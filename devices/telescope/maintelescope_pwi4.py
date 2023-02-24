@@ -271,7 +271,7 @@ class mainTelescope_pwi4(mainConfig):
             coordinate = to_SkyCoord(ra, dec)
         ra = coordinate.ra.hour
         dec = coordinate.dec.deg
-        target = mainTarget(self.observer, coordinate.ra.deg, coordinate.dec.deg, target_name)
+        target = mainTarget(self.observer, ra, dec, target_name)
         altaz = target.altaz()
         log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
 

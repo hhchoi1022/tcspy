@@ -369,7 +369,7 @@ class mainTarget(mainConfig):
 if __name__ == '__main__':
     config = mainConfig().config
     observer = mainObserver(**config)
-    A = mainTarget(observer, target_ra =12.5, target_dec = -33.3, target_name = 'NGC1566')
+    A = mainTarget(observer, target_ra =10.7326, target_dec = 11.7039, target_name = 'NGC1566')
     A.staralt()
     #%%
     b= A.meridiantime()

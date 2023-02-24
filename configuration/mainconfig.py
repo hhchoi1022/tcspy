@@ -32,9 +32,9 @@ class mainConfig:
                 json.dump(dict_params, f , indent = 4)
             print('New configuration file made : %s'%(savepath+filename))
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) ######
-        observer_params = dict(OBSERVER_LONGITUDE = 289.2369,
-                       OBSERVER_LATITUDE = -30.4725,
-                       OBSERVER_ELEVATION = 1525,
+        observer_params = dict(OBSERVER_LONGITUDE = -70.7804,
+                       OBSERVER_LATITUDE = -30.4704,
+                       OBSERVER_ELEVATION = 1580,
                        OBSERVER_TIMEZONE = 'America/Santiago',
                        OBSERVER_NAME = 'Hyeonho Choi',
                        OBSERVER_OBSERVATORY = '7DT_01'

@@ -36,5 +36,5 @@ alt = 60
 az = 170
 #%%
 obs.slew_exposure(target_alt = alt, target_az = az, exptime = 10, binning = 1, target_name = target_name)
-obs.slew_exposure(target = coordinate_radec, exptime = 10, counts = 1, filter = 'w425')
+obs.slew_exposure(target_ra = ra_hour, target_dec = dec_deg, exptime = 10, binning = 1, target_name = target_name)
 # %%
