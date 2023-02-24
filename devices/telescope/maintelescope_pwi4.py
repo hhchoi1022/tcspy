@@ -202,7 +202,7 @@ class mainTelescope_pwi4(mainConfig):
         self.slew_altaz(alt = alt, az = az, tracking = False)
         self.status = self.get_status()
         time.sleep(5*self._checktime)
-        while self.status['is_stationary']:
+        while not self.status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
         self.device.mount_set_park_here()
@@ -218,7 +218,7 @@ class mainTelescope_pwi4(mainConfig):
         self.device.mount_park()
         time.sleep(5*self._checktime)
         self.status = self.get_status()
-        while self.status['is_stationary']:
+        while not self.status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
         log.info('Telescope parked')
@@ -245,6 +245,11 @@ class mainTelescope_pwi4(mainConfig):
         
         log.info('Finding home position...')
         self.device.mount_find_home()
+        self.status = self.get_status()
+        time.sleep(5*self._checktime)
+        while not self.status['is_stationary']:
+            time.sleep(self._checktime)
+            self.status = self.get_status()
         self.status = self.get_status()
         log.info('Finding home finished')
 
