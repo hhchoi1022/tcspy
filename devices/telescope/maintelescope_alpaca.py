@@ -90,6 +90,7 @@ class mainTelescope_Alpaca(mainConfig):
         status['is_connected'] = None
         status['is_tracking'] = None
         status['is_slewing'] = None
+        status['is_stationary'] = None
         try:
             if self.device.Connected:
                 try:
@@ -134,6 +135,10 @@ class mainTelescope_Alpaca(mainConfig):
                     pass
                 try:
                     status['is_slewing'] = self.device.Slewing
+                except:
+                    pass
+                try:
+                    status['is_stationary'] = not status['is_slewing']
                 except:
                     pass
         except:
