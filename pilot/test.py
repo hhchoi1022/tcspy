@@ -8,7 +8,7 @@ from alpaca.focuser import Focuser
 from alpaca.filterwheel import FilterWheel
 from alpaca.telescope import Telescope
 
-from tcspy.pilot.startup import startUp
+from tcspy.pilot.startup import StartUp
 from tcspy.utils import mainLogger
 from tcspy.utils.target import mainTarget
 from tcspy.configuration import mainConfig
@@ -20,21 +20,21 @@ from tcspy.devices.observer import mainObserver
 
 from tcspy.pilot.singleobservation import singleObservation
 #%% Setting devices
-config = mainConfig().config
-observer = mainObserver(**config)
-cam = mainCamera(Camera('127.0.0.1:32323', 0))
-focus = mainFocuser(Focuser('127.0.0.1:32323', 0))
-filt = mainFilterwheel(FilterWheel('127.0.0.1:32323', 0))
-tel = mainTelescope_Alpaca(Telescope('127.0.0.1:32323', 0), Observer = observer)
+startup = StartUp()
+startup.run()
+devices = startup.devices
+observer = startup.observer
 #%%
-startUp().run()
+obs = singleObservation(**devices, observer = observer)
 #%%
-obs = singleObservation(camera = cam, telescope= tel, filterwheel = filt, observer = observer)
+ra = '10:43:57.7'
+dec = '+11:42:14.1'
+target_name = 'M95'
+coord_radec = to_SkyCoord(ra, dec)
+ra_hour ,dec_deg = coord_radec.ra.hour, coord_radec.dec.deg
+alt = 60
+az = 170
 #%%
-ra = '15:35:28'
-dec = '-50:39:32'
-coordinate_radec = to_SkyCoord(ra, dec)
-target = mainTarget(observer= observer, target_ra = coordinate_radec.ra.value, target_dec = coordinate_radec.dec.value, target_name = 'NGC1566')
-#%%
+obs.slew_exposure(target_alt = alt, target_az = az, exptime = 10, binning = 1, target_name = target_name)
 obs.slew_exposure(target = coordinate_radec, exptime = 10, counts = 1, filter = 'w425')
 # %%
