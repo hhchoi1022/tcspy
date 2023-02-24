@@ -1,0 +1,155 @@
+[INFO]2023-02-11 16:50:01 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 16:50:01 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:03:30 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:09:44 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:09:45 | Connecting to the telescope...
+[INFO]2023-02-11 17:09:45 | Telescope connected
+[INFO]2023-02-11 17:10:49 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:11:02 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:11:02 | Connecting to the telescope...
+[INFO]2023-02-11 17:11:02 | Telescope connected
+[INFO]2023-02-11 17:12:37 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:12:37 | Connecting to the telescope...
+[INFO]2023-02-11 17:12:37 | Telescope connected
+[INFO]2023-02-11 17:12:41 | Tracking deactivated
+[INFO]2023-02-11 17:13:22 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:13:22 | Connecting to the telescope...
+[INFO]2023-02-11 17:13:22 | Telescope connected
+[INFO]2023-02-11 17:14:25 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:14:26 | Connecting to the telescope...
+[INFO]2023-02-11 17:14:26 | Telescope connected
+[INFO]2023-02-11 17:15:07 | Slewing to the coordinate (RA = 15.591, Dec = -50.659, Alt = 54.0, Az = 135.9)
+[INFO]2023-02-11 17:20:00 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:20:00 | Connecting to the telescope...
+[INFO]2023-02-11 17:20:00 | Telescope connected
+[INFO]2023-02-11 17:21:41 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:21:41 | Connecting to the telescope...
+[INFO]2023-02-11 17:21:41 | Telescope connected
+[INFO]2023-02-11 17:21:41 | Telescope Unparked
+[INFO]2023-02-11 17:21:41 | Setting park position of the telescope... Slew to the park position (Alt = 30.0 Az = 180.0)
+[INFO]2023-02-11 17:21:41 | Slewing to the coordinate (Alt = 30.0, Az = 180.0)
+[INFO]2023-02-11 17:23:22 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-11 17:23:22 | Connecting to the telescope...
+[INFO]2023-02-11 17:23:22 | Telescope connected
+[INFO]2023-02-11 17:23:22 | Telescope Unparked
+[INFO]2023-02-11 17:23:22 | Setting park position of the telescope... Slew to the park position (Alt = 30.0 Az = 180.0)
+[INFO]2023-02-11 17:23:22 | Slewing to the coordinate (Alt = 30.0, Az = 180.0)
+[INFO]2023-02-11 17:23:23 | Slewing finished. Current coordinate (Alt = 30.0, Az = 180.0)
+[INFO]2023-02-11 17:23:23 | Park position is set (Alt = 30.0 Az = 180.0)
+[INFO]2023-02-11 17:23:23 | Slewing to the coordinate (RA = 15.591, Dec = -50.659, Alt = 55.3, Az = 136.7)
+[INFO]2023-02-11 17:23:29 | Slewing finished. Current coordinate (RA = 15.591, Dec = -50.659, Alt = 55.6, Az = 136.8)
+[INFO]2023-02-11 17:23:29 | Parking telescope...
+[INFO]2023-02-11 17:23:35 | Telescope parked
+[INFO]2023-02-11 17:23:35 | Unparking telescope...
+[INFO]2023-02-11 17:23:35 | Telescope Unparked
+[INFO]2023-02-11 17:23:35 | Slewing to the coordinate (RA = 15.591, Dec = -50.659, Alt = 55.3, Az = 136.8)
+[INFO]2023-02-11 17:23:41 | Slewing finished. Current coordinate (RA = 15.591, Dec = -50.659, Alt = 55.6, Az = 136.8)
+[INFO]2023-02-11 17:23:41 | Slewing to the coordinate (Alt = 50.2, Az = 170.2)
+[INFO]2023-02-11 17:23:48 | Slewing finished. Current coordinate (Alt = 50.2, Az = 170.2)
+[INFO]2023-02-11 17:23:48 | Telescope Unparked
+[INFO]2023-02-11 17:23:48 | Setting park position of the telescope... Slew to the park position (Alt = 40.0 Az = 180.0)
+[INFO]2023-02-11 17:23:48 | Slewing to the coordinate (Alt = 40.0, Az = 180.0)
+[INFO]2023-02-11 17:23:52 | Slewing finished. Current coordinate (Alt = 40.0, Az = 180.0)
+[INFO]2023-02-11 17:23:52 | Park position is set (Alt = 40.0 Az = 180.0)
+[INFO]2023-02-11 17:23:52 | Tracking activated
+[INFO]2023-02-11 17:23:52 | Tracking deactivated
+[INFO]2023-02-11 17:23:52 | Parking telescope...
+[INFO]2023-02-11 17:23:53 | Telescope parked
+[INFO]2023-02-11 17:23:53 | Disconnecting the telescope...
+[INFO]2023-02-11 17:23:53 | Telescope disconnected

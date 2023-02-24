@@ -1,0 +1,469 @@
+[INFO]2023-02-15 15:37:38 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 15:37:58 | Connecting to the telescope...
+[INFO]2023-02-15 15:37:58 | Telescope connected
+[INFO]2023-02-15 16:02:14 | Connecting to the Camera...
+[INFO]2023-02-15 16:02:14 | Camera connected
+[INFO]2023-02-15 16:14:23 | Connecting to the SafetyMonitor device...
+[INFO]2023-02-15 16:14:23 | SafetyMonitor device connected
+[INFO]2023-02-15 18:43:31 | Connecting to the weather station...
+[INFO]2023-02-15 18:43:31 | Weather device connected
+[INFO]2023-02-15 18:45:53 | Connecting to the weather station...
+[INFO]2023-02-15 18:45:53 | Weather device connected
+[INFO]2023-02-15 18:46:34 | Connecting to the weather station...
+[INFO]2023-02-15 18:46:34 | Weather device connected
+[INFO]2023-02-15 18:47:02 | Connecting to the weather station...
+[INFO]2023-02-15 18:47:02 | Weather device connected
+[INFO]2023-02-15 19:06:51 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 19:06:53 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 19:06:53 | Connecting to the telescope...
+[INFO]2023-02-15 19:06:53 | Telescope connected
+[INFO]2023-02-15 19:06:53 | Connecting to the Camera...
+[INFO]2023-02-15 19:06:53 | Camera connected
+[INFO]2023-02-15 19:06:53 | Connecting to the Focuser...
+[INFO]2023-02-15 19:06:53 | Focuser connected
+[INFO]2023-02-15 19:06:53 | Connecting to the Filterwheel...
+[INFO]2023-02-15 19:06:53 | Filterwheel connected
+[INFO]2023-02-15 19:06:56 | Start checking status
+[INFO]2023-02-15 19:06:56 | [Connected] Telescope
+[INFO]2023-02-15 19:06:56 | [Connected] Camera
+[INFO]2023-02-15 19:06:56 | [Connected] Focuser
+[INFO]2023-02-15 19:06:57 | [Connected] FilterWheel
+[INFO]2023-02-15 20:10:01 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 20:10:09 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 20:17:39 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[WARNING]2023-02-15 20:18:02 | Device type is not mathced to Alpaca Camera
+[WARNING]2023-02-15 20:18:36 | Device type is not mathced to Alpaca Camera
+[INFO]2023-02-15 20:21:33 | Connecting to the telescope...
+[INFO]2023-02-15 20:21:33 | Telescope connected
+[INFO]2023-02-15 20:22:46 | Connecting to the telescope...
+[INFO]2023-02-15 20:22:46 | Telescope connected
+[INFO]2023-02-15 20:22:46 | Connecting to the Camera...
+[INFO]2023-02-15 20:22:46 | Camera connected
+[INFO]2023-02-15 20:22:46 | Connecting to the Filterwheel...
+[INFO]2023-02-15 20:22:46 | Filterwheel connected
+[INFO]2023-02-15 20:22:46 | Connecting to the Focuser...
+[INFO]2023-02-15 20:22:46 | Focuser connected
+[INFO]2023-02-15 20:22:46 | Connecting to the weather station...
+[INFO]2023-02-15 20:22:46 | Weather device connected
+[INFO]2023-02-15 20:23:03 | Connecting to the telescope...
+[INFO]2023-02-15 20:23:03 | Telescope connected
+[INFO]2023-02-15 20:23:03 | Connecting to the Camera...
+[INFO]2023-02-15 20:23:03 | Camera connected
+[INFO]2023-02-15 20:23:03 | Connecting to the Filterwheel...
+[INFO]2023-02-15 20:23:03 | Filterwheel connected
+[INFO]2023-02-15 20:23:03 | Connecting to the Focuser...
+[INFO]2023-02-15 20:23:03 | Focuser connected
+[INFO]2023-02-15 20:23:03 | Connecting to the weather station...
+[INFO]2023-02-15 20:23:03 | Weather device connected
+[INFO]2023-02-15 20:28:45 | Connecting to the telescope...
+[INFO]2023-02-15 20:28:45 | Telescope connected
+[INFO]2023-02-15 20:28:45 | Connecting to the Camera...
+[INFO]2023-02-15 20:28:45 | Camera connected
+[INFO]2023-02-15 20:28:46 | Connecting to the Filterwheel...
+[INFO]2023-02-15 20:28:46 | Filterwheel connected
+[INFO]2023-02-15 20:28:46 | Connecting to the Focuser...
+[INFO]2023-02-15 20:28:46 | Focuser connected
+[INFO]2023-02-15 20:28:46 | Connecting to the weather station...
+[INFO]2023-02-15 20:28:46 | Weather device connected
+[INFO]2023-02-15 21:32:39 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 21:33:36 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 21:33:56 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 21:34:28 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 21:34:28 | Connecting to the telescope...
+[INFO]2023-02-15 21:34:28 | Telescope connected
+[INFO]2023-02-15 21:34:29 | Connecting to the Camera...
+[INFO]2023-02-15 21:34:29 | Camera connected
+[INFO]2023-02-15 21:34:30 | Connecting to the Filterwheel...
+[INFO]2023-02-15 21:34:30 | Filterwheel connected
+[INFO]2023-02-15 21:34:31 | Connecting to the weather station...
+[INFO]2023-02-15 21:34:31 | Weather device connected
+[INFO]2023-02-15 21:34:32 | Connecting to the Focuser...
+[INFO]2023-02-15 21:34:32 | Focuser connected
+[INFO]2023-02-15 21:34:47 | Connecting to the telescope...
+[INFO]2023-02-15 21:34:47 | Telescope connected
+[INFO]2023-02-15 21:34:48 | Connecting to the Camera...
+[INFO]2023-02-15 21:34:48 | Camera connected
+[INFO]2023-02-15 21:34:49 | Connecting to the Filterwheel...
+[INFO]2023-02-15 21:34:49 | Filterwheel connected
+[INFO]2023-02-15 21:34:50 | Connecting to the weather station...
+[INFO]2023-02-15 21:34:51 | Weather device connected
+[INFO]2023-02-15 21:34:52 | Connecting to the Focuser...
+[INFO]2023-02-15 21:34:52 | Focuser connected
+[INFO]2023-02-15 21:35:08 | ======== Checking connection ========
+[INFO]2023-02-15 21:35:08 | [Connected] telescope
+[INFO]2023-02-15 21:35:08 | [Connected] camera
+[INFO]2023-02-15 21:35:08 | [Connected] filterwheel
+[INFO]2023-02-15 21:35:26 | ======== Checking connection ========
+[INFO]2023-02-15 21:35:27 | [Connected] telescope
+[INFO]2023-02-15 21:35:27 | [Connected] camera
+[INFO]2023-02-15 21:35:27 | [Connected] filterwheel
+[INFO]2023-02-15 21:35:53 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 21:36:05 | Connecting to the telescope...
+[INFO]2023-02-15 21:36:05 | Telescope connected
+[INFO]2023-02-15 21:36:06 | Connecting to the Camera...
+[INFO]2023-02-15 21:36:06 | Camera connected
+[INFO]2023-02-15 21:36:07 | Connecting to the Filterwheel...
+[INFO]2023-02-15 21:36:07 | Filterwheel connected
+[INFO]2023-02-15 21:36:08 | Connecting to the weather station...
+[INFO]2023-02-15 21:36:08 | Weather device connected
+[INFO]2023-02-15 21:36:09 | Connecting to the Focuser...
+[INFO]2023-02-15 21:36:09 | Focuser connected
+[INFO]2023-02-15 21:36:14 | ======== Checking connection ========
+[INFO]2023-02-15 21:36:14 | [Connected] telescope
+[INFO]2023-02-15 21:36:14 | [Connected] camera
+[INFO]2023-02-15 21:36:14 | [Connected] filterwheel
+[INFO]2023-02-15 21:36:14 | [Connected] weather
+[INFO]2023-02-15 21:36:14 | [Connected] focuser
+[INFO]2023-02-15 21:36:37 | [Connected] Observer (Localtime : 2023-02-15 09:36:37.707567-03:00)
+[INFO]2023-02-15 21:36:39 | [Connected] Observer (Localtime : 2023-02-15 09:36:39.371379-03:00)
+[INFO]2023-02-15 21:36:39 | [Connected] Observer (Localtime : 2023-02-15 09:36:39.691592-03:00)
+[INFO]2023-02-15 21:36:40 | [Connected] Observer (Localtime : 2023-02-15 09:36:40.074339-03:00)
+[INFO]2023-02-15 21:36:43 | ======== Checking connection ========
+[INFO]2023-02-15 21:36:43 | [Connected] telescope
+[INFO]2023-02-15 21:36:43 | [Connected] camera
+[INFO]2023-02-15 21:36:43 | [Connected] filterwheel
+[INFO]2023-02-15 21:36:43 | [Connected] weather
+[INFO]2023-02-15 21:36:43 | [Connected] focuser
+[INFO]2023-02-15 21:36:43 | [Connected] Observer (Localtime : 2023-02-15 09:36:43.544254-03:00)
+[INFO]2023-02-15 21:36:43 | Checking connection finished
+[INFO]2023-02-15 21:38:16 | [Connected] Observer
+[INFO]2023-02-15 21:38:16 | Checking connection finished
+[INFO]2023-02-15 21:38:19 | ======== Checking weather condition ========
+[INFO]2023-02-15 21:38:56 | ======== Checking weather condition ========
+[INFO]2023-02-15 21:39:28 | ======== Checking weather condition ========
+[INFO]2023-02-15 21:39:28 | Weather condition is good
+[INFO]2023-02-15 21:43:50 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 21:43:50 | Connecting to the telescope...
+[INFO]2023-02-15 21:43:50 | Telescope connected
+[INFO]2023-02-15 21:43:51 | Connecting to the Camera...
+[INFO]2023-02-15 21:43:51 | Camera connected
+[INFO]2023-02-15 21:43:52 | Connecting to the Filterwheel...
+[INFO]2023-02-15 21:43:52 | Filterwheel connected
+[INFO]2023-02-15 21:43:53 | Connecting to the weather station...
+[INFO]2023-02-15 21:43:53 | Weather device connected
+[INFO]2023-02-15 21:43:54 | Connecting to the Focuser...
+[INFO]2023-02-15 21:43:54 | Focuser connected
+[INFO]2023-02-15 21:44:28 | Connecting to the telescope...
+[INFO]2023-02-15 21:44:28 | Telescope connected
+[INFO]2023-02-15 21:44:29 | Connecting to the Camera...
+[INFO]2023-02-15 21:44:29 | Camera connected
+[INFO]2023-02-15 21:44:30 | Connecting to the Filterwheel...
+[INFO]2023-02-15 21:44:30 | Filterwheel connected
+[INFO]2023-02-15 21:44:31 | Connecting to the weather station...
+[INFO]2023-02-15 21:44:31 | Weather device connected
+[INFO]2023-02-15 21:44:32 | Connecting to the Focuser...
+[INFO]2023-02-15 21:44:32 | Focuser connected
+[INFO]2023-02-15 21:44:37 | ======== Checking connection ========
+[INFO]2023-02-15 21:44:37 | [Connected] telescope
+[INFO]2023-02-15 21:44:37 | [Connected] camera
+[INFO]2023-02-15 21:44:37 | [Connected] filterwheel
+[INFO]2023-02-15 21:44:37 | [Connected] weather
+[INFO]2023-02-15 21:44:37 | [Connected] focuser
+[INFO]2023-02-15 21:44:37 | [Connected] Observer
+[INFO]2023-02-15 21:44:37 | Checking connection finished
+[INFO]2023-02-15 21:44:40 | ======== Checking weather condition ========
+[INFO]2023-02-15 21:44:40 | Weather condition is good
+[INFO]2023-02-15 21:44:40 | Checking weather finished
+[INFO]2023-02-15 21:45:57 | ======== Checking connection ========
+[INFO]2023-02-15 21:45:57 | [Connected] telescope
+[INFO]2023-02-15 21:45:57 | [Connected] camera
+[INFO]2023-02-15 21:45:57 | [Connected] filterwheel
+[INFO]2023-02-15 21:45:57 | [Connected] weather
+[INFO]2023-02-15 21:45:57 | [Connected] focuser
+[INFO]2023-02-15 21:46:05 | ======== Checking connection ========
+[INFO]2023-02-15 21:46:05 | [Connected] telescope
+[INFO]2023-02-15 21:46:05 | [Connected] camera
+[INFO]2023-02-15 21:46:05 | [Connected] filterwheel
+[INFO]2023-02-15 21:46:05 | [Connected] weather
+[INFO]2023-02-15 21:46:05 | [Connected] focuser
+[INFO]2023-02-15 21:46:05 | [Connected] Observer
+[INFO]2023-02-15 21:46:05 | Checking connection finished
+[INFO]2023-02-15 21:46:08 | ======== Checking weather condition ========
+[INFO]2023-02-15 21:46:08 | Weather condition is good
+[INFO]2023-02-15 21:46:08 | Checking weather finished
+[INFO]2023-02-15 21:55:00 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 21:55:00 | Connecting to the telescope...
+[INFO]2023-02-15 21:55:00 | Telescope connected
+[INFO]2023-02-15 21:55:01 | Connecting to the Camera...
+[INFO]2023-02-15 21:55:01 | Camera connected
+[INFO]2023-02-15 21:55:02 | Connecting to the Filterwheel...
+[INFO]2023-02-15 21:55:02 | Filterwheel connected
+[INFO]2023-02-15 21:55:04 | Connecting to the weather station...
+[INFO]2023-02-15 21:55:04 | Weather device connected
+[INFO]2023-02-15 21:55:05 | Connecting to the Focuser...
+[INFO]2023-02-15 21:55:05 | Focuser connected
+[INFO]2023-02-15 21:55:35 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-15 21:55:35 | Connecting to the telescope...
+[INFO]2023-02-15 21:55:35 | Telescope connected
+[INFO]2023-02-15 21:55:36 | Connecting to the Camera...
+[INFO]2023-02-15 21:55:36 | Camera connected
+[INFO]2023-02-15 21:55:37 | Connecting to the Filterwheel...
+[INFO]2023-02-15 21:55:37 | Filterwheel connected
+[INFO]2023-02-15 21:55:38 | Connecting to the weather station...
+[INFO]2023-02-15 21:55:38 | Weather device connected
+[INFO]2023-02-15 21:55:40 | Connecting to the Focuser...
+[INFO]2023-02-15 21:55:40 | Focuser connected
+[INFO]2023-02-15 21:55:51 | Connecting to the telescope...
+[INFO]2023-02-15 21:55:51 | Telescope connected
+[INFO]2023-02-15 21:55:52 | Connecting to the Camera...
+[INFO]2023-02-15 21:55:52 | Camera connected
+[INFO]2023-02-15 21:55:53 | Connecting to the Filterwheel...
+[INFO]2023-02-15 21:55:53 | Filterwheel connected
+[INFO]2023-02-15 21:55:54 | Connecting to the weather station...
+[INFO]2023-02-15 21:55:55 | Weather device connected
+[INFO]2023-02-15 21:55:56 | Connecting to the Focuser...
+[INFO]2023-02-15 21:55:56 | Focuser connected
+[INFO]2023-02-15 21:56:00 | ======== Checking connection ========
+[INFO]2023-02-15 21:56:00 | [Connected] telescope
+[INFO]2023-02-15 21:56:00 | [Connected] camera
+[INFO]2023-02-15 21:56:00 | [Connected] filterwheel
+[INFO]2023-02-15 21:56:00 | [Connected] weather
+[INFO]2023-02-15 21:56:00 | [Connected] focuser
+[INFO]2023-02-15 21:56:00 | [Connected] Observer
+[INFO]2023-02-15 21:56:00 | ======== Checking connection finished ========
+[INFO]2023-02-15 21:56:03 | ======== Checking weather condition ========
+[INFO]2023-02-15 21:56:03 | Weather condition is good
+[INFO]2023-02-15 21:56:03 | ======== Checking weather finished ========
+[INFO]2023-02-15 21:56:03 | Parking telescope...
+[INFO]2023-02-15 21:56:11 | Telescope parked
+[INFO]2023-02-15 21:56:11 | Unparking telescope...
+[INFO]2023-02-15 21:56:11 | Telescope Unparked
+[INFO]2023-02-15 21:56:11 | Start cooling...
+[INFO]2023-02-15 21:56:11 | Current temperature : 10.0
+[INFO]2023-02-15 21:56:14 | Current temperature : 0.9
+[INFO]2023-02-15 21:56:17 | Current temperature : -4.1
+[INFO]2023-02-15 21:56:20 | Current temperature : -6.8
+[INFO]2023-02-15 21:56:23 | Cooling finished. Set temperature : -10.0
+[INFO]2023-02-16 15:23:18 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-16 15:23:18 | Connecting to the telescope...
+[INFO]2023-02-16 15:23:18 | Telescope connected
+[INFO]2023-02-16 15:23:19 | Connecting to the Camera...
+[INFO]2023-02-16 15:23:19 | Camera connected
+[INFO]2023-02-16 15:23:20 | Connecting to the Filterwheel...
+[INFO]2023-02-16 15:23:20 | Filterwheel connected
+[INFO]2023-02-16 15:23:21 | Connecting to the weather station...
+[INFO]2023-02-16 15:23:21 | Weather device connected
+[INFO]2023-02-16 15:23:22 | Connecting to the Focuser...
+[INFO]2023-02-16 15:23:22 | Focuser connected
+[INFO]2023-02-16 15:23:26 | ======== Checking connection ========
+[INFO]2023-02-16 15:23:26 | [Connected] telescope
+[INFO]2023-02-16 15:23:26 | [Connected] camera
+[INFO]2023-02-16 15:23:26 | [Connected] filterwheel
+[INFO]2023-02-16 15:23:26 | [Connected] weather
+[INFO]2023-02-16 15:23:26 | [Connected] focuser
+[INFO]2023-02-16 15:23:26 | [Connected] Observer
+[INFO]2023-02-16 15:23:26 | ======== Checking connection finished ========
+[INFO]2023-02-16 15:23:29 | ======== Checking weather condition ========
+[INFO]2023-02-16 15:23:29 | Weather condition is good
+[INFO]2023-02-16 15:23:29 | ======== Checking weather finished ========
+[INFO]2023-02-16 15:23:29 | Parking telescope...
+[INFO]2023-02-16 15:23:30 | Telescope parked
+[INFO]2023-02-16 15:23:30 | Unparking telescope...
+[INFO]2023-02-16 15:23:30 | Telescope Unparked
+[INFO]2023-02-16 15:23:30 | Start cooling...
+[INFO]2023-02-16 15:23:30 | Cooling finished. Set temperature : -10.0
+[INFO]2023-02-16 15:30:43 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-16 15:30:43 | Connecting to the telescope...
+[INFO]2023-02-16 15:30:43 | Telescope connected
+[INFO]2023-02-16 15:30:44 | Connecting to the Camera...
+[INFO]2023-02-16 15:30:44 | Camera connected
+[INFO]2023-02-16 15:30:45 | Connecting to the Filterwheel...
+[INFO]2023-02-16 15:30:45 | Filterwheel connected
+[INFO]2023-02-16 15:30:46 | Connecting to the weather station...
+[INFO]2023-02-16 15:30:46 | Weather device connected
+[INFO]2023-02-16 15:30:47 | Connecting to the Focuser...
+[INFO]2023-02-16 15:30:47 | Focuser connected
+[INFO]2023-02-16 15:30:51 | ======== Checking connection ========
+[INFO]2023-02-16 15:30:51 | [Connected] telescope
+[INFO]2023-02-16 15:30:51 | [Connected] camera
+[INFO]2023-02-16 15:30:51 | [Connected] filterwheel
+[INFO]2023-02-16 15:30:51 | [Connected] weather
+[INFO]2023-02-16 15:30:51 | [Connected] focuser
+[INFO]2023-02-16 15:30:51 | [Connected] Observer
+[INFO]2023-02-16 15:30:51 | ======== Checking connection finished ========
+[INFO]2023-02-16 15:30:54 | ======== Checking weather condition ========
+[INFO]2023-02-16 15:30:54 | Weather condition is good
+[INFO]2023-02-16 15:30:54 | ======== Checking weather finished ========
+[INFO]2023-02-16 15:30:54 | Parking telescope...
+[INFO]2023-02-16 15:30:55 | Telescope parked
+[INFO]2023-02-16 15:30:55 | Unparking telescope...
+[INFO]2023-02-16 15:30:55 | Telescope Unparked
+[INFO]2023-02-16 15:30:55 | Start cooling...
+[INFO]2023-02-16 15:30:55 | Current temperature : -10.0
+[INFO]2023-02-16 15:30:58 | Current temperature : -12.4
+[INFO]2023-02-16 15:31:01 | Current temperature : -13.6
+[INFO]2023-02-16 15:31:04 | Cooling finished. Set temperature : -15.0
+[INFO]2023-02-16 15:31:24 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-02-16 15:31:25 | Connecting to the telescope...
+[INFO]2023-02-16 15:31:25 | Telescope connected
+[INFO]2023-02-16 15:31:26 | Connecting to the Camera...
+[INFO]2023-02-16 15:31:26 | Camera connected
+[INFO]2023-02-16 15:31:27 | Connecting to the Filterwheel...
+[INFO]2023-02-16 15:31:27 | Filterwheel connected
+[INFO]2023-02-16 15:31:28 | Connecting to the weather station...
+[INFO]2023-02-16 15:31:28 | Weather device connected
+[INFO]2023-02-16 15:31:29 | Connecting to the Focuser...
+[INFO]2023-02-16 15:31:29 | Focuser connected
+[INFO]2023-02-16 15:31:33 | ======== Checking connection ========
+[INFO]2023-02-16 15:31:33 | [Connected] telescope
+[INFO]2023-02-16 15:31:33 | [Connected] camera
+[INFO]2023-02-16 15:31:33 | [Connected] filterwheel
+[INFO]2023-02-16 15:31:33 | [Connected] weather
+[INFO]2023-02-16 15:31:33 | [Connected] focuser
+[INFO]2023-02-16 15:31:33 | [Connected] Observer
+[INFO]2023-02-16 15:31:33 | ======== Checking connection finished ========
+[INFO]2023-02-16 15:31:36 | ======== Checking weather condition ========
+[INFO]2023-02-16 15:31:36 | Weather condition is good
+[INFO]2023-02-16 15:31:36 | ======== Checking weather finished ========
+[INFO]2023-02-16 15:31:36 | Parking telescope...
+[INFO]2023-02-16 15:31:37 | Telescope parked
+[INFO]2023-02-16 15:31:37 | Unparking telescope...
+[INFO]2023-02-16 15:31:37 | Telescope Unparked
+[INFO]2023-02-16 15:31:37 | Start cooling...
+[INFO]2023-02-16 15:31:37 | Cooling finished. Set temperature : -15.0
+[CRITICAL]2023-02-16 15:31:37 | Startup completed
+[INFO]2023-02-16 19:16:00 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================

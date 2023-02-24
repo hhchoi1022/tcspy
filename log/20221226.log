@@ -1,0 +1,61 @@
+[INFO]2022-12-26 16:44:11 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2022-12-26 16:44:38 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2022-12-26 16:47:44 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2022-12-26 21:38:10 | Connecting to the Filterwheel...
+[INFO]2022-12-26 21:38:10 | Filterwheel connected
+[INFO]2022-12-26 21:38:46 | Connecting to the Filterwheel...
+[INFO]2022-12-26 21:38:46 | Filterwheel connected
+[INFO]2022-12-26 21:38:48 | Disconnecting to the Filterwheel...
+[INFO]2022-12-26 21:38:48 | Filterwheel disconnected
+[INFO]2022-12-26 21:39:11 | Connecting to the Filterwheel...
+[INFO]2022-12-26 21:39:11 | Filterwheel connected
+[INFO]2022-12-26 21:39:40 | Disconnecting to the Filterwheel...
+[INFO]2022-12-26 21:39:40 | Filterwheel disconnected
+[INFO]2022-12-26 21:41:19 | Connecting to the Filterwheel...
+[INFO]2022-12-26 21:41:19 | Filterwheel connected
+[INFO]2022-12-26 22:26:56 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:26:56 | Filterwheel connected
+[INFO]2022-12-26 22:27:33 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:27:33 | Filterwheel connected
+[INFO]2022-12-26 22:27:49 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:27:49 | Filterwheel connected
+[INFO]2022-12-26 22:27:59 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:27:59 | Filterwheel connected
+[INFO]2022-12-26 22:28:04 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:28:04 | Filterwheel connected
+[INFO]2022-12-26 22:37:59 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:37:59 | Filterwheel connected
+[INFO]2022-12-26 22:38:10 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:38:10 | Filterwheel connected
+[INFO]2022-12-26 22:38:32 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:38:32 | Filterwheel connected
+[INFO]2022-12-26 22:38:32 | Changing filter... (Current : w550 To : w425
+[INFO]2022-12-26 22:38:40 | Filter changed (Current : w425
+[INFO]2022-12-26 22:39:35 | Connecting to the Filterwheel...
+[INFO]2022-12-26 22:39:35 | Filterwheel connected
+[INFO]2022-12-26 22:39:35 | Changing filter... (Current : w425 To : w425)
+[INFO]2022-12-26 22:39:35 | Filter changed (Current : w425)

@@ -1,0 +1,16 @@
+[INFO]2022-12-25 21:03:56 | Connecting to the Camera...
+[INFO]2022-12-25 21:03:56 | Camera connected
+[INFO]2022-12-25 21:05:38 | [DARK] Start exposure (exptime = 10.0)
+[INFO]2022-12-25 21:05:48 | [DARK] Exposure finished (exptime = 10.0)
+[INFO]2022-12-25 21:52:43 | Connecting to the Camera...
+[INFO]2022-12-25 21:52:43 | Camera connected
+[INFO]2022-12-25 21:52:43 | Start cooling...
+[INFO]2022-12-25 21:52:43 | Current temperature : -10.0
+[INFO]2022-12-25 21:52:46 | Current temperature : -5.4
+[INFO]2022-12-25 21:52:49 | Current temperature : -2.9
+[INFO]2022-12-25 21:52:52 | Current temperature : -1.6
+[INFO]2022-12-25 21:52:55 | Cooling finished. Set temperature : 0.0
+[INFO]2022-12-25 21:52:57 | [LIGHT] Start exposure (exptime = 3.0)
+[INFO]2022-12-25 21:53:00 | [LIGHT] Exposure finished (exptime = 3.0)
+[INFO]2022-12-25 21:53:07 | [LIGHT] Start exposure (exptime = 3.0)
+[INFO]2022-12-25 21:53:10 | [LIGHT] Exposure finished (exptime = 3.0)

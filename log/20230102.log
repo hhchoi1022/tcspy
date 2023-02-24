@@ -1,0 +1,37 @@
+[INFO]2023-01-02 23:19:20 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4725 deg
+   Longitude = 289.2369 deg
+   Elevation = 1525.0 m
+   Timezone = America/Santiago
+==================
+[INFO]2023-01-02 23:19:20 | Connecting to the telescope...
+[INFO]2023-01-02 23:19:20 | Telescope connected
+[INFO]2023-01-02 23:19:20 | Connecting to the Camera...
+[INFO]2023-01-02 23:19:20 | Camera connected
+[INFO]2023-01-02 23:19:20 | Connecting to the Filterwheel...
+[INFO]2023-01-02 23:19:20 | Filterwheel connected
+[INFO]2023-01-02 23:19:23 | Start checking status
+[INFO]2023-01-02 23:19:23 | [Connected] Telescope
+[INFO]2023-01-02 23:19:23 | [Connected] Camera
+[INFO]2023-01-02 23:19:23 | [Connected] Focuser
+[INFO]2023-01-02 23:19:23 | [Connected] FilterWheel
+[INFO]2023-01-02 23:19:23 | [Connected] Observer (Localtime : 2023-01-02 11:19:23.408614-03:00)
+[INFO]2023-01-02 23:19:23 | Checking connection finished
+[INFO]2023-01-02 23:19:24 | Telescope Unparked
+[INFO]2023-01-02 23:19:30 | Slewing to the coordinate (RA = 10.367, Dec = -50.640, Alt = 22.9, Az = 223.4)
+[CRITICAL]2023-01-02 23:19:30 | Destination altitude below limit (22.9deg)
+[INFO]2023-01-02 23:19:34 | Slewing to the coordinate (RA = 2.167, Dec = -50.640, Alt = -3.8, Az = 159.5)
+[CRITICAL]2023-01-02 23:19:34 | Destination altitude below limit (-3.8deg)
+[INFO]2023-01-02 23:19:36 | Slewing to the coordinate (RA = 21.700, Dec = -50.640, Alt = 29.3, Az = 134.2)
+[CRITICAL]2023-01-02 23:19:36 | Destination altitude below limit (29.3deg)
+[INFO]2023-01-02 23:19:40 | Slewing to the coordinate (RA = 21.700, Dec = -70.640, Alt = 31.9, Az = 157.3)
+[INFO]2023-01-02 23:19:46 | Slewing finished. Current coordinate (RA = 325.500, Dec = -70.640, Alt = 32.1, Az = 157.4)
+[INFO]2023-01-02 23:19:48 | Changing filter... (Current : w525 To : w425)
+[INFO]2023-01-02 23:19:58 | Filter changed (Current : w425)
+[INFO]2023-01-02 23:19:59 | Moving focuser position... (Current : 12500 To : 10500)
+[INFO]2023-01-02 23:20:02 | Focuser position is set (Current : 10500)
+[INFO]2023-01-02 23:20:03 | [LIGHT] Start exposure (exptime = 10.0)
+[INFO]2023-01-02 23:20:13 | [LIGHT] Exposure finished (exptime = 10.0)
