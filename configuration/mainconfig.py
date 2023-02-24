@@ -98,11 +98,11 @@ class mainConfig:
                              TARGET_MOONSEP = 40,
                              TARGET_MAXAIRMASS = None
                              )
-        path_params = dict(LOGGER_FILEPATH = 'C:/Users/RASA36/gitrepo/tcspy/log/',
+        path_params = dict(LOGGER_FILEPATH = 'C:/Users/RASA36/Desktop/tcspy/log/',
                            IMAGE_FILEPATH = 'C:/Users/RASA36/Desktop/images'
                            )
         # For more camera info : https://www.gxccd.com/art?id=647&lang=409
-        logger_params = dict(LOGGER_SAVE = True,
+        logger_params = dict(LOGGER_SAVE = False,
                             LOGGER_LEVEL = 'INFO',
                             LOGGER_FORMAT = '[%(levelname)s]%(asctime)-15s | %(message)s',
                             )
