@@ -57,6 +57,8 @@ class mainConfig:
         telescope_params = dict(TELESCOPE_DEVICE = 'PWI4', # or PWI4
                                 TELESCOPE_HOSTIP = '10.0.101.178',
                                 TELESCOPE_PORTNUM = '8220',
+                                TELESCOPE_RMSRA = 0.15,
+                                TELESCOPE_RMSDEC = 0.15,
                                 TELESCOPE_DEVICENUM = 0,
                                 TELESCOPE_CHECKTIME = 0.5,
                                 TELESCOPE_DIAMETER = 0.5,

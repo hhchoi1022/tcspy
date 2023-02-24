@@ -27,14 +27,16 @@ observer = startup.observer
 #%%
 obs = singleObservation(**devices, observer = observer)
 #%%
-ra = '10:43:57.7'
-dec = '+11:42:14.1'
-target_name = 'M95'
+ra = '12:39:30.7'
+dec = '-26:45:00'
+target_name = 'M68'
 coord_radec = to_SkyCoord(ra, dec)
 ra_hour ,dec_deg = coord_radec.ra.hour, coord_radec.dec.deg
 alt = 60
 az = 170
+target = mainTarget(observer = observer, target_ra = ra_hour, target_dec = dec_deg, target_name = target_name)
+target.staralt()
 #%%
-obs.slew_exposure(target_alt = alt, target_az = az, exptime = 10, binning = 1, target_name = target_name)
-obs.slew_exposure(target_ra = ra_hour, target_dec = dec_deg, exptime = 10, binning = 1, target_name = target_name)
+#obs.slew_exposure(target_alt = alt, target_az = az, exptime = 10, binning = 1, target_name = target_name)
+image = obs.slew_exposure(target_ra = ra_hour, target_dec = dec_deg, exptime = 60, binning = 1, target_name = target_name)
 # %%
