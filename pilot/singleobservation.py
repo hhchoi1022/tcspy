@@ -52,6 +52,7 @@ class singleObservation(mainConfig):
             self.tel.slew_radec(coordinate = target.coordinate)
         else:
             self.tel.slew_altaz(coordinate= target.coordinate)
+        self.tel.status = self.tel.get_status()
             # move filter
         if not filter == None:
             self.filt.move(filter)

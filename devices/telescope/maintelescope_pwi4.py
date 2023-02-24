@@ -108,6 +108,7 @@ class mainTelescope_pwi4(mainConfig):
         status['is_connected'] = None
         status['is_tracking'] = None
         status['is_slewing'] = None
+        status['is_stationary'] = None
         status['axis1_rms'] = None
         status['axis2_rms'] = None
         status['axis1_maxvel'] = None
@@ -127,6 +128,7 @@ class mainTelescope_pwi4(mainConfig):
                 status['is_connected'] = self.PWI_status.mount.is_connected
                 status['is_tracking'] = self.PWI_status.mount.is_tracking
                 status['is_slewing'] = self.PWI_status.mount.is_slewing 
+                status['is_stationary'] = (self.PWI_status.mount.axis0.rms_error_arcsec < 0.15 & self.PWI_status.mount.axis0.rms_error_arcsec < 0.15)
                 status['axis1_rms'] = round(self.PWI_status.mount.axis0.rms_error_arcsec,3)
                 status['axis2_rms'] = round(self.PWI_status.mount.axis1.rms_error_arcsec,3)
                 status['axis1_maxvel'] = round(self.PWI_status.mount.axis0.max_velocity_degs_per_sec,3)
@@ -285,7 +287,7 @@ class mainTelescope_pwi4(mainConfig):
         self.status = self.get_status()
         self.device.mount_goto_ra_dec_j2000(ra, dec)
         self.status = self.get_status()
-        while self.status['is_slewing']:
+        while not self.status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
         self.status = self.get_status()
@@ -329,7 +331,7 @@ class mainTelescope_pwi4(mainConfig):
         self.status = self.get_status()
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
         self.status = self.get_status()
-        while self.status['is_slewing']:
+        while not self.status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
         self.status = self.get_status()
