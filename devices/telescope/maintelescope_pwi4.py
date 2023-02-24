@@ -116,7 +116,6 @@ class mainTelescope_pwi4(mainConfig):
         try:
             if self.PWI_status.mount.is_connected:
                 self._update_PWI_status()
-                status = dict()
                 status['update_time'] = self.PWI_status.response.timestamp_utc
                 status['jd'] = round(self.PWI_status.mount.julian_date,6)
                 status['ra'] = round(self.PWI_status.mount.ra_j2000_hours,5)
@@ -128,7 +127,7 @@ class mainTelescope_pwi4(mainConfig):
                 status['is_connected'] = self.PWI_status.mount.is_connected
                 status['is_tracking'] = self.PWI_status.mount.is_tracking
                 status['is_slewing'] = self.PWI_status.mount.is_slewing 
-                status['is_stationary'] = (self.PWI_status.mount.axis0.rms_error_arcsec < 0.15 & self.PWI_status.mount.axis1.rms_error_arcsec < 0.15)
+                status['is_stationary'] = (self.PWI_status.mount.axis0.rms_error_arcsec < 0.15) & (self.PWI_status.mount.axis1.rms_error_arcsec < 0.15)
                 status['axis1_rms'] = round(self.PWI_status.mount.axis0.rms_error_arcsec,3)
                 status['axis2_rms'] = round(self.PWI_status.mount.axis1.rms_error_arcsec,3)
                 status['axis1_maxvel'] = round(self.PWI_status.mount.axis0.max_velocity_degs_per_sec,3)
