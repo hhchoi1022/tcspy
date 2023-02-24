@@ -90,6 +90,7 @@ class mainTelescope_pwi4(mainConfig):
             - 'is_connected' : True if the telescope is connected, False otherwise.
             - 'is_tracking' : True if the telescope is currently tracking, False otherwise.
             - 'is_slewing' : True if the telescope is currently slewing, False otherwise.
+            - 'is_stationary' : True if the telescope is currently stationary, False otherwise.
             - 'axis1_rms' : The RMS error of axis 1 in arcseconds.
             - 'axis2_rms' : The RMS error of axis 2 in arcseconds.
             - 'axis1_maxvel' : The maximum velocity of axis 1 in degrees per second.
@@ -199,9 +200,9 @@ class mainTelescope_pwi4(mainConfig):
         log.info('Setting park position of the telescope... Slew to the park position (Alt = %.1f Az = %.1f)'%(alt, az))
         
         self.slew_altaz(alt = alt, az = az, tracking = False)
-        time.sleep(self._checktime)
         self.status = self.get_status()
-        while self.status['is_slewing']:
+        time.sleep(5*self._checktime)
+        while self.status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
         self.device.mount_set_park_here()
@@ -215,8 +216,9 @@ class mainTelescope_pwi4(mainConfig):
         
         log.info('Parking telescope...')
         self.device.mount_park()
+        time.sleep(5*self._checktime)
         self.status = self.get_status()
-        while self.status['is_slewing']:
+        while self.status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
         log.info('Telescope parked')
@@ -233,6 +235,7 @@ class mainTelescope_pwi4(mainConfig):
             self.device.mount_enable(axisNum = 0)
         if not self.PWI_status.mount.axis1.is_enabled:
             self.device.mount_enable(axisNum = 1)
+        self.status = self.get_status()
         log.info('Telescope unparked')
     
     def find_home(self):
@@ -285,6 +288,7 @@ class mainTelescope_pwi4(mainConfig):
         self.unpark()
         self.status = self.get_status()
         self.device.mount_goto_ra_dec_j2000(ra, dec)
+        time.sleep(5*self._checktime)
         self.status = self.get_status()
         while not self.status['is_stationary']:
             time.sleep(self._checktime)
@@ -329,6 +333,7 @@ class mainTelescope_pwi4(mainConfig):
         self.unpark()
         self.status = self.get_status()
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
+        time.sleep(5*self._checktime)
         self.status = self.get_status()
         while not self.status['is_stationary']:
             time.sleep(self._checktime)
