@@ -159,8 +159,8 @@ class mainTelescope_Alpaca(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 log.info('Telescope connected')
-        except Exception as e:
-            log.warning('Connection failed :', str(e))
+        except:
+            log.warning('Connection failed')
         self.status = self.get_status()
             
     def disconnect(self):

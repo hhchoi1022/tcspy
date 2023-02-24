@@ -97,8 +97,8 @@ class mainSafetyMonitor(mainConfig):
                     time.sleep(self._checktime)
                 if  self.device.Connected:
                     log.info('SafetyMonitor device connected')
-        except Exception as e:
-            log.warning('Connection failed :', str(e))
+        except :
+            log.warning('Connection failed')
     
     def disconnect(self):
         """

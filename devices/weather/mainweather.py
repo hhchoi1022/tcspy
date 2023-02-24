@@ -118,8 +118,8 @@ class mainWeather(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 log.info('Weather device connected')
-        except Exception as e:
-            log.warning('Connection failed :', str(e))
+        except:
+            log.warning('Connection failed')
         self.status = self.get_status()
     
     def disconnect(self):

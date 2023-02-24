@@ -160,7 +160,7 @@ class mainTelescope_pwi4(mainConfig):
                 self._update_PWI_status()
             log.info('Telescope connected')
         except:
-            log.warning('Connection failed :')
+            log.warning('Connection failed')
         self._update_PWI_status()
         self.status = self.get_status()
     
