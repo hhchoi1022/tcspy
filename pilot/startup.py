@@ -8,6 +8,7 @@ from tcspy.devices.observer import mainObserver
 from tcspy.devices.weather import mainWeather
 from tcspy.configuration import mainConfig
 from tcspy.utils import mainLogger
+from tcspy.utils import LogFormat
 
 from alpaca import management
 from alpaca import discovery
@@ -93,7 +94,6 @@ class StartUp(mainConfig):
     
     def check_devices(self):
         condition_key = True
-        log.info('======== Checking connection ========')
         connected_devices = dict()
         devices = self.get_devices()
         status_devices = self.get_status(self.devices)
@@ -120,9 +120,7 @@ class StartUp(mainConfig):
         if ('telescope' not in connected_devices.keys()) & ('camera' not in connected_devices.keys()):
             log.critical('Telescope & Camera must be connected. Startup process stopped')
             condition_key = False
-        log.info('======== Checking connection finished ========')
         time.sleep(3)
-        log.info('======== Checking weather condition ========')
         weather_status = status_devices['weather']
         weather_device = devices['weather']
         if weather_status['is_connected']:
@@ -133,26 +131,31 @@ class StartUp(mainConfig):
                 log.critical('Weather condition is bad. Startup process stopped')
                 condition_key = False
         else:
-            log.warning('Weather device is not connected')
-        log.info('======== Checking weather finished ========')      
+            log.warning('Weather device is not connected')     
         self.status = self.get_status(self.devices)
         return condition_key, devices
 
     def run(self,
             sensortemperature : int = -15):
+        log.info(LogFormat('StartUp').message_with_border(width = 70))
+        log.info(LogFormat('Connecting devices').message_with_border(width = 50, border_char= '-'))
         self.connect_devices()
+        log.info(LogFormat('Connection completed').message_with_border(width = 50, border_char= '-'))
+        
         time.sleep(3)
+        log.info(LogFormat('Checking device connection').message_with_border(width = 50, border_char= '-'))
         condition_key, devices = self.check_devices()
+        log.info(LogFormat('Checking device completed').message_with_border(width = 50, border_char= '-'))
         if condition_key:
             tel = devices['telescope']
             cam = devices['camera']
             tel.park()
             tel.unpark()
             cam.cooler_on(sensortemperature)
-            log.info('======== Startup completed ========')
+            log.info(LogFormat('Startup Completed').message_with_border(width = 70))
             return devices
         else:
-            log.critical('Startup process failed')
+            log.critical(LogFormat('Startup process failed').message_with_border(width = 70))
             raise RuntimeError('======== Startup process failed ========')
 
         

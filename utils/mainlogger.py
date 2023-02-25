@@ -34,6 +34,7 @@ class mainLogger(mainConfig):
             fileHandler.setFormatter(formatter)
             logger.addHandler(fileHandler)
         return logger
+
 # %%
 if __name__ == '__main__':
     A = mainLogger('adsd')
