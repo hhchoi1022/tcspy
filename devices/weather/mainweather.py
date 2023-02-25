@@ -263,7 +263,8 @@ if __name__ =='__main__':
     dev = ObservingConditions('127.0.0.1:32323',0)
     weather = mainWeather(dev)
     weather.connect()
-    weather.is_safe()
+    print(weather.is_safe())
+    weather.disconnect()
 #%%
 
 

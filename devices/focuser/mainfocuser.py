@@ -225,7 +225,8 @@ class mainFocuser(mainConfig):
 if __name__ == '__main__':
     Focus = Focuser('127.0.0.1:32323', 0)
     F = mainFocuser(Focus)
-    #%%
+    F.connect()
     F.move(19000)
+    F.disconnect()
 
 # %%

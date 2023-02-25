@@ -326,7 +326,7 @@ class mainCamera(mainConfig):
         """
         
         if self.device.CoolerOn:
-            self.device.SetCCDTemperature = 20
+            self.device.SetCCDTemperature = 10
             log.info('Warming up...')
             idx = warmuptime//5
             for i in range(idx):
@@ -455,3 +455,5 @@ if __name__ == '__main__':
     bias, status_3 = A.take_bias(3)
     A.cooler_off(warmuptime=10)
     A.disconnect()
+
+# %%

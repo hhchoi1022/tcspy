@@ -263,16 +263,9 @@ class mainFilterwheel(mainConfig):
 if __name__ == '__main__':
     Filt = FilterWheel('127.0.0.1:32323', 0)
     F = mainFilterwheel(Filt)
-    #%%
     F.connect()
-    F._name()
-    F._get_all_filt_names()
-    F._get_all_filt_offset()
-    F._get_current_filtinfo()
-    F._position_to_filtname(5)
-    F._filtname_to_position('w400')
     F.move('w425')
-    F._get_current_filtinfo()
+    F.disconnect()
 # %%
 
 # %%
