@@ -87,19 +87,58 @@ class mainWeather(mainConfig):
         try:
             if self.device.Connected:
                 self._update()
-                status['update_time'] = Time.now().iso
-                status['jd'] = round(Time.now().jd,6)
-                status['name'] = self.device.Name
-                status['is_safe'] = self.is_safe()
-                status['temperature'] = self._get_status_updatetime('Temperature', 1)
-                status['humidity'] = self._get_status_updatetime('Humidity', 1)
-                status['pressure'] = self._get_status_updatetime('Pressure', 1)
-                status['windspeed'] = self._get_status_updatetime('WindSpeed', 1)
-                status['skybrightness'] = self._get_status_updatetime('SkyQuality', 3)
-                status['cloudfraction'] = self._get_status_updatetime('CloudCover', 2)
-                status['rainrate'] = self._get_status_updatetime('RainRate', 2)
-                status['fwhm'] = self._get_status_updatetime('StarFWHM', 2)
-                status['is_connected'] = self.device.Connected
+                try:
+                    status['update_time'] = Time.now().iso
+                except:
+                    pass
+                try:
+                    status['jd'] = round(Time.now().jd,6)
+                except:
+                    pass
+                try:
+                    status['name'] = self.device.Name
+                except:
+                    pass
+                try:
+                    status['is_safe'] = self.is_safe()
+                except:
+                    pass
+                try:
+                    status['temperature'] = self._get_status_updatetime('Temperature', 1)
+                except:
+                    pass
+                try:
+                    status['humidity'] = self._get_status_updatetime('Humidity', 1)
+                except:
+                    pass
+                try:
+                    status['pressure'] = self._get_status_updatetime('Pressure', 1)
+                except:
+                    pass
+                try:
+                    status['windspeed'] = self._get_status_updatetime('WindSpeed', 1)
+                except:
+                    pass
+                try:
+                    status['skybrightness'] = self._get_status_updatetime('SkyQuality', 3)
+                except:
+                    pass
+                try:
+                    status['cloudfraction'] = self._get_status_updatetime('CloudCover', 2)
+                except:
+                    pass
+                try:
+                    status['rainrate'] = self._get_status_updatetime('RainRate', 2)
+                except:
+                    pass
+                try:
+                    status['fwhm'] = self._get_status_updatetime('StarFWHM', 2)
+                except:
+                    pass
+                try:
+                    status['is_connected'] = self.device.Connected
+                except:
+                    pass
         except:
             pass
         return status

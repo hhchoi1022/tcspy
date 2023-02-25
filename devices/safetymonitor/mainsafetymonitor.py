@@ -99,6 +99,7 @@ class mainSafetyMonitor(mainConfig):
                     log.info('SafetyMonitor device connected')
         except :
             log.warning('Connection failed')
+        self.status = self.get_status()
     
     def disconnect(self):
         """
@@ -112,6 +113,7 @@ class mainSafetyMonitor(mainConfig):
                 time.sleep(self._checktime)
             if not self.device.Connected:
                 log.info('Weather SafetyMonitor disconnected')
+        self.status = self.get_status()
 # %%
 if __name__ == '__main__':
     smonitor = SafetyMonitor('127.0.0.1:32323', 0)

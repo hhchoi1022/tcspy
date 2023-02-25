@@ -189,28 +189,26 @@ class mainFocuser(mainConfig):
             The position to move the device to
         """
     
-        status = self.get_status()
-        if (position <= 0) | (position > status['maxstep']):
-            logtxt = 'Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, status['maxstep'])
+        self.status = self.get_status()
+        if (position <= 0) | (position > self.status['maxstep']):
+            logtxt = 'Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep'])
             log.critical(logtxt)
             raise ValueError(logtxt)
-        elif np.abs(position - status['position']) > status['step_abort']:
-            logtxt = 'Set position is too distant from current position. Halt action. (Moving position : %d > halt tolerance : %d)'%(np.abs(position - status['position']), status['step_abort'])
+        elif np.abs(position - self.status['position']) > self.status['step_abort']:
+            logtxt = 'Set position is too distant from current position. Halt action. (Moving position : %d > halt tolerance : %d)'%(np.abs(position - self.status['position']), self.status['step_abort'])
             log.critical(logtxt)
             raise ValueError(logtxt)
         else:
-            if np.abs(position - status['position']) > status['step_warn']:
-                logtxt = 'Set position is far from current position. Be careful... (Moving position : %d > warn tolerance : %d)'%(np.abs(position - status['position']), status['step_warn'])
+            if np.abs(position - self.status['position']) > self.status['step_warn']:
+                logtxt = 'Set position is far from current position. Be careful... (Moving position : %d > warn tolerance : %d)'%(np.abs(position - self.status['position']), self.status['step_warn'])
                 log.warn(logtxt)
-            log.info('Moving focuser position... (Current : %s To : %s)'%(status['position'], position))
+            log.info('Moving focuser position... (Current : %s To : %s)'%(self.status['position'], position))
             self.device.Move(position)
-            status = self.get_status()
-            while status['is_moving']:
+            time.sleep(3*self._checktime)
+            while self.device.IsMoving:
                 time.sleep(self._checktime)
-                status = self.get_status()
-            status = self.get_status()
-            log.info('Focuser position is set (Current : %s)'%(status['position']))
-        print(status)
+            log.info('Focuser position is set (Current : %s)'%(self.status['position']))
+        self.status = self.get_status()
         
     def abort(self):
         """
@@ -218,6 +216,7 @@ class mainFocuser(mainConfig):
         """
     
         self.device.Halt()
+        self.status = self.get_status()
         log.warning('Focuser aborted')
         
         

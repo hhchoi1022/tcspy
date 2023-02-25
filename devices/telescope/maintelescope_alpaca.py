@@ -175,10 +175,8 @@ class mainTelescope_Alpaca(mainConfig):
         if not self.device.Connected:
             log.info('Telescope disconnected')
         self.status = self.get_status()
-    
-    def set_park(self,
-                 altitude : float = 40,
-                 azimuth : float = 180):
+    '''  
+    def set_park(self):
         """
         Sets the park position of the telescope.
 
@@ -190,40 +188,48 @@ class mainTelescope_Alpaca(mainConfig):
             The azimuth of the park position, in degrees. Default is 180.
         """
         
-        coordinate = SkyCoord(azimuth, altitude, frame = 'altaz', unit ='deg')
+        coordinate = SkyCoord(self.config['TELESCOPE_PARKALT'], self.config['TELESCOPE_PARKAZ'], frame = 'altaz', unit ='deg')
         alt = coordinate.alt.deg
         az = coordinate.az.deg
         self.unpark()
         log.info('Setting park position of the telescope... Slew to the park position (Alt = %.1f Az = %.1f)'%(alt, az))
         self.slew_altaz(alt = alt, az = az, tracking = False)
+        time.sleep(5*self._checktime)
         while self.device.Slewing:
             time.sleep(self._checktime)  
         self.device.SetPark()
+        self.status = self.get_status()
         log.info('Park position is set (Alt = %.1f Az = %.1f)'%(alt, az))
-        
-    def park(self,
-             altitude : float = 40,
-             azimuth : float = 180):
+        '''
+    def park(self):
         """
         Parks the telescope.
         """
-        coordinate = SkyCoord(azimuth, altitude, frame = 'altaz', unit ='deg')
+        coordinate = SkyCoord(self.config['TELESCOPE_PARKAZ'],self.config['TELESCOPE_PARKALT'], frame = 'altaz', unit ='deg')
         alt = coordinate.alt.deg
         az = coordinate.az.deg
         
-        if self.device.CanPark:
+        #if self.device.CanPark:
             #if not self.device.AtPark:
-            log.info('Parking telescope...')
-            self.slew_altaz(alt = alt, az = az, tracking = False)
-            #self.device.Park() Read timeout?
+        log.info('Parking telescope...')
+        if self.device.CanSlewAsync:
+            if self.device.AtPark:
+                self.unpark()
+            if self.device.Tracking:
+                self.device.Tracking = False
+            while self.device.Tracking:
+                time.sleep(self._checktime)
+            self.device.SlewToAltAzAsync(az, alt)
+            time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
-                ################ timeout need to be implemented
-            if not self.device.Slewing:
-                log.info('Telescope parked')
+            time.sleep(5*self._checktime)
+            self.status = self.get_status()
+            self.status['at_parked'] = True
+            log.info('Telescope parked')
         else:
             log.critical('Parking failed')
-            raise SystemError('Parking failed')
+            raise SystemError('Parking failed') 
     
     def unpark(self):
         """
@@ -234,10 +240,7 @@ class mainTelescope_Alpaca(mainConfig):
         if self.device.CanUnpark:
             if self.device.AtPark:
                 self.device.Unpark()
-                #while self.device.AtPark:
-                #    time.sleep(self._checktime)
-            if not self.device.AtPark:
-                self.device.Tracking = False
+            self.device.Tracking = False
             log.info('Telescope Unparked')
         else:
             log.critical('Unparking failed')
@@ -281,7 +284,6 @@ class mainTelescope_Alpaca(mainConfig):
         
         # Slewing 
         if self.device.CanSlewAsync:
-
             if self.device.AtPark:
                 self.unpark()
             if not self.device.Tracking:
@@ -289,6 +291,7 @@ class mainTelescope_Alpaca(mainConfig):
             while not self.device.Tracking:
                 time.sleep(self._checktime)
             self.device.SlewToCoordinatesAsync(ra, dec)
+            time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
             status = self.get_status()
@@ -338,6 +341,7 @@ class mainTelescope_Alpaca(mainConfig):
             while self.device.Tracking:
                 time.sleep(self._checktime)
             self.device.SlewToAltAzAsync(az, alt)
+            time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
             status = self.get_status()
@@ -354,6 +358,7 @@ class mainTelescope_Alpaca(mainConfig):
         
         if self.device.CanSetTracking:
             if not self.device.Tracking:
+                time.sleep(self._checktime)
                 self.device.Tracking = True
                 while not self.device.Tracking:
                     time.sleep(self._checktime)
@@ -371,6 +376,7 @@ class mainTelescope_Alpaca(mainConfig):
         if self.device.CanSetTracking:
             if self.device.Tracking:
                 self.device.Tracking = False
+                time.sleep(self._checktime)
                 while self.device.Tracking:
                     time.sleep(self._checktime)
             if not self.device.Tracking:
@@ -395,28 +401,25 @@ if __name__ == '__main__':
     config = mainConfig().config
     Tel = mainTelescope_Alpaca(device= T, observer = mainObserver(**config))
     Tel.connect()
-    
-#%%
+
 
     ra = '15:35:28'
     dec = '-50:39:32'
-    
+
     coordinate_radec = to_SkyCoord(ra, dec)
-    Tel.set_park(altitude = 30, azimuth = 180)
-    
+
     Tel.slew_radec(coordinate_radec, tracking = True)
 
     alt = 50.23
     az = 170.23
-    
+
     Tel.park()
     Tel.unpark()
     coordinate_altaz = SkyCoord(az, alt, frame = 'altaz', unit = 'deg')
     Tel.slew_radec(coordinate_radec, tracking = True)
     Tel.slew_altaz(alt = alt, az = az)
-    Tel.set_park()
     Tel.tracking_on()
     Tel.tracking_off()
     Tel.park()
     Tel.disconnect()
-# %%
+ # %%

@@ -150,11 +150,14 @@ class mainFilterwheel(mainConfig):
         else:
             log.info('Changing filter... (Current : %s To : %s)'%(self._get_current_filtinfo()['name'], self._position_to_filtname(filter_)))
         self.device.Position = filter_
+        time.sleep(self._checktime)
         while not self.device.Position == filter_:
             time.sleep(self._checktime)
         log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
+        self.status = self.get_status()
     
     def abort(self):
+        self.status = self.get_status()
         pass
     
     # Information giding

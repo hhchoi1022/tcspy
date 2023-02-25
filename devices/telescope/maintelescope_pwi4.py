@@ -180,7 +180,7 @@ class mainTelescope_pwi4(mainConfig):
         log.info('Telescope disconnected')
         self._update_PWI_status()
         self.status = self.get_status()
-    
+    '''    
     def set_park(self,
                  altitude : float = 40,
                  azimuth : float = 180):
@@ -208,7 +208,29 @@ class mainTelescope_pwi4(mainConfig):
         self.device.mount_set_park_here()
         self.status = self.get_status()
         log.info('Park position is set (Alt = %.1f Az = %.1f)'%(alt, az))
+        '''
+    def park(self):
+        """
+        Parks the telescope.
+        """
+        coordinate = SkyCoord(self.config['TELESCOPE_PARKAZ'],self.config['TELESCOPE_PARKALT'], frame = 'altaz', unit ='deg')
+        alt = coordinate.alt.deg
+        az = coordinate.az.deg
         
+        #if self.device.CanPark:
+            #if not self.device.AtPark:
+
+        log.info('Parking telescope...')
+        self.unpark()
+        self.status = self.get_status()
+        self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
+        self.status = self.get_status()
+        while not self.status['is_stationary']:
+            time.sleep(self._checktime)
+            self.status = self.get_status()
+        self.status = self.get_status()
+        log.info('Telescope parked')
+    '''
     def park(self):
         """
         Park the telescope.
@@ -222,7 +244,7 @@ class mainTelescope_pwi4(mainConfig):
             time.sleep(self._checktime)
             self.status = self.get_status()
         log.info('Telescope parked')
-
+    '''
     def unpark(self):
         """
         Unpark the telescope.

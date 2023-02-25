@@ -39,4 +39,5 @@ target.staralt()
 #%%
 #obs.slew_exposure(target_alt = alt, target_az = az, exptime = 10, binning = 1, target_name = target_name)
 image = obs.slew_exposure(target_ra = ra_hour, target_dec = dec_deg, exptime = 60, binning = 1, target_name = target_name)
-# %%
+image.show()
+image.save('{}_3.fits'.format(target_name))

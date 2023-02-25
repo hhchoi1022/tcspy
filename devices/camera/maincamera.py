@@ -7,6 +7,7 @@ import time
 import numpy as np
 from astropy.io import fits
 from astropy.time import Time
+from progress.bar import Bar
 
 import alpaca
 from alpaca.camera import Camera
@@ -282,6 +283,7 @@ class mainCamera(mainConfig):
         self.device.BinX = self.device.BinY = binning
         self.device.NumX = self.device.CameraXSize // self.device.BinX
         self.device.NumY = self.device.CameraYSize // self.device.BinY
+        self.status = self.get_status()
     
     @Timeout(30, 'Timeout') 
     def cooler_on(self,
@@ -332,6 +334,7 @@ class mainCamera(mainConfig):
                 time.sleep(5)
             self.device.CoolerOn = False
             log.info('Cooler is now off')
+        self.status = self.get_status()
             
     def take_light(self,
                    exptime : float,
@@ -359,13 +362,12 @@ class mainCamera(mainConfig):
         self.set_binning(binning = binning)
         log.info('[LIGHT] Start exposure (exptime = %.1f)'%exptime)
         self.device.StartExposure(Duration = exptime, Light = True)
-        status = self.get_status()
-        while not status['is_imgReady'] :
+        time.sleep(2*self._checktime)
+        while not self.device.ImageReady :
             time.sleep(self._checktime)
-            imginfo, status = self.get_imginfo()
-            print(f'{self.device.PercentCompleted}% complete')
         imginfo, status = self.get_imginfo()
         log.info(f'[{imgtypename.upper()}] Exposure finished (exptime = %.1f)'%exptime)
+        self.status = self.get_status()
         return imginfo, status
         
     def take_bias(self,
@@ -391,10 +393,9 @@ class mainCamera(mainConfig):
         self.set_binning(binning = binning)
         log.info('[BIAS] Start exposure for bias')
         self.device.StartExposure(Duration = self.device.ExposureMin, Light = False)
-        status = self.get_status()
-        while not status['is_imgReady']:
+        time.sleep(2*self._checktime)
+        while not self.device.ImageReady:
             time.sleep(self._checktime)
-            imginfo, status = self.get_imginfo()
         imginfo, status = self.get_imginfo()
         log.info(f'[{imgtypename.upper()}] Exposure finished')
         return imginfo, status
@@ -425,13 +426,12 @@ class mainCamera(mainConfig):
         self.set_binning(binning = binning)
         log.info('[DARK] Start exposure (exptime = %.1f)'%exptime)
         self.device.StartExposure(Duration = exptime, Light = False)
-        status = self.get_status()
-        while not status['is_imgReady']:
+        time.sleep(2*self._checktime)
+        while not self.device.ImageReady:
             time.sleep(self._checktime)
-            imginfo, status = self.get_imginfo()
-            print(f'{self.device.PercentCompleted}% complete')
         imginfo, status = self.get_imginfo()
         log.info(f'[{imgtypename.upper()}] Exposure finished (exptime = %.1f)'%exptime)
+        self.status = self.get_status()
         return imginfo, status
     
     def abort(self):
@@ -441,20 +441,17 @@ class mainCamera(mainConfig):
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
             log.warning('Camera aborted')
+        self.status = self.get_status()
         
         
 # %% Test
 if __name__ == '__main__':
-    C = Camera('127.0.0.2:32323',0)
+    C = Camera('127.0.0.1:32323',0)
     A = mainCamera(C)
-#%%
     A.connect()
     A.cooler_on(5)
-    light, status_1 = A.take_light(3)
+    light, status_1 = A.take_light(30)
     dark, status_2 = A.take_dark(3)
     bias, status_3 = A.take_bias(3)
     A.cooler_off(warmuptime=10)
     A.disconnect()
-    
-
-#%%
