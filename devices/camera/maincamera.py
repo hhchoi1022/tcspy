@@ -304,7 +304,7 @@ class mainCamera(mainConfig):
                 self.device.SetCCDTemperature = settemperature
                 self.device.CoolerOn = True
                 log.info('Start cooling...')
-                while not np.abs(self.device.CCDTemperature - settemperature) < tolerance:
+                while not self.device.CCDTemperature - settemperature < tolerance:
                     log.info('Current temperature : %.1f'%(self.device.CCDTemperature))
                     time.sleep(5)
                 log.info('Cooling finished. Set temperature : %.1f'%(settemperature))
