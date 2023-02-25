@@ -7,7 +7,6 @@ import time
 import numpy as np
 from astropy.io import fits
 from astropy.time import Time
-from progress.bar import Bar
 
 import alpaca
 from alpaca.camera import Camera
