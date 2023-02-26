@@ -224,3 +224,12 @@
 [INFO]2023-02-19 10:29:00 | Filter changed (Current : w475)
 [INFO]2023-02-19 10:29:00 | [LIGHT] Start exposure (exptime = 10.0)
 [INFO]2023-02-19 10:29:11 | [LIGHT] Exposure finished (exptime = 10.0)
+[INFO]2023-02-26 10:22:06 | Observer information setting compleated!
+==================
+   Observer = Hyeonho Choi
+   Observatory = 7DT_01
+   Latitude = -30.4704 deg
+   Longitude = -70.7804 deg
+   Elevation = 1580.0 m
+   Timezone = America/Santiago
+==================
