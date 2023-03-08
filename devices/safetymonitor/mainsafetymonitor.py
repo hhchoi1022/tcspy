@@ -59,14 +59,14 @@ class mainSafetyMonitor(mainConfig):
         
         
         status = dict()
-        status['update_time'] = Time.now().iso
+        status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd, 6)
         status['name'] = None
         status['is_connected'] = None
         status['is_safe'] = None
         if self.device.Connected:     
             try:
-                status['update_time'] = Time.now().iso
+                status['update_time'] = Time.now().isot
             except:
                 pass
             try:

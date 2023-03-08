@@ -98,8 +98,8 @@ class mainTelescope_pwi4(mainConfig):
         """
         
         status = dict()
-        status['update_time'] = Time.now().iso
-        status['jd'] = None
+        status['update_time'] = Time.now().isot
+        status['jd'] = round(Time.now().jd,6)
         status['ra'] = None
         status['dec'] = None
         status['alt'] = None

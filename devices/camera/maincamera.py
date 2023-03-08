@@ -4,9 +4,11 @@
 
 
 import time
+import pytz
 import numpy as np
 from astropy.io import fits
 from astropy.time import Time
+import datetime
 
 import alpaca
 from alpaca.camera import Camera
@@ -15,7 +17,6 @@ from alpaca.camera import ImageArrayElementTypes
 from tcspy.utils import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
-
 #%%
 
 log = mainLogger(__name__).log()
@@ -76,6 +77,8 @@ class mainCamera(mainConfig):
         =======
         1. status : dict
             A dictionary containing the following information about the connected camera:
+            - 'update_time': Time stamp of the status update in ISO format.
+            - 'jd': Julian date of the status update, rounded to six decimal places.
             - 'is_imgReady': Whether the camera is ready to capture an image.
             - 'is_connected': Whether the camera is connected.
             - 'state': The current state of the camera.
@@ -95,7 +98,7 @@ class mainCamera(mainConfig):
         """
 
         status = dict()
-        status['update_time'] = Time.now().iso
+        status['update_time'] = Time.now().isot
         status['jd'] = None
         status['is_imgReady'] = None
         status['is_connected'] = None
@@ -115,6 +118,14 @@ class mainCamera(mainConfig):
         status['type_sensor'] = None
         try:
             if self.device.Connected:
+                try:
+                    status['update_time'] = Time.now().isot
+                except:
+                    pass
+                try:
+                    status['jd'] = round(Time.now().jd,6)
+                except:
+                    pass
                 try:
                     status['is_imgReady'] = self.device.ImageReady
                 except:
@@ -206,6 +217,19 @@ class mainCamera(mainConfig):
         
         status = self.get_status()
         imginfo = dict()
+        imginfo['data'] = None
+        imginfo['imgtype'] = None
+        imginfo['numX'] = None
+        imginfo['numY'] = None
+        imginfo['numX'] = None
+        imginfo['numY'] = None
+        imginfo['binningX'] = None
+        imginfo['binningY'] = None
+        imginfo['numDimension'] = None
+        imginfo['exptime'] = None
+        imginfo['date_obs'] = Time.now().isot
+        imginfo['jd'] = round(Time.now().jd,6)
+        
         if status['is_imgReady']:
             imgdata_alpaca =  self.device.ImageArray
             imginfo_alpaca = self.device.ImageArrayInfo
@@ -217,18 +241,43 @@ class mainCamera(mainConfig):
             elif imginfo_alpaca.ImageElementType == ImageArrayElementTypes.Double:
                 img_dtype = np.float64
             data = np.array(imgdata_alpaca, dtype=img_dtype).transpose()
-            imginfo['data'] = data
-            imginfo['imgtype'] = self._imagetype
-            imginfo['numX'] = imginfo_alpaca.Dimension1
-            imginfo['numY'] = imginfo_alpaca.Dimension2
-            imginfo['binningX'] = status['numX']//imginfo_alpaca.Dimension1
-            imginfo['binningY'] = status['numY']//imginfo_alpaca.Dimension2
-            imginfo['numDimension'] = imginfo_alpaca.Rank
-            imginfo['exptime'] = self.device.LastExposureDuration
-            imginfo['date_obs'] = self.device.LastExposureStartTime
-            imginfo['jd'] = Time(self.device.LastExposureStartTime).jd
-        else:
-            pass
+            try:
+                imginfo['data'] = data
+            except:
+                pass
+            try:
+                imginfo['imgtype'] = self._imagetype
+            except:
+                pass
+            try:
+                imginfo['numX'] = imginfo_alpaca.Dimension1
+                imginfo['numY'] = imginfo_alpaca.Dimension2
+            except:
+                pass
+            try:
+                imginfo['binningX'] = status['numX']//imginfo_alpaca.Dimension1
+                imginfo['binningY'] = status['numY']//imginfo_alpaca.Dimension2
+            except:
+                pass
+            try:
+                imginfo['numDimension'] = imginfo_alpaca.Rank
+            except:
+                pass
+            try:
+                imginfo['exptime'] = self.device.LastExposureDuration
+            except:
+                pass
+            try:
+                local = pytz.timezone(self.config['OBSERVER_TIMEZONE'])
+                naive = datetime.strptime(self.device.LastExposureStartTime, "%Y-%m-%dT%H:%M:%S")
+                local_dt = local.localize(naive, is_dst=None)
+                imginfo['date_obs'] = Time(local_dt.astimezone(pytz.utc)).isot
+            except:
+                pass
+            try:
+                imginfo['jd'] = Time(self.device.LastExposureStartTime).jd
+            except:
+                pass
         return imginfo, status
 
     @Timeout(5, 'Timeout') 
@@ -365,6 +414,11 @@ class mainCamera(mainConfig):
         while not self.device.ImageReady :
             time.sleep(self._checktime)
         imginfo, status = self.get_imginfo()
+        if imginfo['exptime'] is None:
+            imginfo['exptime'] = exptime
+        if imginfo['date_obs'] is None:
+            imginfo['date_obs']  = Time.now().isot
+            imginfo['jd'] = round(Time.now().jd,6)
         log.info(f'[{imgtypename.upper()}] Exposure finished (exptime = %.1f)'%exptime)
         self.status = self.get_status()
         return imginfo, status
@@ -396,6 +450,11 @@ class mainCamera(mainConfig):
         while not self.device.ImageReady:
             time.sleep(self._checktime)
         imginfo, status = self.get_imginfo()
+        if imginfo['exptime'] is None:
+            imginfo['exptime'] = 0
+        if imginfo['date_obs'] is None:
+            imginfo['date_obs']  = Time.now().isot
+            imginfo['jd'] = round(Time.now().jd,6)
         log.info(f'[{imgtypename.upper()}] Exposure finished')
         return imginfo, status
 
@@ -429,6 +488,11 @@ class mainCamera(mainConfig):
         while not self.device.ImageReady:
             time.sleep(self._checktime)
         imginfo, status = self.get_imginfo()
+        if imginfo['exptime'] is None:
+            imginfo['exptime'] = exptime
+        if imginfo['date_obs'] is None:
+            imginfo['date_obs']  = Time.now().isot
+            imginfo['jd'] = round(Time.now().jd,6)
         log.info(f'[{imgtypename.upper()}] Exposure finished (exptime = %.1f)'%exptime)
         self.status = self.get_status()
         return imginfo, status
@@ -455,4 +519,9 @@ if __name__ == '__main__':
     A.cooler_off(warmuptime=10)
     A.disconnect()
 
+# %%
+C1 = Camera('192.168.0.5:11111',0)
+C2 = Camera('192.168.0.4:11111',0)
+A1 = mainCamera(C1)
+A2 = mainCamera(C2)
 # %%

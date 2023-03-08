@@ -71,7 +71,7 @@ class mainWeather(mainConfig):
         """
 
         status = dict()
-        status['update_time'] = Time.now().iso
+        status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
         status['name'] = None
         status['is_safe'] = None
@@ -88,7 +88,7 @@ class mainWeather(mainConfig):
             if self.device.Connected:
                 self._update()
                 try:
-                    status['update_time'] = Time.now().iso
+                    status['update_time'] = Time.now().isot
                 except:
                     pass
                 try:

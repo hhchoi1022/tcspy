@@ -62,8 +62,8 @@ class mainFilterwheel(mainConfig):
         """
 
         status = dict()
-        status['update_time'] = Time.now().iso
-        status['jd'] = None
+        status['update_time'] = Time.now().isot
+        status['jd'] = round(Time.now().jd,6)
         status['name'] = None
         status['filter'] = None
         status['offset'] = None
@@ -75,7 +75,7 @@ class mainFilterwheel(mainConfig):
                 except:
                     pass
                 try:
-                    status['update_time'] = Time.now().iso
+                    status['update_time'] = Time.now().isot
                 except:
                     pass
                 try:

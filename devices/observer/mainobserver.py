@@ -117,7 +117,7 @@ class mainObserver:
             - observer: The astropy.coordinates.EarthLocation object representing the observer's location.
         """
         obsinfo = dict()
-        obsinfo['update_time'] = Time.now().iso
+        obsinfo['update_time'] = Time.now().isot
         obsinfo['jd'] = round(Time.now().jd,6)
         obsinfo['name_observatory'] = self._observatory
         obsinfo['name_observer'] = self._name
@@ -382,7 +382,7 @@ class mainObserver:
         if not isinstance(utctimes, Time):
             utctimes = Time(utctimes)
             
-        return self._observer.moon_altaz(utctimes)#self._moon_altaz(radec = get_moon(time), time = time)
+        return self._observer.moon_altaz(utctimes) #self._moon_altaz(radec = get_moon(time), time = time)
 
     def moon_risetime(self,
                       utctimes : datetime or Time or np.array = None,

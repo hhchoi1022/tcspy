@@ -75,8 +75,8 @@ class mainFocuser(mainConfig):
         """
         
         status = dict()
-        status['update_time'] = Time.now().iso
-        status['jd'] = None
+        status['update_time'] = Time.now().isot
+        status['jd'] = round(Time.now().jd,6)
         status['name'] = None
         status['position'] = None
         status['maxstep'] = None
@@ -91,7 +91,7 @@ class mainFocuser(mainConfig):
         try:
             if self.device.Connected:
                 try:
-                    status['update_time'] = Time.now().iso
+                    status['update_time'] = Time.now().isot
                 except:
                     pass
                 try:

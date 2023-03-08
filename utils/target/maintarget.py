@@ -104,7 +104,7 @@ class mainTarget(mainConfig):
         """
         if self.coordinate.frame.name == 'altaz':
             targetinfo = dict()
-            targetinfo['update_time'] = Time.now().iso
+            targetinfo['update_time'] = Time.now().isot
             targetinfo['jd'] = round(Time.now().jd,5)
             targetinfo['name'] = self.name
             targetinfo['ra'] = None
@@ -116,7 +116,7 @@ class mainTarget(mainConfig):
             targetinfo['is_observable'] = None
         else:
             targetinfo = dict()
-            targetinfo['update_time'] = Time.now().iso
+            targetinfo['update_time'] = Time.now().isot
             targetinfo['jd'] = round(Time.now().jd,5)
             targetinfo['name'] = self.name
             targetinfo['ra'] = round(self.ra,5)
@@ -294,15 +294,17 @@ class mainTarget(mainConfig):
             utctime = Time.now()
         if not isinstance(utctime, Time):
             utctime = Time(utctime)
-        astro_sunsettime, astro_sunrisetime = self._observer.sun_settime(utctime, horizon = -18), self._observer.sun_risetime(utctime, horizon = -18)
-        sunsettime, sunrisetime = self._observer.sun_settime(utctime, horizon = 0), self._observer.sun_risetime(utctime, horizon = 0)
+        astro_sunsettime  = self._observer.sun_settime(utctime, horizon = -18)
+        astro_sunrisetime = self._observer.sun_risetime(astro_sunsettime, horizon = -18, mode = 'next')
+        sunsettime = self._observer.sun_settime(utctime, horizon = 0)
+        sunrisetime = self._observer.sun_risetime(sunsettime, horizon = 0, mode = 'next')
         time_range_start, time_range_end = sunsettime.datetime - datetime.timedelta(hours = 2), sunrisetime.datetime + datetime.timedelta(hours = 2)
         time_axis = np.arange(time_range_start, time_range_end, datetime.timedelta(minutes = 5))
         moon_altaz = self._observer.moon_altaz(time_axis)
         sun_altaz = self._observer.sun_altaz(time_axis)
         target_altaz = self.altaz(time_axis)
         plt.figure(dpi = 300, figsize = (10, 4))
-        if (now.datetime < sunrisetime.datetime) & (now.datetime > sunsettime.datetime):
+        if (now.datetime < time_range_end + datetime.timedelta(hours = 3)) & (now.datetime > time_range_start - datetime.timedelta(hours = 3)):
             plt.axvline(now.datetime, linestyle = '--', c='r', label = 'Now')
         plt.scatter(moon_altaz.obstime.datetime, moon_altaz.alt.value, c = moon_altaz.az.value, cmap = 'viridis', s = 10, marker = '.', label ='Moon')
         plt.scatter(sun_altaz.obstime.datetime, sun_altaz.alt.value, c = 'k', cmap = 'viridis', s = 15, marker = '.', label = 'Sun')
@@ -369,7 +371,7 @@ class mainTarget(mainConfig):
 if __name__ == '__main__':
     config = mainConfig().config
     observer = mainObserver(**config)
-    A = mainTarget(observer, target_ra =10.7326, target_dec = 11.7039, target_name = 'NGC1566')
+    A = mainTarget(observer, target_ra =4.86, target_dec = -76.146, target_name = 'Center')
     A.staralt()
     #%%
     b= A.meridiantime()

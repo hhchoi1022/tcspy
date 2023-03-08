@@ -79,8 +79,8 @@ class mainTelescope_Alpaca(mainConfig):
     def get_status(self):
 
         status = dict()
-        status['update_time'] = Time.now().iso
-        status['jd'] = None
+        status['update_time'] = Time.now().isot
+        status['jd'] = round(Time.now().jd,6)
         status['ra'] = None
         status['dec'] = None
         status['alt'] = None
@@ -94,7 +94,7 @@ class mainTelescope_Alpaca(mainConfig):
         try:
             if self.device.Connected:
                 try:
-                    status['update_time'] = Time.now().iso
+                    status['update_time'] = Time.now().isot
                 except:
                     pass
                 try:
@@ -397,7 +397,7 @@ class mainTelescope_Alpaca(mainConfig):
             
 if __name__ == '__main__':
 
-    T = Telescope('localhost:32323',0)
+    T = Telescope('192.168.0.4:11111',0)
     config = mainConfig().config
     Tel = mainTelescope_Alpaca(device= T, observer = mainObserver(**config))
     Tel.connect()
@@ -423,3 +423,4 @@ if __name__ == '__main__':
     Tel.park()
     Tel.disconnect()
  # %%
+
