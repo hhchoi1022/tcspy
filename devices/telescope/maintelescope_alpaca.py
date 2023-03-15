@@ -18,7 +18,6 @@ from tcspy.configuration import mainConfig
 from tcspy.utils import to_SkyCoord
 from tcspy.utils.target import mainTarget
 #%%
-log = mainLogger(__name__).log()
 class mainTelescope_Alpaca(mainConfig):
     """
     Class for controlling an Alpaca telescope.
@@ -57,24 +56,18 @@ class mainTelescope_Alpaca(mainConfig):
     """
 
     def __init__(self,
-                 device : alpaca.telescope.Telescope,
-                 observer : mainObserver,
+                 unitnum : int,
                  **kwargs):
         
-        # Load other modules
-        super().__init__()
+        super().__init__(unitnum = unitnum)
+        self._unitnum = unitnum
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._min_altitude = float(self.config['TARGET_MINALT'])
         self._max_altitude = float(self.config['TARGET_MAXALT'])
         self._checktime = float(self.config['TELESCOPE_CHECKTIME'])
-        self._lock_func = threading.Lock()
-        self._abort = threading.Event()
-        
-        self.observer = observer
-        if isinstance(device, alpaca.telescope.Telescope):
-            self.device = device
-            self.status = self.get_status()
-        else:
-            raise ValueError('Device type is not mathced to Alpaca Telescope')
+        self.observer = mainObserver(unitnum = unitnum)
+        self.device = Telescope(f"{self.config['TELESCOPE_HOSTIP']}:{self.config['TELESCOPE_PORTNUM']}",self.config['TELESCOPE_DEVICENUM'])
+        self.status = self.get_status()
         
     def get_status(self):
 
@@ -151,16 +144,16 @@ class mainTelescope_Alpaca(mainConfig):
         Connects to the telescope.
         """
         
-        log.info('Connecting to the telescope...')
+        self._log.info('Connecting to the telescope...')
         try:
             if not self.device.Connected:
                 self.device.Connected = True
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                log.info('Telescope connected')
+                self._log.info('Telescope connected')
         except:
-            log.warning('Connection failed')
+            self._log.warning('Connection failed')
         self.status = self.get_status()
             
     def disconnect(self):
@@ -169,11 +162,11 @@ class mainTelescope_Alpaca(mainConfig):
         """
         
         self.device.Connected = False
-        log.info('Disconnecting the telescope...')
+        self._log.info('Disconnecting the telescope...')
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            log.info('Telescope disconnected')
+            self._log.info('Telescope disconnected')
         self.status = self.get_status()
     '''  
     def set_park(self):
@@ -211,7 +204,7 @@ class mainTelescope_Alpaca(mainConfig):
         
         #if self.device.CanPark:
             #if not self.device.AtPark:
-        log.info('Parking telescope...')
+        self._log.info('Parking telescope...')
         if self.device.CanSlewAsync:
             if self.device.AtPark:
                 self.unpark()
@@ -225,26 +218,28 @@ class mainTelescope_Alpaca(mainConfig):
                 time.sleep(self._checktime)
             time.sleep(5*self._checktime)
             self.status = self.get_status()
-            self.status['at_parked'] = True
-            log.info('Telescope parked')
+            self._log.info('Telescope parked')
         else:
-            log.critical('Parking failed')
+            self._log.critical('Parking failed')
             raise SystemError('Parking failed') 
+        self.status = self.get_status()
+        self.status['at_parked'] = True
     
     def unpark(self):
         """
         Unparks the telescope.
         """
         
-        log.info('Unparking telescope...')
+        self._log.info('Unparking telescope...')
         if self.device.CanUnpark:
             if self.device.AtPark:
                 self.device.Unpark()
             self.device.Tracking = False
-            log.info('Telescope Unparked')
+            self._log.info('Telescope Unparked')
         else:
-            log.critical('Unparking failed')
+            self._log.critical('Unparking failed')
             raise SystemError('Unparking failed')
+        self.status = self.get_status()
 
     def slew_radec(self,
                    coordinate : SkyCoord = None,
@@ -273,13 +268,13 @@ class mainTelescope_Alpaca(mainConfig):
             coordinate = to_SkyCoord(ra, dec)
         ra = coordinate.ra.hour
         dec = coordinate.dec.deg
-        target = mainTarget(self.observer, ra, dec, target_name)
+        target = mainTarget(unitnum = self._unitnum, observer = self.observer, target_ra = ra, target_dec = dec, target_name = target_name)
         altaz = target.altaz()
-        log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
+        self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
 
         # Check coordinates
         if altaz.alt.deg < self._min_altitude:
-            log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+            self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
             raise ValueError('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
         
         # Slewing 
@@ -294,12 +289,14 @@ class mainTelescope_Alpaca(mainConfig):
             time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
-            status = self.get_status()
-            log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(status['ra'], status['dec'], status['alt'], status['az']))
+            time.sleep(2*self._checktime)
+            self.status = self.get_status()
+            self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(self.status['ra'], self.status['dec'], self.status['alt'], self.status['az']))
             if not tracking:
                 self.device.Tracking = False
         else:
-            log.critical('Slewing failed')
+            self._log.critical('Slewing failed')
+        self.status = self.get_status()
             
     def slew_altaz(self,
                    coordinate : SkyCoord = None,
@@ -325,11 +322,11 @@ class mainTelescope_Alpaca(mainConfig):
             coordinate = SkyCoord(az, alt, frame = 'altaz', unit ='deg')
         alt = coordinate.alt.deg
         az = coordinate.az.deg
-        log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
+        self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
 
         # Check coordinates
         if alt < self._min_altitude:
-            log.critical('Destination altitude below limit (%.1fdeg)' %alt)
+            self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
             raise ValueError('Destination altitude below limit (%.1fdeg)' %alt)
         
         # Slewing 
@@ -344,12 +341,15 @@ class mainTelescope_Alpaca(mainConfig):
             time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
-            status = self.get_status()
-            log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(status['alt'], status['az']))
+            time.sleep(2*self._checktime)
+            self.status = self.get_status()
+            self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(self.status['alt'], self.status['az']))
             if tracking:
                 self.device.Tracking = True
+            
         else:
-            log.critical('Slewing failed')
+            self._log.critical('Slewing failed')
+        self.status = self.get_status()
 
     def tracking_on(self):
         """
@@ -363,10 +363,11 @@ class mainTelescope_Alpaca(mainConfig):
                 while not self.device.Tracking:
                     time.sleep(self._checktime)
             if  self.device.Tracking:
-                log.info('Tracking activated')
+                self._log.info('Tracking activated')
         else:
-            log.critical('Tracking failed')
+            self._log.critical('Tracking failed')
             raise SystemError('Tracking failed')
+        self.status = self.get_status()
     
     def tracking_off(self):
         """
@@ -380,10 +381,11 @@ class mainTelescope_Alpaca(mainConfig):
                 while self.device.Tracking:
                     time.sleep(self._checktime)
             if not self.device.Tracking:
-                log.info('Tracking deactivated')
+                self._log.info('Tracking deactivated')
         else:
-            log.critical('Untracking failed')
+            self._log.critical('Untracking failed')
             raise SystemError('Untracking failed')
+        self.status = self.get_status()
     
     def abort(self):
         """
@@ -391,36 +393,30 @@ class mainTelescope_Alpaca(mainConfig):
         """
         
         self.device.AbortSlew()
-        log.warning('Telescope aborted')
+        self._log.warning('Telescope aborted')
+        self.status = self.get_status()
         
 #%% Test  
             
 if __name__ == '__main__':
-
-    T = Telescope('192.168.0.4:11111',0)
-    config = mainConfig().config
-    Tel = mainTelescope_Alpaca(device= T, observer = mainObserver(**config))
+    Tel = mainTelescope_Alpaca(unitnum = 4)
     Tel.connect()
-
-
     ra = '15:35:28'
-    dec = '-50:39:32'
-
+    dec = '40:39:32'
     coordinate_radec = to_SkyCoord(ra, dec)
 
-    Tel.slew_radec(coordinate_radec, tracking = True)
-
-    alt = 50.23
-    az = 170.23
+    #Tel.slew_radec(coordinate_radec, tracking = True)
+    alt = 20
+    az = 230
 
     Tel.park()
     Tel.unpark()
     coordinate_altaz = SkyCoord(az, alt, frame = 'altaz', unit = 'deg')
-    Tel.slew_radec(coordinate_radec, tracking = True)
+    #Tel.slew_radec(coordinate_radec, tracking = True)
     Tel.slew_altaz(alt = alt, az = az)
-    Tel.tracking_on()
-    Tel.tracking_off()
-    Tel.park()
-    Tel.disconnect()
+    #Tel.tracking_on()
+    #Tel.tracking_off()
+    #Tel.park()
+    #Tel.disconnect()
  # %%
 

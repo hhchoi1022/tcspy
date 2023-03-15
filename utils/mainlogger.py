@@ -6,8 +6,9 @@ import datetime
 #%%
 class mainLogger(mainConfig):
     def __init__(self,
+                 unitnum : int,
                  logger_name):
-        super().__init__()
+        super().__init__(unitnum= unitnum)
         self._log = self.CreateLogger(logger_name)
     
     def log(self):

@@ -13,7 +13,6 @@ from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 
 # %%
-log = mainLogger(__name__).log()
 class mainFilterwheel(mainConfig):
     """
     This class provides an interface to interact with a filter wheel device.
@@ -38,18 +37,18 @@ class mainFilterwheel(mainConfig):
     """
     
     def __init__(self,
-                 device : alpaca.filterwheel.FilterWheel):
-        super().__init__()
+                 unitnum : int):
+        super().__init__(unitnum = unitnum)
+        self._unitnum = unitnum
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['FTWHEEL_CHECKTIME'])
         self._filternames = self._get_all_filt_names()
         self._filteroffset = self._get_all_filt_offset()
+        self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])
+        self.status = self.get_status()
         
-        if isinstance(device, alpaca.filterwheel.FilterWheel):
-            self.device = device
-            self.status = self.get_status()
-        else:
-            log.warning('Device type is not mathced to Alpaca Filterwheel')
-            raise ValueError('Device type is not mathced to Alpaca Filterwheel')
+        if not sorted(self.device.Names) == sorted(self._filternames):
+            raise ValueError(f'Registered filternames are not matched. Check & change the filternames of Filtoffset.config file to\n {sorted(self.device.Names)}.')
         
     def get_status(self) -> dict:
         """
@@ -108,16 +107,16 @@ class mainFilterwheel(mainConfig):
         Connects to the filter wheel device.
         """
         
-        log.info('Connecting to the Filterwheel...')
+        self._log.info('Connecting to the Filterwheel...')
         try:
             if not self.device.Connected:
                 self.device.Connected = True
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                log.info('Filterwheel connected')
+                self._log.info('Filterwheel connected')
         except:
-            log.warning('Connection failed')
+            self._log.warning('Connection failed')
         self.status = self.get_status()
     
     def disconnect(self):
@@ -126,11 +125,11 @@ class mainFilterwheel(mainConfig):
         """
         
         self.device.Connected = False
-        log.info('Disconnecting the Filterwheel...')
+        self._log.info('Disconnecting the Filterwheel...')
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            log.info('Filterwheel disconnected')
+            self._log.info('Filterwheel disconnected')
         self.status = self.get_status()
             
     def move(self,
@@ -145,15 +144,15 @@ class mainFilterwheel(mainConfig):
         """
         
         if isinstance(filter_, str):
-            log.info('Changing filter... (Current : %s To : %s)'%(self._get_current_filtinfo()['name'], filter_))
+            self._log.info('Changing filter... (Current : %s To : %s)'%(self._get_current_filtinfo()['name'], filter_))
             filter_ = self._filtname_to_position(filter_)
         else:
-            log.info('Changing filter... (Current : %s To : %s)'%(self._get_current_filtinfo()['name'], self._position_to_filtname(filter_)))
+            self._log.info('Changing filter... (Current : %s To : %s)'%(self._get_current_filtinfo()['name'], self._position_to_filtname(filter_)))
         self.device.Position = filter_
         time.sleep(self._checktime)
         while not self.device.Position == filter_:
             time.sleep(self._checktime)
-        log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
+        self._log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
         self.status = self.get_status()
     
     def abort(self):
@@ -208,7 +207,7 @@ class mainFilterwheel(mainConfig):
         try:
             return self._filternames[position]  
         except:
-            log.warning('%s is out of range of the filterwheel'%position)
+            self._log.warning('%s is out of range of the filterwheel'%position)
         
     def _filtname_to_position(self,
                               filtname : str) -> int:
@@ -229,7 +228,7 @@ class mainFilterwheel(mainConfig):
         try:
             return self._filternames.index(filtname)
         except:
-            log.warning('%s is not implemented in the filterwheel'%filtname)
+            self._log.warning('%s is not implemented in the filterwheel'%filtname)
     
     def _is_connected(self) -> bool:
         """
@@ -261,8 +260,7 @@ class mainFilterwheel(mainConfig):
         
 # %% Test
 if __name__ == '__main__':
-    Filt = FilterWheel('127.0.0.1:32323', 0)
-    F = mainFilterwheel(Filt)
+    F = mainFilterwheel(unitnum= 4)
     F.connect()
     F.move('w425')
     F.disconnect()

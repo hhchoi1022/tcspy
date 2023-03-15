@@ -16,10 +16,10 @@ from tcspy.utils.target import mainTarget
 from tcspy.utils.images import mainImage
 
 #%%
-log = mainLogger(__name__).log()
 class singleObservation(mainConfig):
     
     def __init__(self,
+                 unitnum : int,
                  camera : mainCamera,
                  telescope : mainTelescope_pwi4 or mainTelescope_Alpaca,
                  observer : mainObserver,
@@ -27,7 +27,9 @@ class singleObservation(mainConfig):
                  focuser : mainFocuser,
                  **kwargs
                  ):
-        super().__init__()
+        super().__init__(unitnum = unitnum)
+        self._unitnum = unitnum
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self.tel = telescope
         self.cam = camera
         self.filt = filterwheel
@@ -46,7 +48,7 @@ class singleObservation(mainConfig):
                       imgtype : str = 'light',
                       binning : int = 1):
         
-        target = mainTarget(self.observer, target_ra = target_ra, target_dec = target_dec, target_alt = target_alt, target_az = target_az, target_name = target_name )
+        target = mainTarget(unitnum = self._unitnum, observer = self.observer, target_ra = target_ra, target_dec = target_dec, target_alt = target_alt, target_az = target_az, target_name = target_name )
         
         if target.status['coordtype'] == 'radec':
             self.tel.slew_radec(coordinate = target.coordinate)
@@ -69,7 +71,7 @@ class singleObservation(mainConfig):
             focus_status = self.focus.get_status()
             obs_status = self.observer.get_info()
             target_status = target.get_status()
-            image = mainImage(image_info = img_status, camera_info = cam_status, telescope_info = tel_status, filterwheel_info = filt_status, focuser_info = focus_status, observer_info = obs_status, target_info = target_status)
+            image = mainImage(unitnum = self._unitnum, image_info = img_status, camera_info = cam_status, telescope_info = tel_status, filterwheel_info = filt_status, focuser_info = focus_status, observer_info = obs_status, target_info = target_status)
         return image
  #%% Test
 if __name__ == '__main__':

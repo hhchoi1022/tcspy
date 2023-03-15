@@ -19,7 +19,6 @@ from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 #%%
 
-log = mainLogger(__name__).log()
 class mainCamera(mainConfig):
     """
     This class provides control over an Alpaca camera connected to the system.
@@ -56,19 +55,15 @@ class mainCamera(mainConfig):
     """
     
     def __init__(self,
-                 device : alpaca.camera.Camera):
+                 unitnum : int):
         
-        super().__init__()
+        super().__init__(unitnum=unitnum)
+        self._unitnum = unitnum
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['CAMERA_CHECKTIME'])
-        
-        if isinstance(device, alpaca.camera.Camera):
-            self.device = device
-            self.status = self.get_status()
+        self.device = Camera(f"{self.config['CAMERA_HOSTIP']}:{self.config['CAMERA_PORTNUM']}",self.config['CAMERA_DEVICENUM'])
+        self.status = self.get_status()
 
-        else:
-            log.warning('Device type is not mathced to Alpaca Camera')
-            raise ValueError('Device type is not mathced to Alpaca Camera')
- 
     def get_status(self) -> dict:
         """
         Get the current status of the connected camera.
@@ -286,16 +281,16 @@ class mainCamera(mainConfig):
         Connect to the camera and wait until the connection is established.
         """
         
-        log.info('Connecting to the Camera...')
+        self._log.info('Connecting to the Camera...')
         try:
             if not self.device.Connected:
                 self.device.Connected = True
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                log.info('Camera connected')
+                self._log.info('Camera connected')
         except:
-            log.warning('Connection failed')
+            self._log.warning('Connection failed')
         self.status = self.get_status()
 
     def disconnect(self):
@@ -304,11 +299,11 @@ class mainCamera(mainConfig):
         """
         
         self.device.Connected = False
-        log.info('Disconnecting to the Camera...')
+        self._log.info('Disconnecting to the Camera...')
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            log.info('Camera disconnected')
+            self._log.info('Camera disconnected')
         self.status = self.get_status()
             
     def set_binning(self,
@@ -324,7 +319,7 @@ class mainCamera(mainConfig):
         
         if (binning > self.device.MaxBinX) | (binning > self.device.MaxBinY):
             logtxt = 'binning value %d above the maximum supported %d'%(binning, self.device.MaxBinX)
-            log.warning(logtxt) 
+            self._log.warning(logtxt) 
             raise ValueError(logtxt)
         self.device.StartX = 0
         self.device.StartY = 0
@@ -351,15 +346,15 @@ class mainCamera(mainConfig):
             if self.device.CanSetCCDTemperature:
                 self.device.SetCCDTemperature = settemperature
                 self.device.CoolerOn = True
-                log.info('Start cooling...')
+                self._log.info('Start cooling...')
                 while not self.device.CCDTemperature - settemperature < tolerance:
-                    log.info('Current temperature : %.1f'%(self.device.CCDTemperature))
+                    self._log.info('Current temperature : %.1f'%(self.device.CCDTemperature))
                     time.sleep(5)
-                log.info('Cooling finished. Set temperature : %.1f'%(settemperature))
+                self._log.info('Cooling finished. Set temperature : %.1f'%(settemperature))
             else:
-                log.warning('Cooling is not implemented on this device')
+                self._log.warning('Cooling is not implemented on this device')
         except TimeoutError as e:
-            log.warning('{}CCD Temperature cannot be reached to the set temp, current temp : {}'.format(str(e), self.device.CCDTemperature))
+            self._log.warning('{}CCD Temperature cannot be reached to the set temp, current temp : {}'.format(str(e), self.device.CCDTemperature))
             
     
     def cooler_off(self,
@@ -375,13 +370,13 @@ class mainCamera(mainConfig):
         
         if self.device.CoolerOn:
             self.device.SetCCDTemperature = 10
-            log.info('Warming up...')
+            self._log.info('Warming up...')
             idx = warmuptime//5
             for i in range(idx):
-                log.info('Current temperature : %.1f'%(self.device.CCDTemperature))
+                self._log.info('Current temperature : %.1f'%(self.device.CCDTemperature))
                 time.sleep(5)
             self.device.CoolerOn = False
-            log.info('Cooler is now off')
+            self._log.info('Cooler is now off')
         self.status = self.get_status()
             
     def take_light(self,
@@ -408,7 +403,7 @@ class mainCamera(mainConfig):
         """
         self._imagetype = imgtypename
         self.set_binning(binning = binning)
-        log.info('[LIGHT] Start exposure (exptime = %.1f)'%exptime)
+        self._log.info('[LIGHT] Start exposure (exptime = %.1f)'%exptime)
         self.device.StartExposure(Duration = exptime, Light = True)
         time.sleep(2*self._checktime)
         while not self.device.ImageReady :
@@ -419,7 +414,7 @@ class mainCamera(mainConfig):
         if imginfo['date_obs'] is None:
             imginfo['date_obs']  = Time.now().isot
             imginfo['jd'] = round(Time.now().jd,6)
-        log.info(f'[{imgtypename.upper()}] Exposure finished (exptime = %.1f)'%exptime)
+        self._log.info(f'[LIGHT] Exposure finished (exptime = %.1f)'%exptime)
         self.status = self.get_status()
         return imginfo, status
         
@@ -444,7 +439,7 @@ class mainCamera(mainConfig):
         """
         self._imagetype = imgtypename
         self.set_binning(binning = binning)
-        log.info('[BIAS] Start exposure for bias')
+        self._log.info('[BIAS] Start exposure for bias')
         self.device.StartExposure(Duration = self.device.ExposureMin, Light = False)
         time.sleep(2*self._checktime)
         while not self.device.ImageReady:
@@ -455,7 +450,7 @@ class mainCamera(mainConfig):
         if imginfo['date_obs'] is None:
             imginfo['date_obs']  = Time.now().isot
             imginfo['jd'] = round(Time.now().jd,6)
-        log.info(f'[{imgtypename.upper()}] Exposure finished')
+        self._log.info(f'[{imgtypename.upper()}] Exposure finished')
         return imginfo, status
 
     def take_dark(self,
@@ -482,7 +477,7 @@ class mainCamera(mainConfig):
         """
         self._imagetype = imgtypename
         self.set_binning(binning = binning)
-        log.info('[DARK] Start exposure (exptime = %.1f)'%exptime)
+        self._log.info('[DARK] Start exposure (exptime = %.1f)'%exptime)
         self.device.StartExposure(Duration = exptime, Light = False)
         time.sleep(2*self._checktime)
         while not self.device.ImageReady:
@@ -493,7 +488,7 @@ class mainCamera(mainConfig):
         if imginfo['date_obs'] is None:
             imginfo['date_obs']  = Time.now().isot
             imginfo['jd'] = round(Time.now().jd,6)
-        log.info(f'[{imgtypename.upper()}] Exposure finished (exptime = %.1f)'%exptime)
+        self._log.info(f'[{imgtypename.upper()}] Exposure finished (exptime = %.1f)'%exptime)
         self.status = self.get_status()
         return imginfo, status
     
@@ -503,25 +498,18 @@ class mainCamera(mainConfig):
         """
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
-            log.warning('Camera aborted')
+            self._log.warning('Camera aborted')
         self.status = self.get_status()
         
         
 # %% Test
 if __name__ == '__main__':
-    C = Camera('127.0.0.1:32323',0)
-    A = mainCamera(C)
+    A = mainCamera(unitnum = 4)
     A.connect()
     A.cooler_on(5)
-    light, status_1 = A.take_light(30)
+    light, status_1 = A.take_light(3)
     dark, status_2 = A.take_dark(3)
-    bias, status_3 = A.take_bias(3)
+    bias, status_3 = A.take_bias()
     A.cooler_off(warmuptime=10)
     A.disconnect()
 
-# %%
-C1 = Camera('192.168.0.5:11111',0)
-C2 = Camera('192.168.0.4:11111',0)
-A1 = mainCamera(C1)
-A2 = mainCamera(C2)
-# %%

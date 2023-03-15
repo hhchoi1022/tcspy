@@ -2,6 +2,7 @@
 
 #%%
 from tcspy.utils import mainLogger
+from tcspy.configuration import mainConfig
 from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_sun, get_moon
 import astropy.units as u
 from datetime import datetime
@@ -10,8 +11,7 @@ import pytz
 from astroplan import Observer
 
 #%%
-log = mainLogger(__name__).log()
-class mainObserver:
+class mainObserver(mainConfig):
     """
     Class for observing astronomical objects and events from a specific location on Earth.
 
@@ -64,38 +64,21 @@ class mainObserver:
         Calculates the next set time of the Moon at the observer's location, starting from the
     """
     
-    def __init__(self, 
-                 OBSERVER_LATITUDE : float, 
-                 OBSERVER_LONGITUDE : float, 
-                 OBSERVER_ELEVATION : float, 
-                 OBSERVER_TIMEZONE : str,
-                 OBSERVER_NAME : str = None,
-                 OBSERVER_OBSERVATORY : str = None,
+    def __init__(self,
+                 unitnum : int,
                  **kwargs
                  ):
-        self._latitude = None
-        self._longitude = None
-        self._elevation = 0
-        self._timezone = None
-        self._name = None
-        self._observatory = None
-        
-        if OBSERVER_LATITUDE is not None:
-            self._latitude = float(OBSERVER_LATITUDE)*u.deg
-        if OBSERVER_LONGITUDE is not None:
-            self._longitude = float(OBSERVER_LONGITUDE)*u.deg
-        if OBSERVER_ELEVATION is not None:        
-            self._elevation = float(OBSERVER_ELEVATION)*u.m
-        if OBSERVER_NAME is not None:        
-            self._name = OBSERVER_NAME
-        if OBSERVER_OBSERVATORY is not None:        
-            self._observatory= OBSERVER_OBSERVATORY
-        if OBSERVER_TIMEZONE is not None:
-            self._timezone = pytz.timezone(OBSERVER_TIMEZONE)
-        if (OBSERVER_LATITUDE is not None) & (OBSERVER_LONGITUDE is not None):
-            self._earthlocation = EarthLocation.from_geodetic(lat=self._latitude, lon=self._longitude, height=self._elevation)
-            self._observer = Observer(location = self._earthlocation, name = self._observatory, timezone = self._timezone)
-            log.info("Observer information setting compleated!\n==================\n   Observer = %s\n   Observatory = %s\n   Latitude = %s\n   Longitude = %s\n   Elevation = %s\n   Timezone = %s\n=================="%(self._name, self._observatory, self._latitude, self._longitude, self._elevation, self._timezone))
+        super().__init__(unitnum = unitnum)
+        self._unitnum = unitnum
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
+        self._latitude = float(self.config['OBSERVER_LATITUDE'])*u.deg
+        self._longitude = float(self.config['OBSERVER_LONGITUDE'])*u.deg
+        self._elevation = float(self.config['OBSERVER_ELEVATION'])*u.m
+        self._name = self.config['OBSERVER_NAME']
+        self._observatory= self.config['OBSERVER_OBSERVATORY']
+        self._timezone = pytz.timezone(self.config['OBSERVER_TIMEZONE'])
+        self._earthlocation = EarthLocation.from_geodetic(lat=self._latitude, lon=self._longitude, height=self._elevation)
+        self._observer = Observer(location = self._earthlocation, name = self._observatory, timezone = self._timezone)
         self.info = self.get_info()
     ############ Site info ############
     
@@ -464,6 +447,5 @@ class mainObserver:
 # %%
 if __name__ == '__main__':
     from tcspy.configuration import mainConfig
-    config = mainConfig().config
-    obs = mainObserver(**config)
+    obs = mainObserver(unitnum = 4)
 # %%

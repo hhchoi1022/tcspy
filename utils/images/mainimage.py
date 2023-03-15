@@ -20,6 +20,7 @@ from tcspy.devices.observer import mainObserver
 class mainImage(mainConfig):
     
     def __init__(self,
+                 unitnum : int,
                  image_info : dict,
                  camera_info : dict,
                  telescope_info : dict,
@@ -28,7 +29,7 @@ class mainImage(mainConfig):
                  observer_info : dict,
                  target_info : dict
                  ):
-        super().__init__()
+        super().__init__(unitnum = unitnum)
         self._imginfo = image_info
         self._caminfo = camera_info
         self._telinfo = telescope_info
@@ -64,7 +65,6 @@ class mainImage(mainConfig):
         return dict(value = value, note=  note)
         
     def _get_info_config(self):
-        config_info = self.config
         info = dict()
         # telescope
         info['TEL_IP'] = self._fotmat_header(self.config['TELESCOPE_HOSTIP'],'Hosting IP for ALPACA telescope device')
@@ -172,7 +172,8 @@ class mainImage(mainConfig):
         img_info = self._get_info_image()
         tar_info = self._get_info_target()
         config_info = self._get_info_config()
-        all_info = {**tel_info,**cam_info,**focus_info,**filt_info,**img_info,**tar_info,**config_info}
+        obs_info = self._get_info_observer()
+        all_info = {**tel_info,**cam_info,**focus_info,**filt_info,**img_info,**tar_info,**config_info,**obs_info}
         hdu = fits.PrimaryHDU()
         hdu.data = self._imginfo['data']
         for key, value in all_info.items():
@@ -188,7 +189,7 @@ class mainImage(mainConfig):
         return self.hdu.data
     
     def save(self, filename):
-        self.hdu.writeto(self.config['IMAGE_FILEPATH']+filename)
+        self.hdu.writeto(self.config['IMAGE_FILEPATH']+filename, overwrite = True)
     
 
             

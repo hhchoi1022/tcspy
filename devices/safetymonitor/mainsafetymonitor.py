@@ -9,7 +9,6 @@ from astropy.io import ascii
 from astropy.time import Time
 import time
 # %%
-log = mainLogger(__name__).log()
 class mainSafetyMonitor(mainConfig):
     """
     A class that provides a wrapper for the Alpaca SafetyMonitor device.
@@ -31,15 +30,14 @@ class mainSafetyMonitor(mainConfig):
     """
     
     def __init__(self,
-                 device : SafetyMonitor):
-        super().__init__()
-        if isinstance(device, SafetyMonitor):
-            self.device = device
-            self.status = self.get_status()
-        else:
-            log.warning('Device type is not mathced to Alpaca SafetyMonitor device')
-            raise ValueError('Device type is not mathced to Alpaca SafetyMonitor device')
+                 unitnum : int):
+        super().__init__(unitnum = unitnum)
+        self._unitnum = unitnum
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['SAFEMONITOR_CHECKTIME'])
+        self.device = SafetyMonitor(f"{self.config['SAFEMONITOR_HOSTIP']}:{self.config['SAFEMONITOR_PORTNUM']}",self.config['SAFEMONITOR_DEVICENUM'])
+        self.status = self.get_status()
+        
         
     def get_status(self) -> dict:
         """
@@ -89,16 +87,16 @@ class mainSafetyMonitor(mainConfig):
         Connect to the SafetyMonitor device
         """
         
-        log.info('Connecting to the SafetyMonitor device...')
+        self._log.info('Connecting to the SafetyMonitor device...')
         try:
             if not self.device.Connected:
                 self.device.Connected = True
                 while not self.device.Connected:
                     time.sleep(self._checktime)
                 if  self.device.Connected:
-                    log.info('SafetyMonitor device connected')
+                    self._log.info('SafetyMonitor device connected')
         except :
-            log.warning('Connection failed')
+            self._log.warning('Connection failed')
         self.status = self.get_status()
     
     def disconnect(self):
@@ -108,16 +106,15 @@ class mainSafetyMonitor(mainConfig):
         
         if self.device.Connected:
             self.device.Connected = False
-            log.info('Disconnecting the SafetyMonitor device...')
+            self._log.info('Disconnecting the SafetyMonitor device...')
             while self.device.Connected:
                 time.sleep(self._checktime)
             if not self.device.Connected:
-                log.info('Weather SafetyMonitor disconnected')
+                self._log.info('Weather SafetyMonitor disconnected')
         self.status = self.get_status()
 # %%
 if __name__ == '__main__':
-    smonitor = SafetyMonitor('127.0.0.1:32323', 0)
-    safe = mainSafetyMonitor(device= smonitor)
+    safe = mainSafetyMonitor(unitnum = 4)
     safe.connect()
     safe.get_status()
     safe.disconnect()

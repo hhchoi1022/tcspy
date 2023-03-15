@@ -6,15 +6,13 @@ from tcspy.pilot.startup import StartUp
 from tcspy.utils.target import mainTarget
 from tcspy.pilot.singleobservation import singleObservation
 #%%
-startup = StartUp()
-startup.run()
-#%%
-devices = startup.devices
+startup = StartUp(unitnum=4)
+devices = startup.run()
 observer = startup.observer
 #%% Setting Target
-ra = '20:37:36'
+ra = '3:37:36'
 dec = '32:14:59'
-target_name = 'M14'
+target_name = 'M15'
 coord_radec = to_SkyCoord(ra, dec)
 ra_hour ,dec_deg = coord_radec.ra.hour, coord_radec.dec.deg
 alt = 60
@@ -23,9 +21,9 @@ target = mainTarget(observer = observer, target_ra = ra_hour, target_dec = dec_d
 target.staralt()
 #%% Observation
 obs = singleObservation(**devices, observer = observer)
-image = obs.slew_exposure(target_ra = ra_hour, target_dec = dec_deg, exptime = 15, binning = 1, target_name = target_name)
+image = obs.slew_exposure(target_ra = ra_hour, target_dec = dec_deg, exptime = 15, binning = 1, target_name = target_name, filter = 'g')
 image.show()
-image.save('{}_1.fits'.format(target_name))
+image.save('{}.fits'.format(target_name))
 #devices['telescope'].park()
 #%%
 

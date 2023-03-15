@@ -13,7 +13,6 @@ from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 
 # %%
-log = mainLogger(__name__).log()
 class mainFocuser(mainConfig):
     """
     A class for controlling a Focuser device.
@@ -38,19 +37,15 @@ class mainFocuser(mainConfig):
     """
     
     def __init__(self,
-                 device : alpaca.focuser.Focuser):
-        super().__init__()
+                 unitnum : int):
+        super().__init__(unitnum = unitnum)
+        self._unitnum = unitnum
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['FOCUSER_CHECKTIME'])
         self._abort_tolerance = int(self.config['FOCUSER_HALTTOL'])
         self._warn_tolerance = int(self.config['FOCUSER_WARNTOL'])
-        
-        if isinstance(device, alpaca.focuser.Focuser):
-            self.device = device
-            self.status = self.get_status()
-
-        else:
-            log.warning('Device type is not mathced to Alpaca Focuser')
-            raise ValueError('Device type is not mathced to Alpaca Focuser')
+        self.device = Focuser(f"{self.config['FOCUSER_HOSTIP']}:{self.config['FOCUSER_PORTNUM']}",self.config['FOCUSER_DEVICENUM'])
+        self.status = self.get_status()
     
     def get_status(self) -> dict:
         """
@@ -152,16 +147,16 @@ class mainFocuser(mainConfig):
         Connect to the Focuser device
         """
         
-        log.info('Connecting to the Focuser...')
+        self._log.info('Connecting to the Focuser...')
         try:
             if not self.device.Connected:
                 self.device.Connected = True
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                log.info('Focuser connected')
+                self._log.info('Focuser connected')
         except:
-            log.warning('Connection failed')
+            self._log.warning('Connection failed')
         self.status = self.get_status()
         
     
@@ -171,11 +166,11 @@ class mainFocuser(mainConfig):
         """
         
         self.device.Connected = False
-        log.info('Disconnecting the Focuser...')
+        self._log.info('Disconnecting the Focuser...')
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            log.info('Focuser disconnected')
+            self._log.info('Focuser disconnected')
         self.status = self.get_status()
             
     def move(self,
@@ -192,22 +187,22 @@ class mainFocuser(mainConfig):
         self.status = self.get_status()
         if (position <= 0) | (position > self.status['maxstep']):
             logtxt = 'Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep'])
-            log.critical(logtxt)
+            self._log.critical(logtxt)
             raise ValueError(logtxt)
         elif np.abs(position - self.status['position']) > self.status['step_abort']:
             logtxt = 'Set position is too distant from current position. Halt action. (Moving position : %d > halt tolerance : %d)'%(np.abs(position - self.status['position']), self.status['step_abort'])
-            log.critical(logtxt)
+            self._log.critical(logtxt)
             raise ValueError(logtxt)
         else:
             if np.abs(position - self.status['position']) > self.status['step_warn']:
                 logtxt = 'Set position is far from current position. Be careful... (Moving position : %d > warn tolerance : %d)'%(np.abs(position - self.status['position']), self.status['step_warn'])
-                log.warn(logtxt)
-            log.info('Moving focuser position... (Current : %s To : %s)'%(self.status['position'], position))
+                self._log.warn(logtxt)
+            self._log.info('Moving focuser position... (Current : %s To : %s)'%(self.status['position'], position))
             self.device.Move(position)
             time.sleep(3*self._checktime)
             while self.device.IsMoving:
                 time.sleep(self._checktime)
-            log.info('Focuser position is set (Current : %s)'%(self.status['position']))
+            self._log.info('Focuser position is set (Current : %s)'%(self.status['position']))
         self.status = self.get_status()
         
     def abort(self):
@@ -217,14 +212,14 @@ class mainFocuser(mainConfig):
     
         self.device.Halt()
         self.status = self.get_status()
-        log.warning('Focuser aborted')
+        self._log.warning('Focuser aborted')
         
         
         
 # %% Test
 if __name__ == '__main__':
-    Focus = Focuser('127.0.0.1:32323', 0)
-    F = mainFocuser(Focus)
+    #Focus = Focuser('192.168.0.4:11111', 0)
+    F = mainFocuser(unitnum = 4)
     F.connect()
     F.move(19000)
     F.disconnect()

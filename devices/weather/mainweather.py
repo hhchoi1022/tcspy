@@ -12,7 +12,6 @@ from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 
 # %%
-log = mainLogger(__name__).log()
 class mainWeather(mainConfig):
     """
     A class for interfacing with an Alpaca weather device.
@@ -35,18 +34,16 @@ class mainWeather(mainConfig):
     """
     
     def __init__(self,
-                 device : ObservingConditions):
-        super().__init__()
+                 unitnum : int):
+        
+        super().__init__(unitnum = unitnum)
+        self._unitnum = unitnum
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['WEATHER_CHECKTIME'])
         self._constraints = self._get_constraints()
+        self.device = ObservingConditions(f"{self.config['WEATHER_HOSTIP']}:{self.config['WEATHER_PORTNUM']}",self.config['WEATHER_DEVICENUM'])
+        self.status = self.get_status()
         
-        if isinstance(device, ObservingConditions):
-            self.device = device
-            self.status = self.get_status()
-        else:
-            log.warning('Device type is not mathced to Alpaca weather device')
-            raise ValueError('Device type is not mathced to Alpaca weather device')
-
     def get_status(self):
         """
         Get the current weather status.
@@ -149,16 +146,16 @@ class mainWeather(mainConfig):
         Connect to the weather device.
         """
         
-        log.info('Connecting to the weather station...')
+        self._log.info('Connecting to the weather station...')
         try:
             if not self.device.Connected:
                 self.device.Connected = True
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                log.info('Weather device connected')
+                self._log.info('Weather device connected')
         except:
-            log.warning('Connection failed')
+            self._log.warning('Connection failed')
         self.status = self.get_status()
     
     def disconnect(self):
@@ -167,11 +164,11 @@ class mainWeather(mainConfig):
         """
         
         self.device.Connected = False
-        log.info('Disconnecting the weather device...')
+        self._log.info('Disconnecting the weather device...')
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            log.info('Weather device disconnected')
+            self._log.info('Weather device disconnected')
         self.status = self.get_status()
 
     def is_safe(self):
@@ -260,8 +257,7 @@ class mainWeather(mainConfig):
 # %%
 
 if __name__ =='__main__':
-    dev = ObservingConditions('127.0.0.1:32323',0)
-    weather = mainWeather(dev)
+    weather = mainWeather(unitnum = 4)
     weather.connect()
     print(weather.is_safe())
     weather.disconnect()

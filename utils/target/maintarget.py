@@ -51,13 +51,14 @@ class mainTarget(mainConfig):
     """
     
     def __init__(self,
+                 unitnum : int,
                  observer : mainObserver,
                  target_ra : float = None,
                  target_dec : float = None,
                  target_alt : float = None,
                  target_az : float = None,
                  target_name : str = ''):
-        super().__init__()
+        super().__init__(unitnum = unitnum)
         self._observer = observer
         self._astroplan_observer = observer.info['observer']
         self._constraints = self._get_constraints(**self.config)
