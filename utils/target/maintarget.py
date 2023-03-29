@@ -57,7 +57,9 @@ class mainTarget(mainConfig):
                  target_dec : float = None,
                  target_alt : float = None,
                  target_az : float = None,
-                 target_name : str = ''):
+                 target_name : str = '',
+                 **kwargs):
+        
         super().__init__(unitnum = unitnum)
         self._observer = observer
         self._astroplan_observer = observer.info['observer']
@@ -67,7 +69,13 @@ class mainTarget(mainConfig):
         self.alt = target_alt
         self.az = target_az
         
-        if (target_ra != None) & (target_dec != None):
+        if (isinstance(target_ra, type(None))) & (isinstance(target_dec, type(None))):
+            self.alt = target_alt
+            self.az = target_az
+            self.coordinate = self._get_coordinate_altaz(alt = target_alt, az = target_az)
+            self._target = self._get_target(self.coordinate, target_name)
+     
+        else:
             self.coordinate = self._get_coordinate_radec(ra = target_ra, dec = target_dec)
             self._target = self._get_target(self.coordinate, target_name)
             altaz = self.altaz()
@@ -75,12 +83,7 @@ class mainTarget(mainConfig):
             self.dec = self.coordinate.dec.deg
             self.alt = altaz.alt.value
             self.az = altaz.az.value
-        else:
-            self.alt = target_alt
-            self.az = target_az
-            self.coordinate = self._get_coordinate_altaz(alt = target_alt, az = target_az)
-            self._target = self._get_target(self.coordinate, target_name)
-        
+            
         self.name = target_name
         self.status = self.get_status()
 
@@ -106,26 +109,26 @@ class mainTarget(mainConfig):
         if self.coordinate.frame.name == 'altaz':
             targetinfo = dict()
             targetinfo['update_time'] = Time.now().isot
-            targetinfo['jd'] = round(Time.now().jd,5)
+            targetinfo['jd'] = np.round(Time.now().jd,5)
             targetinfo['name'] = self.name
             targetinfo['ra'] = None
             targetinfo['dec'] = None
-            targetinfo['alt'] = round(self.alt,3)
-            targetinfo['az'] = round(self.az,3)
+            targetinfo['alt'] = np.round(self.alt,3)
+            targetinfo['az'] = np.round(self.az,3)
             targetinfo['coordtype'] = 'altaz'
             targetinfo['hourangle'] = None
             targetinfo['is_observable'] = None
         else:
             targetinfo = dict()
             targetinfo['update_time'] = Time.now().isot
-            targetinfo['jd'] = round(Time.now().jd,5)
+            targetinfo['jd'] = np.round(Time.now().jd,5)
             targetinfo['name'] = self.name
-            targetinfo['ra'] = round(self.ra,5)
-            targetinfo['dec'] = round(self.dec,5)
-            targetinfo['alt'] = round(self.alt,3)
-            targetinfo['az'] = round(self.az,3)
+            targetinfo['ra'] = np.round(self.ra,5)
+            targetinfo['dec'] = np.round(self.dec,5)
+            targetinfo['alt'] = np.round(self.alt,3)
+            targetinfo['az'] = np.round(self.az,3)
             targetinfo['coordtype'] = 'radec'
-            targetinfo['hourangle'] = round(self.hourangle().value,3)
+            targetinfo['hourangle'] = np.round(self.hourangle().value,3)
             targetinfo['is_observable'] = self.is_observable()
         return targetinfo
     
@@ -148,7 +151,7 @@ class mainTarget(mainConfig):
             utctimes = Time.now()
         if not isinstance(utctimes, Time):
             utctimes = Time(utctimes)
-        return is_event_observable(constraints = self._constraints, observer = self._astroplan_observer, target = self._target, times = utctimes)[0]
+        return is_event_observable(constraints = self._constraints, observer = self._astroplan_observer, target = self._target, times = utctimes)
     
     def altaz(self,
               utctimes : datetime or Time or np.array = None) -> SkyCoord:

@@ -1,4 +1,4 @@
-#%%
+# Written by Hyeonho Choi 2022.12
 import logging
 import logging.handlers
 from tcspy.configuration import mainConfig
@@ -7,14 +7,17 @@ import datetime
 class mainLogger(mainConfig):
     def __init__(self,
                  unitnum : int,
-                 logger_name):
+                 logger_name,
+                 **kwargs
+                 ):
+        
         super().__init__(unitnum= unitnum)
-        self._log = self.CreateLogger(logger_name)
+        self._log = self.createlogger(logger_name)
     
     def log(self):
         return self._log
     
-    def CreateLogger(self,
+    def createlogger(self,
                      logger_name):
         # Create Logger
         logger = logging.getLogger(logger_name)

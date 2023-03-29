@@ -52,7 +52,8 @@ class mainTelescope_pwi4(mainConfig):
     """
 
     def __init__(self,
-                 unitnum : int):
+                 unitnum : int,
+                 **kwargs):
         
         super().__init__(unitnum = unitnum)
         self._unitnum = unitnum

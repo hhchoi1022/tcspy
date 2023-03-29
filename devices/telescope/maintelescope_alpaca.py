@@ -399,7 +399,7 @@ class mainTelescope_Alpaca(mainConfig):
 #%% Test  
             
 if __name__ == '__main__':
-    Tel = mainTelescope_Alpaca(unitnum = 4)
+    Tel = mainTelescope_Alpaca(unitnum = 5)
     Tel.connect()
     ra = '15:35:28'
     dec = '40:39:32'

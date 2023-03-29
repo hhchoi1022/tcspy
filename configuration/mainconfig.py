@@ -1,4 +1,4 @@
-#%%
+# Written by Hyeonho Choi 2023.01
 import glob, os
 from astropy.io import ascii
 from astropy.table import Table

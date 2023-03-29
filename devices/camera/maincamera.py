@@ -1,8 +1,4 @@
-
-
-#%%
-
-
+# Written by Hyeonho Choi 2023.02
 import time
 import pytz
 import numpy as np
@@ -55,7 +51,8 @@ class mainCamera(mainConfig):
     """
     
     def __init__(self,
-                 unitnum : int):
+                 unitnum : int,
+                 **kwargs):
         
         super().__init__(unitnum=unitnum)
         self._unitnum = unitnum
@@ -266,11 +263,9 @@ class mainCamera(mainConfig):
                 local = pytz.timezone(self.config['OBSERVER_TIMEZONE'])
                 naive = datetime.strptime(self.device.LastExposureStartTime, "%Y-%m-%dT%H:%M:%S")
                 local_dt = local.localize(naive, is_dst=None)
-                imginfo['date_obs'] = Time(local_dt.astimezone(pytz.utc)).isot
-            except:
-                pass
-            try:
-                imginfo['jd'] = Time(self.device.LastExposureStartTime).jd
+                ut = Time(local_dt.astimezone(pytz.utc)).isot
+                imginfo['date_obs'] = ut.isot
+                imginfo['jd'] = ut.jd
             except:
                 pass
         return imginfo, status
@@ -404,11 +399,13 @@ class mainCamera(mainConfig):
         self._imagetype = imgtypename
         self.set_binning(binning = binning)
         self._log.info('[LIGHT] Start exposure (exptime = %.1f)'%exptime)
+        start = time.time() 
         self.device.StartExposure(Duration = exptime, Light = True)
         time.sleep(2*self._checktime)
         while not self.device.ImageReady :
             time.sleep(self._checktime)
         imginfo, status = self.get_imginfo()
+        print( time.time() - start)
         if imginfo['exptime'] is None:
             imginfo['exptime'] = exptime
         if imginfo['date_obs'] is None:

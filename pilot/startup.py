@@ -15,7 +15,9 @@ import time
 class StartUp(mainConfig):
     
     def __init__(self,
-                 unitnum : int):
+                 unitnum : int,
+                 **kwargs):
+        
         super().__init__(unitnum = unitnum)
         self._unitnum = unitnum
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
@@ -146,7 +148,7 @@ class StartUp(mainConfig):
         
 # %%
 if __name__ == '__main__':
-    A = StartUp(unitnum = 4)
+    A = StartUp(unitnum = 5)
     connected_devices = A.run()
 #%%
 

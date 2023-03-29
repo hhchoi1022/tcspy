@@ -27,8 +27,10 @@ class mainImage(mainConfig):
                  filterwheel_info : dict,
                  focuser_info : dict,
                  observer_info : dict,
-                 target_info : dict
+                 target_info : dict,
+                 **kwargs
                  ):
+        
         super().__init__(unitnum = unitnum)
         self._imginfo = image_info
         self._caminfo = camera_info
@@ -38,9 +40,8 @@ class mainImage(mainConfig):
         self._obsinfo = observer_info
         self._targetinfo = target_info
         self.status = self._set_status()
-
-    def show(self):
         
+    def show(self):
         figsize_x = 4 * self.header['NAXIS1']/4096
         figsize_y = 4 * self.header['NAXIS2']/4096
         norm = ImageNormalize(self.data, interval=ZScaleInterval(), stretch=LinearStretch())
@@ -73,6 +74,7 @@ class mainImage(mainConfig):
         info['FOCALLEN'] = self._fotmat_header(self.config['TELESCOPE_FOCALLENGTH'],'Focal length of the telescope in mm')
         info['APTDIA'] = self._fotmat_header(self.config['TELESCOPE_DIAMETER'], 'Diameter of the telescope in m')
         info['APTAREA'] = self._fotmat_header(1e4*np.pi*(float(self.config['TELESCOPE_DIAMETER'])/2)**2, 'Aperture area of the telescope in mm^2')
+        info['TEL_UNIT'] = self.unitnum  ############################################
         # camera
         info['CAM_IP'] = self._fotmat_header(self.config['CAMERA_HOSTIP'],'Hosting IP for ALPACA camera device')
         info['CAM_PRT'] = self._fotmat_header(self.config['CAMERA_PORTNUM'],'Port number of ALPACA camera device')
@@ -148,6 +150,7 @@ class mainImage(mainConfig):
         info['EXPTIME'] = self._fotmat_header(img_info['exptime'], 'Duration of exposure time [sec]')
         info['DATE-OBS'] = self._fotmat_header(img_info['date_obs'], 'Date of the observation [ISO format]')
         info['JD'] = self._fotmat_header(img_info['jd'], 'Julian date')
+        ##### MJD
         info['XBINNING'] = self._fotmat_header(img_info['binningX'], 'Binning level along the X-axis')
         info['YBINNING'] = self._fotmat_header(img_info['binningY'], 'Binning level along the Y-axis')
         return info
@@ -189,7 +192,7 @@ class mainImage(mainConfig):
         return self.hdu.data
     
     def save(self, filename):
-        self.hdu.writeto(self.config['IMAGE_FILEPATH']+filename, overwrite = True)
+        self.hdu.writeto(self.config['IMAGE_FILEPATH']+filename, overwrite = True) ########## Raw file naming convention
     
 
             
