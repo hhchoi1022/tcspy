@@ -3,7 +3,7 @@
 #%%
 from tcspy.utils import mainLogger
 from tcspy.configuration import mainConfig
-from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_sun, get_moon
+from astropy.coordinates import EarthLocation, get_sun, get_moon
 import astropy.units as u
 from datetime import datetime
 from astropy.time import Time
@@ -449,4 +449,7 @@ class mainObserver(mainConfig):
 if __name__ == '__main__':
     from tcspy.configuration import mainConfig
     obs = mainObserver(unitnum = 4)
+    from tcspy.utils.target import mainTarget
+    tar = mainTarget(unitnum = 4, observer = obs, target_ra = 10.0, target_dec = -25)
+    tar.staralt()
 # %%
