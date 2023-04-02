@@ -9,7 +9,6 @@ from datetime import datetime
 from astropy.time import Time
 import pytz
 from astroplan import Observer
-
 #%%
 class mainObserver(mainConfig):
     """

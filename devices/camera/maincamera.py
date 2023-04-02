@@ -1,3 +1,4 @@
+#%%
 # Written by Hyeonho Choi 2023.02
 import time
 import pytz
@@ -504,9 +505,11 @@ if __name__ == '__main__':
     A = mainCamera(unitnum = 4)
     A.connect()
     A.cooler_on(5)
-    light, status_1 = A.take_light(3)
+    light, status_1 = A.take_light(3, binning = 3)
     dark, status_2 = A.take_dark(3)
     bias, status_3 = A.take_bias()
     A.cooler_off(warmuptime=10)
     A.disconnect()
 
+
+# %%

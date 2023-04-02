@@ -48,7 +48,7 @@ class mainConfig:
                               WEATHER_PORTNUM = '11111',
                               WEATHER_DEVICENUM = 0,
                               WEATHER_CHECKTIME = 0.5,
-                              WEATHER_CONSTRAINTSFILE = os.path.dirname(__file__)+'/WeatherConstraints.data')
+                              WEATHER_CONSTRAINTSFILE = '/home/hhchoi1022/tcspy/WeatherConstraints.data')
         
         dome_params = dict(DOME_HOSTIP = '192.168.0.%d'%self.unitnum,
                            DOME_PORTNUM = '11111',
@@ -93,7 +93,7 @@ class mainConfig:
                                   FTWHEEL_DEVICENUM = 0,
                                   FTWHEEL_NAME = '',
                                   FTWHEEL_CHECKTIME = 0.5,
-                                  FTWHEEL_OFFSETFILE = os.path.dirname(__file__)+'/FilterOffset.data')
+                                  FTWHEEL_OFFSETFILE = '/home/hhchoi1022/tcspy/FilterOffset.data')
         focuser_params = dict(FOCUSER_HOSTIP = '192.168.0.%d'%self.unitnum,
                               FOCUSER_PORTNUM = '11111',
                               FOCUSER_DEVICENUM = 0,
