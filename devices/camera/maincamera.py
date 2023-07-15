@@ -94,7 +94,7 @@ class mainCamera(mainConfig):
         status['update_time'] = Time.now().isot
         status['jd'] = None
         status['is_imgReady'] = None
-        status['is_connected'] = None
+        status['is_connected'] = False
         status['state'] = None
         status['name_cam'] = None
         status['numX'] = None
@@ -110,7 +110,7 @@ class mainCamera(mainConfig):
         status['name_sensor'] = None
         status['type_sensor'] = None
         try:
-            if self.device.Connected:
+            if status['is_connected']:
                 try:
                     status['update_time'] = Time.now().isot
                 except:
@@ -284,6 +284,7 @@ class mainCamera(mainConfig):
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
+                self.status['is_connected'] = True
                 self._log.info('Camera connected')
         except:
             self._log.warning('Connection failed')
@@ -299,6 +300,7 @@ class mainCamera(mainConfig):
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
+            self.status['is_connected'] = False
             self._log.info('Camera disconnected')
         self.status = self.get_status()
             
@@ -502,7 +504,7 @@ class mainCamera(mainConfig):
         
 # %% Test
 if __name__ == '__main__':
-    A = mainCamera(unitnum = 4)
+    A = mainCamera(unitnum = 1)
     A.connect()
     A.cooler_on(5)
     light, status_1 = A.take_light(3, binning = 3)
@@ -510,6 +512,3 @@ if __name__ == '__main__':
     bias, status_3 = A.take_bias()
     A.cooler_off(warmuptime=10)
     A.disconnect()
-
-
-# %%

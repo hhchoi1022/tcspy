@@ -80,9 +80,9 @@ class mainWeather(mainConfig):
         status['cloudfraction'] = None
         status['rainrate'] = None
         status['fwhm'] = None
-        status['is_connected'] = None
+        status['is_connected'] = False
         try:
-            if self.device.Connected:
+            if status['is_connected']:
                 self._update()
                 try:
                     status['update_time'] = Time.now().isot
@@ -153,6 +153,7 @@ class mainWeather(mainConfig):
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
+                self.status['is_connected'] = True
                 self._log.info('Weather device connected')
         except:
             self._log.warning('Connection failed')
@@ -168,6 +169,7 @@ class mainWeather(mainConfig):
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
+            self.status['is_connected'] = False
             self._log.info('Weather device disconnected')
         self.status = self.get_status()
 

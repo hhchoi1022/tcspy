@@ -80,12 +80,12 @@ class mainTelescope_Alpaca(mainConfig):
         status['az'] = None
         status['at_parked'] = None
         status['at_home'] = None
-        status['is_connected'] = None
+        status['is_connected'] = False
         status['is_tracking'] = None
         status['is_slewing'] = None
         status['is_stationary'] = None
         try:
-            if self.device.Connected:
+            if status['is_connected']:
                 try:
                     status['update_time'] = Time.now().isot
                 except:
@@ -151,6 +151,7 @@ class mainTelescope_Alpaca(mainConfig):
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
+                self.status['is_connected'] = True
                 self._log.info('Telescope connected')
         except:
             self._log.warning('Connection failed')
@@ -166,6 +167,7 @@ class mainTelescope_Alpaca(mainConfig):
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
+            self.status['is_connected'] = False
             self._log.info('Telescope disconnected')
         self.status = self.get_status()
     '''  
@@ -194,6 +196,7 @@ class mainTelescope_Alpaca(mainConfig):
         self.status = self.get_status()
         log.info('Park position is set (Alt = %.1f Az = %.1f)'%(alt, az))
         '''
+        
     def park(self):
         """
         Parks the telescope.
@@ -399,7 +402,7 @@ class mainTelescope_Alpaca(mainConfig):
 #%% Test  
             
 if __name__ == '__main__':
-    Tel = mainTelescope_Alpaca(unitnum = 5)
+    Tel = mainTelescope_Alpaca(unitnum = 1)
     Tel.connect()
     ra = '15:35:28'
     dec = '40:39:32'
@@ -418,5 +421,3 @@ if __name__ == '__main__':
     #Tel.tracking_off()
     #Tel.park()
     #Tel.disconnect()
- # %%
-

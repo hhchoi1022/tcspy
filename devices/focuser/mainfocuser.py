@@ -84,9 +84,9 @@ class mainFocuser(mainConfig):
         status['is_abs_positioning'] = None
         status['is_moving'] = None
         status['is_tempcomp'] = None
-        status['is_connected'] = None
+        status['is_connected'] = False
         try:
-            if self.device.Connected:
+            if status['is_connected']:
                 try:
                     status['update_time'] = Time.now().isot
                 except:
@@ -156,6 +156,7 @@ class mainFocuser(mainConfig):
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
+                self.status['is_connected'] = True
                 self._log.info('Focuser connected')
         except:
             self._log.warning('Connection failed')
@@ -172,6 +173,7 @@ class mainFocuser(mainConfig):
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
+            self.status['is_connected'] = False
             self._log.info('Focuser disconnected')
         self.status = self.get_status()
             
