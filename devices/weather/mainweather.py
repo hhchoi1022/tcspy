@@ -40,7 +40,7 @@ class mainWeather(mainConfig):
         self._unitnum = unitnum
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['WEATHER_CHECKTIME'])
-        self._constraints = self._get_constraints()
+        self.constraints = self._get_constraints()
         self.device = ObservingConditions(f"{self.config['WEATHER_HOSTIP']}:{self.config['WEATHER_PORTNUM']}",self.config['WEATHER_DEVICENUM'])
         self.status = self.get_status()
         
@@ -70,6 +70,7 @@ class mainWeather(mainConfig):
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
+        status['is_connected'] = False
         status['name'] = None
         status['is_safe'] = None
         status['temperature'] = None
@@ -80,64 +81,63 @@ class mainWeather(mainConfig):
         status['cloudfraction'] = None
         status['rainrate'] = None
         status['fwhm'] = None
-        status['is_connected'] = False
-        try:
-            if status['is_connected']:
-                self._update()
-                try:
-                    status['update_time'] = Time.now().isot
-                except:
-                    pass
-                try:
-                    status['jd'] = round(Time.now().jd,6)
-                except:
-                    pass
-                try:
-                    status['name'] = self.device.Name
-                except:
-                    pass
-                try:
-                    status['is_safe'] = self.is_safe()
-                except:
-                    pass
-                try:
-                    status['temperature'] = self._get_status_updatetime('Temperature', 1)
-                except:
-                    pass
-                try:
-                    status['humidity'] = self._get_status_updatetime('Humidity', 1)
-                except:
-                    pass
-                try:
-                    status['pressure'] = self._get_status_updatetime('Pressure', 1)
-                except:
-                    pass
-                try:
-                    status['windspeed'] = self._get_status_updatetime('WindSpeed', 1)
-                except:
-                    pass
-                try:
-                    status['skybrightness'] = self._get_status_updatetime('SkyQuality', 3)
-                except:
-                    pass
-                try:
-                    status['cloudfraction'] = self._get_status_updatetime('CloudCover', 2)
-                except:
-                    pass
-                try:
-                    status['rainrate'] = self._get_status_updatetime('RainRate', 2)
-                except:
-                    pass
-                try:
-                    status['fwhm'] = self._get_status_updatetime('StarFWHM', 2)
-                except:
-                    pass
-                try:
-                    status['is_connected'] = self.device.Connected
-                except:
-                    pass
-        except:
-            pass
+        status['constraints'] = self.constraints
+
+        if self.device.Connected:
+            self._update()
+            try:
+                status['update_time'] = Time.now().isot
+            except:
+                pass
+            try:
+                status['jd'] = round(Time.now().jd,6)
+            except:
+                pass
+            try:
+                status['name'] = self.device.Name
+            except:
+                pass
+            try:
+                status['is_safe'] = self.is_safe()
+            except:
+                pass
+            try:
+                status['temperature'] = self._get_status_updatetime('Temperature', 1)
+            except:
+                pass
+            try:
+                status['humidity'] = self._get_status_updatetime('Humidity', 1)
+            except:
+                pass
+            try:
+                status['pressure'] = self._get_status_updatetime('Pressure', 1)
+            except:
+                pass
+            try:
+                status['windspeed'] = self._get_status_updatetime('WindSpeed', 1)
+            except:
+                pass
+            try:
+                status['skybrightness'] = self._get_status_updatetime('SkyQuality', 3)
+            except:
+                pass
+            try:
+                status['cloudfraction'] = self._get_status_updatetime('CloudCover', 2)
+            except:
+                pass
+            try:
+                status['rainrate'] = self._get_status_updatetime('RainRate', 2)
+            except:
+                pass
+            try:
+                status['fwhm'] = self._get_status_updatetime('StarFWHM', 2)
+            except:
+                pass
+            try:
+                status['is_connected'] = self.device.Connected
+            except:
+                pass
+
         return status
     
     @Timeout(5, 'Timeout')
@@ -184,11 +184,11 @@ class mainWeather(mainConfig):
         """
         
         self._update()
-        safe_humidity    = self.device.Humidity < self._constraints['HUMIDITY'] 
-        safe_rainrate    = self.device.RainRate < self._constraints['RAINRATE'] 
-        safe_skymag      = self.device.SkyQuality > self._constraints['SKYMAG'] 
-        safe_temperature = (self.device.Temperature > self._constraints['TEMPERATURE_LOWER']) & (self.device.Temperature < self._constraints['TEMPERATURE_UPPER'])
-        safe_windspeed   = self.device.WindSpeed < self._constraints['WINDSPEED'] 
+        safe_humidity    = self.device.Humidity < self.constraints['HUMIDITY'] 
+        safe_rainrate    = self.device.RainRate < self.constraints['RAINRATE'] 
+        safe_skymag      = self.device.SkyQuality > self.constraints['SKYMAG'] 
+        safe_temperature = (self.device.Temperature > self.constraints['TEMPERATURE_LOWER']) & (self.device.Temperature < self.constraints['TEMPERATURE_UPPER'])
+        safe_windspeed   = self.device.WindSpeed < self.constraints['WINDSPEED'] 
         is_safe = safe_humidity & safe_rainrate & safe_skymag & safe_temperature & safe_windspeed
         return is_safe
     
@@ -209,8 +209,14 @@ class mainWeather(mainConfig):
                 - 'WINDSPEED': Maximum wind speed.
         """
         
-        with open(self.config['WEATHER_CONSTRAINTSFILE'], 'r') as f:
-            return json.load(f)
+        constraints = dict()
+        constraints['HUMIDITY'] = self.config['WEATHER_HUMIDITY']
+        constraints['RAINRATE'] = self.config['WEATHER_RAINRATE']
+        constraints['SKYMAG'] = self.config['WEATHER_SKYMAG']
+        constraints['TEMPERATURE_LOWER'] = self.config['WEATHER_TEMPERATURE_UPPER']
+        constraints['TEMPERATURE_UPPER'] = self.config['WEATHER_TEMPERATURE_LOWER']
+        constraints['WINDSPEED'] = self.config['WEATHER_WINDSPEED']
+        return constraints
     
     def _get_status_updatetime(self,
                                key : str,

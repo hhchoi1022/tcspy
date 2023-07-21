@@ -64,7 +64,7 @@ class mainSafetyMonitor(mainConfig):
         status['name'] = None
         status['is_connected'] = False
         status['is_safe'] = None
-        if status['is_connected']:     
+        if self.device.Connected:    
             try:
                 status['update_time'] = Time.now().isot
             except:
@@ -96,7 +96,6 @@ class mainSafetyMonitor(mainConfig):
                 while not self.device.Connected:
                     time.sleep(self._checktime)
                 if  self.device.Connected:
-                    self.status['is_connected'] = True
                     self._log.info('SafetyMonitor device connected')
         except :
             self._log.warning('Connection failed')
@@ -113,7 +112,6 @@ class mainSafetyMonitor(mainConfig):
             while self.device.Connected:
                 time.sleep(self._checktime)
             if not self.device.Connected:
-                self.status['is_connected'] = False
                 self._log.info('Weather SafetyMonitor disconnected')
         self.status = self.get_status()
 # %%

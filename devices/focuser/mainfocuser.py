@@ -74,73 +74,72 @@ class mainFocuser(mainConfig):
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
+        status['is_connected'] = False
         status['name'] = None
         status['position'] = None
+        status['is_moving'] = None
         status['maxstep'] = None
         status['stepsize'] = None
         status['temp'] = None
         status['step_abort'] = None
         status['step_warn'] = None
         status['is_abs_positioning'] = None
-        status['is_moving'] = None
         status['is_tempcomp'] = None
-        status['is_connected'] = False
-        try:
-            if status['is_connected']:
-                try:
-                    status['update_time'] = Time.now().isot
-                except:
-                    pass
-                try:
-                    status['jd'] = round(Time.now().jd,5)
-                except:
-                    pass
-                try:
-                    status['name'] = self.device.Name
-                except:
-                    pass
-                try:
-                    status['position'] = self.device.Position
-                except:
-                    pass
-                try:
-                    status['maxstep'] = self.device.MaxStep
-                except:
-                    pass
-                try:
-                    status['stepsize'] = self.device.StepSize
-                except:
-                    pass
-                try:
-                    status['temp'] = self.device.Temperature
-                except:
-                    pass
-                try:
-                    status['step_abort'] = self._abort_tolerance
-                except:
-                    pass
-                try:
-                    status['step_warn'] = self._warn_tolerance
-                except:
-                    pass
-                try:
-                    status['is_abs_positioning'] = self.device.Absolute
-                except:
-                    pass
-                try:
-                    status['is_moving'] = self.device.IsMoving
-                except:
-                    pass
-                try:
-                    status['is_tempcomp'] = self.device.TempComp
-                except:
-                    pass
-                try:
-                    status['is_connected'] = self.device.Connected
-                except:
-                    pass
-        except:
-            pass
+        
+        if self.device.Connected:
+            try:
+                status['update_time'] = Time.now().isot
+            except:
+                pass
+            try:
+                status['jd'] = round(Time.now().jd,5)
+            except:
+                pass
+            try:
+                status['name'] = self.device.Name
+            except:
+                pass
+            try:
+                status['position'] = self.device.Position
+            except:
+                pass
+            try:
+                status['maxstep'] = self.device.MaxStep
+            except:
+                pass
+            try:
+                status['stepsize'] = self.device.StepSize
+            except:
+                pass
+            try:
+                status['temp'] = self.device.Temperature
+            except:
+                pass
+            try:
+                status['step_abort'] = self._abort_tolerance
+            except:
+                pass
+            try:
+                status['step_warn'] = self._warn_tolerance
+            except:
+                pass
+            try:
+                status['is_abs_positioning'] = self.device.Absolute
+            except:
+                pass
+            try:
+                status['is_moving'] = self.device.IsMoving
+            except:
+                pass
+            try:
+                status['is_tempcomp'] = self.device.TempComp
+            except:
+                pass
+            try:
+                status['is_connected'] = self.device.Connected
+            except:
+                pass
+
         return status
         
     @Timeout(5, 'Timeout')
@@ -156,7 +155,6 @@ class mainFocuser(mainConfig):
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                self.status['is_connected'] = True
                 self._log.info('Focuser connected')
         except:
             self._log.warning('Connection failed')
@@ -173,7 +171,6 @@ class mainFocuser(mainConfig):
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            self.status['is_connected'] = False
             self._log.info('Focuser disconnected')
         self.status = self.get_status()
             

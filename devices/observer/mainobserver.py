@@ -79,10 +79,10 @@ class mainObserver(mainConfig):
         self._timezone = pytz.timezone(self.config['OBSERVER_TIMEZONE'])
         self._earthlocation = EarthLocation.from_geodetic(lat=self._latitude, lon=self._longitude, height=self._elevation)
         self._observer = Observer(location = self._earthlocation, name = self._observatory, timezone = self._timezone)
-        self.info = self.get_info()
+        self.status = self.get_status()
     ############ Site info ############
     
-    def get_info(self):
+    def get_status(self):
         """
         Returns observation information.
         
@@ -99,17 +99,17 @@ class mainObserver(mainConfig):
             - timezone: The timezone of the observatory in hours relative to UTC.
             - observer: The astropy.coordinates.EarthLocation object representing the observer's location.
         """
-        obsinfo = dict()
-        obsinfo['update_time'] = Time.now().isot
-        obsinfo['jd'] = round(Time.now().jd,6)
-        obsinfo['name_observatory'] = self._observatory
-        obsinfo['name_observer'] = self._name
-        obsinfo['latitude'] = round(self._latitude.value,4)
-        obsinfo['longitude'] = round(self._longitude.value,4)
-        obsinfo['elevation'] = round(self._elevation.value,2)
-        obsinfo['timezone'] = self._timezone
-        obsinfo['observer'] = self._observer
-        return obsinfo
+        status = dict()
+        status['update_time'] = Time.now().isot
+        status['jd'] = round(Time.now().jd,6)
+        status['name_observatory'] = self._observatory
+        status['name_observer'] = self._name
+        status['latitude'] = round(self._latitude.value,4)
+        status['longitude'] = round(self._longitude.value,4)
+        status['elevation'] = round(self._elevation.value,2)
+        status['timezone'] = self._timezone
+        status['observer'] = self._observer
+        return status
         
     ############ Time ############
     def localtime(self, 

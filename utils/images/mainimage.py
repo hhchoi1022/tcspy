@@ -4,18 +4,11 @@ from astropy.io import fits
 import numpy as np
 from typing import Optional
 from astropy.visualization import ImageNormalize
-from astropy.visualization import ZScaleInterval, MinMaxInterval
-from astropy.visualization import LinearStretch, LogStretch
+from astropy.visualization import ZScaleInterval
+from astropy.visualization import LinearStretch
 import matplotlib.pyplot as plt 
 
-
 from tcspy.configuration import mainConfig
-from tcspy.devices.camera import mainCamera
-from tcspy.devices.telescope import mainTelescope_pwi4
-from tcspy.devices.filterwheel import mainFilterwheel
-from tcspy.devices.observer import mainObserver
-
-
 #%%
 class mainImage(mainConfig):
     

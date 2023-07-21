@@ -84,58 +84,57 @@ class mainTelescope_Alpaca(mainConfig):
         status['is_tracking'] = None
         status['is_slewing'] = None
         status['is_stationary'] = None
-        try:
-            if status['is_connected']:
-                try:
-                    status['update_time'] = Time.now().isot
-                except:
-                    pass
-                try:
-                    status['jd'] = round(Time.now().jd,6)
-                except:
-                    pass
-                try:
-                    status['ra'] = round(self.device.RightAscension,5)
-                except:
-                    pass
-                try:
-                    status['dec'] = round(self.device.Declination,5)
-                except:
-                    pass
-                try:
-                    status['alt'] = round(self.device.Altitude,3)
-                except:
-                    pass
-                try:
-                    status['az'] = round(self.device.Azimuth,3)
-                except:
-                    pass
-                try:
-                    status['at_parked'] = self.device.AtPark
-                except:
-                    pass
-                try:
-                    status['at_home'] = self.device.AtHome
-                except:
-                    pass
-                try:
-                    status['is_connected'] = self.device.Connected
-                except:
-                    pass
-                try:
-                    status['is_tracking'] = self.device.Tracking
-                except:
-                    pass
-                try:
-                    status['is_slewing'] = self.device.Slewing
-                except:
-                    pass
-                try:
-                    status['is_stationary'] = not status['is_slewing']
-                except:
-                    pass
-        except:
-            pass
+
+        if self.device.Connected:
+            try:
+                status['update_time'] = Time.now().isot
+            except:
+                pass
+            try:
+                status['jd'] = round(Time.now().jd,6)
+            except:
+                pass
+            try:
+                status['ra'] = round(self.device.RightAscension,5)
+            except:
+                pass
+            try:
+                status['dec'] = round(self.device.Declination,5)
+            except:
+                pass
+            try:
+                status['alt'] = round(self.device.Altitude,3)
+            except:
+                pass
+            try:
+                status['az'] = round(self.device.Azimuth,3)
+            except:
+                pass
+            try:
+                status['at_parked'] = self.device.AtPark
+            except:
+                pass
+            try:
+                status['at_home'] = self.device.AtHome
+            except:
+                pass
+            try:
+                status['is_connected'] = self.device.Connected
+            except:
+                pass
+            try:
+                status['is_tracking'] = self.device.Tracking
+            except:
+                pass
+            try:
+                status['is_slewing'] = self.device.Slewing
+            except:
+                pass
+            try:
+                status['is_stationary'] = not status['is_slewing']
+            except:
+                pass
+
         return status
     
     @Timeout(5, 'Timeout')  
@@ -151,7 +150,6 @@ class mainTelescope_Alpaca(mainConfig):
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                self.status['is_connected'] = True
                 self._log.info('Telescope connected')
         except:
             self._log.warning('Connection failed')
@@ -167,7 +165,6 @@ class mainTelescope_Alpaca(mainConfig):
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            self.status['is_connected'] = False
             self._log.info('Telescope disconnected')
         self.status = self.get_status()
     '''  

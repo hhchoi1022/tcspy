@@ -54,12 +54,18 @@ class mainConfig:
                               WEATHER_PORTNUM='11111',
                               WEATHER_DEVICENUM=0,
                               WEATHER_CHECKTIME=0.5,
-                              WEATHER_CONSTRAINTSFILE=f'{tcspy_homedir}/configuration/unit{self.unitnum}/WeatherConstraints.data')
+                              WEATHER_HUMIDITY=85,
+                              WEATHER_RAINRATE=80,
+                              WEATHER_SKYMAG=10,
+                              WEATHER_TEMPERATURE_UPPER=-25,
+                              WEATHER_TEMPERATURE_LOWER=40,
+                              WEATHER_WINDSPEED=20)
 
         dome_params = dict(DOME_HOSTIP='192.168.0.%d' % self.unitnum,
                            DOME_PORTNUM='11111',
                            DOME_DEVICENUM=0,
                            DOME_CHECKTIME=0.5)
+        
         safetymonitor_params = dict(SAFEMONITOR_HOSTIP='192.168.0.%d' % self.unitnum,
                                     SAFEMONITOR_PORTNUM='11111',
                                     SAFEMONITOR_DEVICENUM=0,
@@ -83,13 +89,9 @@ class mainConfig:
                              CAMERA_DEVICENUM=0,
                              CAMERA_NAME='Moravian C3-61000',
                              CAMERA_CCDNAME='IMX455',
-                             CAMERA_RESOLUTION_X=1920,
-                             CAMERA_RESOLUTION_Y=1200,
                              CAMERA_PIXSIZE=3.76,  # micron
                              CAMERA_GAIN=1,
                              CAMERA_READNOISE=3.51,
-                             CAMERA_FULLCAP=52800,
-                             CAMERA_E_to_ADU=0.8,  # e-/ADU
                              CAMERA_DARKNOISE=0.1,
                              CAMERA_MINEXPOSURE=19.5,  # microseconds
                              CAMERA_CHECKTIME=0.5
@@ -107,16 +109,19 @@ class mainConfig:
                               FOCUSER_CHECKTIME=0.5,
                               FOCUSER_HALTTOL=10000,
                               FOCUSER_WARNTOL=5000)
+        
         target_params = dict(TARGET_MINALT=-10,
                              TARGET_MAXALT=90,
                              TARGET_MAX_SUNALT=None,
                              TARGET_MOONSEP=40,
                              TARGET_MAXAIRMASS=None
                              )
-        path_params = dict(LOGGER_FILEPATH=f'/home/hhchoi1022/Desktop/log/unit{self.unitnum}/',
-                           IMAGE_FILEPATH=f'/home/hhchoi1022/Desktop/images/unit{self.unitnum}/'
+        
+        save_params = dict(LOGGER_FILEPATH=f'/home/hhchoi1022/Desktop/log/unit{self.unitnum}/',
+                           IMAGE_FILEPATH=f'/home/hhchoi1022/Desktop/images/unit{self.unitnum}/',
+                           FILENAME_FORMAT = ''
                            )
-        # For more camera info : https://www.gxccd.com/art?id=647&lang=409
+        
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO',
                              LOGGER_FORMAT='[%(levelname)s]%(asctime)-15s | %(message)s',
@@ -125,41 +130,28 @@ class mainConfig:
         general_params = dict(TCSPY_VERSION='Version 1.0',
                               TCSPY_NAME='TCSpy'
                               )
-        filt_offset = dict(w425=-999,
-                           g=-999,
-                           r=-999,
-                           i=-999
-                           )
 
-        weather_constraints = dict(HUMIDITY=85,
-                                   RAINRATE=1,
-                                   SKYMAG=10,
-                                   TEMPERATURE_UPPER=40,
-                                   TEMPERATURE_LOWER=-25,
-                                   WINDSPEED=20)
 
         make_configfile(observer_params, filename='Observer.config')
         make_configfile(telescope_params, filename='Telescope.config')
         make_configfile(camera_params, filename='Camera.config')
         make_configfile(logger_params, filename='Logger.config')
         make_configfile(general_params, filename='General.config')
-        make_configfile(path_params, filename='Path.config')
+        make_configfile(save_params, filename='Path.config')
         make_configfile(filterwheel_params, filename='FilterWheel.config')
         make_configfile(focuser_params, filename='Focuser.config')
         make_configfile(target_params, filename='Target.config')
         make_configfile(weather_params, filename='Weather.config')
         make_configfile(dome_params, filename='Dome.config')
         make_configfile(safetymonitor_params, filename='SafetyMonitor.config')
-        make_configfile(filt_offset, filename='FilterOffset.data')
-        make_configfile(weather_constraints,
-                        filename='WeatherConstraints.data')
-        os.makedirs(path_params['LOGGER_FILEPATH'], exist_ok=True)
-        os.makedirs(path_params['IMAGE_FILEPATH'], exist_ok=True)
+
+        os.makedirs(save_params['LOGGER_FILEPATH'], exist_ok=True)
+        os.makedirs(save_params['IMAGE_FILEPATH'], exist_ok=True)
 
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=3)
+    A = mainConfig(unitnum=5)
     A._initialize_config()
 
 # %%

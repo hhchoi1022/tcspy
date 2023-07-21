@@ -44,13 +44,10 @@ class mainFilterwheel(mainConfig):
         self._unitnum = unitnum
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['FTWHEEL_CHECKTIME'])
-        self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])
-        
+        self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])        
+        self.filtnames = None
+        self.offsets = None
         self.status = self.get_status()
-        if self.status['is_connected']:
-            self.filtnames = self._get_all_filt_names()
-            self.filtoffsets = self._get_all_filt_offset()
-            
         
     def get_status(self) -> dict:
         """
@@ -65,42 +62,49 @@ class mainFilterwheel(mainConfig):
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
+        status['is_connected'] = False
         status['name'] = None
         status['filter'] = None
         status['offset'] = None
-        status['is_connected'] = False
-        try:
-            if status['is_connected']:     
-                try:              
-                    filtinfo = self._get_current_filtinfo()
-                except:
-                    pass
-                try:
-                    status['update_time'] = Time.now().isot
-                except:
-                    pass
-                try:
-                    status['jd'] = round(Time.now().jd,6)
-                except:
-                    pass
-                try:
-                    status['name'] = self.device.Name
-                except:
-                    pass
-                try:
-                    status['filter'] = filtinfo['name']
-                except:
-                    pass
-                try:
-                    status['offset'] = filtinfo['offset']
-                except:
-                    pass
-                try:
-                    status['is_connected'] = self.device.Connected
-                except:
-                    pass
-        except:
-            pass
+
+        if self.device.Connected:
+            try:
+                self.filtnames = self._get_all_filt_names()
+            except:
+                pass
+            try:
+                self.offsets = self._get_all_filt_offset()
+            except:
+                pass
+            try:              
+                filtinfo = self._get_current_filtinfo()
+            except:
+                pass
+            try:
+                status['update_time'] = Time.now().isot
+            except:
+                pass
+            try:
+                status['jd'] = round(Time.now().jd,6)
+            except:
+                pass
+            try:
+                status['name'] = self.device.Name
+            except:
+                pass
+            try:
+                status['filter'] = filtinfo['name']
+            except:
+                pass
+            try:
+                status['offset'] = filtinfo['offset']
+            except:
+                pass
+            try:
+                status['is_connected'] = self.device.Connected
+            except:
+                pass
+
         return status
 
     @Timeout(5, 'Timeout')
@@ -116,7 +120,6 @@ class mainFilterwheel(mainConfig):
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                self.status['is_connected'] = True
                 self._log.info('Filterwheel connected')
         except:
             self._log.warning('Connection failed')
@@ -132,7 +135,6 @@ class mainFilterwheel(mainConfig):
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            self.status['is_connected'] = False
             self._log.info('Filterwheel disconnected')
         self.status = self.get_status()
             
@@ -178,7 +180,8 @@ class mainFilterwheel(mainConfig):
         1. filtnames : list
             A list of all filter names configured for the filter wheel.
         """
-        
+        if self.device.Names is None:
+            raise ValueError("No filter information is registered")
         filtnames = self.device.Names
         return filtnames
         
@@ -191,7 +194,8 @@ class mainFilterwheel(mainConfig):
         1. filtnames : list
             A list of all filter offsets configured for the filter wheel.
         """
-        
+        if self.device.Names is None:
+            raise ValueError("No filter information is registered")
         filtoffsets = self.device.FocusOffsets
         filtnames = self.device.Names
         info_offset = dict(zip(filtnames, filtoffsets))
@@ -216,7 +220,7 @@ class mainFilterwheel(mainConfig):
         try:
             return self.filtnames[position]  
         except:
-            self._log.warning('%s is out of range of the filterwheel'%position)
+            self._log.warning('Position "%s" is out of range of the filterwheel'%position)
         
     def _filtname_to_position(self,
                               filtname : str) -> int:
@@ -263,13 +267,13 @@ class mainFilterwheel(mainConfig):
         
         position = self.device.Position
         filtname = self._position_to_filtname(position = position)
-        return dict( position = position, name = self.filtnames[position], offset = self.filtoffsets[filtname])
+        return dict( position = position, name = self.filtnames[position], offset = self.offsets[filtname])
     
     def calc_offset(self,
                     current_filt : str,
                     changed_filt : str) -> int:
-        offset_current = self.filtoffsets[current_filt]
-        offset_changed = self.filtoffsets[changed_filt]
+        offset_current = self.offsets[current_filt]
+        offset_changed = self.offsets[changed_filt]
         return offset_current - offset_changed
 
         
@@ -280,6 +284,5 @@ if __name__ == '__main__':
     F.connect()
     F.move('NoFilter', return_focus_offset= True)
     F.disconnect()
-# %%
 
 # %%

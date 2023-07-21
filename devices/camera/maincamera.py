@@ -109,82 +109,82 @@ class mainCamera(mainConfig):
         status['power_cooler'] = None
         status['name_sensor'] = None
         status['type_sensor'] = None
-        try:
-            if status['is_connected']:
-                try:
-                    status['update_time'] = Time.now().isot
-                except:
-                    pass
-                try:
-                    status['jd'] = round(Time.now().jd,6)
-                except:
-                    pass
-                try:
-                    status['is_imgReady'] = self.device.ImageReady
-                except:
-                    pass
-                try:
-                    status['is_connected'] = self.device.Connected
-                except:
-                    pass
-                try:
-                    status['state'] = self.device.CameraState.name
-                except:
-                    pass
-                try:
-                    status['name_cam'] = self.device.Name
-                except:
-                    pass
-                try:
-                    status['numX'] = self.device.CameraXSize
-                except:
-                    pass
-                try:
-                    status['numY'] = self.device.CameraYSize
-                except:
-                    pass
-                try:
-                    status['maxADU'] = self.device.MaxADU
-                except:
-                    pass
-                try:
-                    status['binX'] = self.device.BinX
-                except:
-                    pass
-                try:
-                    status['binY'] = self.device.BinY
-                except:
-                    pass
-                try:
-                    status['fullwellcap'] = self.device.FullWellCapacity
-                except:
-                    pass
-                try:
-                    status['readoutmode'] = self.device.ReadoutMode
-                except:
-                    pass
-                try:
-                    status['gain'] = self.device.Gain
-                except:
-                    pass
-                try:
-                    status['ccdtemp'] = round(self.device.CCDTemperature,1)
-                except:
-                    pass
-                try:
-                    status['power_cooler'] = round(self.device.CoolerPower,1)
-                except:
-                    pass
-                try:
-                    status['name_sensor'] = self.device.SensorName
-                except:
-                    pass
-                try:
-                    status['type_sensor'] = self.device.SensorType.name
-                except:
-                    pass
-        except:
-            pass
+        
+        # Update status
+        if self.device.Connected:
+            try:
+                status['update_time'] = Time.now().isot
+            except:
+                pass
+            try:
+                status['jd'] = round(Time.now().jd,6)
+            except:
+                pass
+            try:
+                status['is_imgReady'] = self.device.ImageReady
+            except:
+                pass
+            try:
+                status['is_connected'] = self.device.Connected
+            except:
+                pass
+            try:
+                status['state'] = self.device.CameraState.name
+            except:
+                pass
+            try:
+                status['name_cam'] = self.device.Name
+            except:
+                pass
+            try:
+                status['numX'] = self.device.CameraXSize
+            except:
+                pass
+            try:
+                status['numY'] = self.device.CameraYSize
+            except:
+                pass
+            try:
+                status['maxADU'] = self.device.MaxADU
+            except:
+                pass
+            try:
+                status['binX'] = self.device.BinX
+            except:
+                pass
+            try:
+                status['binY'] = self.device.BinY
+            except:
+                pass
+            try:
+                status['fullwellcap'] = self.device.FullWellCapacity
+            except:
+                pass
+            try:
+                status['readoutmode'] = self.device.ReadoutMode
+            except:
+                pass
+            try:
+                status['gain'] = self.device.Gain
+            except:
+                pass
+            try:
+                status['ccdtemp'] = round(self.device.CCDTemperature,1)
+            except:
+                pass
+            try:
+                status['power_cooler'] = round(self.device.CoolerPower,1)
+            except:
+                pass
+            try:
+                status['name_sensor'] = self.device.SensorName
+            except:
+                pass
+            try:
+                status['type_sensor'] = self.device.SensorType.name
+            except:
+                pass
+
         return status    
     
     def get_imginfo(self) -> dict:
@@ -284,7 +284,6 @@ class mainCamera(mainConfig):
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                self.status['is_connected'] = True
                 self._log.info('Camera connected')
         except:
             self._log.warning('Connection failed')
@@ -300,7 +299,6 @@ class mainCamera(mainConfig):
         while self.device.Connected:
             time.sleep(self._checktime)
         if not self.device.Connected:
-            self.status['is_connected'] = False
             self._log.info('Camera disconnected')
         self.status = self.get_status()
             
