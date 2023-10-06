@@ -95,11 +95,17 @@ class mainTelescope_Alpaca(mainConfig):
             except:
                 pass
             try:
-                status['ra'] = round(self.device.RightAscension,5)
+                coordinates = SkyCoord(self.device.RightAscension, self.device.Declination, unit = (u.hourangle, u.deg) )
+                status['ra'] = round(coordinates.ra.deg,5)
+                status['dec'] = round(coordinates.dec.deg,5)
             except:
                 pass
             try:
-                status['dec'] = round(self.device.Declination,5)
+                status['ra_hour'] = round(self.device.RightAscension,5)
+            except:
+                pass
+            try:
+                status['dec_deg'] = round(self.device.Declination,5)
             except:
                 pass
             try:
@@ -242,7 +248,6 @@ class mainTelescope_Alpaca(mainConfig):
         self.status = self.get_status()
 
     def slew_radec(self,
-                   coordinate : SkyCoord = None,
                    ra : float = None,
                    dec : float = None,
                    target_name : str = '',
@@ -264,10 +269,10 @@ class mainTelescope_Alpaca(mainConfig):
             Whether to start tracking after slewing to the target. Default is True.
         """
         
-        if (ra != None) & (dec != None):
-            coordinate = to_SkyCoord(ra, dec)
-        ra = coordinate.ra.hour
-        dec = coordinate.dec.deg
+        # if (ra != None) & (dec != None):
+        #     coordinate = to_SkyCoord(ra, dec)
+        # ra_hour = coordinate.ra.hour
+        # dec_deg = coordinate.dec.deg
         target = mainTarget(unitnum = self._unitnum, observer = self.observer, target_ra = ra, target_dec = dec, target_name = target_name)
         altaz = target.altaz()
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
@@ -285,7 +290,7 @@ class mainTelescope_Alpaca(mainConfig):
                 self.device.Tracking = True
             while not self.device.Tracking:
                 time.sleep(self._checktime)
-            self.device.SlewToCoordinatesAsync(ra, dec)
+            self.device.SlewToCoordinatesAsync(target.ra_hour, target.dec_deg)
             time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
@@ -299,7 +304,6 @@ class mainTelescope_Alpaca(mainConfig):
         self.status = self.get_status()
             
     def slew_altaz(self,
-                   coordinate : SkyCoord = None,
                    alt : float = None,
                    az : float = None,
                    tracking = False):
@@ -318,10 +322,10 @@ class mainTelescope_Alpaca(mainConfig):
             If True, activate the telescope tracking feature after slewing. Default is False.
         """
         
-        if coordinate == None:
-            coordinate = SkyCoord(az, alt, frame = 'altaz', unit ='deg')
-        alt = coordinate.alt.deg
-        az = coordinate.az.deg
+        # if coordinate == None:
+        #     coordinate = SkyCoord(az, alt, frame = 'altaz', unit ='deg')
+        # alt = coordinate.alt.deg
+        # az = coordinate.az.deg
         self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
 
         # Check coordinates

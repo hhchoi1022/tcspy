@@ -24,7 +24,7 @@ def to_SkyCoord(ra, dec,
         4. 230.8875, 50.5369
     -----
     '''
-    if (type(ra) == float) | (type(ra) == int) | (type(ra) == str) | (type(ra) == np.str_):
+    if isinstance(ra, float) | isinstance(ra, int) | isinstance(ra, str) | isinstance(ra, np.str_):
         ra = str(ra) ; dec = str(dec)
         if (':' in ra) & (':' in dec):
             skycoord = SkyCoord(ra = ra, dec = dec, unit = (u.hourangle, u.deg), frame = frame)
@@ -35,7 +35,7 @@ def to_SkyCoord(ra, dec,
         else:
             skycoord = SkyCoord(ra = ra, dec = dec, unit = (u.deg, u.deg), frame = frame)
     else:
-        if (type(ra[0]) == str) | (type(ra[0]) == np.str_):
+        if isinstance(type(ra[0]), str) | isinstance(type(ra[0]), np.str_):
             if (':' in ra[0]) & (':' in dec[0]):
                 skycoord = SkyCoord(ra = ra, dec = dec, unit = (u.hourangle, u.deg), frame = frame)
             elif ('h' in ra[0]) & ('d' in dec[0]):

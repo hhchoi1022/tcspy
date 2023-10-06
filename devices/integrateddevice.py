@@ -8,13 +8,13 @@ from tcspy.devices.observer import mainObserver
 from tcspy.devices.weather import mainWeather
 from tcspy.devices.safetymonitor import mainSafetyMonitor
 
-class Integreated_device:
+class IntegratedDevice:
     
     def __init__(self,
                  unitnum : int,
                  tel_type : str = 'Alpaca'):
-        self.unitnum = unitnum
         self._tel_type = tel_type
+        self.unitnum = unitnum
         self.cam = None
         self.tel = None
         self.focus = None
@@ -41,7 +41,32 @@ class Integreated_device:
         self.obs.status = self.obs.get_status()
         self.weat.status = self.weat.get_status()
         self.safe.status = self.safe.get_status()
-        
+    
+    @property
+    def status(self):
+        self.update_status()
+        status = dict()
+        status['camera'] = self.cam.status
+        status['telescope'] = self.tel.status
+        status['focuser'] = self.focus.status
+        status['filterwheel'] = self.filt.status
+        status['observer'] = self.obs.status
+        status['weather'] = self.weat.status
+        status['safetymonitor'] = self.safe.status
+        return status
+    
+    @property
+    def devices(self):
+        devices = dict()
+        devices['camera'] = self.cam
+        devices['telescope'] = self.tel
+        devices['focuser'] = self.focus
+        devices['filterwheel'] = self.filt
+        devices['observer'] = self.obs
+        devices['weather'] = self.weat
+        devices['safetymonitor'] = self.safe
+        return devices
+    
     def _get_cam(self):
         return mainCamera(unitnum= self.unitnum)
 
@@ -68,55 +93,57 @@ class Integreated_device:
         return mainSafetyMonitor(unitnum = self.unitnum)
     
     
-# %%
-unit1 = Integreated_device(unitnum = 4)
-unit2 = Integreated_device(unitnum = 5)
-#%%
-devices = dict()
-devices['unit1'] = unit1
-devices['unit2'] = unit2
+# # %%
+# unit1 = Integreated_device(unitnum = 4)
+# unit2 = Integreated_device(unitnum = 5)
+# #%%
+# devices = dict()
+# devices['unit1'] = unit1
+# devices['unit2'] = unit2
 
-# %%
-from threading import Thread
-from queue import Queue
-def slew_altaz(q,
-               **kwargs
-               ):
-    params = q.get()
-    device = devices[f'unit{params["unitnum"]}']
-    device.tel.slew_altaz(alt = params['alt'], az = params['az'])    
-#%%
-def exposure(unitnum : int,
-             exptime : float,
-             binning : int = 1,
-             imgtypename : str = 'object',
-             **kwargs
-             ):
-    device = devices[f'unit{unitnum}']
-    q.get()
-    device.cam.take_light(exptime = exptime, binning = binning, imgtypename = imgtypename)
-#%%
-az = 270
-alt = 40
-exptime = 60
-binning = 1
-imgtypename = 'object'
-#%%
-unitnums = [1,2]
-q = Queue()
+# # %%
+# from threading import Thread
+# from queue import Queue
+# def slew_altaz(q,
+#                **kwargs
+#                ):
+#     params = q.get()
+#     device = devices[f'unit{params["unitnum"]}']
+#     device.tel.slew_altaz(alt = params['alt'], az = params['az'])    
+# #%%
+# def exposure(unitnum : int,
+#              exptime : float,
+#              binning : int = 1,
+#              imgtypename : str = 'object',
+#              **kwargs
+#              ):
+#     device = devices[f'unit{unitnum}']
+#     q.get()
+#     device.cam.take_light(exptime = exptime, binning = binning, imgtypename = imgtypename)
+# #%%
+# az = 270
+# alt = 40
+# exptime = 60
+# binning = 1
+# imgtypename = 'object'
+# #%%
+# unitnums = [1,2]
+# q = Queue()
 
-for unitnum in unitnums:
-    thread = Thread(target=slew_altaz, kwargs = {'q':q})
-    thread.start()
-    params = dict(unitnum = unitnum, alt = 0, az = 270)
-    q.put(params)
-    print(q.task_done())
-#%%
-q = Queue()
-for unitnum in unitnums:
-    thread = Thread(target=slew_altaz, kwargs = {'q':q})
-    thread.start()
-    params = dict(unitnum = unitnum, alt = 40, az = 90)
-    q.put(params)
-    q.task_done()
+# for unitnum in unitnums:
+#     thread = Thread(target=slew_altaz, kwargs = {'q':q})
+#     thread.start()
+#     params = dict(unitnum = unitnum, alt = 0, az = 270)
+#     q.put(params)
+#     print(q.task_done())
+# #%%
+# q = Queue()
+# for unitnum in unitnums:
+#     thread = Thread(target=slew_altaz, kwargs = {'q':q})
+#     thread.start()
+#     params = dict(unitnum = unitnum, alt = 40, az = 90)
+#     q.put(params)
+#     q.task_done()
+# # %%
+
 # %%

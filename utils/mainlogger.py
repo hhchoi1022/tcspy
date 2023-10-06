@@ -1,8 +1,10 @@
 # Written by Hyeonho Choi 2022.12
+#%%
 import logging
 import logging.handlers
 from tcspy.configuration import mainConfig
 import datetime
+import os
 #%%
 class mainLogger(mainConfig):
     def __init__(self,
@@ -19,6 +21,10 @@ class mainLogger(mainConfig):
     
     def createlogger(self,
                      logger_name):
+        # Create filepath
+        if not os.path.isdir(self.config['LOGGER_FILEPATH']):
+            os.makedirs(name = self.config['LOGGER_FILEPATH'], exist_ok= True)
+        
         # Create Logger
         logger = logging.getLogger(logger_name)
         # Check handler exists
@@ -38,8 +44,3 @@ class mainLogger(mainConfig):
             fileHandler.setFormatter(formatter)
             logger.addHandler(fileHandler)
         return logger
-
-# %%
-if __name__ == '__main__':
-    A = mainLogger('adsd')
-#%%

@@ -8,7 +8,6 @@ from tcspy.devices.observer import mainObserver
 from tcspy.devices.weather import mainWeather
 from tcspy.configuration import mainConfig
 from tcspy.utils import mainLogger
-from tcspy.utils import LogFormat
 import time
 
 #%%

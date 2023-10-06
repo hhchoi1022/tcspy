@@ -117,8 +117,8 @@ class mainConfig:
                              TARGET_MAXAIRMASS=None
                              )
         
-        save_params = dict(LOGGER_FILEPATH=f'/home/hhchoi1022/Desktop/log/unit{self.unitnum}/',
-                           IMAGE_FILEPATH=f'/home/hhchoi1022/Desktop/images/unit{self.unitnum}/',
+        save_params = dict(LOGGER_FILEPATH=f'~/7DT/log/unit{self.unitnum}/',
+                           IMAGE_FILEPATH=f'~/7DT/images/unit{self.unitnum}/',
                            FILENAME_FORMAT = ''
                            )
         
@@ -151,7 +151,7 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=5)
+    A = mainConfig(unitnum=0)
     A._initialize_config()
 
 # %%

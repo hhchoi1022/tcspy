@@ -20,7 +20,7 @@ class mainTarget(mainConfig):
     1. observer : mainObserver
         An instance of mainObserver representing the observer.
     2. target_ra : float, optional
-        The right ascension of the target, in hours.
+        The right ascension of the target, in degrees.
     3. target_dec : float, optional
         The declination of the target, in degrees.
     4. target_alt : float, optional
@@ -62,10 +62,12 @@ class mainTarget(mainConfig):
         
         super().__init__(unitnum = unitnum)
         self._observer = observer
-        self._astroplan_observer = observer.info['observer']
+        self._astroplan_observer = observer.status['observer']
         self._constraints = self._get_constraints(**self.config)
         self.ra = target_ra
         self.dec = target_dec
+        self.ra_hour = None
+        self.dec_deg = None
         self.alt = target_alt
         self.az = target_az
         
@@ -79,8 +81,10 @@ class mainTarget(mainConfig):
             self.coordinate = self._get_coordinate_radec(ra = target_ra, dec = target_dec)
             self._target = self._get_target(self.coordinate, target_name)
             altaz = self.altaz()
-            self.ra = self.coordinate.ra.hour
+            self.ra = self.coordinate.ra.deg
             self.dec = self.coordinate.dec.deg
+            self.ra_hour = self.coordinate.ra.hour
+            self.dec_deg = self.coordinate.dec.deg
             self.alt = altaz.alt.value
             self.az = altaz.az.value
             
@@ -113,6 +117,8 @@ class mainTarget(mainConfig):
             targetinfo['name'] = self.name
             targetinfo['ra'] = None
             targetinfo['dec'] = None
+            targetinfo['ra_hour'] = None
+            targetinfo['dec_deg'] = None
             targetinfo['alt'] = np.round(self.alt,3)
             targetinfo['az'] = np.round(self.az,3)
             targetinfo['coordtype'] = 'altaz'
@@ -125,6 +131,8 @@ class mainTarget(mainConfig):
             targetinfo['name'] = self.name
             targetinfo['ra'] = np.round(self.ra,5)
             targetinfo['dec'] = np.round(self.dec,5)
+            targetinfo['ra_hour'] = np.round(self.ra_hour,5)
+            targetinfo['dec_deg'] = np.round(self.dec_deg,5)
             targetinfo['alt'] = np.round(self.alt,3)
             targetinfo['az'] = np.round(self.az,3)
             targetinfo['coordtype'] = 'radec'
@@ -335,7 +343,7 @@ class mainTarget(mainConfig):
                               ra,
                               dec,
                               frame : str = 'icrs') -> SkyCoord:
-        return SkyCoord(ra = ra, dec = dec, frame = frame, unit = (u.hourangle, u.deg))
+        return SkyCoord(ra = ra, dec = dec, frame = frame, unit = (u.deg, u.deg))
 
     def _get_coordinate_altaz(self,
                               alt,

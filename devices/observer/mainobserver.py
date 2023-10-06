@@ -109,6 +109,7 @@ class mainObserver(mainConfig):
         status['elevation'] = round(self._elevation.value,2)
         status['timezone'] = self._timezone
         status['observer'] = self._observer
+        status['is_connected'] = True
         return status
         
     ############ Time ############

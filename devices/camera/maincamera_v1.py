@@ -239,7 +239,7 @@ class mainCamera(mainConfig):
             except:
                 pass
             try:
-                imginfo['imgtype'] = self.imagetype
+                imginfo['imgtype'] = self._imagetype
             except:
                 pass
             try:
@@ -375,23 +375,20 @@ class mainCamera(mainConfig):
             self._log.info('Cooler is now off')
         self.status = self.get_status()
             
-    def exposure(self,
-                 exptime : float = 0,
-                 imgtype : str = 'object',
-                 binning : int = 1
-                 ):
+    def take_light(self,
+                   exptime : float,
+                   binning : int = 1,
+                   imgtypename : str = 'object'
+                   ):
         """
         Capture a light frame with the connected camera.
 
         Parameters
         ==========
-        1. exptime : float (default = minimun exposure time of a CCD)
+        1. exptime : float
             The exposure time for the light frame, in seconds.
-        2. imgtypename : str (default = 'object)
-            The type of an image
-        3. binning : int (default = 1)
+        2. binning : int, optional
             The binning value to use for the light frame.
-        
 
         Returns
         =======
@@ -400,40 +397,99 @@ class mainCamera(mainConfig):
         2. status : dict
             A dictionary containing the current status of the connected camera, as returned by get_status()
         """
-        
-        # Set binning 
+        self._imagetype = imgtypename
         self.set_binning(binning = binning)
-        # Set minimum exposure time
-        if exptime < self.device.ExposureMin:
-            exptime = self.device.ExposureMin
-        # Set imagetype & exposure time & is_light
-        if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'OBJECT', 'LIGHT']:
-            raise ValueError(f'Type "{imgtype}" is not set as imagetype')
-        if imgtype.upper() == 'BIAS':
-            exptime = exptime
-            is_light = False
-        if imgtype.upper() == 'DARK':
-            exptime = exptime
-            is_light = False
-        if imgtype.upper() == 'FLAT':
-            exptime = exptime
-            is_light = True
-        if imgtype.upper() in ['OBJECT','LIGHT']:
-            exptime = exptime
-            is_light = True
-        # Exposure
-        self.device.StartExposure(Duration = exptime, Light = is_light)
+        self._log.info('[LIGHT] Start exposure (exptime = %.1f)'%exptime)
+        start = time.time() 
+        self.device.StartExposure(Duration = exptime, Light = True)
+        time.sleep(2*self._checktime)
+        while not self.device.ImageReady :
+            time.sleep(self._checktime)
+        imginfo, status = self.get_imginfo()
+        print( time.time() - start)
+        if imginfo['exptime'] is None:
+            imginfo['exptime'] = exptime
+        if imginfo['date_obs'] is None:
+            imginfo['date_obs']  = Time.now().isot
+            imginfo['jd'] = round(Time.now().jd,6)
+        self._log.info(f'[LIGHT] Exposure finished (exptime = %.1f)'%exptime)
+        self.status = self.get_status()
+        return imginfo, status
+        
+    def take_bias(self,
+                  binning : int = 1,
+                  imgtypename : str = 'bias'
+                  ):
+        """
+        Capture a bias frame with the connected camera.
+
+        Parameters
+        ==========
+        1. binning : int, optional
+            The binning value to use for the bias frame.
+
+        Returns
+        =======
+        1. imginfo : dict
+            A dictionary containing the following information about the captured image, as returned by get_imginfo()
+        2. status : dict
+            A dictionary containing the current status of the connected camera, as returned by get_status().
+        """
+        self._imagetype = imgtypename
+        self.set_binning(binning = binning)
+        self._log.info('[BIAS] Start exposure for bias')
+        self.device.StartExposure(Duration = self.device.ExposureMin, Light = False)
         time.sleep(2*self._checktime)
         while not self.device.ImageReady:
             time.sleep(self._checktime)
         imginfo, status = self.get_imginfo()
-        # Modify image information
-        imginfo['exptime'] = exptime
-        # Logging
-        self._log.info(f'[%s] Exposure finished (exptime = %.1f)'%(imgtype.upper(), exptime))
-        self.status = self.get_status()
+        if imginfo['exptime'] is None:
+            imginfo['exptime'] = 0
+        if imginfo['date_obs'] is None:
+            imginfo['date_obs']  = Time.now().isot
+            imginfo['jd'] = round(Time.now().jd,6)
+        self._log.info(f'[{imgtypename.upper()}] Exposure finished')
         return imginfo, status
 
+    def take_dark(self,
+                  exptime : float,
+                  binning : int = 1,
+                  imgtypename : str = 'dark'
+                  ):
+        """
+        Capture a dark frame with the connected camera.
+
+        Parameters
+        ==========
+        1. exptime : float
+            The exposure time for the dark frame, in seconds.
+        2. binning : int, optional
+            The binning value to use for the dark frame.
+
+        Returns
+        =======
+        1. imginfo : dict
+            A dictionary containing the following information about the captured image, as returned by get_imginfo()
+        2. status : dict
+            A dictionary containing the current status of the connected camera, as returned by get_status().
+        """
+        self._imagetype = imgtypename
+        self.set_binning(binning = binning)
+        self._log.info('[DARK] Start exposure (exptime = %.1f)'%exptime)
+        self.device.StartExposure(Duration = exptime, Light = False)
+        time.sleep(2*self._checktime)
+        while not self.device.ImageReady:
+            time.sleep(self._checktime)
+        imginfo, status = self.get_imginfo()
+        if imginfo['exptime'] is None:
+            imginfo['exptime'] = exptime
+        if imginfo['date_obs'] is None:
+            imginfo['date_obs']  = Time.now().isot
+            imginfo['jd'] = round(Time.now().jd,6)
+        self._log.info(f'[{imgtypename.upper()}] Exposure finished (exptime = %.1f)'%exptime)
+        self.status = self.get_status()
+        return imginfo, status
+    
     def abort(self):
         """
         Aborts the current exposure.
@@ -446,7 +502,7 @@ class mainCamera(mainConfig):
         
 # %% Test
 if __name__ == '__main__':
-    A = mainCamera(unitnum = 0)
+    A = mainCamera(unitnum = 1)
     A.connect()
     A.cooler_on(5)
     light, status_1 = A.take_light(3, binning = 3)
