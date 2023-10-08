@@ -2,6 +2,8 @@
 #%%
 import mysql.connector
 from astropy.table import Table
+import uuid
+import mysql
 #%%
 
 class SQL_Connector:
@@ -126,55 +128,10 @@ class SQL_Connector:
 
     def set_data_id(self,
                     tbl_name : str):
-        values = sql.select_data(tbl_name = tbl_name, select_key = 'id,idx')
+        values = self.select_data(tbl_name = tbl_name, select_key = 'id,idx')
         id_values = values['id']
         idx_values = values['idx']
         indices = [index for value, index in zip(id_values, idx_values) if value == '' or value is None]
         uuidlist = [uuid.uuid4().hex for i in range(len(indices))]
         for id_, index in zip(uuidlist, indices):
             self.update_data(tbl_name = tbl_name, update_value = id_, update_key = 'id', id_value = index, id_key='idx')
-        
-            
-
-
-        
-        
-        
-            
-            
-            
-            
-            
-        
-    
-        
-    
-# %%
-sql = SQL_Connector(db_name = 'target')
-# %% 
-from astropy.io import ascii
-import uuid
-#%% RIS
-tbl = ascii.read('./sky-grid and tiling/7-DT/displaycenter.txt')
-tbl.rename_column('id', 'objname')
-tbl.rename_column('ra', 'RA')
-tbl.rename_column('dec', 'De')
-str_tile = tbl['objname']
-objnames = []
-for tilenum in str_tile:
-    objname = 'Tile_' + str(tilenum).zfill(5)
-    objnames.append(objname)
-tbl['objname'] = objnames
-#%%
-sql.initialize_tbl(tbl_name = 'RIS')
-#%%
-sql.insert_data(tbl_name = 'RIS', data = tbl)
-# %% Update data
-sql.update_data(tbl_name = 'RIS', update_value = 'observed', update_key='obs_status', id_value = id_)
-observed_num = sql.select_data(tbl_name = 'RIS', select_key= 'obs_number', where_value = id_)['obs_number'][0]
-sql.update_data(tbl_name = 'RIS', update_value = observed_num+1, update_key='obs_number', id_value = id_)
-# %% Select data
-id_data = sql.select_data(tbl_name = 'Daily', select_key = 'id')['id']
-# %% Set ID
-sql.set_data_id('Daily')
-# %%
