@@ -1,0 +1,12 @@
+[INFO]2023-11-08 17:04:07 | Connecting to the telescope...
+[INFO]2023-11-08 17:04:07 | Telescope connected
+[INFO]2023-11-08 17:04:24 | Slewing to the coordinate (RA = 210.000, Dec = -15.000, Alt = -6.1, Az = 255.6)
+[INFO]2023-11-08 17:04:28 | Slewing finished. Current coordinate (RA = 216.880, Dec = -15.985, Alt = -0.0, Az = 250.0)
+[INFO]2023-11-08 17:04:43 | Slewing to the coordinate (RA = 210.000, Dec = 20.000, Alt = 14.9, Az = 283.8)
+[INFO]2023-11-08 17:04:54 | Slewing finished. Current coordinate (RA = 210.000, Dec = 20.000, Alt = 15.7, Az = 283.5)
+[INFO]2023-11-08 17:05:47 | Slewing to the coordinate (RA = 220.000, Dec = 20.000, Alt = 22.5, Az = 278.4)
+[INFO]2023-11-08 17:05:52 | Slewing finished. Current coordinate (RA = 220.000, Dec = 20.000, Alt = 23.4, Az = 278.3)
+[INFO]2023-11-08 17:06:45 | Slewing to the coordinate (RA = 210.000, Dec = 20.000, Alt = 14.5, Az = 284.1)
+[INFO]2023-11-08 17:06:50 | Slewing finished. Current coordinate (RA = 210.000, Dec = 20.000, Alt = 15.4, Az = 283.8)
+[INFO]2023-11-08 17:07:13 | Slewing to the coordinate (RA = 210.000, Dec = -20.000, Alt = -9.6, Az = 252.0)
+[INFO]2023-11-08 17:07:17 | Slewing finished. Current coordinate (RA = 210.000, Dec = 20.000, Alt = 15.3, Az = 283.8)

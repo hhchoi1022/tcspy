@@ -22,8 +22,8 @@ class mainLogger(mainConfig):
     def createlogger(self,
                      logger_name):
         # Create filepath
-        if not os.path.isdir(self.config['LOGGER_FILEPATH']):
-            os.makedirs(name = self.config['LOGGER_FILEPATH'], exist_ok= True)
+        if not os.path.isdir(self.config['LOGGER_PATH']):
+            os.makedirs(name = self.config['LOGGER_PATH'], exist_ok= True)
         
         # Create Logger
         logger = logging.getLogger(logger_name)
@@ -39,7 +39,7 @@ class mainLogger(mainConfig):
         streamHandler.setFormatter(formatter)
         logger.addHandler(streamHandler)
         if self.config['LOGGER_SAVE']:
-            fileHandler = logging.FileHandler(filename = self.config['LOGGER_FILEPATH']+datetime.datetime.now().strftime('%Y%m%d')+'.log')
+            fileHandler = logging.FileHandler(filename = self.config['LOGGER_PATH']+datetime.datetime.now().strftime('%Y%m%d')+'.log')
             fileHandler.setLevel(self.config['LOGGER_LEVEL'])
             fileHandler.setFormatter(formatter)
             logger.addHandler(fileHandler)

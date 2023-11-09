@@ -10,7 +10,6 @@ import datetime
 import alpaca
 from alpaca.camera import Camera
 from alpaca.camera import ImageArrayElementTypes
-
 from tcspy.utils import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
@@ -185,7 +184,7 @@ class mainCamera(mainConfig):
             except:
                 pass
 
-        return status    
+        return status
     
     def get_imginfo(self) -> dict:
         """
@@ -301,28 +300,6 @@ class mainCamera(mainConfig):
         if not self.device.Connected:
             self._log.info('Camera disconnected')
         self.status = self.get_status()
-            
-    def set_binning(self,
-                    binning :int = 1):
-        """
-        Set the binning for the connected camera.
-
-        Parameters
-        ==========
-        1. binning : int, optional
-            The binning value to set. Must be less than or equal to the maximum supported binning values for both X and Y.
-        """
-        
-        if (binning > self.device.MaxBinX) | (binning > self.device.MaxBinY):
-            logtxt = 'binning value %d above the maximum supported %d'%(binning, self.device.MaxBinX)
-            self._log.warning(logtxt) 
-            raise ValueError(logtxt)
-        self.device.StartX = 0
-        self.device.StartY = 0
-        self.device.BinX = self.device.BinY = binning
-        self.device.NumX = self.device.CameraXSize // self.device.BinX
-        self.device.NumY = self.device.CameraYSize // self.device.BinY
-        self.status = self.get_status()
     
     @Timeout(30, 'Timeout') 
     def cooler_on(self,
@@ -377,7 +354,7 @@ class mainCamera(mainConfig):
             
     def exposure(self,
                  exptime : float = 0,
-                 imgtype : str = 'object',
+                 imgtype : str = 'light',
                  binning : int = 1
                  ):
         """
@@ -397,17 +374,15 @@ class mainCamera(mainConfig):
         =======
         1. imginfo : dict
             A dictionary containing the following information about the captured image, as returned by get_imginfo()
-        2. status : dict
-            A dictionary containing the current status of the connected camera, as returned by get_status()
         """
         
         # Set binning 
-        self.set_binning(binning = binning)
+        self._set_binning(binning = binning)
         # Set minimum exposure time
         if exptime < self.device.ExposureMin:
             exptime = self.device.ExposureMin
         # Set imagetype & exposure time & is_light
-        if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'OBJECT', 'LIGHT']:
+        if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'LIGHT']:
             raise ValueError(f'Type "{imgtype}" is not set as imagetype')
         if imgtype.upper() == 'BIAS':
             exptime = exptime
@@ -418,10 +393,11 @@ class mainCamera(mainConfig):
         if imgtype.upper() == 'FLAT':
             exptime = exptime
             is_light = True
-        if imgtype.upper() in ['OBJECT','LIGHT']:
+        if imgtype.upper() in 'LIGHT':
             exptime = exptime
             is_light = True
         # Exposure
+        self._log.info(f'[%s] Start exposure... (exptime = %.1f)'%(imgtype.upper(), exptime))
         self.device.StartExposure(Duration = exptime, Light = is_light)
         time.sleep(2*self._checktime)
         while not self.device.ImageReady:
@@ -432,7 +408,7 @@ class mainCamera(mainConfig):
         # Logging
         self._log.info(f'[%s] Exposure finished (exptime = %.1f)'%(imgtype.upper(), exptime))
         self.status = self.get_status()
-        return imginfo, status
+        return imginfo 
 
     def abort(self):
         """
@@ -442,15 +418,46 @@ class mainCamera(mainConfig):
             self.device.AbortExposure()
             self._log.warning('Camera aborted')
         self.status = self.get_status()
+    
+    def _set_binning(self,
+                     binning :int = 1):
+        """
+        Set the binning for the connected camera.
+
+        Parameters
+        ==========
+        1. binning : int, optional
+            The binning value to set. Must be less than or equal to the maximum supported binning values for both X and Y.
+        """
+        
+        if (binning > self.device.MaxBinX) | (binning > self.device.MaxBinY):
+            logtxt = 'binning value %d above the maximum supported %d'%(binning, self.device.MaxBinX)
+            self._log.warning(logtxt) 
+            raise ValueError(logtxt)
+        self.device.StartX = 0
+        self.device.StartY = 0
+        self.device.BinX = self.device.BinY = binning
+        self.device.NumX = self.device.CameraXSize // self.device.BinX
+        self.device.NumY = self.device.CameraYSize // self.device.BinY
+        self.status = self.get_status()
         
         
 # %% Test
 if __name__ == '__main__':
-    A = mainCamera(unitnum = 0)
+    import numpy as np
+    import matplotlib.pyplot as plt
+    A = mainCamera(unitnum = 1)
     A.connect()
-    A.cooler_on(5)
-    light, status_1 = A.take_light(3, binning = 3)
-    dark, status_2 = A.take_dark(3)
-    bias, status_3 = A.take_bias()
-    A.cooler_off(warmuptime=10)
+    #A.cooler_on(5)
+    for i in range(5):
+        imginfo, status = A.exposure(exptime = 0, imgtype = 'bias')
+        data = np.array(imginfo['data'])
+        plt.figure(dpi = 300)
+        plt.imshow(data, vmin = 100, vmax= 150)
+        plt.colorbar()
+        plt.show()
+    
+#%%
+    #A.cooler_off(warmuptime=10)
     A.disconnect()
+# %%

@@ -41,7 +41,6 @@ class mainFocuser(mainConfig):
                  **kwargs):
         
         super().__init__(unitnum = unitnum)
-        self._unitnum = unitnum
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['FOCUSER_CHECKTIME'])
         self._abort_tolerance = int(self.config['FOCUSER_HALTTOL'])
@@ -220,7 +219,7 @@ class mainFocuser(mainConfig):
 # %% Test
 if __name__ == '__main__':
     #Focus = Focuser('192.168.0.4:11111', 0)
-    F = mainFocuser(unitnum = 4)
+    F = mainFocuser(unitnum = 1)
     F.connect()
     F.move(19000)
     F.disconnect()

@@ -1,0 +1,32 @@
+[INFO]2023-10-27 13:08:46 | Slewing to the coordinate (Alt = 30.0, Az = 270.0)
+[INFO]2023-10-27 13:09:07 | Connecting to the telescope...
+[INFO]2023-10-27 13:09:07 | Telescope connected
+[INFO]2023-10-27 13:09:11 | Slewing to the coordinate (Alt = 30.0, Az = 270.0)
+[INFO]2023-10-27 13:09:52 | Slewing to the coordinate (Alt = 30.0, Az = 270.0)
+[INFO]2023-10-27 13:17:36 | Slewing to the coordinate (Alt = 0.0, Az = 270.0)
+[INFO]2023-10-27 13:17:49 | Slewing to the coordinate (Alt = 40.0, Az = 270.0)
+[INFO]2023-10-27 13:22:59 | Slewing to the coordinate (Alt = 0.0, Az = 270.0)
+[INFO]2023-10-27 13:23:03 | Slewing finished. Current coordinate (Alt = -0.0, Az = 270.0)
+[INFO]2023-10-27 13:23:14 | Slewing to the coordinate (Alt = 40.0, Az = 270.0)
+[INFO]2023-10-27 13:23:24 | Slewing finished. Current coordinate (Alt = 40.0, Az = 270.0)
+[INFO]2023-10-27 13:23:27 | Slewing to the coordinate (Alt = 40.0, Az = 90.0)
+[INFO]2023-10-27 13:23:57 | Slewing finished. Current coordinate (Alt = 40.0, Az = 90.0)
+[INFO]2023-10-27 13:25:03 | Slewing to the coordinate (Alt = 40.0, Az = 270.0)
+[INFO]2023-10-27 13:25:34 | Slewing finished. Current coordinate (Alt = 40.0, Az = 270.0)
+[INFO]2023-10-27 13:26:30 | Slewing to the coordinate (Alt = 40.0, Az = 90.0)
+[WARNING]2023-10-27 13:26:32 | Telescope aborted
+[INFO]2023-10-27 13:26:35 | Slewing finished. Current coordinate (Alt = 40.4, Az = 282.8)
+[INFO]2023-10-27 13:26:40 | Slewing to the coordinate (Alt = 40.0, Az = 270.0)
+[WARNING]2023-10-27 13:26:42 | Telescope aborted
+[INFO]2023-10-27 13:26:44 | Slewing to the coordinate (Alt = 40.0, Az = 90.0)
+[INFO]2023-10-27 13:26:44 | Slewing finished. Current coordinate (Alt = 40.0, Az = 270.4)
+[WARNING]2023-10-27 13:26:47 | Telescope aborted
+[INFO]2023-10-27 13:26:49 | Slewing to the coordinate (Alt = 40.0, Az = 90.0)
+[INFO]2023-10-27 13:26:49 | Slewing finished. Current coordinate (Alt = 40.4, Az = 282.8)
+[WARNING]2023-10-27 13:26:51 | Telescope aborted
+[INFO]2023-10-27 13:26:54 | Slewing to the coordinate (Alt = 40.0, Az = 270.0)
+[INFO]2023-10-27 13:26:54 | Slewing finished. Current coordinate (Alt = 40.3, Az = 288.8)
+[WARNING]2023-10-27 13:26:55 | Telescope aborted
+[INFO]2023-10-27 13:26:58 | Slewing finished. Current coordinate (Alt = 40.4, Az = 281.6)
+[INFO]2023-10-27 13:27:04 | Slewing to the coordinate (Alt = 0.0, Az = 270.0)
+[INFO]2023-10-27 13:27:13 | Slewing finished. Current coordinate (Alt = 0.0, Az = 270.0)

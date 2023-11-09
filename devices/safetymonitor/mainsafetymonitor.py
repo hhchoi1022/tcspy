@@ -34,7 +34,6 @@ class mainSafetyMonitor(mainConfig):
                  **kwargs):
         
         super().__init__(unitnum = unitnum)
-        self._unitnum = unitnum
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['SAFEMONITOR_CHECKTIME'])
         self.device = SafetyMonitor(f"{self.config['SAFEMONITOR_HOSTIP']}:{self.config['SAFEMONITOR_PORTNUM']}",self.config['SAFEMONITOR_DEVICENUM'])

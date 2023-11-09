@@ -1,4 +1,5 @@
 #%%
+from tcspy.configuration import mainConfig
 from tcspy.devices.camera import mainCamera
 from tcspy.devices.telescope import mainTelescope_Alpaca
 from tcspy.devices.telescope import mainTelescope_pwi4
@@ -8,13 +9,13 @@ from tcspy.devices.observer import mainObserver
 from tcspy.devices.weather import mainWeather
 from tcspy.devices.safetymonitor import mainSafetyMonitor
 
-class IntegratedDevice:
+class IntegratedDevice(mainConfig):
     
     def __init__(self,
                  unitnum : int,
                  tel_type : str = 'Alpaca'):
+        super().__init__(unitnum= unitnum)
         self._tel_type = tel_type
-        self.unitnum = unitnum
         self.cam = None
         self.tel = None
         self.focus = None
@@ -22,9 +23,9 @@ class IntegratedDevice:
         self.obs = None
         self.weat = None
         self.safe = None
-        self.set_devices()
+        self._set_devices()
 
-    def set_devices(self):
+    def _set_devices(self):
         self.cam = self._get_cam()
         self.tel = self._get_tel(tel_type = self._tel_type)
         self.focus = self._get_focus()

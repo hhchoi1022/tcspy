@@ -41,7 +41,6 @@ class mainFilterwheel(mainConfig):
                  **kwargs):
         
         super().__init__(unitnum = unitnum)
-        self._unitnum = unitnum
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['FTWHEEL_CHECKTIME'])
         self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])        
@@ -151,9 +150,13 @@ class mainFilterwheel(mainConfig):
         """
         current_filter = self._get_current_filtinfo()['name']
         if isinstance(filter_, str):
+            if not filter_ in self.filtnames:
+                raise ValueError(f'Filter {filter_} is not implemented')
             self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, filter_))
             filter_ = self._filtname_to_position(filter_)
         else:
+            if filter_ > len(self.filtnames):
+                raise ValueError(f'Position {filter_} is not implemented')
             self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
         self.device.Position = filter_
         time.sleep(self._checktime)
@@ -280,7 +283,7 @@ class mainFilterwheel(mainConfig):
         
 # %% Test
 if __name__ == '__main__':
-    F = mainFilterwheel(unitnum= 2)
+    F = mainFilterwheel(unitnum= 1)
     F.connect()
     F.move('NoFilter', return_focus_offset= True)
     F.disconnect()

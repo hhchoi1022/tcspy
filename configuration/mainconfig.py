@@ -6,8 +6,6 @@ from astropy.io import ascii
 from astropy.table import Table
 import json
 # %%
-
-
 class mainConfig:
     def __init__(self,
                  unitnum: int,
@@ -30,8 +28,8 @@ class mainConfig:
         return all_config
 
     def _initialize_config(self,
-                           savedir=f'{os.path.dirname(__file__)}',
-                           tcspy_homedir : str = '/home/hhchoi1022/tcspy'):
+                           portnum: int,
+                           savedir=f'{os.path.dirname(__file__)}'):
         savepath = savedir + f'/unit{self.unitnum}/'
         if not os.path.exists(savepath):
             os.makedirs(savepath, exist_ok=True)
@@ -48,9 +46,9 @@ class mainConfig:
                                OBSERVER_ELEVATION=140,  # Obstec = 1580,
                                OBSERVER_TIMEZONE='Asia/Seoul',  # 'America/Santiago'
                                OBSERVER_NAME='Hyeonho Choi',
-                               OBSERVER_OBSERVATORY='7DT_%.2d' % self.unitnum
+                               OBSERVER_OBSERVATORY='7DT%.2d' % self.unitnum
                                )
-        weather_params = dict(WEATHER_HOSTIP='192.168.0.%d' % self.unitnum,
+        weather_params = dict(WEATHER_HOSTIP='192.168.0.%d' % portnum,
                               WEATHER_PORTNUM='11111',
                               WEATHER_DEVICENUM=0,
                               WEATHER_CHECKTIME=0.5,
@@ -61,18 +59,18 @@ class mainConfig:
                               WEATHER_TEMPERATURE_LOWER=40,
                               WEATHER_WINDSPEED=20)
 
-        dome_params = dict(DOME_HOSTIP='192.168.0.%d' % self.unitnum,
+        dome_params = dict(DOME_HOSTIP='192.168.0.%d' % portnum,
                            DOME_PORTNUM='11111',
                            DOME_DEVICENUM=0,
                            DOME_CHECKTIME=0.5)
         
-        safetymonitor_params = dict(SAFEMONITOR_HOSTIP='192.168.0.%d' % self.unitnum,
+        safetymonitor_params = dict(SAFEMONITOR_HOSTIP='192.168.0.%d' % portnum,
                                     SAFEMONITOR_PORTNUM='11111',
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_CHECKTIME=0.5)
 
         telescope_params = dict(TELESCOPE_DEVICE='Alpaca',  # Alpaca or PWI4
-                                TELESCOPE_HOSTIP='192.168.0.%d' % self.unitnum,
+                                TELESCOPE_HOSTIP='192.168.0.%d' % portnum,
                                 TELESCOPE_PORTNUM='11111',
                                 TELESCOPE_DEVICENUM=0,
                                 TELESCOPE_PARKALT=0,
@@ -84,7 +82,7 @@ class mainConfig:
                                 TELESCOPE_APAREA=0.196,
                                 TELESCOPE_FOCALLENGTH=1500
                                 )
-        camera_params = dict(CAMERA_HOSTIP='192.168.0.%d' % self.unitnum,
+        camera_params = dict(CAMERA_HOSTIP='192.168.0.%d' % portnum,
                              CAMERA_PORTNUM='11111',
                              CAMERA_DEVICENUM=0,
                              CAMERA_NAME='Moravian C3-61000',
@@ -94,15 +92,15 @@ class mainConfig:
                              CAMERA_READNOISE=3.51,
                              CAMERA_DARKNOISE=0.1,
                              CAMERA_MINEXPOSURE=19.5,  # microseconds
-                             CAMERA_CHECKTIME=0.5
-                             )
-        filterwheel_params = dict(FTWHEEL_HOSTIP='192.168.0.%d' % self.unitnum,
+                             CAMERA_CHECKTIME=0.5)
+                             
+        filterwheel_params = dict(FTWHEEL_HOSTIP='192.168.0.%d' % portnum,
                                   FTWHEEL_PORTNUM='11111',
                                   FTWHEEL_DEVICENUM=0,
                                   FTWHEEL_NAME='',
                                   FTWHEEL_CHECKTIME=0.5)
 
-        focuser_params = dict(FOCUSER_HOSTIP='192.168.0.%d' % self.unitnum,
+        focuser_params = dict(FOCUSER_HOSTIP='192.168.0.%d' % portnum,
                               FOCUSER_PORTNUM='11111',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_NAME='',
@@ -110,34 +108,33 @@ class mainConfig:
                               FOCUSER_HALTTOL=10000,
                               FOCUSER_WARNTOL=5000)
         
-        target_params = dict(TARGET_MINALT=-10,
+        target_params = dict(TARGET_MINALT=0,
                              TARGET_MAXALT=90,
                              TARGET_MAX_SUNALT=None,
                              TARGET_MOONSEP=40,
                              TARGET_MAXAIRMASS=None
                              )
         
-        save_params = dict(LOGGER_FILEPATH=f'~/7DT/log/unit{self.unitnum}/',
-                           IMAGE_FILEPATH=f'~/7DT/images/unit{self.unitnum}/',
+        image_params = dict(IMAGE_PATH=f'/home/hhchoi1022/Desktop/7DT/images/unit{self.unitnum}/',
                            FILENAME_FORMAT = ''
                            )
         
         logger_params = dict(LOGGER_SAVE=True,
-                             LOGGER_LEVEL='INFO',
+                             LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT='[%(levelname)s]%(asctime)-15s | %(message)s',
+                             LOGGER_PATH= f'/home/hhchoi1022/Desktop/7DT/log/unit{self.unitnum}/'
                              )
 
         general_params = dict(TCSPY_VERSION='Version 1.0',
                               TCSPY_NAME='TCSpy'
                               )
 
-
         make_configfile(observer_params, filename='Observer.config')
         make_configfile(telescope_params, filename='Telescope.config')
         make_configfile(camera_params, filename='Camera.config')
         make_configfile(logger_params, filename='Logger.config')
         make_configfile(general_params, filename='General.config')
-        make_configfile(save_params, filename='Path.config')
+        make_configfile(image_params, filename='Path.config')
         make_configfile(filterwheel_params, filename='FilterWheel.config')
         make_configfile(focuser_params, filename='Focuser.config')
         make_configfile(target_params, filename='Target.config')
@@ -145,14 +142,14 @@ class mainConfig:
         make_configfile(dome_params, filename='Dome.config')
         make_configfile(safetymonitor_params, filename='SafetyMonitor.config')
 
-        os.makedirs(save_params['LOGGER_FILEPATH'], exist_ok=True)
-        os.makedirs(save_params['IMAGE_FILEPATH'], exist_ok=True)
+        os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
+        os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
 
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=0)
-    A._initialize_config()
+    A = mainConfig(unitnum=1)
+    A._initialize_config(portnum = 4)
 
 # %%
 # %%

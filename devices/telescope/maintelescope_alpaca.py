@@ -60,7 +60,6 @@ class mainTelescope_Alpaca(mainConfig):
                  **kwargs):
         
         super().__init__(unitnum = unitnum)
-        self._unitnum = unitnum
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._min_altitude = float(self.config['TARGET_MINALT'])
         self._max_altitude = float(self.config['TARGET_MAXALT'])
@@ -73,7 +72,7 @@ class mainTelescope_Alpaca(mainConfig):
 
         status = dict()
         status['update_time'] = Time.now().isot
-        status['jd'] = round(Time.now().jd,6)
+        status['jd'] = "{:.6f}".format(Time.now().jd)
         status['ra'] = None
         status['dec'] = None
         status['alt'] = None
@@ -91,29 +90,29 @@ class mainTelescope_Alpaca(mainConfig):
             except:
                 pass
             try:
-                status['jd'] = round(Time.now().jd,6)
+                status['jd'] = "{:.6f}".format(Time.now().jd)
             except:
                 pass
             try:
                 coordinates = SkyCoord(self.device.RightAscension, self.device.Declination, unit = (u.hourangle, u.deg) )
-                status['ra'] = round(coordinates.ra.deg,5)
-                status['dec'] = round(coordinates.dec.deg,5)
+                status['ra'] =  "{:.4f}".format(coordinates.ra.deg)
+                status['dec'] =  "{:.4f}".format(coordinates.dec.deg)
             except:
                 pass
             try:
-                status['ra_hour'] = round(self.device.RightAscension,5)
+                status['ra_hour'] =  "{:.4f}".format(self.device.RightAscension)
             except:
                 pass
             try:
-                status['dec_deg'] = round(self.device.Declination,5)
+                status['dec_deg'] =  "{:.4f}".format(self.device.Declination)
             except:
                 pass
             try:
-                status['alt'] = round(self.device.Altitude,3)
+                status['alt'] =  "{:.3f}".format(self.device.Altitude)
             except:
                 pass
             try:
-                status['az'] = round(self.device.Azimuth,3)
+                status['az'] =  "{:.3f}".format(self.device.Azimuth)
             except:
                 pass
             try:
@@ -248,9 +247,8 @@ class mainTelescope_Alpaca(mainConfig):
         self.status = self.get_status()
 
     def slew_radec(self,
-                   ra : float = None,
-                   dec : float = None,
-                   target_name : str = '',
+                   ra : float,
+                   dec : float,
                    tracking = True):
         """
         Slews the telescope to the given RA and Dec or SkyCoord.
@@ -273,7 +271,7 @@ class mainTelescope_Alpaca(mainConfig):
         #     coordinate = to_SkyCoord(ra, dec)
         # ra_hour = coordinate.ra.hour
         # dec_deg = coordinate.dec.deg
-        target = mainTarget(unitnum = self._unitnum, observer = self.observer, target_ra = ra, target_dec = dec, target_name = target_name)
+        target = mainTarget(unitnum = self.unitnum, observer = self.observer, target_ra = ra, target_dec = dec)
         altaz = target.altaz()
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
 
@@ -286,8 +284,7 @@ class mainTelescope_Alpaca(mainConfig):
         if self.device.CanSlewAsync:
             if self.device.AtPark:
                 self.unpark()
-            if not self.device.Tracking:
-                self.device.Tracking = True
+            self.device.Tracking = tracking 
             while not self.device.Tracking:
                 time.sleep(self._checktime)
             self.device.SlewToCoordinatesAsync(target.ra_hour, target.dec_deg)
@@ -304,8 +301,8 @@ class mainTelescope_Alpaca(mainConfig):
         self.status = self.get_status()
             
     def slew_altaz(self,
-                   alt : float = None,
-                   az : float = None,
+                   alt : float,
+                   az : float,
                    tracking = False):
         """
         Slew the telescope to the given Altitude and Azimuth coordinates in the horizontal coordinate system.
@@ -322,10 +319,6 @@ class mainTelescope_Alpaca(mainConfig):
             If True, activate the telescope tracking feature after slewing. Default is False.
         """
         
-        # if coordinate == None:
-        #     coordinate = SkyCoord(az, alt, frame = 'altaz', unit ='deg')
-        # alt = coordinate.alt.deg
-        # az = coordinate.az.deg
         self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
 
         # Check coordinates
@@ -337,8 +330,7 @@ class mainTelescope_Alpaca(mainConfig):
         if self.device.CanSlewAsync:
             if self.device.AtPark:
                 self.unpark()
-            if self.device.Tracking:
-                self.device.Tracking = False
+            self.device.Tracking = tracking
             while self.device.Tracking:
                 time.sleep(self._checktime)
             self.device.SlewToAltAzAsync(az, alt)

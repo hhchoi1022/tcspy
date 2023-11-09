@@ -34,9 +34,9 @@ class mainTarget(mainConfig):
     -------
     1. get_status() -> dict
         Returns a dictionary with information about the current status of the target.
-    2. is_observable(utctimes: datetime or Time = None) -> bool
+    2. is_observable(utctime: datetime or Time = None) -> bool
         Determines whether the target is observable at the specified time or at the current time.
-    3. altaz(utctimes: datetime or Time = None) -> SkyCoord
+    3. altaz(utctime: datetime or Time = None) -> SkyCoord
         Calculate the alt-az coordinates of the target for a given time(s) in UTC.
     4. risetime(utctime: datetime or Time = None, mode: str = 'next', horizon: float = 30) -> Time
         Calculate the next rise time of the target as seen by the observer.
@@ -44,7 +44,7 @@ class mainTarget(mainConfig):
         Calculate the time when the target sets below the horizon.
     6. meridiantime(utctime: datetime or Time = None, mode: str = 'nearest') -> Time
         Calculate the time at which the target passes through the observer's meridian.
-    7. hourangle(utctimes: datetime or Time = None) -> Angle
+    7. hourangle(utctime: datetime or Time = None) -> Angle
         Calculate the hour angle of the target(s) at the specified time(s).
     8. staralt(utctime : datetime or Time or np.array = None)
         Creates a plot of the altitude and azimuth of a celestial object.
@@ -70,14 +70,19 @@ class mainTarget(mainConfig):
         self.dec_deg = None
         self.alt = target_alt
         self.az = target_az
+        self.name = target_name
+        self._target = None
+        self._coordtype = None
         
-        if (isinstance(target_ra, type(None))) & (isinstance(target_dec, type(None))):
+        if (not isinstance(target_alt, type(None))) & (not isinstance(target_az, type(None))):
+            self._coordtype = 'altaz'
             self.alt = target_alt
             self.az = target_az
             self.coordinate = self._get_coordinate_altaz(alt = target_alt, az = target_az)
             self._target = self._get_target(self.coordinate, target_name)
      
-        else:
+        if (not isinstance(target_ra, type(None))) & (not isinstance(target_dec, type(None))):
+            self._coordtype = 'radec'
             self.coordinate = self._get_coordinate_radec(ra = target_ra, dec = target_dec)
             self._target = self._get_target(self.coordinate, target_name)
             altaz = self.altaz()
@@ -88,7 +93,13 @@ class mainTarget(mainConfig):
             self.alt = altaz.alt.value
             self.az = altaz.az.value
             
-        self.name = target_name
+        
+        elif (isinstance(target_alt, type(None))) & (isinstance(target_az, type(None))) & (isinstance(target_ra, type(None))) & (isinstance(target_dec, type(None))):
+            pass
+        
+        else:
+            raise ValueError('Coordinate of the target cannot be defined.')
+                        
         self.status = self.get_status()
 
     def get_status(self):
@@ -110,44 +121,61 @@ class mainTarget(mainConfig):
                 - hourangle: the hour angle of the target in degrees.
                 - is_observable: a boolean indicating whether the target is currently observable.
         """
-        if self.coordinate.frame.name == 'altaz':
+        targetinfo = dict()
+        targetinfo['update_time'] = Time.now().isot
+        targetinfo['jd'] = "{:.6f}".format(Time.now().jd)
+        targetinfo['name'] = self.name
+        targetinfo['ra'] = None
+        targetinfo['dec'] = None
+        targetinfo['ra_hour'] = None
+        targetinfo['dec_deg'] = None
+        targetinfo['alt'] = None
+        targetinfo['az'] = None
+        targetinfo['coordtype'] = None
+        targetinfo['hourangle'] = None
+        targetinfo['is_observable'] = None
+        
+        if self._coordtype == 'altaz':
+            targetinfo['alt'] = "{:.3f}".format(self.alt)
+            targetinfo['az'] = "{:.3f}".format(self.az)
+            targetinfo['coordtype'] = self._coordtype
+            targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time'])
+        
+        elif self._coordtype == 'radec':
+            targetinfo['ra'] = "{:.4f}".format(self.ra)
+            targetinfo['dec'] = "{:.4f}".format(self.dec)
+            targetinfo['ra_hour'] = "{:.4f}".format(self.ra_hour)
+            targetinfo['dec_deg'] = "{:.4f}".format(self.dec_deg)
+            targetinfo['alt'] = "{:.3f}".format(self.alt)
+            targetinfo['az'] = "{:.3f}".format(self.az)
+            targetinfo['coordtype'] = self._coordtype
+            targetinfo['hourangle'] = "{:.3f}".format(self.hourangle(utctime = targetinfo['update_time']).value,3)
+            targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time'])
+        else:
             targetinfo = dict()
             targetinfo['update_time'] = Time.now().isot
-            targetinfo['jd'] = np.round(Time.now().jd,5)
+            targetinfo['jd'] = "{:.6f}".format(Time.now().jd)
             targetinfo['name'] = self.name
             targetinfo['ra'] = None
             targetinfo['dec'] = None
             targetinfo['ra_hour'] = None
             targetinfo['dec_deg'] = None
-            targetinfo['alt'] = np.round(self.alt,3)
-            targetinfo['az'] = np.round(self.az,3)
-            targetinfo['coordtype'] = 'altaz'
+            targetinfo['alt'] = None
+            targetinfo['az'] = None
+            targetinfo['coordtype'] = None
             targetinfo['hourangle'] = None
             targetinfo['is_observable'] = None
-        else:
-            targetinfo = dict()
-            targetinfo['update_time'] = Time.now().isot
-            targetinfo['jd'] = np.round(Time.now().jd,5)
-            targetinfo['name'] = self.name
-            targetinfo['ra'] = np.round(self.ra,5)
-            targetinfo['dec'] = np.round(self.dec,5)
-            targetinfo['ra_hour'] = np.round(self.ra_hour,5)
-            targetinfo['dec_deg'] = np.round(self.dec_deg,5)
-            targetinfo['alt'] = np.round(self.alt,3)
-            targetinfo['az'] = np.round(self.az,3)
-            targetinfo['coordtype'] = 'radec'
-            targetinfo['hourangle'] = np.round(self.hourangle().value,3)
-            targetinfo['is_observable'] = self.is_observable()
+            
         return targetinfo
     
     def is_observable(self,
-                      utctimes : datetime or Time or np.array = None) -> bool:
+                      utctime : datetime or Time or np.array = None) -> bool:
         """
         Determines whether the target is observable at the specified time or at the current time.
 
         Parameters
         ----------
-        1. utctimes : datetime or Time, optional
+        1. utctime : datetime or Time, optional
             The time at which to check observability. Defaults to the current time.
             
         Returns
@@ -155,20 +183,29 @@ class mainTarget(mainConfig):
         bool
             True if the target is observable, False otherwise.
         """
-        if utctimes is None:
-            utctimes = Time.now()
-        if not isinstance(utctimes, Time):
-            utctimes = Time(utctimes)
-        return is_event_observable(constraints = self._constraints, observer = self._astroplan_observer, target = self._target, times = utctimes)
-    
+        if self._coordtype == 'radec':
+            if utctime is None:
+                utctime = Time.now()
+            if not isinstance(utctime, Time):
+                utctime = Time(utctime)
+            is_observable = is_event_observable(constraints = self._constraints, observer = self._astroplan_observer, target = self._target, times = utctime)[0][0]
+        
+        elif self._coordtype == 'altaz':
+            if (self.alt > self.config['TARGET_MINALT']) & (self.alt < self.config['TARGET_MAXALT']):
+                is_observable = True
+            else:
+                is_observable = False
+                
+        return is_observable 
+        
     def altaz(self,
-              utctimes : datetime or Time or np.array = None) -> SkyCoord:
+              utctime : datetime or Time or np.array = None) -> SkyCoord:
         """
         Calculate the alt-az coordinates of the target for a given time(s) in UTC.
 
         Parameters
         ==========
-        1. utctimes : datetime or Time, optional
+        1. utctime : datetime or Time, optional
             The time(s) to calculate the alt-az coordinates for, in UTC. If not provided, the current time will be used. 
 
         Returns
@@ -176,12 +213,15 @@ class mainTarget(mainConfig):
         1. SkyCoord
             The alt-az coordinates of the target at the specified time(s).
         """
-        if utctimes is None:
-            utctimes = Time.now()
-        if not isinstance(utctimes, Time):
-            utctimes = Time(utctimes)
-        return self._astroplan_observer.altaz(utctimes, target = self._target)
-    
+        if self._coordtype == 'radec':
+            if utctime is None:
+                utctime = Time.now()
+            if not isinstance(utctime, Time):
+                utctime = Time(utctime)
+            return self._astroplan_observer.altaz(utctime, target = self._target)
+        else:
+            return None
+        
     def risetime(self,
                  utctime : datetime or Time or np.array = None ,
                  mode : str = 'next',
@@ -204,12 +244,15 @@ class mainTarget(mainConfig):
             The rise time of the target as seen by the observer.
 
         """
-        if utctime == None:
-            utctime = Time.now()
-        if not isinstance(utctime, Time):
-            utctime = Time(utctime)
-        return self._astroplan_observer.target_rise_time(utctime, target = self._target, which = mode, horizon = horizon*u.deg)
-    
+        if self._coordtype == 'radec':
+            if utctime == None:
+                utctime = Time.now()
+            if not isinstance(utctime, Time):
+                utctime = Time(utctime)
+            return self._astroplan_observer.target_rise_time(utctime, target = self._target, which = mode, horizon = horizon*u.deg)
+        else:
+            return None
+        
     def settime(self,
                 utctime : datetime or Time or np.array = None,
                 mode : str = 'nearest',
@@ -231,11 +274,14 @@ class mainTarget(mainConfig):
         1. settime : Time
             The time when the target sets below the horizon.
         """
-        if utctime is None:
-            utctime = Time.now()
-        if not isinstance(utctime, Time):
-            utctime = Time(utctime)
-        return self._astroplan_observer.target_set_time(utctime, self._target, which = mode, horizon = horizon*u.deg)
+        if self._coordtype == 'radec':
+            if utctime is None:
+                utctime = Time.now()
+            if not isinstance(utctime, Time):
+                utctime = Time(utctime)
+            return self._astroplan_observer.target_set_time(utctime, self._target, which = mode, horizon = horizon*u.deg)
+        else:
+            return None
     
     def meridiantime(self,
                      utctime : datetime or Time or np.array = None,
@@ -255,21 +301,23 @@ class mainTarget(mainConfig):
         1. meridiantime : Time
             The time at which the target passes through the observer's meridian.
         """
+        if self._coordtype == 'radec':
+            if utctime is None:
+                utctime = Time.now()
+            if not isinstance(utctime, Time):
+                utctime = Time(utctime)
+            return self._astroplan_observer.target_meridian_transit_time(utctime, self._target, which = mode)
+        else:
+            return None
         
-        if utctime is None:
-            utctime = Time.now()
-        if not isinstance(utctime, Time):
-            utctime = Time(utctime)
-        return self._astroplan_observer.target_meridian_transit_time(utctime, self._target, which = mode)
-    
     def hourangle(self,
-                  utctimes : datetime or Time or np.array = None):
+                  utctime : datetime or Time or np.array = None):
         """
         Calculate the hour angle of the target for a given time(s) in UTC.
 
         Parameters
         ==========
-        1. utctimes : datetime or Time, optional
+        1. utctime : datetime or Time, optional
             The time(s) to calculate the hour angle of the target for, in UTC. If not provided, the current time will be used. 
 
         Returns
@@ -277,14 +325,16 @@ class mainTarget(mainConfig):
         1. hourangle : astropy.coordinates.Angle
             The hour angle of the target(s) at the specified time(s).
         """
-        
-        if utctimes is None:
-            utctimes = Time.now()
-        if not isinstance(utctimes, Time):
-            utctimes = Time(utctimes)
-        if not isinstance(self._target, FixedTarget):
-            raise ValueError('No target is specified for hourangle')
-        return self._astroplan_observer.target_hour_angle(utctimes, self._target)
+        if self._coordtype == 'radec':
+            if utctime is None:
+                utctime = Time.now()
+            if not isinstance(utctime, Time):
+                utctime = Time(utctime)
+            if not isinstance(self._target, FixedTarget):
+                raise ValueError('No target is specified for hourangle')
+            return self._astroplan_observer.target_hour_angle(utctime, self._target)
+        else:
+            return None
     
     def staralt(self,
                 utctime : datetime or Time or np.array = None):
@@ -300,44 +350,46 @@ class mainTarget(mainConfig):
         =======
         None
         """
-        
-        now = Time.now()
-        if utctime is None:
-            utctime = Time.now()
-        if not isinstance(utctime, Time):
-            utctime = Time(utctime)
-        astro_sunsettime  = self._observer.sun_settime(utctime, horizon = -18)
-        astro_sunrisetime = self._observer.sun_risetime(astro_sunsettime, horizon = -18, mode = 'next')
-        sunsettime = self._observer.sun_settime(utctime, horizon = 0)
-        sunrisetime = self._observer.sun_risetime(sunsettime, horizon = 0, mode = 'next')
-        time_range_start, time_range_end = sunsettime.datetime - datetime.timedelta(hours = 2), sunrisetime.datetime + datetime.timedelta(hours = 2)
-        time_axis = np.arange(time_range_start, time_range_end, datetime.timedelta(minutes = 5))
-        moon_altaz = self._observer.moon_altaz(time_axis)
-        sun_altaz = self._observer.sun_altaz(time_axis)
-        target_altaz = self.altaz(time_axis)
-        plt.figure(dpi = 300, figsize = (10, 4))
-        if (now.datetime < time_range_end + datetime.timedelta(hours = 3)) & (now.datetime > time_range_start - datetime.timedelta(hours = 3)):
-            plt.axvline(now.datetime, linestyle = '--', c='r', label = 'Now')
-        plt.scatter(moon_altaz.obstime.datetime, moon_altaz.alt.value, c = moon_altaz.az.value, cmap = 'viridis', s = 10, marker = '.', label ='Moon')
-        plt.scatter(sun_altaz.obstime.datetime, sun_altaz.alt.value, c = 'k', cmap = 'viridis', s = 15, marker = '.', label = 'Sun')
-        plt.scatter(target_altaz.obstime.datetime, target_altaz.alt.value, c = target_altaz.az.value, cmap = 'viridis', s = 30, marker = '*', label = 'Target')
-        plt.fill_betweenx([10,90], astro_sunsettime.datetime, astro_sunrisetime.datetime, alpha = 0.1)
-        plt.fill_betweenx([10,90], sunsettime.datetime, sunrisetime.datetime, alpha = 0.1)
-        plt.axvline(x=astro_sunrisetime.datetime, linestyle = '-', c='k', linewidth = 0.5)
-        plt.axvline(x=astro_sunsettime.datetime, linestyle = '-', c='k', linewidth = 0.5)
-        plt.axvline(x=sunrisetime.datetime, linestyle = '--', c='k', linewidth = 0.5)
-        plt.axvline(x=sunsettime.datetime, linestyle = '--', c='k', linewidth = 0.5)
-        plt.text(astro_sunsettime.datetime-datetime.timedelta(minutes=0), 92, 'Twilight', fontsize = 10)
-        plt.text(sunsettime.datetime-datetime.timedelta(minutes=00), 92, 'S.set', fontsize = 10)
-        plt.text(sunrisetime.datetime-datetime.timedelta(minutes=00), 92, 'S.rise', fontsize = 10)
-        plt.xlim(time_range_start - datetime.timedelta(hours = 1), time_range_end + datetime.timedelta(hours = 1))
-        plt.ylim(10, 90)
-        plt.legend(loc = 1)
-        plt.xlabel('UTC [mm-dd hh]')
-        plt.ylabel('Altitude [deg]')
-        plt.grid()
-        plt.colorbar(label = 'Azimuth [deg]')
-        plt.xticks(rotation = 45)
+        if self._coordtype == 'radec':
+            now = Time.now()
+            if utctime is None:
+                utctime = Time.now()
+            if not isinstance(utctime, Time):
+                utctime = Time(utctime)
+            astro_sunsettime  = self._observer.sun_settime(utctime, horizon = -18)
+            astro_sunrisetime = self._observer.sun_risetime(astro_sunsettime, horizon = -18, mode = 'next')
+            sunsettime = self._observer.sun_settime(utctime, horizon = 0)
+            sunrisetime = self._observer.sun_risetime(sunsettime, horizon = 0, mode = 'next')
+            time_range_start, time_range_end = sunsettime.datetime - datetime.timedelta(hours = 2), sunrisetime.datetime + datetime.timedelta(hours = 2)
+            time_axis = np.arange(time_range_start, time_range_end, datetime.timedelta(minutes = 5))
+            moon_altaz = self._observer.moon_altaz(time_axis)
+            sun_altaz = self._observer.sun_altaz(time_axis)
+            target_altaz = self.altaz(time_axis)
+            plt.figure(dpi = 300, figsize = (10, 4))
+            if (now.datetime < time_range_end + datetime.timedelta(hours = 3)) & (now.datetime > time_range_start - datetime.timedelta(hours = 3)):
+                plt.axvline(now.datetime, linestyle = '--', c='r', label = 'Now')
+            plt.scatter(moon_altaz.obstime.datetime, moon_altaz.alt.value, c = moon_altaz.az.value, cmap = 'viridis', s = 10, marker = '.', label ='Moon')
+            plt.scatter(sun_altaz.obstime.datetime, sun_altaz.alt.value, c = 'k', cmap = 'viridis', s = 15, marker = '.', label = 'Sun')
+            plt.scatter(target_altaz.obstime.datetime, target_altaz.alt.value, c = target_altaz.az.value, cmap = 'viridis', s = 30, marker = '*', label = 'Target')
+            plt.fill_betweenx([10,90], astro_sunsettime.datetime, astro_sunrisetime.datetime, alpha = 0.1)
+            plt.fill_betweenx([10,90], sunsettime.datetime, sunrisetime.datetime, alpha = 0.1)
+            plt.axvline(x=astro_sunrisetime.datetime, linestyle = '-', c='k', linewidth = 0.5)
+            plt.axvline(x=astro_sunsettime.datetime, linestyle = '-', c='k', linewidth = 0.5)
+            plt.axvline(x=sunrisetime.datetime, linestyle = '--', c='k', linewidth = 0.5)
+            plt.axvline(x=sunsettime.datetime, linestyle = '--', c='k', linewidth = 0.5)
+            plt.text(astro_sunsettime.datetime-datetime.timedelta(minutes=0), 92, 'Twilight', fontsize = 10)
+            plt.text(sunsettime.datetime-datetime.timedelta(minutes=00), 92, 'S.set', fontsize = 10)
+            plt.text(sunrisetime.datetime-datetime.timedelta(minutes=00), 92, 'S.rise', fontsize = 10)
+            plt.xlim(time_range_start - datetime.timedelta(hours = 1), time_range_end + datetime.timedelta(hours = 1))
+            plt.ylim(10, 90)
+            plt.legend(loc = 1)
+            plt.xlabel('UTC [mm-dd hh]')
+            plt.ylabel('Altitude [deg]')
+            plt.grid()
+            plt.colorbar(label = 'Azimuth [deg]')
+            plt.xticks(rotation = 45)
+        else:
+            return None
         
     def _get_coordinate_radec(self,
                               ra,
@@ -381,12 +433,13 @@ class mainTarget(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    config = mainConfig().config
-    observer = mainObserver(**config)
-    A = mainTarget(observer, target_ra =4.86, target_dec = -76.146, target_name = 'Center')
-    A.staralt()
+    unitnum = 1
+    config = mainConfig(unitnum = unitnum).config
+    observer = mainObserver(unitnum = unitnum)
+    A = mainTarget(unitnum, observer, target_ra= 300.23, target_dec = 20.22, target_name = 'Center')
+    
+    A
     #%%
     b= A.meridiantime()
     A.risetime()
-    type(A.altaz(A.risetime()))
 #%%

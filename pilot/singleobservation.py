@@ -13,7 +13,7 @@ from tcspy.devices.telescope import mainTelescope_Alpaca
 from tcspy.devices.filterwheel import mainFilterwheel
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.target import mainTarget
-from tcspy.utils.images import mainImage
+from tcspy.utils.image import mainImage
 
 #%%
 class singleObservation(mainConfig):

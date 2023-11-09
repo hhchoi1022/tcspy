@@ -69,7 +69,6 @@ class mainObserver(mainConfig):
                  ):
         
         super().__init__(unitnum = unitnum)
-        self._unitnum = unitnum
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._latitude = float(self.config['OBSERVER_LATITUDE'])*u.deg
         self._longitude = float(self.config['OBSERVER_LONGITUDE'])*u.deg
@@ -448,7 +447,7 @@ class mainObserver(mainConfig):
 # %%
 if __name__ == '__main__':
     from tcspy.configuration import mainConfig
-    obs = mainObserver(unitnum = 4)
+    obs = mainObserver(unitnum = 1)
     from tcspy.utils.target import mainTarget
     tar = mainTarget(unitnum = 4, observer = obs, target_ra = 10.0, target_dec = -25)
     tar.staralt()
