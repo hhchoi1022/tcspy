@@ -1,7 +1,7 @@
 #%%
 from tcspy.devices import IntegratedDevice
 from tcspy.devices.integrateddevice import IntegratedDevice
-from tcspy.utils.mainlogger import mainLogger
+from utils.logger.mainlogger import mainLogger
 
 #%%
 def Check_connection(devices : IntegratedDevice):

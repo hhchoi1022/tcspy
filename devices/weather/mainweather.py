@@ -7,7 +7,7 @@ import json
 # Alpaca modules
 from alpaca.observingconditions import ObservingConditions
 # TCSpy modules
-from tcspy.utils import mainLogger
+from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 

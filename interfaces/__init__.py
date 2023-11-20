@@ -1,9 +1,5 @@
 
-from .Interface import Interface
-from .Abort import Interface_Abort
-from .Slew import Interface_Slew
-from .Observation import Interface_Observation
-from .Filterchange import Interface_Filterchange
-from .Exposure import Interface_Exposure
-
+from .interface import Interface
+from .interface_abortable import Interface_Abortable
+from .interface_runnable import Interface_Runnable
 

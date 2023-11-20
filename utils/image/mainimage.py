@@ -10,10 +10,12 @@ import matplotlib.pyplot as plt
 import os
 import re
 from tcspy.configuration import mainConfig
+from datetime import datetime
 #%%
 class mainImage(mainConfig):
     
     def __init__(self,
+                 frame_number : int,
                  config_info : dict,
                  image_info : dict,
                  camera_info : dict = None,
@@ -24,6 +26,7 @@ class mainImage(mainConfig):
                  target_info : dict = None
                  ):
         
+        self._framenum = frame_number
         self._configinfo = config_info
         self._imginfo = image_info
         self._caminfo = camera_info
@@ -44,18 +47,40 @@ class mainImage(mainConfig):
     
     def _format_filename(self):
         format_filename = self._configinfo['FILENAME_FORMAT']
-        format_filename = '$$TELESCOP$$-$$OBJECT$$-$$EXPTIME$$-$$FILTER$$.fits'
         key_data = self.header
-        key_data['']
         
-        pattern =  r'\$\$(.*?)\$\$'
-        keys = re.findall(pattern, format_filename)
-        for key in keys:
-            print(self.header[key])
+        key_data['FRAMENUM'] = '%.4d' %(self._framenum)
         
-        format_filename
+        dt_ut = datetime.strptime(key_data['DATE-OBS'], '%Y-%m-%dT%H:%M:%S.%f')
+        dt_lt = datetime.strptime(key_data['DATE-LOC'], '%Y-%m-%d %H:%M:%S.%f')
+        key_data['UTCDATE'] = '%.4d%.2d%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
+        key_data['LTCDATE'] = '%.4d%.2d%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
+        key_data['UTCTIME'] = '%.2d%.2d%.2d' % (dt_ut.hour, dt_ut.minute, dt_ut.second)
+        key_data['LTCTIME'] = '%.2d%.2d%.2d' % (dt_lt.hour, dt_lt.minute, dt_lt.second)
         
-        re.findall('$$(\s)$$')
+        key_data['UTCDATE_'] = '%.4d_%.2d_%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
+        key_data['LTCDATE_'] = '%.4d_%.2d_%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
+        key_data['UTCTIME_'] = '%.2d_%.2d_%.2d' % (dt_ut.hour, dt_ut.minute, dt_ut.second)
+        key_data['LTCTIME_'] = '%.2d_%.2d_%.2d' % (dt_lt.hour, dt_lt.minute, dt_lt.second)
+        
+        key_data['UTCDATE-'] = '%.4d-%.2d-%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
+        key_data['LTCDATE-'] = '%.4d-%.2d-%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
+        key_data['UTCTIME-'] = '%.2d-%.2d-%.2d' % (dt_ut.hour, dt_ut.minute, dt_ut.second)
+        key_data['LTCTIME-'] = '%.2d-%.2d-%.2d' % (dt_lt.hour, dt_lt.minute, dt_lt.second)
+        
+        key_dict = dict()
+        for key in key_data.keys():
+            key_dict[key] = str(key_data[key])
+            
+        
+        def replace_placeholder(match):
+            key = match.group(1)
+            return key_dict.get(key, match.group(0))
+
+        # Use regular expressions to find and replace the placeholders
+        pattern = r'\$\$(.*?)\$\$'
+        output_string = re.sub(pattern, replace_placeholder, format_filename)
+        return output_string
     
     def _format_header(self,
                        value,
@@ -157,7 +182,8 @@ class mainImage(mainConfig):
         info = dict()
         info['IMAGETYP'] = self._format_header(self._imginfo['imgtype'], 'Type of the image')
         info['EXPTIME'] = self._format_header(self._imginfo['exptime'], 'Duration of exposure time [sec]')
-        info['DATE-OBS'] = self._format_header(self._imginfo['date_obs'], 'Date of the observation [ISO format]')
+        info['DATE-OBS'] = self._format_header(self._imginfo['date_obs_utc'], '[UTC] Date of the observation')
+        info['DATE-LOC'] = self._format_header(self._imginfo['date_obs_ltc'], '[Local] Date of the observation')
         info['JD'] = self._format_header(self._imginfo['jd'], 'Julian date')
         ##### MJD
         info['XBINNING'] = self._format_header(self._imginfo['binningX'], 'Binning level along the X-axis')
@@ -206,15 +232,16 @@ class mainImage(mainConfig):
     def data(self):
         return self.hdu.data
     
-    def save(self, filename):
+    def save(self):
         if not os.path.isdir(self._configinfo['IMAGE_PATH']):
             os.makedirs(self._configinfo['IMAGE_PATH'])
-        self.hdu.writeto(self._configinfo['IMAGE_PATH']+filename, overwrite = True) 
-        print(self._configinfo['IMAGE_PATH']+filename)
-        ########## Raw file naming convention
-    
-
-            
-            
+        filename = self._format_filename()
+        filepath = self._configinfo['IMAGE_PATH']+filename
+        if os.path.exists(filepath):
+            filepath = self._configinfo['IMAGE_PATH']+"dup_"+filename
+            self.hdu.writeto(filepath, overwrite = False) 
+        else:
+            self.hdu.writeto(filepath, overwrite = False) 
+        return filepath
 
 # %%

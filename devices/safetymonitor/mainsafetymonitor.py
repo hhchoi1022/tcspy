@@ -1,13 +1,12 @@
 #%%
-from alpaca.safetymonitor import SafetyMonitor
-
-from tcspy.utils import mainLogger
-from tcspy.utils import Timeout
-from tcspy.configuration import mainConfig
-
 from astropy.io import ascii
 from astropy.time import Time
 import time
+from alpaca.safetymonitor import SafetyMonitor
+
+from tcspy.utils.logger import mainLogger
+from tcspy.utils import Timeout
+from tcspy.configuration import mainConfig
 # %%
 class mainSafetyMonitor(mainConfig):
     """

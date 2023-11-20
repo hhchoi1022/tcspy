@@ -1,14 +1,15 @@
 
 
 #%%
-from tcspy.utils import mainLogger
-from tcspy.configuration import mainConfig
+
 from astropy.coordinates import EarthLocation, get_sun, get_moon
 import astropy.units as u
 from datetime import datetime
 from astropy.time import Time
 import pytz
 from astroplan import Observer
+
+from tcspy.configuration import mainConfig
 #%%
 class mainObserver(mainConfig):
     """
@@ -69,7 +70,6 @@ class mainObserver(mainConfig):
                  ):
         
         super().__init__(unitnum = unitnum)
-        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._latitude = float(self.config['OBSERVER_LATITUDE'])*u.deg
         self._longitude = float(self.config['OBSERVER_LONGITUDE'])*u.deg
         self._elevation = float(self.config['OBSERVER_ELEVATION'])*u.m

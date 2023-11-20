@@ -2,7 +2,7 @@
 from tcspy.devices import IntegratedDevice
 from tcspy.utils.mainlogger import mainLogger
 from tcspy.utils import LogFormat
-from tcspy.action import *
+from action.level1 import *
 
 #%%
 class StartUp:

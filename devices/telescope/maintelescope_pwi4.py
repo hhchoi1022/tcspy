@@ -2,14 +2,13 @@
 # Other modules
 from astropy.coordinates import SkyCoord
 import time
-import threading
 from astropy.time import Time
-from typing import Optional
-# TCSpy modules
+
 from tcspy.devices.telescope.pwi4_client import PWI4 # PWI4 API 
 from tcspy.configuration import mainConfig
 from tcspy.devices.observer import mainObserver
-from tcspy.utils import mainLogger, to_SkyCoord
+from tcspy.utils.logger import mainLogger
+from tcspy.utils import to_SkyCoord
 from tcspy.utils import Timeout
 from tcspy.utils.target import mainTarget
 #%%
@@ -65,6 +64,7 @@ class mainTelescope_pwi4(mainConfig):
         self.device = PWI4(self.config['TELESCOPE_HOSTIP'], self.config['TELESCOPE_PORTNUM'])
         self.PWI_status = self.device.status()
         self.status = self.get_status()
+        self.condition = 'idle'
         
     def get_status(self):
         """
@@ -217,12 +217,14 @@ class mainTelescope_pwi4(mainConfig):
 
         self._log.info('Parking telescope...')
         self.unpark()
-        self.status = self.get_status()
+        #self.status = self.get_status()
+        self.condition = 'slewing'
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
         self.status = self.get_status()
         while not self.status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
+        self.condition = 'idle'
         self.status = self.get_status()
         self._log.info('Telescope parked')
     '''
@@ -261,12 +263,14 @@ class mainTelescope_pwi4(mainConfig):
         """
         
         self._log.info('Finding home position...')
+        self.condition = 'slewing'
         self.device.mount_find_home()
         self.status = self.get_status()
         time.sleep(5*self._checktime)
         while not self.status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
+        self.condition = 'idle'
         self.status = self.get_status()
         self._log.info('Finding home finished')
 
@@ -308,7 +312,8 @@ class mainTelescope_pwi4(mainConfig):
         
         # Slewing 
         self.unpark()
-        self.status = self.get_status()
+        #self.status = self.get_status()
+        self.condition = 'slewing'
         self.device.mount_goto_ra_dec_j2000(ra, dec)
         time.sleep(5*self._checktime)
         self.status = self.get_status()
@@ -316,6 +321,7 @@ class mainTelescope_pwi4(mainConfig):
             time.sleep(self._checktime)
             self.status = self.get_status()
         time.sleep(2*self._checktime)
+        self.condition = 'idle'
         self.status = self.get_status()
         self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(self.status['ra'], self.status['dec'], self.status['alt'], self.status['az']))
         if not tracking:
@@ -354,7 +360,8 @@ class mainTelescope_pwi4(mainConfig):
 
         # Slewing 
         self.unpark()
-        self.status = self.get_status()
+        #self.status = self.get_status()
+        self.condition = 'slewing'
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
         time.sleep(5*self._checktime)
         self.status = self.get_status()
@@ -362,6 +369,7 @@ class mainTelescope_pwi4(mainConfig):
             time.sleep(self._checktime)
             self.status = self.get_status()
         time.sleep(2*self._checktime)
+        self.condition = 'idle'
         self.status = self.get_status()
         self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(self.status['alt'], self.status['az']))
         if tracking:
@@ -401,6 +409,7 @@ class mainTelescope_pwi4(mainConfig):
         """
         
         self.device.mount_stop()
+        self.condition = 'idle'
         self._log.warning('Telescope aborted')
         self.status = self.get_status()
     

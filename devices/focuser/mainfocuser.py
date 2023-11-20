@@ -1,17 +1,12 @@
-#%%
-# Other modules
 from astropy.io import ascii
 import time
 from astropy.time import Time
 import numpy as np
-# Alpaca modules
 from alpaca.focuser import Focuser
-import alpaca
-#TCSpy modules
-from tcspy.utils import mainLogger
+
+from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
-
 # %%
 class mainFocuser(mainConfig):
     """

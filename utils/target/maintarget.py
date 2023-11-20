@@ -98,7 +98,8 @@ class mainTarget(mainConfig):
             pass
         
         else:
-            raise ValueError('Coordinate of the target cannot be defined.')
+            pass
+            #raise ValueError('Coordinate of the target cannot be defined.')
                         
         self.status = self.get_status()
 
@@ -392,15 +393,15 @@ class mainTarget(mainConfig):
             return None
         
     def _get_coordinate_radec(self,
-                              ra,
-                              dec,
+                              ra : float,
+                              dec : float,
                               frame : str = 'icrs') -> SkyCoord:
-        return SkyCoord(ra = ra, dec = dec, frame = frame, unit = (u.deg, u.deg))
+        return SkyCoord(ra = float(ra), dec = float(dec), frame = frame, unit = (u.deg, u.deg))
 
     def _get_coordinate_altaz(self,
-                              alt,
-                              az) -> SkyCoord:
-        return SkyCoord(alt = alt, az = az, frame = 'altaz', unit = u.deg)
+                              alt : float,
+                              az : float) -> SkyCoord:
+        return SkyCoord(alt = float(alt), az = float(az), frame = 'altaz', unit = u.deg)
         
     def _get_target(self,
                     coord,

@@ -1,14 +1,10 @@
 #%%
-# Other modules
 from astropy.io import ascii
 from astropy.time import Time
 import time
-import json
-# Alpaca modules
 from alpaca.filterwheel import FilterWheel
-import alpaca
-# TCSpy modules
-from tcspy.utils import mainLogger
+
+from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 

@@ -1,18 +1,14 @@
 #%%
-# Other modules
-import threading
 import time
-from typing import Optional
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 from astropy.time import Time
-#Alpaca modules
-import alpaca
+
 from alpaca.telescope import Telescope
 from alpaca.exceptions import *
-# TCSpy modules
+
 from tcspy.utils import Timeout
-from tcspy.utils import mainLogger
+from tcspy.utils.logger import mainLogger
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
 from tcspy.utils import to_SkyCoord
@@ -67,6 +63,7 @@ class mainTelescope_Alpaca(mainConfig):
         self.observer = mainObserver(unitnum = unitnum)
         self.device = Telescope(f"{self.config['TELESCOPE_HOSTIP']}:{self.config['TELESCOPE_PORTNUM']}",self.config['TELESCOPE_DEVICENUM'])
         self.status = self.get_status()
+        self.condition = 'idle' #idle, slewing, parked
         
     def get_status(self):
 
@@ -95,24 +92,24 @@ class mainTelescope_Alpaca(mainConfig):
                 pass
             try:
                 coordinates = SkyCoord(self.device.RightAscension, self.device.Declination, unit = (u.hourangle, u.deg) )
-                status['ra'] =  "{:.4f}".format(coordinates.ra.deg)
-                status['dec'] =  "{:.4f}".format(coordinates.dec.deg)
+                status['ra'] =  float("{:.4f}".format(coordinates.ra.deg))
+                status['dec'] =  float("{:.4f}".format(coordinates.dec.deg))
             except:
                 pass
             try:
-                status['ra_hour'] =  "{:.4f}".format(self.device.RightAscension)
+                status['ra_hour'] =  float("{:.4f}".format(self.device.RightAscension))
             except:
                 pass
             try:
-                status['dec_deg'] =  "{:.4f}".format(self.device.Declination)
+                status['dec_deg'] =  float("{:.4f}".format(self.device.Declination))
             except:
                 pass
             try:
-                status['alt'] =  "{:.3f}".format(self.device.Altitude)
+                status['alt'] =  float("{:.3f}".format(self.device.Altitude))
             except:
                 pass
             try:
-                status['az'] =  "{:.3f}".format(self.device.Azimuth)
+                status['az'] =  float("{:.3f}".format(self.device.Azimuth))
             except:
                 pass
             try:
@@ -217,10 +214,12 @@ class mainTelescope_Alpaca(mainConfig):
                 self.device.Tracking = False
             while self.device.Tracking:
                 time.sleep(self._checktime)
+            self.condition = 'slewing'
             self.device.SlewToAltAzAsync(az, alt)
             time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
+            self.condition = 'idle'
             time.sleep(5*self._checktime)
             self.status = self.get_status()
             self._log.info('Telescope parked')
@@ -287,11 +286,14 @@ class mainTelescope_Alpaca(mainConfig):
             self.device.Tracking = tracking 
             while not self.device.Tracking:
                 time.sleep(self._checktime)
+            self.condition = 'slewing'
             self.device.SlewToCoordinatesAsync(target.ra_hour, target.dec_deg)
             time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
-            time.sleep(2*self._checktime)
+            self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
+            time.sleep(self.config['TELESCOPE_SETTLETIME'])
+            self.condition = 'idle'
             self.status = self.get_status()
             self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(self.status['ra'], self.status['dec'], self.status['alt'], self.status['az']))
             if not tracking:
@@ -333,11 +335,14 @@ class mainTelescope_Alpaca(mainConfig):
             self.device.Tracking = tracking
             while self.device.Tracking:
                 time.sleep(self._checktime)
+            self.condition = 'slewing'
             self.device.SlewToAltAzAsync(az, alt)
             time.sleep(5*self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)
-            time.sleep(2*self._checktime)
+            self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
+            time.sleep(self.config['TELESCOPE_SETTLETIME'])
+            self.condition = 'idle'
             self.status = self.get_status()
             self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(self.status['alt'], self.status['az']))
             if tracking:
@@ -389,6 +394,7 @@ class mainTelescope_Alpaca(mainConfig):
         """
         
         self.device.AbortSlew()
+        self.condition = 'idle'
         self._log.warning('Telescope aborted')
         self.status = self.get_status()
         

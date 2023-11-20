@@ -27,7 +27,6 @@ def Timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
     return decoratoref wrapper(*args, **kwargs):
           '''
 
-
 # For window system
 def Timeout(timeout, error : str):
     def deco(func):

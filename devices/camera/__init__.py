@@ -1,2 +1,1 @@
-#%%
 from .maincamera import mainCamera

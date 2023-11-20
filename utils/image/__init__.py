@@ -1,4 +1,1 @@
-#%%
 from .mainimage import mainImage
-
-#%%

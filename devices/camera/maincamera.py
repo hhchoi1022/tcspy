@@ -3,14 +3,12 @@
 import time
 import pytz
 import numpy as np
-from astropy.io import fits
 from astropy.time import Time
-import datetime
+from datetime import datetime
 
-import alpaca
 from alpaca.camera import Camera
 from alpaca.camera import ImageArrayElementTypes
-from tcspy.utils import mainLogger
+from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 #%%
@@ -219,7 +217,8 @@ class mainCamera(mainConfig):
         imginfo['binningY'] = None
         imginfo['numDimension'] = None
         imginfo['exptime'] = None
-        imginfo['date_obs'] = Time.now().isot
+        imginfo['date_obs_ltc'] = None
+        imginfo['date_obs_utc'] = Time.now().isot
         imginfo['jd'] = round(Time.now().jd,6)
         
         if status['is_imgReady']:
@@ -260,11 +259,16 @@ class mainCamera(mainConfig):
             except:
                 pass
             try:
-                local = pytz.timezone(self.config['OBSERVER_TIMEZONE'])
-                naive = datetime.strptime(self.device.LastExposureStartTime, "%Y-%m-%dT%H:%M:%S")
-                local_dt = local.localize(naive, is_dst=None)
-                ut = Time(local_dt.astimezone(pytz.utc)).isot
-                imginfo['date_obs'] = ut.isot
+                obstime_ut = datetime.strptime(self.device.LastExposureStartTime, "%Y-%m-%dT%H:%M:%S")
+                tz_local = pytz.timezone(self.config['OBSERVER_TIMEZONE'])
+                local_ut = pytz.utc.localize(obstime_ut)
+                local_lt = local_ut.astimezone(tz_local)
+                lt_str = local_lt.strftime("%Y-%m-%d %H:%M:%S")
+                ut_str = local_ut.strftime("%Y-%m-%dT%H:%M:%S")
+                lt = Time(lt_str, scale='local', format='iso')
+                ut = Time(ut_str, scale='utc', format='isot')
+                imginfo['date_obs_ltc'] = lt.iso
+                imginfo['date_obs_utc'] = ut.isot
                 imginfo['jd'] = ut.jd
             except:
                 pass
@@ -397,7 +401,7 @@ class mainCamera(mainConfig):
             exptime = exptime
             is_light = True
         # Exposure
-        self._log.info(f'[%s] Start exposure... (exptime = %.1f)'%(imgtype.upper(), exptime))
+        #self._log.info(f'[%s] Start exposure... (exptime = %.1f)'%(imgtype.upper(), exptime))
         self.device.StartExposure(Duration = exptime, Light = is_light)
         time.sleep(2*self._checktime)
         while not self.device.ImageReady:
@@ -406,7 +410,7 @@ class mainCamera(mainConfig):
         # Modify image information
         imginfo['exptime'] = exptime
         # Logging
-        self._log.info(f'[%s] Exposure finished (exptime = %.1f)'%(imgtype.upper(), exptime))
+        #self._log.info(f'[%s] Exposure finished (exptime = %.1f)'%(imgtype.upper(), exptime))
         self.status = self.get_status()
         return imginfo 
 
@@ -446,17 +450,18 @@ class mainCamera(mainConfig):
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
-    A = mainCamera(unitnum = 1)
+    A = mainCamera(unitnum = 3)
     A.connect()
-    #A.cooler_on(5)
-    for i in range(5):
-        imginfo, status = A.exposure(exptime = 0, imgtype = 'bias')
-        data = np.array(imginfo['data'])
-        plt.figure(dpi = 300)
-        plt.imshow(data, vmin = 100, vmax= 150)
-        plt.colorbar()
-        plt.show()
+
+    C = A.exposure(exptime = 0, imgtype = 'bias')
     
+    #%%
+    data = np.array(imginfo['data'])
+    plt.figure(dpi = 300)
+    plt.imshow(data, vmin = 100, vmax= 150)
+    plt.colorbar()
+    plt.show()
+
 #%%
     #A.cooler_off(warmuptime=10)
     A.disconnect()
