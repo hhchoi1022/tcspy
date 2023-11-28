@@ -15,7 +15,7 @@ class IntegratedDevice(mainConfig):
                  unitnum : int,
                  tel_type : str = 'Alpaca'):
         super().__init__(unitnum= unitnum)
-        self._tel_type = tel_type
+        self.tel_type = tel_type
         self.cam = None
         self.tel = None
         self.focus = None
@@ -27,7 +27,7 @@ class IntegratedDevice(mainConfig):
 
     def _set_devices(self):
         self.cam = self._get_cam()
-        self.tel = self._get_tel(tel_type = self._tel_type)
+        self.tel = self._get_tel(tel_type = self.tel_type)
         self.focus = self._get_focus()
         self.filt = self._get_filtwheel()
         self.obs = self._get_observer()
@@ -43,6 +43,19 @@ class IntegratedDevice(mainConfig):
         self.weat.status = self.weat.get_status()
         self.safe.status = self.safe.get_status()
     
+    
+    @property
+    def condition(self):
+        condition = dict()
+        condition['camera'] = self.cam.condition
+        condition['telescope'] = self.tel.condition
+        condition['focuser'] = self.focus.condition
+        condition['filterwheel'] = self.filt.condition
+        condition['observer'] = self.obs.condition
+        condition['weather'] = self.weat.condition
+        condition['safetymonitor'] = self.safe.condition
+        return condition
+
     @property
     def status(self):
         self.update_status()
@@ -93,58 +106,3 @@ class IntegratedDevice(mainConfig):
     def _get_safetymonitor(self):
         return mainSafetyMonitor(unitnum = self.unitnum)
     
-    
-# # %%
-# unit1 = Integreated_device(unitnum = 4)
-# unit2 = Integreated_device(unitnum = 5)
-# #%%
-# devices = dict()
-# devices['unit1'] = unit1
-# devices['unit2'] = unit2
-
-# # %%
-# from threading import Thread
-# from queue import Queue
-# def slew_altaz(q,
-#                **kwargs
-#                ):
-#     params = q.get()
-#     device = devices[f'unit{params["unitnum"]}']
-#     device.tel.slew_altaz(alt = params['alt'], az = params['az'])    
-# #%%
-# def exposure(unitnum : int,
-#              exptime : float,
-#              binning : int = 1,
-#              imgtypename : str = 'object',
-#              **kwargs
-#              ):
-#     device = devices[f'unit{unitnum}']
-#     q.get()
-#     device.cam.take_light(exptime = exptime, binning = binning, imgtypename = imgtypename)
-# #%%
-# az = 270
-# alt = 40
-# exptime = 60
-# binning = 1
-# imgtypename = 'object'
-# #%%
-# unitnums = [1,2]
-# q = Queue()
-
-# for unitnum in unitnums:
-#     thread = Thread(target=slew_altaz, kwargs = {'q':q})
-#     thread.start()
-#     params = dict(unitnum = unitnum, alt = 0, az = 270)
-#     q.put(params)
-#     print(q.task_done())
-# #%%
-# q = Queue()
-# for unitnum in unitnums:
-#     thread = Thread(target=slew_altaz, kwargs = {'q':q})
-#     thread.start()
-#     params = dict(unitnum = unitnum, alt = 40, az = 90)
-#     q.put(params)
-#     q.task_done()
-# # %%
-
-# %%

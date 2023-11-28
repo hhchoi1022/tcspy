@@ -218,7 +218,7 @@ class mainTelescope_pwi4(mainConfig):
         self._log.info('Parking telescope...')
         self.unpark()
         #self.status = self.get_status()
-        self.condition = 'slewing'
+        self.condition = 'busy'
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
         self.status = self.get_status()
         while not self.status['is_stationary']:
@@ -313,7 +313,7 @@ class mainTelescope_pwi4(mainConfig):
         # Slewing 
         self.unpark()
         #self.status = self.get_status()
-        self.condition = 'slewing'
+        self.condition = 'busy'
         self.device.mount_goto_ra_dec_j2000(ra, dec)
         time.sleep(5*self._checktime)
         self.status = self.get_status()
@@ -361,7 +361,7 @@ class mainTelescope_pwi4(mainConfig):
         # Slewing 
         self.unpark()
         #self.status = self.get_status()
-        self.condition = 'slewing'
+        self.condition = 'busy'
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
         time.sleep(5*self._checktime)
         self.status = self.get_status()
@@ -409,7 +409,7 @@ class mainTelescope_pwi4(mainConfig):
         """
         
         self.device.mount_stop()
-        self.condition = 'idle'
+        self.condition = 'aborted'
         self._log.warning('Telescope aborted')
         self.status = self.get_status()
     

@@ -79,6 +79,7 @@ class mainObserver(mainConfig):
         self._earthlocation = EarthLocation.from_geodetic(lat=self._latitude, lon=self._longitude, height=self._elevation)
         self._observer = Observer(location = self._earthlocation, name = self._observatory, timezone = self._timezone)
         self.status = self.get_status()
+        self.condition = 'idle'
     ############ Site info ############
     
     def get_status(self):

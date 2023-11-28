@@ -1,1 +1,2 @@
 from .integrateddevice import IntegratedDevice
+from .devicecondition import DeviceCondition

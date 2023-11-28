@@ -42,6 +42,7 @@ class mainWeather(mainConfig):
         self._checktime = float(self.config['WEATHER_CHECKTIME'])
         self.constraints = self._get_constraints()
         self.device = ObservingConditions(f"{self.config['WEATHER_HOSTIP']}:{self.config['WEATHER_PORTNUM']}",self.config['WEATHER_DEVICENUM'])
+        self.condition = 'disconnected'
         self.status = self.get_status()
         
     def get_status(self):
@@ -102,39 +103,57 @@ class mainWeather(mainConfig):
             except:
                 pass
             try:
-                status['temperature'] = self._get_status_updatetime('Temperature', 1)
+                status['temperature'] = round(self.device.Temperature,1)
             except:
                 pass
             try:
-                status['humidity'] = self._get_status_updatetime('Humidity', 1)
+                status['dewpoint'] = round(self.device.DewPoint,1)
             except:
                 pass
             try:
-                status['pressure'] = self._get_status_updatetime('Pressure', 1)
+                status['humidity'] = round(self.device.Humidity,1)
             except:
                 pass
             try:
-                status['windspeed'] = self._get_status_updatetime('WindSpeed', 1)
+                status['pressure'] = round(self.device.Pressure,1)
             except:
                 pass
             try:
-                status['skybrightness'] = self._get_status_updatetime('SkyQuality', 3)
+                status['windspeed'] = round(self.device.WindSpeed,1)
             except:
                 pass
             try:
-                status['cloudfraction'] = self._get_status_updatetime('CloudCover', 2)
+                status['windgust'] = round(self.device.WindGust,1)
             except:
                 pass
             try:
-                status['rainrate'] = self._get_status_updatetime('RainRate', 2)
+                status['winddirection'] = round(self.device.WindDirection,1)
             except:
                 pass
             try:
-                status['fwhm'] = self._get_status_updatetime('StarFWHM', 2)
+                status['skybrightness'] = round(self.device.SkyQuality,2)
+            except:
+                pass
+            try:
+                status['skytemperature'] = round(self.device.SkyTemperature,1)
+            except:
+                pass
+            try:
+                status['cloudfraction'] = round(self.device.CloudCover,2)
+            except:
+                pass
+            try:
+                status['rainrate'] = int(self.device.RainRate)
+            except:
+                pass
+            try:
+                status['fwhm'] = round(self.device.StarFWHM,2)
             except:
                 pass
             try:
                 status['is_connected'] = self.device.Connected
+                if status['is_connected']:
+                    self.condition = 'idle'
             except:
                 pass
 
@@ -154,6 +173,7 @@ class mainWeather(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self.status['is_connected'] = True
+                self.condition = 'idle'
                 self._log.info('Weather device connected')
         except:
             self._log.warning('Connection failed')
@@ -170,6 +190,7 @@ class mainWeather(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self.status['is_connected'] = False
+            self.condition = 'disconnected'
             self._log.info('Weather device disconnected')
         self.status = self.get_status()
 
@@ -218,39 +239,10 @@ class mainWeather(mainConfig):
         constraints['WINDSPEED'] = self.config['WEATHER_WINDSPEED']
         return constraints
     
-    def _get_status_updatetime(self,
-                               key : str,
-                               digit : int = 1
-                               ):
-        """
-        Get the value and the last update time of a weather parameter.
-
-        Parameters
-        ----------
-        1. key : str
-            The weather parameter.
-        2. digit : int, optional
-            The number of decimal places to round the value.
-
-        Returns
-        -------
-        1. data : dict
-            A dictionary containing the value and the last update time of the weather parameter.
-            Keys:
-                - 'value': The value of the weather parameter, rounded to `digit` decimal places.
-                - 'last_update_seconds': The number of seconds since the last update of the weather parameter.
-        """
-        
-        data = dict()
-        data['value'] = round(getattr(self.device, key),digit)
-        data['last_update_seconds'] = round(self.device.TimeSinceLastUpdate(key),2)
-        return data
-    
     def _update(self):
         """
-        Update the weather device status.
+        Immediately update the weather device status.
         """
-        
         self.device.Refresh()
         
 
@@ -265,11 +257,8 @@ class mainWeather(mainConfig):
 # %%
 
 if __name__ =='__main__':
-    weather = mainWeather(unitnum = 4)
+    weather = mainWeather(unitnum = 1)
     weather.connect()
     print(weather.is_safe())
-    weather.disconnect()
-#%%
-
-
+    #weather.disconnect()
 # %%

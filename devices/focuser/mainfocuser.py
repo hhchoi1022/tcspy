@@ -41,7 +41,9 @@ class mainFocuser(mainConfig):
         self._abort_tolerance = int(self.config['FOCUSER_HALTTOL'])
         self._warn_tolerance = int(self.config['FOCUSER_WARNTOL'])
         self.device = Focuser(f"{self.config['FOCUSER_HOSTIP']}:{self.config['FOCUSER_PORTNUM']}",self.config['FOCUSER_DEVICENUM'])
+        self.condition = 'disconnected'
         self.status = self.get_status()
+        
     
     def get_status(self) -> dict:
         """
@@ -131,6 +133,8 @@ class mainFocuser(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
+                if status['is_connected']:
+                    self.condition = 'idle'
             except:
                 pass
 
@@ -150,6 +154,7 @@ class mainFocuser(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Focuser connected')
+                self.condition = 'idle'
         except:
             self._log.warning('Connection failed')
         self.status = self.get_status()
@@ -166,6 +171,7 @@ class mainFocuser(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self._log.info('Focuser disconnected')
+            self.condition = 'disconnected'
         self.status = self.get_status()
             
     def move(self,
@@ -193,10 +199,12 @@ class mainFocuser(mainConfig):
                 logtxt = 'Set position is far from current position. Be careful... (Moving position : %d > warn tolerance : %d)'%(np.abs(position - self.status['position']), self.status['step_warn'])
                 self._log.warn(logtxt)
             self._log.info('Moving focuser position... (Current : %s To : %s)'%(self.status['position'], position))
+            self.condition = 'busy'
             self.device.Move(position)
             time.sleep(3*self._checktime)
             while self.device.IsMoving:
                 time.sleep(self._checktime)
+            self.condition = 'idle'
             self._log.info('Focuser position is set (Current : %s)'%(self.status['position']))
         self.status = self.get_status()
         
@@ -204,7 +212,7 @@ class mainFocuser(mainConfig):
         """
         Abort the movement of the Focuser device
         """
-    
+        self.condition = 'aborted'
         self.device.Halt()
         self.status = self.get_status()
         self._log.warning('Focuser aborted')

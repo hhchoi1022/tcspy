@@ -23,7 +23,8 @@ class mainImage(mainConfig):
                  filterwheel_info : dict = None,
                  focuser_info : dict = None,
                  observer_info : dict = None,
-                 target_info : dict = None
+                 target_info : dict = None,
+                 weather_info : dict = None
                  ):
         
         self._framenum = frame_number
@@ -35,6 +36,7 @@ class mainImage(mainConfig):
         self._focusinfo = focuser_info
         self._obsinfo = observer_info
         self._targetinfo = target_info
+        self._weatherinfo = weather_info
         
     def show(self):
         figsize_x = 4 * self.header['NAXIS1']/4096
@@ -122,7 +124,40 @@ class mainImage(mainConfig):
         # logger
         info['LOGFILE'] = self._format_header(self._configinfo['LOGGER_PATH'], 'Log file path')
         return info
+    
+    def _add_weatinfo_to_hdr(self):
+        info = dict()
+        info['DATE-WEA'] = None
+        info['TEMP'] = None
+        info['HUMIDITY'] = None
+        info['PRESSURE'] = None
+        info['DEWPOINT'] = None
+        info['WINDSPED'] = None
+        info['WINDGUST'] = None
+        info['DEWPOINT'] = None
+        info['SKYBRIGT'] = None
+        info['SKYTEMP'] = None
+        info['SKYFWHM'] = None
+        info['CLUDFRAC'] = None
+        info['RAINRATE'] = None
+
+        if self._weatherinfo:
+            info['DATE-WEA'] = self._format_header(self._weatherinfo['update_time'], 'UTC of the latest weather update')
+            info['TEMP'] = self._format_header(self._weatherinfo['temperature'], 'Atmospheric temperature (deg C) at the observatory')
+            info['HUMIDITY'] = self._format_header(self._weatherinfo['humidity'], 'Atmospheric relative humidity (0-100%) at the observatory')
+            info['PRESSURE'] = self._format_header(self._weatherinfo['pressure'], 'Atmospheric pressure (hPa) at the observatory altitude')
+            info['DEWPOINT'] = self._format_header(self._weatherinfo['dewpoint'], 'Atmospheric dew point temperature (deg C) at the observatory')
+            info['WINDSPED'] = self._format_header(self._weatherinfo['windspeed'], 'Wind speed (m/s) at the observatory')
+            info['WINDGUST'] = self._format_header(self._weatherinfo['windgust'], 'Peak 3 second wind gust (m/s) at the observatory over the last 2 minutes')
+            info['DEWPOINT'] = self._format_header(self._weatherinfo['winddirection'], 'Direction (deg) from which the wind is blowing at the observatory')
+            info['SKYBRIGT'] = self._format_header(self._weatherinfo['skybrightness'], 'Sky quality (mag per sq-arcsec) at the observatory')
+            info['SKYTEMP'] = self._format_header(self._weatherinfo['skytemperature'], 'Sky temperature (deg C) at the observatory')
+            info['SKYFWHM'] = self._format_header(self._weatherinfo['fwhm'], 'Seeing (FWHM in arc-sec) at the observatory')
+            info['CLUDFRAC'] = self._format_header(self._weatherinfo['cloudfraction'], 'Amount of sky obscured by cloud (0.0-1.0)')
+            info['RAINRATE'] = self._format_header(self._weatherinfo['rainrate'], 'Rain rate (mm/hr) at the observatory')
+
         
+    
     def _add_caminfo_to_hdr(self):
         info = dict()
         info['INSTRUME'] = None

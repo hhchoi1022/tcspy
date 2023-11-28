@@ -57,6 +57,7 @@ class mainCamera(mainConfig):
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['CAMERA_CHECKTIME'])
         self.device = Camera(f"{self.config['CAMERA_HOSTIP']}:{self.config['CAMERA_PORTNUM']}",self.config['CAMERA_DEVICENUM'])
+        self.condition = 'disconnected'
         self.status = self.get_status()
 
     def get_status(self) -> dict:
@@ -123,6 +124,8 @@ class mainCamera(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
+                if status['is_connected']:
+                    self.condition = 'idle'
             except:
                 pass
             try:
@@ -237,7 +240,7 @@ class mainCamera(mainConfig):
             except:
                 pass
             try:
-                imginfo['imgtype'] = self.imagetype
+                imginfo['imgtype'] = self.imgtype
             except:
                 pass
             try:
@@ -259,7 +262,7 @@ class mainCamera(mainConfig):
             except:
                 pass
             try:
-                obstime_ut = datetime.strptime(self.device.LastExposureStartTime, "%Y-%m-%dT%H:%M:%S")
+                obstime_ut = Time(self.device.LastExposureStartTime).datetime
                 tz_local = pytz.timezone(self.config['OBSERVER_TIMEZONE'])
                 local_ut = pytz.utc.localize(obstime_ut)
                 local_lt = local_ut.astimezone(tz_local)
@@ -288,6 +291,7 @@ class mainCamera(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Camera connected')
+                self.condition = 'idle'
         except:
             self._log.warning('Connection failed')
         self.status = self.get_status()
@@ -303,6 +307,7 @@ class mainCamera(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self._log.info('Camera disconnected')
+            self.condition = 'disconnected'
         self.status = self.get_status()
     
     @Timeout(30, 'Timeout') 
@@ -382,6 +387,7 @@ class mainCamera(mainConfig):
         
         # Set binning 
         self._set_binning(binning = binning)
+        self.imgtype = imgtype.upper()
         # Set minimum exposure time
         if exptime < self.device.ExposureMin:
             exptime = self.device.ExposureMin
@@ -402,10 +408,12 @@ class mainCamera(mainConfig):
             is_light = True
         # Exposure
         #self._log.info(f'[%s] Start exposure... (exptime = %.1f)'%(imgtype.upper(), exptime))
+        self.condition = 'busy'
         self.device.StartExposure(Duration = exptime, Light = is_light)
         time.sleep(2*self._checktime)
         while not self.device.ImageReady:
             time.sleep(self._checktime)
+        self.condition = 'idle'
         imginfo, status = self.get_imginfo()
         # Modify image information
         imginfo['exptime'] = exptime
@@ -421,6 +429,7 @@ class mainCamera(mainConfig):
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
             self._log.warning('Camera aborted')
+            self.condition = 'aborted'
         self.status = self.get_status()
     
     def _set_binning(self,
@@ -444,8 +453,6 @@ class mainCamera(mainConfig):
         self.device.NumX = self.device.CameraXSize // self.device.BinX
         self.device.NumY = self.device.CameraYSize // self.device.BinY
         self.status = self.get_status()
-        
-        
 # %% Test
 if __name__ == '__main__':
     import numpy as np

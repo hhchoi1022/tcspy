@@ -62,8 +62,9 @@ class mainTelescope_Alpaca(mainConfig):
         self._checktime = float(self.config['TELESCOPE_CHECKTIME'])
         self.observer = mainObserver(unitnum = unitnum)
         self.device = Telescope(f"{self.config['TELESCOPE_HOSTIP']}:{self.config['TELESCOPE_PORTNUM']}",self.config['TELESCOPE_DEVICENUM'])
+        self.condition = 'disconnected'
         self.status = self.get_status()
-        self.condition = 'idle' #idle, slewing, parked
+        
         
     def get_status(self):
 
@@ -122,6 +123,8 @@ class mainTelescope_Alpaca(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
+                if status['is_connected']:
+                    self.condition = 'idle'
             except:
                 pass
             try:
@@ -153,10 +156,11 @@ class mainTelescope_Alpaca(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Telescope connected')
+                self.condition = 'idle'
         except:
             self._log.warning('Connection failed')
         self.status = self.get_status()
-            
+        
     def disconnect(self):
         """
         Disconnects from the telescope.
@@ -168,6 +172,7 @@ class mainTelescope_Alpaca(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self._log.info('Telescope disconnected')
+            self.condition = 'disconnected'
         self.status = self.get_status()
     '''  
     def set_park(self):
@@ -214,7 +219,7 @@ class mainTelescope_Alpaca(mainConfig):
                 self.device.Tracking = False
             while self.device.Tracking:
                 time.sleep(self._checktime)
-            self.condition = 'slewing'
+            self.condition = 'busy'
             self.device.SlewToAltAzAsync(az, alt)
             time.sleep(5*self._checktime)
             while self.device.Slewing:
@@ -266,10 +271,6 @@ class mainTelescope_Alpaca(mainConfig):
             Whether to start tracking after slewing to the target. Default is True.
         """
         
-        # if (ra != None) & (dec != None):
-        #     coordinate = to_SkyCoord(ra, dec)
-        # ra_hour = coordinate.ra.hour
-        # dec_deg = coordinate.dec.deg
         target = mainTarget(unitnum = self.unitnum, observer = self.observer, target_ra = ra, target_dec = dec)
         altaz = target.altaz()
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
@@ -286,7 +287,7 @@ class mainTelescope_Alpaca(mainConfig):
             self.device.Tracking = tracking 
             while not self.device.Tracking:
                 time.sleep(self._checktime)
-            self.condition = 'slewing'
+            self.condition = 'busy'
             self.device.SlewToCoordinatesAsync(target.ra_hour, target.dec_deg)
             time.sleep(5*self._checktime)
             while self.device.Slewing:
@@ -335,7 +336,7 @@ class mainTelescope_Alpaca(mainConfig):
             self.device.Tracking = tracking
             while self.device.Tracking:
                 time.sleep(self._checktime)
-            self.condition = 'slewing'
+            self.condition = 'busy'
             self.device.SlewToAltAzAsync(az, alt)
             time.sleep(5*self._checktime)
             while self.device.Slewing:
@@ -394,8 +395,7 @@ class mainTelescope_Alpaca(mainConfig):
         """
         
         self.device.AbortSlew()
-        self.condition = 'idle'
-        self._log.warning('Telescope aborted')
+        self.condition = 'aborted'
         self.status = self.get_status()
         
 #%% Test  

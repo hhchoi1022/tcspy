@@ -42,6 +42,7 @@ class mainFilterwheel(mainConfig):
         self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])        
         self.filtnames = None
         self.offsets = None
+        self.condition = 'disconnected'
         self.status = self.get_status()
         
     def get_status(self) -> dict:
@@ -97,6 +98,8 @@ class mainFilterwheel(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
+                if status['is_connected']:
+                    self.condition = 'idle'
             except:
                 pass
 
@@ -116,6 +119,7 @@ class mainFilterwheel(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Filterwheel connected')
+                self.condition = 'idle'
         except:
             self._log.warning('Connection failed')
         self.status = self.get_status()
@@ -131,6 +135,7 @@ class mainFilterwheel(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self._log.info('Filterwheel disconnected')
+            self.condition = 'disconnected'
         self.status = self.get_status()
             
     def move(self,
@@ -154,10 +159,12 @@ class mainFilterwheel(mainConfig):
             if filter_ > len(self.filtnames):
                 raise ValueError(f'Position {filter_} is not implemented')
             self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
+        self.condition = 'busy'
         self.device.Position = filter_
         time.sleep(self._checktime)
         while not self.device.Position == filter_:
             time.sleep(self._checktime)
+        self.condition = 'idle'
         changed_filter = self._get_current_filtinfo()['name']
         self._log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
         self.status = self.get_status()
@@ -166,6 +173,7 @@ class mainFilterwheel(mainConfig):
             return offset 
         
     def abort(self):
+        self.condition = 'aborted'
         self.status = self.get_status()
         pass
     
