@@ -5,8 +5,8 @@ from tcspy.utils.target import mainTarget
 from tcspy.utils.image import mainImage
 from tcspy.utils.logger import mainLogger
 from tcspy.action.level1.changefilter import ChangeFilter
-from threading import Thread, Event
-
+from threading import Event
+from tcspy.devices import DeviceCondition
 #%%
 class Exposure(Interface_Runnable, Interface_Abortable):
     

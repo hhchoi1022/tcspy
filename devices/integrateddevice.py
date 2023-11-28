@@ -20,9 +20,9 @@ class IntegratedDevice(mainConfig):
         self.tel = None
         self.focus = None
         self.filt = None
-        self.obs = None
         self.weat = None
         self.safe = None
+        self.observer = self._get_observer()
         self._set_devices()
 
     def _set_devices(self):
@@ -30,7 +30,6 @@ class IntegratedDevice(mainConfig):
         self.tel = self._get_tel(tel_type = self.tel_type)
         self.focus = self._get_focus()
         self.filt = self._get_filtwheel()
-        self.obs = self._get_observer()
         self.weat = self._get_weather()
         self.safe = self._get_safetymonitor()
     
@@ -39,7 +38,6 @@ class IntegratedDevice(mainConfig):
         self.tel.status = self.tel.get_status()
         self.focus.status = self.focus.get_status()
         self.filt.status = self.filt.get_status()
-        self.obs.status = self.obs.get_status()
         self.weat.status = self.weat.get_status()
         self.safe.status = self.safe.get_status()
     
@@ -51,7 +49,6 @@ class IntegratedDevice(mainConfig):
         condition['telescope'] = self.tel.condition
         condition['focuser'] = self.focus.condition
         condition['filterwheel'] = self.filt.condition
-        condition['observer'] = self.obs.condition
         condition['weather'] = self.weat.condition
         condition['safetymonitor'] = self.safe.condition
         return condition
@@ -64,7 +61,6 @@ class IntegratedDevice(mainConfig):
         status['telescope'] = self.tel.status
         status['focuser'] = self.focus.status
         status['filterwheel'] = self.filt.status
-        status['observer'] = self.obs.status
         status['weather'] = self.weat.status
         status['safetymonitor'] = self.safe.status
         return status
@@ -76,7 +72,6 @@ class IntegratedDevice(mainConfig):
         devices['telescope'] = self.tel
         devices['focuser'] = self.focus
         devices['filterwheel'] = self.filt
-        devices['observer'] = self.obs
         devices['weather'] = self.weat
         devices['safetymonitor'] = self.safe
         return devices

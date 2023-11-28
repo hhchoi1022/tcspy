@@ -296,6 +296,7 @@ class mainCamera(mainConfig):
             self._log.warning('Connection failed')
         self.status = self.get_status()
 
+    @Timeout(5, 'Timeout')
     def disconnect(self):
         """
         Disconnect from the camera and wait until the disconnection is completed.

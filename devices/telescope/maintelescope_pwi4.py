@@ -159,6 +159,7 @@ class mainTelescope_pwi4(mainConfig):
         self._update_PWI_status()
         self.status = self.get_status()
     
+    @Timeout(5, 'Timeout')
     def disconnect(self):
         """
         Disconnect from the telescope.

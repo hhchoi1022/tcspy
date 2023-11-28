@@ -102,6 +102,7 @@ class mainSafetyMonitor(mainConfig):
             self._log.warning('Connection failed')
         self.status = self.get_status()
     
+    @Timeout(5, 'Timeout')
     def disconnect(self):
         """
         Disconnect from the SafetyMonitor device
