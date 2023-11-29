@@ -52,7 +52,6 @@ class MultiAction:
                 kwargs = self.queue.get()
                 func.abort()
                 #self.queue.task_done()
-        thread_dict = dict()
         for telescope in self.array_telescope:
             thread = Thread(target= consumer, kwargs = {'telescope' : telescope, 'abort_action' : self.abort_action}, daemon = True)
             thread.start()
@@ -64,9 +63,25 @@ class MultiAction:
 IntDevice_1 = IntegratedDevice(unitnum = 1)
 IntDevice_2 = IntegratedDevice(unitnum = 2)
 array_telescope = list([IntDevice_1, IntDevice_2])
+
+#%%
+from tcspy.action.level1 import Park
+#%%
+array_kwargs = dict()
+A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Park)
+A.run()
+#%%
+A.abort()
+#%%
+from tcspy.action.level1 import Unpark
+#%%
+array_kwargs = dict()
+A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Unpark)
+A.run()
+
 #%%
 from tcspy.action.level1.slewAltAz import SlewAltAz
-array_kwargs = dict(alt = 0,
+array_kwargs = dict(alt = 30,
                     az  = 270)
 #%%
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= SlewAltAz)
@@ -76,10 +91,10 @@ A.run()
 A.abort()
 #%%
 from tcspy.action.level2.exposure import Exposure
-array_kwargs = dict(frame_number = 2,
-                    exptime = 10,
+array_kwargs = dict(frame_number = 0,
+                    exptime = 5,
                     filter_ = 'g',
-                    imgtype = 'Light',
+                    imgtype = 'bias',
                     binning = 1,
                     target_name = None,
                     target = None

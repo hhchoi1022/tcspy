@@ -6,8 +6,8 @@ class DeviceStatus(Interface):
     
     def __init__(self, 
                  Integrated_device : IntegratedDevice):
-        self.IntDevice = Integrated_device
-        self.tel_type = self.IntDevice.tel_type
+        self.IDevice = Integrated_device
+        self.tel_type = self.IDevice.tel_type
     
     @property
     def dict(self):
@@ -30,9 +30,9 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IntDevice.cam.device.Connected:
+            if self.IDevice.camera.device.Connected:
                 status = 'idle'
-                if self.IntDevice.cam.device.CamsState.name == 'cameraIdle':
+                if self.IDevice.camera.device.CamsState.name == 'cameraIdle':
                     status = 'idle'
                 else:
                     status = 'busy'    
@@ -49,9 +49,9 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            telescope = self.IntDevice.tel
+            telescope = self.IDevice.telescope
             # Alpaca device
-            if self.IntDevice.tel_type.lower() == 'alpaca':
+            if self.IDevice.tel_type.lower() == 'alpaca':
                 if telescope.device.Connected:
                     status = 'idle'
                     if telescope.device.AtHome:
@@ -86,9 +86,8 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IntDevice.filt.device.Connected:
+            if self.IDevice.filterwheel.device.Connected:
                 status = 'idle'
-                status = self.filt.status
         except:
             pass
         return status
@@ -102,9 +101,8 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IntDevice.focus.device.Connected:
+            if self.IDevice.focuser.device.Connected:
                 status = 'idle'
-                status = self.filt.status
         except:
             pass
         return status
@@ -128,9 +126,9 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IntDevice.safe.device.Connected:
+            if self.IDevice.safetymonitor.device.Connected:
                 status = 'unsafe'
-                if self.IntDevice.safe.device.IsSafe:
+                if self.IDevice.safetymonitor.device.IsSafe:
                     status = 'safe'
         except:
             pass
@@ -145,9 +143,9 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IntDevice.weat.device.Connected:
+            if self.IDevice.weather.device.Connected:
                 status = 'unsafe'
-                if self.IntDevice.weat.is_safe():
+                if self.IDevice.weather.is_safe():
                     status = 'safe'
         except:
             pass

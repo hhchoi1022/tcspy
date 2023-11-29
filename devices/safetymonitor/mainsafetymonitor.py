@@ -36,7 +36,6 @@ class mainSafetyMonitor(mainConfig):
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['SAFEMONITOR_CHECKTIME'])
         self.device = SafetyMonitor(f"{self.config['SAFEMONITOR_HOSTIP']}:{self.config['SAFEMONITOR_PORTNUM']}",self.config['SAFEMONITOR_DEVICENUM'])
-        self.condition = 'disconnected'
         self.status = self.get_status()
         
     def get_status(self) -> dict:
@@ -73,8 +72,6 @@ class mainSafetyMonitor(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
-                if status['is_connected']:
-                    self.condition = 'idle'
             except:
                 pass
             try:
@@ -97,10 +94,9 @@ class mainSafetyMonitor(mainConfig):
                     time.sleep(self._checktime)
                 if  self.device.Connected:
                     self._log.info('SafetyMonitor device connected')
-                    self.condition = 'idle'
         except :
             self._log.warning('Connection failed')
-        self.status = self.get_status()
+        #self.status = self.get_status()
     
     @Timeout(5, 'Timeout')
     def disconnect(self):
@@ -115,8 +111,7 @@ class mainSafetyMonitor(mainConfig):
                 time.sleep(self._checktime)
             if not self.device.Connected:
                 self._log.info('Weather SafetyMonitor disconnected')
-                self.condition = 'disconnected'
-        self.status = self.get_status()
+        #self.status = self.get_status()
 # %%
 if __name__ == '__main__':
     safe = mainSafetyMonitor(unitnum = 4)

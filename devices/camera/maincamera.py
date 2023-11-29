@@ -5,12 +5,15 @@ import pytz
 import numpy as np
 from astropy.time import Time
 from datetime import datetime
+from threading import Event
 
 from alpaca.camera import Camera
 from alpaca.camera import ImageArrayElementTypes
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
+
+
 #%%
 
 class mainCamera(mainConfig):
@@ -57,7 +60,6 @@ class mainCamera(mainConfig):
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['CAMERA_CHECKTIME'])
         self.device = Camera(f"{self.config['CAMERA_HOSTIP']}:{self.config['CAMERA_PORTNUM']}",self.config['CAMERA_DEVICENUM'])
-        self.condition = 'disconnected'
         self.status = self.get_status()
 
     def get_status(self) -> dict:
@@ -124,8 +126,6 @@ class mainCamera(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
-                if status['is_connected']:
-                    self.condition = 'idle'
             except:
                 pass
             try:
@@ -291,11 +291,10 @@ class mainCamera(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Camera connected')
-                self.condition = 'idle'
         except:
             self._log.warning('Connection failed')
-        self.status = self.get_status()
-
+        #self.status = self.get_status()
+    
     @Timeout(5, 'Timeout')
     def disconnect(self):
         """
@@ -308,40 +307,75 @@ class mainCamera(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self._log.info('Camera disconnected')
-            self.condition = 'disconnected'
-        self.status = self.get_status()
+        #self.status = self.get_status()
     
-    @Timeout(30, 'Timeout') 
-    def cooler_on(self,
-                  settemperature : float,
-                  tolerance : float = 1):
-        """
-        Turn on the cooler for the connected camera and set the CCD temperature to the specified value.
+    def cooler_on(self):
+        if self.device.CanSetCCDTemperature:
+            self.device.CoolerOn = True
+        return
 
-        Parameters
-        ==========
-        1. settemperature : float
-            The target CCD temperature to set.
-        2. tolerance : float, optional
-            The tolerance level for the CCD temperature. The cooling process will end when the temperature is within this tolerance of the target temperature.
-        """
+    def cooler_off(self):
+        if self.device.CanSetCCDTemperature:
+            self.device.CoolerOn = False
+        return
+            
+    def cool(self,
+             abort_action : Event,
+             settemperature: float,
+             tolerance: float = 1,
+             max_consecutive_stable_iterations: int = 10,
+             ):
         try:
             if self.device.CanSetCCDTemperature:
                 self.device.SetCCDTemperature = settemperature
                 self.device.CoolerOn = True
                 self._log.info('Start cooling...')
+                
+                # Initialize variables for tracking temperature and gradient
+                prev_temperature = self.device.CCDTemperature
+                consecutive_stable_iterations = 0
+                current_temperature = self.device.CCDTemperature
+
                 while not self.device.CCDTemperature - settemperature < tolerance:
-                    self._log.info('Current temperature : %.1f'%(self.device.CCDTemperature))
+                    if abort_action.is_set():
+                        self.device.CoolerOn = False
+                        self._log.warning('Camera cooling is aborted')
+                        return
+                    current_temperature = self.device.CCDTemperature
+                    cooler_power = None
+                    if self.device.CanGetCoolerPower:
+                        cooler_power = self.device.CoolerPower
+                    
+                    # Calculate the gradient
+                    gradient = current_temperature - prev_temperature
+                    
+                    if gradient > -0.1:  # Adjust the threshold as needed
+                        consecutive_stable_iterations += 1
+                    else:
+                        consecutive_stable_iterations = 0
+
+                    # Check if the temperature has been stable for too long
+                    if consecutive_stable_iterations >= max_consecutive_stable_iterations:
+                        raise TimeoutError('Cooling operation has stalled')
+
+                    self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
                     time.sleep(5)
-                self._log.info('Cooling finished. Set temperature : %.1f'%(settemperature))
+                    
+                    # Update the previous temperature for the next iteration
+                    prev_temperature = current_temperature
+
+                self._log.info('Cooling finished. Current temperature: %.1f' % current_temperature)
             else:
                 self._log.warning('Cooling is not implemented on this device')
         except TimeoutError as e:
-            self._log.warning('{}CCD Temperature cannot be reached to the set temp, current temp : {}'.format(str(e), self.device.CCDTemperature))
-            
+            self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
     
-    def cooler_off(self,
-                   warmuptime : float = 30):
+    def warm(self,
+             abort_action : Event,
+             settemperature : float = 10,
+             tolerance: float = 1,
+             max_consecutive_stable_iterations : int = 10
+             ):
         """
         Turn off the cooler for the connected camera and warm up the CCD for the specified duration.
 
@@ -350,22 +384,56 @@ class mainCamera(mainConfig):
         1. warmuptime : float, optional
             The duration to warm up the CCD, in seconds.
         """
-        
-        if self.device.CoolerOn:
-            self.device.SetCCDTemperature = 10
-            self._log.info('Warming up...')
-            idx = warmuptime//5
-            for i in range(idx):
-                self._log.info('Current temperature : %.1f'%(self.device.CCDTemperature))
-                time.sleep(5)
-            self.device.CoolerOn = False
-            self._log.info('Cooler is now off')
-        self.status = self.get_status()
-            
+        try:
+            if self.device.CanSetCCDTemperature:
+                self.device.SetCCDTemperature = settemperature
+                self._log.info('Start warning...')
+                
+                # Initialize variables for tracking temperature and gradient
+                prev_temperature = self.device.CCDTemperature
+                consecutive_stable_iterations = 0
+                current_temperature = self.device.CCDTemperature
+                
+                while not self.device.CCDTemperature - settemperature > tolerance:
+                    if abort_action.is_set():
+                        self.device.CoolerOn = False
+                        self._log.warning('Camera warming is aborted')
+                        return
+                    current_temperature = self.device.CCDTemperature
+                    cooler_power = None
+                    if self.device.CanGetCoolerPower:
+                        cooler_power = self.device.CoolerPower
+                        
+                    # Calculate the gradient
+                    gradient = current_temperature - prev_temperature
+                    
+                    if gradient < 0.1:  # Adjust the threshold as needed
+                        consecutive_stable_iterations += 1
+                    else:
+                        consecutive_stable_iterations = 0
+
+                    # Check if the temperature has been stable for too long
+                    if consecutive_stable_iterations >= max_consecutive_stable_iterations:
+                        raise TimeoutError('Cooling operation has stalled')
+
+                    self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
+                    time.sleep(5)
+                    
+                    # Update the previous temperature for the next iteration
+                    prev_temperature = current_temperature
+                self.device.CoolerOn = False
+
+                self._log.info('Warning finished. Current temperature: %.1f' % current_temperature)
+            else:
+                self._log.warning('Cooling is not implemented on this device')
+        except TimeoutError as e:
+            self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
+    
     def exposure(self,
-                 exptime : float = 0,
-                 imgtype : str = 'light',
-                 binning : int = 1
+                 abort_action : Event,
+                 exptime : float,
+                 imgtype : str,
+                 binning : int,
                  ):
         """
         Capture a light frame with the connected camera.
@@ -389,14 +457,17 @@ class mainCamera(mainConfig):
         # Set binning 
         self._set_binning(binning = binning)
         self.imgtype = imgtype.upper()
+        
         # Set minimum exposure time
         if exptime < self.device.ExposureMin:
             exptime = self.device.ExposureMin
+        
         # Set imagetype & exposure time & is_light
         if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'LIGHT']:
             raise ValueError(f'Type "{imgtype}" is not set as imagetype')
         if imgtype.upper() == 'BIAS':
-            exptime = exptime
+            exptime = self.device.ExposureMin
+            self._log.warning('Input exposure time is set to the minimum value for BIAS image')
             is_light = False
         if imgtype.upper() == 'DARK':
             exptime = exptime
@@ -409,18 +480,18 @@ class mainCamera(mainConfig):
             is_light = True
         # Exposure
         #self._log.info(f'[%s] Start exposure... (exptime = %.1f)'%(imgtype.upper(), exptime))
-        self.condition = 'busy'
         self.device.StartExposure(Duration = exptime, Light = is_light)
-        time.sleep(2*self._checktime)
+        time.sleep(self._checktime)
         while not self.device.ImageReady:
+            if abort_action.is_set():
+                self._log.warning('Camera exposure is aborted')
+                self.abort()
+                return
             time.sleep(self._checktime)
-        self.condition = 'idle'
         imginfo, status = self.get_imginfo()
-        # Modify image information
-        imginfo['exptime'] = exptime
-        # Logging
-        #self._log.info(f'[%s] Exposure finished (exptime = %.1f)'%(imgtype.upper(), exptime))
-        self.status = self.get_status()
+        # Modify image information if camera returns too detailed exposure time
+        imginfo['exptime'] = round(float(imginfo['exptime']),1)
+        #imginfo['exptime'] = exptime
         return imginfo 
 
     def abort(self):
@@ -429,9 +500,7 @@ class mainCamera(mainConfig):
         """
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
-            self._log.warning('Camera aborted')
-            self.condition = 'aborted'
-        self.status = self.get_status()
+        #self.status = self.get_status()
     
     def _set_binning(self,
                      binning :int = 1):
@@ -453,7 +522,7 @@ class mainCamera(mainConfig):
         self.device.BinX = self.device.BinY = binning
         self.device.NumX = self.device.CameraXSize // self.device.BinX
         self.device.NumY = self.device.CameraYSize // self.device.BinY
-        self.status = self.get_status()
+        #self.status = self.get_status()
 # %% Test
 if __name__ == '__main__':
     import numpy as np

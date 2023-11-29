@@ -42,7 +42,6 @@ class mainFilterwheel(mainConfig):
         self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])        
         self.filtnames = None
         self.offsets = None
-        self.condition = 'disconnected'
         self.status = self.get_status()
         
     def get_status(self) -> dict:
@@ -98,8 +97,6 @@ class mainFilterwheel(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
-                if status['is_connected']:
-                    self.condition = 'idle'
             except:
                 pass
 
@@ -119,10 +116,9 @@ class mainFilterwheel(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Filterwheel connected')
-                self.condition = 'idle'
         except:
             self._log.warning('Connection failed')
-        self.status = self.get_status()
+        #self.status = self.get_status()
     
     @Timeout(5, 'Timeout')
     def disconnect(self):
@@ -136,8 +132,7 @@ class mainFilterwheel(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self._log.info('Filterwheel disconnected')
-            self.condition = 'disconnected'
-        self.status = self.get_status()
+        #self.status = self.get_status()
             
     def move(self,
              filter_ : str or int,
@@ -150,33 +145,40 @@ class mainFilterwheel(mainConfig):
         1. filter_ : str or int
             The position or name of the filter to move to.
         """
+        # Check whether the input filter is implemented
         current_filter = self._get_current_filtinfo()['name']
         if isinstance(filter_, str):
             if not filter_ in self.filtnames:
-                raise ValueError(f'Filter {filter_} is not implemented')
-            self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, filter_))
-            filter_ = self._filtname_to_position(filter_)
+                self._log.critical(f'Filter {filter_} is not implemented')
+                return
+            else:
+                self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, filter_))
+                filter_ = self._filtname_to_position(filter_)
         else:
             if filter_ > len(self.filtnames):
-                raise ValueError(f'Position {filter_} is not implemented')
-            self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
-        self.condition = 'busy'
+                self._log.critical(f'Position "{filter_}" is not implemented')
+                return
+            else:
+                self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
+        
+        # Change filter
         self.device.Position = filter_
         time.sleep(self._checktime)
         while not self.device.Position == filter_:
             time.sleep(self._checktime)
-        self.condition = 'idle'
+            
+        # Return result
         changed_filter = self._get_current_filtinfo()['name']
         self._log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
-        self.status = self.get_status()
+        #self.status = self.get_status()
+        
+        # If return_focus_offset == True, return offset
         if return_focus_offset:
             offset = self.calc_offset(current_filt= current_filter, changed_filt = changed_filter)
             return offset 
         
     def abort(self):
-        self.condition = 'aborted'
-        self.status = self.get_status()
-        pass
+        return
     
     # Information giding
     def _get_all_filt_names(self) -> list:

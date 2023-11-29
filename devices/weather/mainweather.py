@@ -42,7 +42,6 @@ class mainWeather(mainConfig):
         self._checktime = float(self.config['WEATHER_CHECKTIME'])
         self.constraints = self._get_constraints()
         self.device = ObservingConditions(f"{self.config['WEATHER_HOSTIP']}:{self.config['WEATHER_PORTNUM']}",self.config['WEATHER_DEVICENUM'])
-        self.condition = 'disconnected'
         self.status = self.get_status()
         
     def get_status(self):
@@ -152,8 +151,6 @@ class mainWeather(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
-                if status['is_connected']:
-                    self.condition = 'idle'
             except:
                 pass
 
@@ -173,11 +170,10 @@ class mainWeather(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self.status['is_connected'] = True
-                self.condition = 'idle'
                 self._log.info('Weather device connected')
         except:
             self._log.warning('Connection failed')
-        self.status = self.get_status()
+        #self.status = self.get_status()
     
     @Timeout(5, 'Timeout')
     def disconnect(self):
@@ -191,9 +187,8 @@ class mainWeather(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self.status['is_connected'] = False
-            self.condition = 'disconnected'
             self._log.info('Weather device disconnected')
-        self.status = self.get_status()
+        #self.status = self.get_status()
 
     def is_safe(self):
         """

@@ -16,80 +16,69 @@ class IntegratedDevice(mainConfig):
                  tel_type : str = 'Alpaca'):
         super().__init__(unitnum= unitnum)
         self.tel_type = tel_type
-        self.cam = None
-        self.tel = None
-        self.focus = None
-        self.filt = None
-        self.weat = None
-        self.safe = None
+        self.camera = None
+        self.telescope = None
+        self.focuser = None
+        self.filterwheel = None
+        self.weather = None
+        self.safetymonitor = None
         self.observer = self._get_observer()
         self._set_devices()
 
     def _set_devices(self):
-        self.cam = self._get_cam()
-        self.tel = self._get_tel(tel_type = self.tel_type)
-        self.focus = self._get_focus()
-        self.filt = self._get_filtwheel()
-        self.weat = self._get_weather()
-        self.safe = self._get_safetymonitor()
+        self.camera = self._get_camera()
+        self.telescope = self._get_telescope(tel_type = self.tel_type)
+        self.focuser = self._get_focuser()
+        self.filterwheel = self._get_filterwheel()
+        self.weather = self._get_weather()
+        self.safetymonitor = self._get_safetymonitor()
     
     def update_status(self):
-        self.cam.status = self.cam.get_status()
-        self.tel.status = self.tel.get_status()
-        self.focus.status = self.focus.get_status()
-        self.filt.status = self.filt.get_status()
-        self.weat.status = self.weat.get_status()
-        self.safe.status = self.safe.get_status()
+        self.camera.status = self.camera.get_status()
+        self.telescope.status = self.telescope.get_status()
+        self.focuser.status = self.focuser.get_status()
+        self.filterwheel.status = self.filterwheel.get_status()
+        self.weather.status = self.weather.get_status()
+        self.safetymonitor.status = self.safetymonitor.get_status()
     
-    
-    @property
-    def condition(self):
-        condition = dict()
-        condition['camera'] = self.cam.condition
-        condition['telescope'] = self.tel.condition
-        condition['focuser'] = self.focus.condition
-        condition['filterwheel'] = self.filt.condition
-        condition['weather'] = self.weat.condition
-        condition['safetymonitor'] = self.safe.condition
-        return condition
-
     @property
     def status(self):
         self.update_status()
         status = dict()
-        status['camera'] = self.cam.status
-        status['telescope'] = self.tel.status
-        status['focuser'] = self.focus.status
-        status['filterwheel'] = self.filt.status
-        status['weather'] = self.weat.status
-        status['safetymonitor'] = self.safe.status
+        status['camera'] = self.camera.status
+        status['telescope'] = self.telescope.status
+        status['focuser'] = self.focuser.status
+        status['filterwheel'] = self.filterwheel.status
+        status['weather'] = self.weather.status
+        status['safetymonitor'] = self.safetymonitor.status
+        status['observer'] = self.observer.status
         return status
     
     @property
     def devices(self):
         devices = dict()
-        devices['camera'] = self.cam
-        devices['telescope'] = self.tel
-        devices['focuser'] = self.focus
-        devices['filterwheel'] = self.filt
-        devices['weather'] = self.weat
-        devices['safetymonitor'] = self.safe
+        devices['camera'] = self.camera
+        devices['telescope'] = self.telescope
+        devices['focuser'] = self.focuser
+        devices['filterwheel'] = self.filterwheel
+        devices['weather'] = self.weather
+        devices['safetymonitor'] = self.safetymonitor
         return devices
     
-    def _get_cam(self):
+    def _get_camera(self):
         return mainCamera(unitnum= self.unitnum)
 
-    def _get_tel(self,
-                 tel_type : str = 'Alpaca'):
+    def _get_telescope(self,
+                       tel_type : str = 'Alpaca'):
         if tel_type.upper() == 'ALPACA':
             return mainTelescope_Alpaca(unitnum= self.unitnum)
         else:
             return mainTelescope_pwi4(unitnum= self.unitnum)
 
-    def _get_focus(self):
+    def _get_focuser(self):
         return mainFocuser(unitnum= self.unitnum)
     
-    def _get_filtwheel(self):
+    def _get_filterwheel(self):
         return mainFilterwheel(unitnum= self.unitnum)
     
     def _get_observer(self):
@@ -101,3 +90,5 @@ class IntegratedDevice(mainConfig):
     def _get_safetymonitor(self):
         return mainSafetyMonitor(unitnum = self.unitnum)
     
+
+# %%

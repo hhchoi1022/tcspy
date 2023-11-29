@@ -155,8 +155,7 @@ class mainImage(mainConfig):
             info['SKYFWHM'] = self._format_header(self._weatherinfo['fwhm'], 'Seeing (FWHM in arc-sec) at the observatory')
             info['CLUDFRAC'] = self._format_header(self._weatherinfo['cloudfraction'], 'Amount of sky obscured by cloud (0.0-1.0)')
             info['RAINRATE'] = self._format_header(self._weatherinfo['rainrate'], 'Rain rate (mm/hr) at the observatory')
-
-        
+        return info
     
     def _add_caminfo_to_hdr(self):
         info = dict()
@@ -250,9 +249,10 @@ class mainImage(mainConfig):
         filtinfo = self._add_filtwheelinfo_to_hdr()
         imginfo = self._add_imginfo_to_hdr()
         targetinfo = self._add_targetinfo_to_hdr()
-        config_info = self._add_configinfo_to_hdr()
+        configinfo = self._add_configinfo_to_hdr()
         obsinfo = self._add_obsinfo_to_hdr()
-        all_info = {**telinfo,**caminfo,**focusinfo,**filtinfo,**imginfo,**targetinfo,**config_info,**obsinfo}
+        weatherinfo = self._add_weatinfo_to_hdr()
+        all_info = {**telinfo,**caminfo,**focusinfo,**filtinfo,**imginfo,**targetinfo,**configinfo,**obsinfo,**weatherinfo}
         hdu = fits.PrimaryHDU()
         hdu.data = self._imginfo['data']
         for key, value in all_info.items():

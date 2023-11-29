@@ -2,6 +2,8 @@ from astropy.io import ascii
 import time
 from astropy.time import Time
 import numpy as np
+from threading import Event
+
 from alpaca.focuser import Focuser
 
 from tcspy.utils.logger import mainLogger
@@ -38,10 +40,7 @@ class mainFocuser(mainConfig):
         super().__init__(unitnum = unitnum)
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['FOCUSER_CHECKTIME'])
-        self._abort_tolerance = int(self.config['FOCUSER_HALTTOL'])
-        self._warn_tolerance = int(self.config['FOCUSER_WARNTOL'])
         self.device = Focuser(f"{self.config['FOCUSER_HOSTIP']}:{self.config['FOCUSER_PORTNUM']}",self.config['FOCUSER_DEVICENUM'])
-        self.condition = 'disconnected'
         self.status = self.get_status()
         
     
@@ -59,8 +58,6 @@ class mainFocuser(mainConfig):
                 - 'maxstep': Maximum position of the device
                 - 'stepsize': Step size of the device
                 - 'temp': Temperature of the device
-                - 'step_abort': Movement distance threshold for halting action
-                - 'step_warn': Movement distance threshold for warning
                 - 'is_abs_positioning': Flag indicating if the device is using absolute positioning
                 - 'is_moving': Flag indicating if the device is currently moving
                 - 'is_tempcomp': Flag indicating if the device is using temperature compensation
@@ -112,14 +109,6 @@ class mainFocuser(mainConfig):
             except:
                 pass
             try:
-                status['step_abort'] = self._abort_tolerance
-            except:
-                pass
-            try:
-                status['step_warn'] = self._warn_tolerance
-            except:
-                pass
-            try:
                 status['is_abs_positioning'] = self.device.Absolute
             except:
                 pass
@@ -133,8 +122,6 @@ class mainFocuser(mainConfig):
                 pass
             try:
                 status['is_connected'] = self.device.Connected
-                if status['is_connected']:
-                    self.condition = 'idle'
             except:
                 pass
 
@@ -154,7 +141,6 @@ class mainFocuser(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Focuser connected')
-                self.condition = 'idle'
         except:
             self._log.warning('Connection failed')
         self.status = self.get_status()
@@ -171,11 +157,11 @@ class mainFocuser(mainConfig):
             time.sleep(self._checktime)
         if not self.device.Connected:
             self._log.info('Focuser disconnected')
-            self.condition = 'disconnected'
         self.status = self.get_status()
             
     def move(self,
-             position : int):
+             position : int,
+             abort_action : Event):
         """
         Move the Focuser device to the specified position
 
@@ -190,34 +176,22 @@ class mainFocuser(mainConfig):
             logtxt = 'Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep'])
             self._log.critical(logtxt)
             raise ValueError(logtxt)
-        elif np.abs(position - self.status['position']) > self.status['step_abort']:
-            logtxt = 'Set position is too distant from current position. Halt action. (Moving position : %d > halt tolerance : %d)'%(np.abs(position - self.status['position']), self.status['step_abort'])
-            self._log.critical(logtxt)
-            raise ValueError(logtxt)
         else:
-            if np.abs(position - self.status['position']) > self.status['step_warn']:
-                logtxt = 'Set position is far from current position. Be careful... (Moving position : %d > warn tolerance : %d)'%(np.abs(position - self.status['position']), self.status['step_warn'])
-                self._log.warn(logtxt)
             self._log.info('Moving focuser position... (Current : %s To : %s)'%(self.status['position'], position))
-            self.condition = 'busy'
             self.device.Move(position)
-            time.sleep(3*self._checktime)
+            time.sleep(self._checktime)
             while self.device.IsMoving:
                 time.sleep(self._checktime)
-            self.condition = 'idle'
+                if abort_action.is_set():
+                    self._log.warning('Focuser moving is aborted')
+                    return 
             self._log.info('Focuser position is set (Current : %s)'%(self.status['position']))
-        self.status = self.get_status()
         
     def abort(self):
         """
         Abort the movement of the Focuser device
         """
-        self.condition = 'aborted'
-        self.device.Halt()
-        self.status = self.get_status()
-        self._log.warning('Focuser aborted')
-        
-        
+        self.device.Halt()   
         
 # %% Test
 if __name__ == '__main__':
