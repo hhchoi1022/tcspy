@@ -1,9 +1,10 @@
 #%%
+from threading import Event
+
 from tcspy.devices import IntegratedDevice
 from tcspy.devices.integrateddevice import IntegratedDevice
 from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
-from threading import Event
 from tcspy.devices import DeviceStatus
 
 class SlewAltAz(Interface_Runnable, Interface_Abortable):
@@ -52,8 +53,10 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
         if status_telescope == 'disconnected':
             self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not aborted')
             return 
+        elif status_telescope == 'busy':
+            self.IDevice.telescope.abort()
         else:
-            self.IDevice.telescope.abort()     
+            pass 
 #%%
 if __name__ == '__main__':
     device = IntegratedDevice(unitnum = 2)

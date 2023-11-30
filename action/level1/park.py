@@ -37,8 +37,10 @@ class Park(Interface_Runnable, Interface_Abortable):
         if status_telescope == 'disconnected':
             self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not aborted')
             return 
-        else:
+        elif status_telescope == 'busy':
             self.IDevice.telescope.abort()
+        else:
+            pass
 #%%
 if __name__ == '__main__':
     device = IntegratedDevice(unitnum = 2)

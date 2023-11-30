@@ -166,29 +166,36 @@ class mainWeather(mainConfig):
         try:
             if not self.device.Connected:
                 self.device.Connected = True
+                time.sleep(self._checktime)
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
-                self.status['is_connected'] = True
                 self._log.info('Weather device connected')
         except:
             self._log.warning('Connection failed')
-        #self.status = self.get_status()
+            return False
+        return True
     
     @Timeout(5, 'Timeout')
     def disconnect(self):
         """
         Disconnect from the weather device.
         """
-        
-        self.device.Connected = False
-        self._log.info('Disconnecting the weather device...')
-        while self.device.Connected:
-            time.sleep(self._checktime)
-        if not self.device.Connected:
-            self.status['is_connected'] = False
-            self._log.info('Weather device disconnected')
-        #self.status = self.get_status()
+
+        self._log.info('Disconnecting weather station...')
+        try:
+            if self.device.Connected:
+                self.device.Connected = False
+                time.sleep(self._checktime)
+            while self.device.Connected:
+                time.sleep(self._checktime)
+            if not self.device.Connected:
+                self._log.info('Weather device is disconnected')
+        except:
+            self._log.warning('Disconnect failed')
+            return False
+        return True
+                
 
     def is_safe(self):
         """

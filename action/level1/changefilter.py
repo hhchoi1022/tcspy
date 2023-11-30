@@ -1,8 +1,9 @@
 #%%
+from threading import Event
+
 from tcspy.interfaces import *
 from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
-from threading import Event
 from tcspy.utils.logger import mainLogger
 #%%
 

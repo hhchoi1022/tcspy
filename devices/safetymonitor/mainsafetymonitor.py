@@ -90,13 +90,15 @@ class mainSafetyMonitor(mainConfig):
         try:
             if not self.device.Connected:
                 self.device.Connected = True
-                while not self.device.Connected:
-                    time.sleep(self._checktime)
-                if  self.device.Connected:
-                    self._log.info('SafetyMonitor device connected')
-        except :
+            time.sleep(self._checktime)
+            while not self.device.Connected:
+                time.sleep(self._checktime)
+            if  self.device.Connected:
+                self._log.info('SafetyMonitor is connected')
+            return True
+        except:
             self._log.warning('Connection failed')
-        #self.status = self.get_status()
+            return False
     
     @Timeout(5, 'Timeout')
     def disconnect(self):
@@ -104,14 +106,19 @@ class mainSafetyMonitor(mainConfig):
         Disconnect from the SafetyMonitor device
         """
         
-        if self.device.Connected:
-            self.device.Connected = False
-            self._log.info('Disconnecting the SafetyMonitor device...')
+        self._log.info('Disconnecting SafetyMonitor device...')
+        try:
+            if self.device.Connected:
+                self.device.Connected = False
+                time.sleep(self._checktime)
             while self.device.Connected:
                 time.sleep(self._checktime)
             if not self.device.Connected:
-                self._log.info('Weather SafetyMonitor disconnected')
-        #self.status = self.get_status()
+                self._log.info('SafetyMonitor is disconnected')
+        except:
+            self._log.warning('Disconnect failed')
+            return False
+        return True
 # %%
 if __name__ == '__main__':
     safe = mainSafetyMonitor(unitnum = 4)

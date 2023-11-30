@@ -137,13 +137,15 @@ class mainFocuser(mainConfig):
         try:
             if not self.device.Connected:
                 self.device.Connected = True
+                time.sleep(self._checktime)
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Focuser connected')
         except:
             self._log.warning('Connection failed')
-        self.status = self.get_status()
+            return False
+        return True
         
     @Timeout(5, 'Timeout')
     def disconnect(self):
@@ -151,13 +153,19 @@ class mainFocuser(mainConfig):
         Disconnect to the Focuser device
         """
         
-        self.device.Connected = False
-        self._log.info('Disconnecting the Focuser...')
-        while self.device.Connected:
-            time.sleep(self._checktime)
-        if not self.device.Connected:
-            self._log.info('Focuser disconnected')
-        self.status = self.get_status()
+        self._log.info('Disconnecting focuser...')
+        try:
+            if self.device.Connected:
+                self.device.Connected = False
+                time.sleep(self._checktime)
+            while self.device.Connected:
+                time.sleep(self._checktime)
+            if not self.device.Connected:
+                self._log.info('Focuser disconnected')
+        except:
+            self._log.warning('Disconnect failed')
+            return False
+        return True
             
     def move(self,
              position : int,
@@ -175,7 +183,7 @@ class mainFocuser(mainConfig):
         if (position <= 0) | (position > self.status['maxstep']):
             logtxt = 'Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep'])
             self._log.critical(logtxt)
-            raise ValueError(logtxt)
+            return
         else:
             self._log.info('Moving focuser position... (Current : %s To : %s)'%(self.status['position'], position))
             self.device.Move(position)
@@ -186,6 +194,7 @@ class mainFocuser(mainConfig):
                     self._log.warning('Focuser moving is aborted')
                     return 
             self._log.info('Focuser position is set (Current : %s)'%(self.status['position']))
+        return True
         
     def abort(self):
         """

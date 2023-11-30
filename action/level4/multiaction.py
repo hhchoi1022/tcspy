@@ -3,7 +3,6 @@ from threading import Thread, Event
 from queue import Queue
 from tcspy.devices import IntegratedDevice
 from typing import List, Union
-#%%
 
 class MultiAction:
     def __init__(self, 
@@ -52,18 +51,23 @@ class MultiAction:
                 kwargs = self.queue.get()
                 func.abort()
                 #self.queue.task_done()
+        local_abort_action = Event()
         for telescope in self.array_telescope:
-            thread = Thread(target= consumer, kwargs = {'telescope' : telescope, 'abort_action' : self.abort_action}, daemon = True)
+            thread = Thread(target= consumer, kwargs = {'telescope' : telescope, 'abort_action' : local_abort_action}, daemon = False)
             thread.start()
             
         for kwargs in self.array_kwargs:
             self.queue.put(kwargs)
-            
-#%%
 IntDevice_1 = IntegratedDevice(unitnum = 1)
 IntDevice_2 = IntegratedDevice(unitnum = 2)
 array_telescope = list([IntDevice_1, IntDevice_2])
-
+#%%
+from tcspy.action.level1 import Connect
+from tcspy.action.level1 import Disconnect
+array_kwargs = dict()
+A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Connect)
+#A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Disconnect)
+A.run()
 #%%
 from tcspy.action.level1 import Park
 #%%
@@ -74,18 +78,15 @@ A.run()
 A.abort()
 #%%
 from tcspy.action.level1 import Unpark
-#%%
 array_kwargs = dict()
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Unpark)
 A.run()
 
 #%%
 from tcspy.action.level1.slewAltAz import SlewAltAz
-array_kwargs = dict(alt = 30,
+array_kwargs = dict(alt = 50,
                     az  = 270)
-#%%
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= SlewAltAz)
-#%%
 A.run()
 #%%
 A.abort()
@@ -100,7 +101,6 @@ array_kwargs = dict(frame_number = 0,
                     target = None
                     )
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Exposure)
-#%%
 A.run()
 #%%
 A.abort()

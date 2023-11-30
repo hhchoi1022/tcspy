@@ -108,17 +108,19 @@ class mainFilterwheel(mainConfig):
         Connects to the filter wheel device.
         """
         
-        self._log.info('Connecting to the Filterwheel...')
+        self._log.info('Connecting to the filterwheel...')
         try:
             if not self.device.Connected:
                 self.device.Connected = True
+            time.sleep(self._checktime)
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Filterwheel connected')
+            return True
         except:
             self._log.warning('Connection failed')
-        #self.status = self.get_status()
+            return False
     
     @Timeout(5, 'Timeout')
     def disconnect(self):
@@ -126,17 +128,22 @@ class mainFilterwheel(mainConfig):
         Disconnects from the filter wheel device.
         """
         
-        self.device.Connected = False
-        self._log.info('Disconnecting the Filterwheel...')
-        while self.device.Connected:
-            time.sleep(self._checktime)
-        if not self.device.Connected:
-            self._log.info('Filterwheel disconnected')
-        #self.status = self.get_status()
+        self._log.info('Disconnecting filterwheel...')
+        try:
+            if self.device.Connected:
+                self.device.Connected = False
+                time.sleep(self._checktime)
+            while self.device.Connected:
+                time.sleep(self._checktime)
+            if not self.device.Connected:
+                self._log.info('Filterwheel is disconnected')
+        except:
+            self._log.warning('Disconnect failed')
+            return False
+        return True
             
     def move(self,
-             filter_ : str or int,
-             return_focus_offset : bool = False):
+             filter_ : str or int) -> bool:
         """
         Moves the filter wheel to the specified filter position or filter name.
 
@@ -150,14 +157,14 @@ class mainFilterwheel(mainConfig):
         if isinstance(filter_, str):
             if not filter_ in self.filtnames:
                 self._log.critical(f'Filter {filter_} is not implemented')
-                return
+                return False
             else:
                 self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, filter_))
                 filter_ = self._filtname_to_position(filter_)
         else:
             if filter_ > len(self.filtnames):
                 self._log.critical(f'Position "{filter_}" is not implemented')
-                return
+                return False
             else:
                 self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
         
@@ -168,14 +175,14 @@ class mainFilterwheel(mainConfig):
             time.sleep(self._checktime)
             
         # Return result
-        changed_filter = self._get_current_filtinfo()['name']
         self._log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
-        #self.status = self.get_status()
-        
-        # If return_focus_offset == True, return offset
-        if return_focus_offset:
-            offset = self.calc_offset(current_filt= current_filter, changed_filt = changed_filter)
-            return offset 
+        return True
+
+    def get_offset_from_currentfilt(self,
+                                    filter_ : str):
+        current_filter = self._get_current_filtinfo()['name']
+        offset = self.calc_offset(current_filt= current_filter, changed_filt = filter_)
+        return offset 
         
     def abort(self):
         return

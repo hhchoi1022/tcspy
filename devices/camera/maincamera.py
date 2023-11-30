@@ -287,13 +287,16 @@ class mainCamera(mainConfig):
         try:
             if not self.device.Connected:
                 self.device.Connected = True
+                time.sleep(self._checktime)
             while not self.device.Connected:
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Camera connected')
         except:
             self._log.warning('Connection failed')
-        #self.status = self.get_status()
+            return False
+        return True
+        
     
     @Timeout(5, 'Timeout')
     def disconnect(self):
@@ -301,23 +304,33 @@ class mainCamera(mainConfig):
         Disconnect from the camera and wait until the disconnection is completed.
         """
         
-        self.device.Connected = False
-        self._log.info('Disconnecting to the Camera...')
-        while self.device.Connected:
-            time.sleep(self._checktime)
-        if not self.device.Connected:
-            self._log.info('Camera disconnected')
-        #self.status = self.get_status()
+        self._log.info('Disconnecting camera...')
+        try:
+            if self.device.Connected:
+                self.device.Connected = False
+                time.sleep(self._checktime)
+            while self.device.Connected:
+                time.sleep(self._checktime)
+            if not self.device.Connected:
+                self._log.info('Camera disconnected')
+        except:
+            self._log.warning('Disconnect failed')
+            return False
+        return True
     
     def cooler_on(self):
         if self.device.CanSetCCDTemperature:
             self.device.CoolerOn = True
-        return
+        else:
+            return False
+        return True
 
     def cooler_off(self):
         if self.device.CanSetCCDTemperature:
             self.device.CoolerOn = False
-        return
+        else:
+            return False
+        return True
             
     def cool(self,
              abort_action : Event,
@@ -340,7 +353,7 @@ class mainCamera(mainConfig):
                     if abort_action.is_set():
                         self.device.CoolerOn = False
                         self._log.warning('Camera cooling is aborted')
-                        return
+                        return False
                     current_temperature = self.device.CCDTemperature
                     cooler_power = None
                     if self.device.CanGetCoolerPower:
@@ -356,7 +369,8 @@ class mainCamera(mainConfig):
 
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
-                        raise TimeoutError('Cooling operation has stalled')
+                        self._log.critical('Cooling operation has stalled')
+                        return False
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
                     time.sleep(5)
@@ -365,10 +379,13 @@ class mainCamera(mainConfig):
                     prev_temperature = current_temperature
 
                 self._log.info('Cooling finished. Current temperature: %.1f' % current_temperature)
+                return True
             else:
                 self._log.warning('Cooling is not implemented on this device')
+                return False
         except TimeoutError as e:
             self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
+            return False
     
     def warm(self,
              abort_action : Event,
@@ -398,7 +415,7 @@ class mainCamera(mainConfig):
                     if abort_action.is_set():
                         self.device.CoolerOn = False
                         self._log.warning('Camera warming is aborted')
-                        return
+                        return False
                     current_temperature = self.device.CCDTemperature
                     cooler_power = None
                     if self.device.CanGetCoolerPower:
@@ -414,7 +431,8 @@ class mainCamera(mainConfig):
 
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
-                        raise TimeoutError('Cooling operation has stalled')
+                        self._log.critical('Cooling operation has stalled')
+                        return False
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
                     time.sleep(5)
@@ -424,16 +442,20 @@ class mainCamera(mainConfig):
                 self.device.CoolerOn = False
 
                 self._log.info('Warning finished. Current temperature: %.1f' % current_temperature)
+                return True
             else:
                 self._log.warning('Cooling is not implemented on this device')
+                return False
         except TimeoutError as e:
             self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
+            return False
     
     def exposure(self,
                  abort_action : Event,
                  exptime : float,
                  imgtype : str,
                  binning : int,
+                 is_light : bool
                  ):
         """
         Capture a light frame with the connected camera.
@@ -464,29 +486,17 @@ class mainCamera(mainConfig):
         
         # Set imagetype & exposure time & is_light
         if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'LIGHT']:
-            raise ValueError(f'Type "{imgtype}" is not set as imagetype')
-        if imgtype.upper() == 'BIAS':
-            exptime = self.device.ExposureMin
-            self._log.warning('Input exposure time is set to the minimum value for BIAS image')
-            is_light = False
-        if imgtype.upper() == 'DARK':
-            exptime = exptime
-            is_light = False
-        if imgtype.upper() == 'FLAT':
-            exptime = exptime
-            is_light = True
-        if imgtype.upper() in 'LIGHT':
-            exptime = exptime
-            is_light = True
+            self._log.critical(f'Type "{imgtype}" is not set as imagetype')
+            return False
+
         # Exposure
-        #self._log.info(f'[%s] Start exposure... (exptime = %.1f)'%(imgtype.upper(), exptime))
         self.device.StartExposure(Duration = exptime, Light = is_light)
         time.sleep(self._checktime)
         while not self.device.ImageReady:
             if abort_action.is_set():
                 self._log.warning('Camera exposure is aborted')
                 self.abort()
-                return
+                return False
             time.sleep(self._checktime)
         imginfo, status = self.get_imginfo()
         # Modify image information if camera returns too detailed exposure time
@@ -500,7 +510,7 @@ class mainCamera(mainConfig):
         """
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
-        #self.status = self.get_status()
+        return
     
     def _set_binning(self,
                      binning :int = 1):

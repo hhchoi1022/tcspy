@@ -78,10 +78,24 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             elif status_camera.lower() == 'idle':
                 
                 # Exposure camera
+                if imgtype.upper() == 'BIAS':
+                    exptime = cam.device.ExposureMin
+                    self._log.warning('Input exposure time is set to the minimum value for BIAS image')
+                    is_light = False
+                if imgtype.upper() == 'DARK':
+                    exptime = exptime
+                    is_light = False
+                if imgtype.upper() == 'FLAT':
+                    exptime = exptime
+                    is_light = True
+                if imgtype.upper() in 'LIGHT':
+                    exptime = exptime
+                    is_light = True
                 self._log.info(f'[%s] Start exposure... (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
                 imginfo = cam.exposure(exptime = float(exptime),
                                        imgtype = imgtype,
                                        binning = int(binning),
+                                       is_light = is_light,
                                        abort_action = self.abort_action)
                 if not self.abort_action.is_set():
                     self._log.info(f'[%s] Exposure finished (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
