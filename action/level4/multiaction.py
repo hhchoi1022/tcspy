@@ -94,8 +94,8 @@ A.abort()
 from tcspy.action.level2.exposure import Exposure
 array_kwargs = dict(frame_number = 0,
                     exptime = 5,
-                    filter_ = 'g',
-                    imgtype = 'bias',
+                    filter_ = 'm400',
+                    imgtype = 'light',
                     binning = 1,
                     target_name = None,
                     target = None

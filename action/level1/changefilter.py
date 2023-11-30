@@ -28,13 +28,15 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         if not self.abort_action.is_set():
             self._log.info(f'[{type(self).__name__}] is triggered.')
             if self.IDevice_status.filterwheel.lower() == 'idle':
-                self.IDevice.filterwheel.move(filter_ = filter_)
+                result = self.IDevice.filterwheel.move(filter_ = filter_)
             if not self.abort_action.is_set():
                 self._log.info(f'[{type(self).__name__}] is finished.')
             else:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
         else:
             self.abort()
+        result = True
+        return result
     
     def abort(self):
         return
