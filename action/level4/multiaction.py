@@ -81,7 +81,6 @@ from tcspy.action.level1 import Unpark
 array_kwargs = dict()
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Unpark)
 A.run()
-
 #%%
 from tcspy.action.level1.slewAltAz import SlewAltAz
 array_kwargs = dict(alt = 50,
@@ -91,7 +90,7 @@ A.run()
 #%%
 A.abort()
 #%%
-from tcspy.action.level2.exposure import Exposure
+from action.level1.exposure import Exposure
 array_kwargs = dict(frame_number = 0,
                     exptime = 5,
                     filter_ = 'm400',
@@ -105,7 +104,7 @@ A.run()
 #%%
 A.abort()
 #%%
-from tcspy.action.level3.singleobservation import SingleObservation
+from action.level2.singleobservation import SingleObservation
 array_kwargs = dict(exptime = 5,
                     count  = 1,
                     filter_  = 'g',

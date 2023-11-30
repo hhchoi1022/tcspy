@@ -2,11 +2,11 @@
 import time
 from threading import Event
 
-from tcspy.interfaces import *
 from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
+from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
-#%%
+
 class Disconnect(Interface_Runnable):
     
     def __init__(self, 
@@ -57,6 +57,8 @@ class Disconnect(Interface_Runnable):
             
         self._log.info(f'[{type(self).__name__}] is finished.')
         time.sleep(1)
+        devices_status = self.IDevice_status.dict
+        return devices_status 
     
     def abort(self):
         return 

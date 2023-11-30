@@ -1,10 +1,10 @@
 #%%
-from tcspy.interfaces import *
+from threading import Event
+
 from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
-from threading import Event
+from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
-#%%
 
 class Cool(Interface_Runnable, Interface_Abortable):
     
@@ -22,16 +22,25 @@ class Cool(Interface_Runnable, Interface_Abortable):
         # Check device connection
         if self.IDevice_status.camera.lower() == 'disconnected':
             self._log.critical(f'Camera is disconnected. Action "{type(self).__name__}" is not triggered')
-            return 
+            return False
         
         # If not aborted, execute the action
         if not self.abort_action.is_set():
             self._log.info(f'[{type(self).__name__}] is triggered.')
-            self.IDevice.cam.cool(settemperature = settemperature, 
-                                  tolerance = tolerance)
-            self._log.info(f'[{type(self).__name__}] is finished.')
+            result_cool = self.IDevice.cam.cool(settemperature = settemperature, 
+                                                tolerance = tolerance)
+            if not self.abort_action.is_set():
+                if result_cool:
+                    self._log.info(f'[{type(self).__name__}] is finished.')
+                else:
+                    return False
+            else:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                return False
         else:
             self.abort()
+            return False
+        return True
     
     def abort(self):
         # Raise critical warning when disconnected

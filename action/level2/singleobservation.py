@@ -2,15 +2,17 @@
 from threading import Event
 
 from tcspy.devices import IntegratedDevice
-from tcspy.utils.target import mainTarget
-from tcspy.devices.integrateddevice import IntegratedDevice
+from tcspy.devices import DeviceStatus
+
 from tcspy.interfaces import *
 from tcspy.utils.error import *
+from tcspy.utils.logger import mainLogger
+from tcspy.utils.target import mainTarget
+
 from tcspy.action.level1.slewRADec import SlewRADec
 from tcspy.action.level1.slewAltAz import SlewAltAz
-from tcspy.action.level2.exposure import Exposure
-from tcspy.utils.logger import mainLogger
-from tcspy.devices import DeviceStatus
+from action.level1.exposure import Exposure
+
 #%%
 class SingleObservation(Interface_Runnable, Interface_Abortable):
     def __init__(self, 

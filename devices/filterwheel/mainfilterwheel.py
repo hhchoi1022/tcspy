@@ -117,10 +117,10 @@ class mainFilterwheel(mainConfig):
                 time.sleep(self._checktime)
             if  self.device.Connected:
                 self._log.info('Filterwheel connected')
-            return True
         except:
             self._log.warning('Connection failed')
             return False
+        return True
     
     @Timeout(5, 'Timeout')
     def disconnect(self):

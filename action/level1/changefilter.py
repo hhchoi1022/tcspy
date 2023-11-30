@@ -1,11 +1,10 @@
 #%%
 from threading import Event
 
-from tcspy.interfaces import *
 from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
+from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
-#%%
 
 class ChangeFilter(Interface_Runnable, Interface_Abortable):
     
@@ -22,21 +21,25 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         # Check device connection
         if self.IDevice_status.filterwheel.lower() == 'disconnected':
             self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
-            return 
+            return False
         
         # If not aborted, execute the action
         if not self.abort_action.is_set():
             self._log.info(f'[{type(self).__name__}] is triggered.')
             if self.IDevice_status.filterwheel.lower() == 'idle':
-                result = self.IDevice.filterwheel.move(filter_ = filter_)
+                result_move = self.IDevice.filterwheel.move(filter_ = filter_)
             if not self.abort_action.is_set():
-                self._log.info(f'[{type(self).__name__}] is finished.')
+                if result_move:
+                    self._log.info(f'[{type(self).__name__}] is finished.')
+                else:
+                    return False
             else:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
+                return False
         else:
             self.abort()
-        result = True
-        return result
+            return False
+        return True
     
     def abort(self):
         return

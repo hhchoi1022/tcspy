@@ -2,11 +2,11 @@
 import time
 from threading import Event
 
+from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.utils.logger import mainLogger
 from tcspy.interfaces import *
-from tcspy.devices import IntegratedDevice
-#%%
+
 class Connect(Interface_Runnable):
     
     def __init__(self, 
@@ -37,7 +37,7 @@ class Connect(Interface_Runnable):
                     pass
             else:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-                return
+                # return False
         
         # check the device connection
         devices_status = self.IDevice_status.dict
@@ -53,11 +53,13 @@ class Connect(Interface_Runnable):
                     self._log.info(f'{device_name} : Connected')
             else:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-                return
+                # return False
             
         self._log.info('='*30)
         self._log.info(f'[{type(self).__name__}] is finished.')
         time.sleep(1)
+        devices_status = self.IDevice_status.dict
+        return devices_status
     
     def abort(self):
         return

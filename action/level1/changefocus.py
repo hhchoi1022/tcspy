@@ -1,11 +1,10 @@
 #%%
 from threading import Event
 
-from tcspy.interfaces import *
 from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
+from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
-#%%
 
 class ChangeFocus(Interface_Runnable, Interface_Abortable):
     
@@ -22,16 +21,25 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
         # Check device connection
         if self.IDevice_status.focuser.lower() == 'disconnected':
             self._log.critical(f'Focuser is disconnected. Action "{type(self).__name__}" is not triggered')
-            return 
+            return False
         
         # If not aborted, execute the action
         if not self.abort_action.is_set():
             self._log.info(f'[{type(self).__name__}] is triggered.')
             if self.IDevice_status.focuser.lower() == 'idle':
-                self.IDevice.focuser.move(position = position)
-            self._log.info(f'[{type(self).__name__}] is finished.')
+                result_move = self.IDevice.focuser.move(position = position)
+            if not self.abort_action.is_set():
+                if result_move:
+                    self._log.info(f'[{type(self).__name__}] is finished.')
+                else:
+                    return False
+            else:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                return False
         else:
             self.abort()
+            return False
+        return True
     
     def abort(self):
         status_focuser = self.IDevice_status.focuser.lower()
