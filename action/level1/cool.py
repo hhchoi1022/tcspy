@@ -19,43 +19,37 @@ class Cool(Interface_Runnable, Interface_Abortable):
     def run(self,
             settemperature : float,
             tolerance : float = 1):
+        self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         if self.IDevice_status.camera.lower() == 'disconnected':
-            self._log.critical(f'Camera is disconnected. Action "{type(self).__name__}" is not triggered')
+            self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
             return False
         
         # If not aborted, execute the action
-        if not self.abort_action.is_set():
-            self._log.info(f'[{type(self).__name__}] is triggered.')
-            result_cool = self.IDevice.cam.cool(settemperature = settemperature, 
-                                                tolerance = tolerance)
-            if not self.abort_action.is_set():
-                if result_cool:
-                    self._log.info(f'[{type(self).__name__}] is finished.')
-                else:
-                    return False
-            else:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                return False
-        else:
+        if self.abort_action.is_set():
             self.abort()
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            return False
+        # Start action
+        result_cool = self.IDevice.camera.cool(settemperature = settemperature, 
+                                               tolerance = tolerance,
+                                               abort_action = self.abort_action)
+        if result_cool:
+            self._log.info(f'[{type(self).__name__}] is finished.')
+        else:
+            self._log.critical(f'[{type(self).__name__}] is failed: camera cool failure.')
             return False
         return True
     
     def abort(self):
-        # Raise critical warning when disconnected
-        status_camera = self.IDevice_status.camera.lower()
-        if status_camera == 'disconnected':
-            self._log.critical(f'Camera is disconnected. Action "{type(self).__name__}" is not triggered')
-            return 
-        elif status_camera == 'busy':
+        if self.Idevice.camera.device.CoolerOn:
             if self.Idevice.camera.device.CCDTemperature < self.Idevice.camera.device.CCDTemperature -20:
                 self._log.critical(f'Turning off when the CCD Temperature below ambient may lead to damage to the sensor.')
                 self.Idevice.camera.cooler_off()
             else:
                 self.Idevice.camera.cooler_off()
         else:
-            return
+            pass
 # %%
 if __name__ == '__main__':
     tel1 = IntegratedDevice(unitnum = 1)

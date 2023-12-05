@@ -3,6 +3,7 @@
 from astropy.coordinates import SkyCoord
 import time
 from astropy.time import Time
+from threading import Event
 
 from tcspy.devices.telescope.pwi4_client import PWI4 # PWI4 API 
 from tcspy.configuration import mainConfig
@@ -64,7 +65,6 @@ class mainTelescope_pwi4(mainConfig):
         self.device = PWI4(self.config['TELESCOPE_HOSTIP'], self.config['TELESCOPE_PORTNUM'])
         self.PWI_status = self.device.status()
         self.status = self.get_status()
-        self.condition = 'idle'
         
     def get_status(self):
         """
@@ -118,7 +118,7 @@ class mainTelescope_pwi4(mainConfig):
                 status['dec'] = "{:.4f}".format(self.PWI_status.mount.dec_j2000_degs)
                 status['alt'] = "{:.3f}".format(self.PWI_status.mount.altitude_degs)
                 status['az'] = "{:.3f}".format(self.PWI_status.mount.azimuth_degs)
-                status['at_parked'] = False
+                status['at_parked'] = (self.PWI_status.mount.axis0.is_enabled == False) & (self.PWI_status.mount.axis1.is_enabled == False)
                 status['at_home'] = None
                 status['is_connected'] = self.PWI_status.mount.is_connected
                 status['is_tracking'] = self.PWI_status.mount.is_tracking
@@ -149,15 +149,17 @@ class mainTelescope_pwi4(mainConfig):
         try:
             self._update_PWI_status()
             if not self.PWI_status.mount.is_connected:
-                self.PWI_status = self.device.mount_connect()
+                self.device.mount_connect()
+            time.sleep(self._checktime)
             while not self.PWI_status.mount.is_connected:
                 time.sleep(self._checktime)
                 self._update_PWI_status()
-            self._log.info('Telescope connected')
+            if self.PWI_status.mount.is_connected:
+                self._log.info('Telescope connected')
         except:
             self._log.warning('Connection failed')
-        self._update_PWI_status()
-        self.status = self.get_status()
+            return False
+        return True
     
     @Timeout(5, 'Timeout')
     def disconnect(self):
@@ -165,47 +167,51 @@ class mainTelescope_pwi4(mainConfig):
         Disconnect from the telescope.
         """
         
-        self._log.info('Disconnecting the telescope...')
-        self.device.mount_disconnect()
-        self._update_PWI_status()
-        if self.PWI_status.mount.is_connected:
-            self.PWI_status = self.device.mount_disconnect()
-        while self.PWI_status.mount.is_connected:
-            time.sleep(self._checktime)
+        self._log.info('Disconnecting to the telescope...')
+        try:
             self._update_PWI_status()
-        self._log.info('Telescope disconnected')
-        self._update_PWI_status()
-        self.status = self.get_status()
-    '''    
-    def set_park(self,
-                 altitude : float = 40,
-                 azimuth : float = 180):
-        """
-        Set the park position of the telescope.
-
-        Parameters
-        ==========
-        1. altitude : float, optional
-            The altitude of the park position, in degrees. Only used if coordinate is not specified.
-        2. azimuth : float, optional
-            The azimuth of the park position, in degrees. Only used if coordinate is not specified.
-        """
-        coordinate = SkyCoord(azimuth, altitude, frame = 'altaz', unit ='deg')
-        alt = coordinate.alt.deg
-        az = coordinate.az.deg
-        self._log.info('Setting park position of the telescope... Slew to the park position (Alt = %.1f Az = %.1f)'%(alt, az))
-        
-        self.slew_altaz(alt = alt, az = az, tracking = False)
-        self.status = self.get_status()
-        time.sleep(5*self._checktime)
-        while not self.status['is_stationary']:
+            if self.PWI_status.mount.is_connected:
+                self.device.mount_disconnect()
             time.sleep(self._checktime)
-            self.status = self.get_status()
-        self.device.mount_set_park_here()
-        self.status = self.get_status()
-        self._log.info('Park position is set (Alt = %.1f Az = %.1f)'%(alt, az))
-        '''
-    def park(self):
+            while self.PWI_status.mount.is_connected:
+                time.sleep(self._checktime)
+                self._update_PWI_status()
+            if not self.PWI_status.mount.is_connected:
+                self._log.info('Telescope disconnected')
+        except:
+            self._log.warning('Disconnect failed')
+            return False
+        return True
+    
+    def enable_mount(self):
+        for axis_index in range(2):
+            self._update_PWI_status()
+            try:
+                if not self.PWI_status.mount.axis[axis_index].is_enabled:
+                    self.device.mount_enable(axisNum= axis_index)
+                else:
+                    pass
+            except:
+                self._log.critical('Mount cannot be enabled')
+                return False
+            self._log.info('Both axis are enabled ')
+            return True
+    
+    def disable_mount(self):
+        for axis_index in range(2):
+            self._update_PWI_status()
+            try:
+                if self.PWI_status.mount.axis[axis_index].is_enabled:
+                    self.device.mount_disable(axisNum= axis_index)
+                else:
+                    pass
+            except:
+                self._log.critical('Mount cannot be disabled')
+                return False
+            self._log.info('Both axis are disabled ')
+            return True
+    
+    def park(self, abort_action : Event, disable_mount = False):
         """
         Parks the telescope.
         """
@@ -217,32 +223,21 @@ class mainTelescope_pwi4(mainConfig):
             #if not self.device.AtPark:
 
         self._log.info('Parking telescope...')
-        self.unpark()
-        #self.status = self.get_status()
-        self.condition = 'busy'
-        self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
-        self.status = self.get_status()
-        while not self.status['is_stationary']:
-            time.sleep(self._checktime)
-            self.status = self.get_status()
-        self.condition = 'idle'
-        self.status = self.get_status()
-        self._log.info('Telescope parked')
-    '''
-    def park(self):
-        """
-        Park the telescope.
-        """
+        self._update_PWI_status()
+        # Check the mount is enabled to slew
+        if not (self.PWI_status.mount.axis0.is_enabled == True) & (self.PWI_status.mount.axis1.is_enabled == True):
+            self.enable_mount()
         
-        self._log.info('Parking telescope...')
-        self.device.mount_park()
-        time.sleep(5*self._checktime)
-        self.status = self.get_status()
-        while not self.status['is_stationary']:
+        self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
+        time.sleep(self._checktime)
+        self._update_PWI_status()
+        while self.PWI_status.mount.is_slewing:
             time.sleep(self._checktime)
-            self.status = self.get_status()
+            self._update_PWI_status()
+        
+        self.status = self.get_status()
         self._log.info('Telescope parked')
-    '''
+
     def unpark(self):
         """
         Unpark the telescope.

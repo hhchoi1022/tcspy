@@ -18,26 +18,31 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
 
     def run(self,
             filter_ : str):
+        self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         if self.IDevice_status.filterwheel.lower() == 'disconnected':
-            self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
+            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
             return False
         
         # If not aborted, execute the action
-        if not self.abort_action.is_set():
-            self._log.info(f'[{type(self).__name__}] is triggered.')
-            if self.IDevice_status.filterwheel.lower() == 'idle':
-                result_move = self.IDevice.filterwheel.move(filter_ = filter_)
-            if not self.abort_action.is_set():
-                if result_move:
-                    self._log.info(f'[{type(self).__name__}] is finished.')
-                else:
-                    return False
-            else:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                return False
+        if self.abort_action.is_set():
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            return False
+        
+        # Start action
+        if self.IDevice_status.filterwheel.lower() == 'idle':
+            result_move = self.IDevice.filterwheel.move(filter_ = filter_)
+        elif self.IDevice_status.filterwheel.lower() == 'busy':
+            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is busy.')
+            return False
         else:
-            self.abort()
+            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel status error.')
+            return False
+        
+        if result_move:
+            self._log.info(f'[{type(self).__name__}] is finished.')
+        else:
+            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel move failure.')
             return False
         return True
     

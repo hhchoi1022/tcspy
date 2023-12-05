@@ -18,20 +18,33 @@ class Unpark(Interface_Runnable, Interface_Abortable):
 
     def run(self):
         # Check device connection
-        if self.Idevice_status.telescope.lower() == 'disconnected':
-            self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered')
-            return 
+        self._log.info(f'[{type(self).__name__}] is triggered.')
+        status_telescope = self.Idevice_status.telescope.lower()
+        if status_telescope == 'disconnected':
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+            return False
         
         # If not aborted, execute the action
-        if not self.abort_action.is_set():
-            self._log.info(f'[{type(self).__name__}] is triggered.')
-            self.IDevice.telescope.unpark()
-            if not self.abort_action.is_set():
-                self._log.info(f'[{type(self).__name__}] is finished.')
-            else:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-        else:
+        if self.abort_action.is_set():
             self.abort()
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            return False
+        
+        # Start action
+        if status_telescope == 'busy':
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope is busy.')
+            return False
+        elif status_telescope == 'parked':
+            result_unpark = self.IDevice.telescope.unpark()
+        else:
+            result_unpark = True
+        
+        if result_unpark:
+            self._log.info(f'[{type(self).__name__}] is finished.')
+        else:
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope unpark failure.')
+            return False
+        return True
     
     def abort(self):
         return

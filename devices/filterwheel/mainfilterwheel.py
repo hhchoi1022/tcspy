@@ -156,7 +156,7 @@ class mainFilterwheel(mainConfig):
         current_filter = self._get_current_filtinfo()['name']
         if isinstance(filter_, str):
             if not filter_ in self.filtnames:
-                self._log.critical(f'Filter {filter_} is not implemented')
+                self._log.critical(f'Filter {filter_} is not implemented [{self.filtnames}]')
                 return False
             else:
                 self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, filter_))

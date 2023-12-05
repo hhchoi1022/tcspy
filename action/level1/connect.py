@@ -20,25 +20,20 @@ class Connect(Interface_Runnable):
     def run(self,
             **kwargs):
         
-        # connect devices
         self._log.info(f'[{type(self).__name__}] is triggered.')
+        # connect devices
         devices_status = self.IDevice_status.dict
         for device_name in self.IDevice.devices.keys():
-            if not self.abort_action.is_set():
-                device = self.IDevice.devices[device_name]
-                status = devices_status[device_name]
-                try:
-                    if status == 'disconnected':
-                        device.connect()
-                    else:
-                        self._log.info(f'{device_name} is connected')
-                    time.sleep(1)
-                except:
-                    pass
-            else:
+            if self.abort_action.is_set():
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-                # return False
-        
+                return False
+            device = self.IDevice.devices[device_name]
+            status = devices_status[device_name]
+            try:
+                device.connect()
+            except:
+                pass
+                        
         # check the device connection
         devices_status = self.IDevice_status.dict
         self._log.info('Checking devices connection...')
@@ -53,7 +48,6 @@ class Connect(Interface_Runnable):
                     self._log.info(f'{device_name} : Connected')
             else:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-                # return False
             
         self._log.info('='*30)
         self._log.info(f'[{type(self).__name__}] is finished.')
@@ -67,9 +61,8 @@ class Connect(Interface_Runnable):
 if __name__ == '__main__':
     tel1 = IntegratedDevice(unitnum = 1)
     tel2 = IntegratedDevice(unitnum = 2)
-    c1 = Connect(tel1)
-    c2 = Connect(tel2)
-    c1.run()
+    c1 = Connect(tel1, abort_action = Event())
+    A = c1.run()
     #c2.run()
 
 #%%

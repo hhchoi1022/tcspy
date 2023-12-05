@@ -19,31 +19,29 @@ class Warm(Interface_Runnable, Interface_Abortable):
     def run(self,
             settemperature : float,
             tolerance : float = 1):
+        
+        self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         if self.Idevice_status.camera.lower() == 'disconnected':
-            self._log.critical(f'Camera is disconnected. Action "{type(self).__name__}" is not triggered')
-            return 
+            self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
+            return False
         
         # If not aborted, execute the action
-        if not self.abort_action.is_set():
-            self._log.info(f'[{type(self).__name__}] is triggered.')
-            self.IDevice.camera.warm(settemperature = settemperature,
-                                  tolerance= tolerance)
-            if not self.abort_action.is_set():
-                self._log.info(f'[{type(self).__name__}] is finished.')
-            else:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-        else:
+        if self.abort_action.is_set():
             self.abort()
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            return False
+        
+        result_warm = self.IDevice.camera.warm(settemperature = settemperature,
+                                               tolerance= tolerance,
+                                               abort_action = self.abort_action)
+        if result_warm:
+            self._log.info(f'[{type(self).__name__}] is finished.')
+        else:
+            self._log.critical(f'[{type(self).__name__}] is failed: camera warming failure.')
+            return False
+        return True 
+            
     
     def abort(self):
-        return
-# %%
-if __name__ == '__main__':
-    tel1 = IntegratedDevice(unitnum = 1)
-    tel2 = IntegratedDevice(unitnum = 2)
-    abort_action = Event()
-    Warm(tel2, abort_action).run()
-
-
-#%%
+        pass

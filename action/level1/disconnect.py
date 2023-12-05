@@ -20,25 +20,20 @@ class Disconnect(Interface_Runnable):
     def run(self,
             **kwargs):
         
-        # disconnect devices
         self._log.info(f'[{type(self).__name__}]" is triggered.')
+        # disconnect devices
         devices_status = self.IDevice_status.dict
         for device_name in self.IDevice.devices.keys():
-            if not self.abort_action.is_set():
-                device = self.IDevice.devices[device_name]
-                status = devices_status[device_name]
-                try:
-                    if not status == 'disconnected':
-                        device.disconnect()
-                    else:
-                        self._log.info(f'{device_name} disconnected')
-                    time.sleep(1)
-                except:
-                    pass
-            else:
+            if self.abort_action.is_set():
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-                return
-        
+                return False
+            device = self.IDevice.devices[device_name]
+            status = devices_status[device_name]
+            try:
+                device.disconnect()
+            except:
+                pass
+
         # check the device connection
         devices_status = self.IDevice_status.dict
         self._log.info('Checking devices connection...')
@@ -53,8 +48,8 @@ class Disconnect(Interface_Runnable):
                     self._log.info(f'{device_name} : Disconnected')
             else:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-                return
-            
+        
+        self._log.info('='*30)
         self._log.info(f'[{type(self).__name__}] is finished.')
         time.sleep(1)
         devices_status = self.IDevice_status.dict

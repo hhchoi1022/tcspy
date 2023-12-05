@@ -7,5 +7,7 @@ from .exposure import Exposure
 from .park import Park
 from .slewRADec import SlewRADec
 from .slewAltAz import SlewAltAz
+from .trackingoff import TrackingOff
+from .trackingon import TrackingOn
 from .unpark import Unpark
 from .warm import Warm

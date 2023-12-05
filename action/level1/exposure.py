@@ -42,15 +42,16 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         """
         
         # Check condition of the instruments for this Action
+        self._log.info(f'[{type(self).__name__}] is triggered.')
         status_filterwheel = self.IDevice_status.filterwheel
         status_camera = self.IDevice_status.camera
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'Camera is disconnected. Action "{type(self).__name__}" is not triggered') 
+            self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
         if status_filterwheel.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
+            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
         if trigger_abort_disconnected:
             return False
         # Done
@@ -58,86 +59,95 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         # Action
         if self.abort_action.is_set():
             self.abort()
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
             return False
-        else:
-            # Set target
-            if not target:
-                target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_name = target_name)
+        
+        # Set target
+        if not target:
+            target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_name = target_name)
+        
+        # Move filter
+        result_changefilter = True
+        if imgtype.upper() == 'LIGHT':
+            if not filter_:
+                self._log.critical('Filter must be determined for LIGHT frame')
+                return False
+            changefilter = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action)    
+            result_changefilter = changefilter.run(str(filter_))
+        
+        # Check the filterchange succeeds or not
+        if not result_changefilter:
+            self._log.critical(f'[{type(self).__name__}] is failed: filterchange failure.')
+            return False
             
-            # Move filter
-            result_changefilter = True
-            if imgtype.upper() == 'LIGHT':
-                if status_filterwheel.lower() == 'idle':
-                    changefilter = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action)
-                else:
-                    self._log.critical(f'Filterwheel is busy. Action "{type(self).__name__}" is not triggered')
-                    return False
-                if not filter_:
-                    self._log.critical('Filter must be determined for LIGHT frame')
-                    return False
-                result_changefilter = changefilter.run(str(filter_))
-            
-            # Check the filterchange succeeds or not
-            if not result_changefilter:
-                self._log.critical('Filterchange failed')
+        # Exposure 
+        # Check whether the process is aborted
+        if self.abort_action.is_set():
+            self.abort()
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            return False
+        
+        # Check device connection
+        camera = self.IDevice.camera
+        status_camera = self.IDevice_status.camera
+        
+        if status_camera.lower() == 'disconnected':
+            self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
+            return False
+        elif status_camera.lower() == 'busy':
+            self._log.critical(f'[{type(self).__name__}] is failed: focuser is busy.')
+            return False
+        elif status_camera.lower() == 'idle':
+            # Exposure camera
+            if imgtype.upper() == 'BIAS':
+                exptime = camera.device.ExposureMin
+                self._log.warning('Input exposure time is set to the minimum value for BIAS image')
+                is_light = False
+            if imgtype.upper() == 'DARK':
+                exptime = exptime
+                is_light = False
+            if imgtype.upper() == 'FLAT':
+                exptime = exptime
+                is_light = True
+            if imgtype.upper() in 'LIGHT':
+                exptime = exptime
+                is_light = True
+            self._log.info(f'[%s] Start exposure... (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
+            imginfo = camera.exposure(exptime = float(exptime),
+                                      imgtype = imgtype,
+                                      binning = int(binning),
+                                      is_light = is_light,
+                                      abort_action = self.abort_action)
+            if imginfo:
+                self._log.info(f'[%s] Exposure finished (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
+            else:
+                self.abort()
+                self._log.critical(f'[{type(self).__name__}] is failed: camera exposure failure.')
                 return False
             
-            # Exposure 
+            # Save image
             if self.abort_action.is_set():
                 self.abort()
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
                 return False
-            else:
-                cam = self.IDevice.camera
-                status_camera = self.IDevice_status.camera
-                if status_camera.lower() == 'disconnected':
-                    self._log.critical(f'Camera is disconnected. Action "{type(self).__name__}" is not triggered')
-                    return False
-                elif status_camera.lower() == 'idle':
-                    
-                    # Exposure camera
-                    if imgtype.upper() == 'BIAS':
-                        exptime = cam.device.ExposureMin
-                        self._log.warning('Input exposure time is set to the minimum value for BIAS image')
-                        is_light = False
-                    if imgtype.upper() == 'DARK':
-                        exptime = exptime
-                        is_light = False
-                    if imgtype.upper() == 'FLAT':
-                        exptime = exptime
-                        is_light = True
-                    if imgtype.upper() in 'LIGHT':
-                        exptime = exptime
-                        is_light = True
-                    self._log.info(f'[%s] Start exposure... (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
-                    imginfo = cam.exposure(exptime = float(exptime),
-                                           imgtype = imgtype,
-                                           binning = int(binning),
-                                           is_light = is_light,
-                                           abort_action = self.abort_action)
-                    if self.abort_action.is_set():
-                        self._log.warning(f'[{type(self).__name__}] is aborted.')
-                        return False
-                    else:
-                        self._log.info(f'[%s] Exposure finished (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
-                        
-                        # Save image
-                        status = self.IDevice.status
-                        img = mainImage(frame_number = int(frame_number),
-                                        config_info = self.IDevice.config,
-                                        image_info = imginfo,
-                                        camera_info = status['camera'],
-                                        telescope_info = status['telescope'],
-                                        filterwheel_info = status['filterwheel'],
-                                        focuser_info = status['focuser'],
-                                        observer_info = status['observer'],
-                                        target_info = target.status,
-                                        weather_info = status['weather'])
-                        filepath = img.save()
-                        self._log.info(f'Saved!: %s)'%(filepath))
-                        
-                elif status_camera.lower() == 'busy':
-                    self._log.critical(f'Camera is busy. Action "{type(self).__name__}" is not triggered')
-                    return False
+            
+            status = self.IDevice.status
+            try:
+                img = mainImage(frame_number = int(frame_number),
+                                config_info = self.IDevice.config,
+                                image_info = imginfo,
+                                camera_info = status['camera'],
+                                telescope_info = status['telescope'],
+                                filterwheel_info = status['filterwheel'],
+                                focuser_info = status['focuser'],
+                                observer_info = status['observer'],
+                                target_info = target.status,
+                                weather_info = status['weather'])
+                filepath = img.save()
+                self._log.info(f'Saved!: %s)'%(filepath))
+            except:
+                self._log.critical(f'[{type(self).__name__}] is failed: mainImage save failure.')
+                return False
         return True
 
     def abort(self):

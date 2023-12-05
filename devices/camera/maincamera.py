@@ -340,8 +340,10 @@ class mainCamera(mainConfig):
              ):
         try:
             if self.device.CanSetCCDTemperature:
-                self.device.SetCCDTemperature = settemperature
                 self.device.CoolerOn = True
+                while not self.device.CoolerOn:
+                    time.sleep(self._checktime)
+                self.device.SetCCDTemperature = settemperature
                 self._log.info('Start cooling...')
                 
                 # Initialize variables for tracking temperature and gradient

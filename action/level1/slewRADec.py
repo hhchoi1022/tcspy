@@ -19,41 +19,48 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
             ra : float = None,
             dec : float = None,
             **kwargs):
-        tel = self.IDevice.telescope
-        status_tel = self.IDevice_status.telescope
+        
         # Check device connection
-        if status_tel.lower() == 'disconnected':
-            self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered')
+        telescope = self.IDevice.telescope
+        status_telescope = self.IDevice_status.telescope.lower()
+        if status_telescope == 'disconnected':
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
             return False
 
-        # If not aborted, execute the action
-        if not self.abort_action.is_set():
-            self._log.info(f'[{type(self).__name__}] is triggered.')
-            if status_tel.lower() == 'disconnected':
-                self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered')
-            elif status_tel.lower() == 'parked' :
-                self._log.warning(f'Telescope is parked. Unpark before operation')
-            elif status_tel.lower() == 'busy':
-                self._log.warning(f'Telescope {self.IDevice.unitnum} is busy! Action SlewRADec is not triggered')
-            else:
-                tel.slew_radec(ra = float(ra),
-                               dec = float(dec),
-                               abort_action = self.abort_action,
-                               tracking = False)
-            if not self.abort_action.is_set():
-                self._log.info(f'[{type(self).__name__}] is finished.')
-            else:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-        else:
+        # Check abort_action
+        if self.abort_action.is_set():
             self.abort()
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            return False
+        
+        # Start action
+        self._log.info(f'[{type(self).__name__}] is triggered.')
+        if status_telescope == 'disconnected':
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+            return False
+        elif status_telescope == 'parked' :
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope is parked.')
+            return False
+        elif status_telescope == 'busy':
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope is busy.')
+            return False
+        else:
+            result_slew = telescope.slew_radec(ra = float(ra),
+                                               dec = float(dec),
+                                               abort_action = self.abort_action,
+                                               tracking = True)
+        
+        if result_slew:
+            self._log.info(f'[{type(self).__name__}] is finished.')
+        else:
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope slew_radec failure.')
+            return False
+        return True
     
     # For faster trigger of abort action
     def abort(self):
         status_telescope = self.IDevice_status.telescope.lower()
-        if status_telescope == 'disconnected':
-            self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not aborted')
-            return 
-        elif status_telescope == 'busy':
+        if status_telescope == 'busy':
             self.IDevice.telescope.abort()
         else:
             pass   
