@@ -61,11 +61,12 @@ class mainTelescope_pwi4(mainConfig):
         self._min_altitude = float(self.config['TARGET_MINALT'])
         self._max_altitude = float(self.config['TARGET_MAXALT'])
         self._checktime = float(self.config['TELESCOPE_CHECKTIME'])
+        self._settle_time = float(self.config['TELESCOPE_SETTLETIME'])
         self.observer = mainObserver(unitnum = unitnum)
         self.device = PWI4(self.config['TELESCOPE_HOSTIP'], self.config['TELESCOPE_PORTNUM'])
-        self.PWI_status = self.device.status()
         self.status = self.get_status()
-        
+    
+    @property
     def get_status(self):
         """
         Get the current status of the telescope.
@@ -111,33 +112,37 @@ class mainTelescope_pwi4(mainConfig):
         status['axis2_maxvel'] = None
         try:
             if self.PWI_status.mount.is_connected:
-                self._update_PWI_status()
-                status['update_time'] = self.PWI_status.response.timestamp_utc
-                status['jd'] = "{:.6f}".format(self.PWI_status.mount.julian_date)
-                status['ra'] = "{:.4f}".format(self.PWI_status.mount.ra_j2000_hours)
-                status['dec'] = "{:.4f}".format(self.PWI_status.mount.dec_j2000_degs)
-                status['alt'] = "{:.3f}".format(self.PWI_status.mount.altitude_degs)
-                status['az'] = "{:.3f}".format(self.PWI_status.mount.azimuth_degs)
-                status['at_parked'] = (self.PWI_status.mount.axis0.is_enabled == False) & (self.PWI_status.mount.axis1.is_enabled == False)
-                status['at_home'] = None
-                status['is_connected'] = self.PWI_status.mount.is_connected
-                status['is_tracking'] = self.PWI_status.mount.is_tracking
-                status['is_slewing'] = self.PWI_status.mount.is_slewing 
-                status['is_stationary'] = (self.PWI_status.mount.axis0.rms_error_arcsec < self.config['TELESCOPE_RMSRA']) & (self.PWI_status.mount.axis1.rms_error_arcsec < self.config['TELESCOPE_RMSDEC']) & (not self.PWI_status.mount.is_slewing)
-                status['axis1_rms'] = "{:.4f}".format(self.PWI_status.mount.axis0.rms_error_arcsec)
-                status['axis2_rms'] = "{:.4f}".format(self.PWI_status.mount.axis1.rms_error_arcsec)
-                status['axis1_maxvel'] = "{:.4f}".format(self.PWI_status.mount.axis0.max_velocity_degs_per_sec)
-                status['axis2_maxvel'] = "{:.4f}".format(self.PWI_status.mount.axis1.max_velocity_degs_per_sec)
+                PWI_status = self.PWI_status
+                status['update_time'] = PWI_status.response.timestamp_utc
+                status['jd'] = "{:.6f}".format(PWI_status.mount.julian_date)
+                status['ra'] = "{:.4f}".format(PWI_status.mount.ra_j2000_hours)
+                status['dec'] = "{:.4f}".format(PWI_status.mount.dec_j2000_degs)
+                status['alt'] = "{:.3f}".format(PWI_status.mount.altitude_degs)
+                status['az'] = "{:.3f}".format(PWI_status.mount.azimuth_degs)
+                status['at_parked'] = (PWI_status.mount.axis0.is_enabled == False) & (PWI_status.mount.axis1.is_enabled == False)
+                status['is_connected'] = PWI_status.mount.is_connected
+                status['is_tracking'] = PWI_status.mount.is_tracking
+                status['is_slewing'] = PWI_status.mount.is_slewing 
+                status['is_stationary'] = (PWI_status.mount.axis0.rms_error_arcsec < self.config['TELESCOPE_RMSRA']) & (PWI_status.mount.axis1.rms_error_arcsec < self.config['TELESCOPE_RMSDEC']) & (not PWI_status.mount.is_slewing)
+                status['axis1_rms'] = "{:.4f}".format(PWI_status.mount.axis0.rms_error_arcsec)
+                status['axis2_rms'] = "{:.4f}".format(PWI_status.mount.axis1.rms_error_arcsec)
+                status['axis1_maxvel'] = "{:.4f}".format(PWI_status.mount.axis0.max_velocity_degs_per_sec)
+                status['axis2_maxvel'] = "{:.4f}".format(PWI_status.mount.axis1.max_velocity_degs_per_sec)
         except:
             pass
         return status
     
+    @property
+    def PWI_status(self):
+        return self.device.status()
+    '''
     def _update_PWI_status(self):
         """
         Update the status of the telescope.
         """
         
         self.PWI_status = self.device.status()
+    '''
     
     @Timeout(5, 'Timeout')
     def connect(self):
@@ -146,18 +151,20 @@ class mainTelescope_pwi4(mainConfig):
         """
         
         self._log.info('Connecting to the telescope...')
+        status = self.get_status()
         try:
-            self._update_PWI_status()
-            if not self.PWI_status.mount.is_connected:
+            #self._update_PWI_status()
+            if not status['is_connected']:
                 self.device.mount_connect()
             time.sleep(self._checktime)
-            while not self.PWI_status.mount.is_connected:
+            while not status['is_connected']:
                 time.sleep(self._checktime)
-                self._update_PWI_status()
-            if self.PWI_status.mount.is_connected:
+                status = self.get_status() #
+                #self._update_PWI_status()
+            if status['is_connected']:
                 self._log.info('Telescope connected')
         except:
-            self._log.warning('Connection failed')
+            self._log.critical('Connection failed')
             return False
         return True
     
@@ -168,48 +175,52 @@ class mainTelescope_pwi4(mainConfig):
         """
         
         self._log.info('Disconnecting to the telescope...')
+        status = self.get_status()
         try:
             self._update_PWI_status()
-            if self.PWI_status.mount.is_connected:
+            if status['is_connected']:
                 self.device.mount_disconnect()
             time.sleep(self._checktime)
-            while self.PWI_status.mount.is_connected:
+            while status['is_connected']:
                 time.sleep(self._checktime)
-                self._update_PWI_status()
-            if not self.PWI_status.mount.is_connected:
+                status = self.get_status() #
+                #self._update_PWI_status()
+            if not status['is_connected']:
                 self._log.info('Telescope disconnected')
         except:
-            self._log.warning('Disconnect failed')
+            self._log.critical('Disconnect failed')
             return False
         return True
     
     def enable_mount(self):
+        result = True
         for axis_index in range(2):
-            self._update_PWI_status()
+            PWI_status = self.PWI_status
             try:
-                if not self.PWI_status.mount.axis[axis_index].is_enabled:
+                if not PWI_status.mount.axis[axis_index].is_enabled:
                     self.device.mount_enable(axisNum= axis_index)
                 else:
                     pass
             except:
                 self._log.critical('Mount cannot be enabled')
-                return False
+                result = False
             self._log.info('Both axis are enabled ')
-            return True
+        return result
     
     def disable_mount(self):
+        result = True
         for axis_index in range(2):
-            self._update_PWI_status()
+            PWI_status = self.PWI_status
             try:
-                if self.PWI_status.mount.axis[axis_index].is_enabled:
+                if PWI_status.mount.axis[axis_index].is_enabled:
                     self.device.mount_disable(axisNum= axis_index)
                 else:
                     pass
             except:
                 self._log.critical('Mount cannot be disabled')
-                return False
+                result = False
             self._log.info('Both axis are disabled ')
-            return True
+        return result
     
     def park(self, abort_action : Event, disable_mount = False):
         """
@@ -218,25 +229,38 @@ class mainTelescope_pwi4(mainConfig):
         coordinate = SkyCoord(self.config['TELESCOPE_PARKAZ'],self.config['TELESCOPE_PARKALT'], frame = 'altaz', unit ='deg')
         alt = coordinate.alt.deg
         az = coordinate.az.deg
-        
-        #if self.device.CanPark:
-            #if not self.device.AtPark:
 
         self._log.info('Parking telescope...')
-        self._update_PWI_status()
+        status = self.get_status()
         # Check the mount is enabled to slew
-        if not (self.PWI_status.mount.axis0.is_enabled == True) & (self.PWI_status.mount.axis1.is_enabled == True):
-            self.enable_mount()
+        result_enable = True
+        if status['is_parked']:
+            result_enable = self.enable_mount()
+        if not result_enable:
+            return False
         
+        # Slew
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
         time.sleep(self._checktime)
-        self._update_PWI_status()
-        while self.PWI_status.mount.is_slewing:
+        status = self.get_status()
+        while status['is_slewing']:
             time.sleep(self._checktime)
-            self._update_PWI_status()
+            status = self.get_status()
+            if abort_action.is_set():
+                self.abort()
+                self._log.warning('Telescope parking is aborted')
+                return False
+        time.sleep(self._checktime)
         
-        self.status = self.get_status()
+        # Disable mount when disable_mount == True
+        result_disable = True
+        if disable_mount:
+            result_disable = self.disable_mount()
+        if not result_disable:
+            self._log.info('Parking failed')
+            return False
         self._log.info('Telescope parked')
+        return True
 
     def unpark(self):
         """
@@ -244,37 +268,43 @@ class mainTelescope_pwi4(mainConfig):
         """
         
         self._log.info('Unparking telescope...')
-        self.status = self.get_status()
-        self._update_PWI_status()
-        if not self.PWI_status.mount.axis0.is_enabled:
-            self.device.mount_enable(axisNum = 0)
-        if not self.PWI_status.mount.axis1.is_enabled:
-            self.device.mount_enable(axisNum = 1)
-        self.status = self.get_status()
+        result_enable = self.enable_mount()
+        if not result_enable:
+            self._log.critical('Unparking failed')
+            return False
         self._log.info('Telescope unparked')
+        return True
     
-    def find_home(self):
+    def find_home(self, abort_action : Event):
         """
         Find the home position of the telescope.
         """
         
         self._log.info('Finding home position...')
-        self.condition = 'slewing'
+        # Check whether mount is parked 
+        status = self.get_status()
+        if status['at_parked']:
+            self.unpark()
+        
+        # Find home 
         self.device.mount_find_home()
-        self.status = self.get_status()
-        time.sleep(5*self._checktime)
-        while not self.status['is_stationary']:
+        
+        time.sleep(self._checktime)
+        status = self.get_status()
+        while not status['is_stationary']:
             time.sleep(self._checktime)
-            self.status = self.get_status()
-        self.condition = 'idle'
-        self.status = self.get_status()
-        self._log.info('Finding home finished')
+            status = self.get_status()
+            if abort_action.is_set():
+                self.abort()
+                self._log.warning('Telescope parking is aborted')
+                return False
+        self._log.info('Telescope homed')
+        return True
 
     def slew_radec(self,
-                   coordinate : SkyCoord = None,
-                   ra : float = None,
-                   dec : float = None,
-                   target_name : str = '',
+                   ra : float,
+                   dec : float,
+                   abort_action : Event,
                    tracking = True):
         """
         Slew the telescope to a specified RA/Dec coordinate.
@@ -293,40 +323,49 @@ class mainTelescope_pwi4(mainConfig):
             Whether to turn tracking on after slewing
         """
         
-        if (ra != None) & (dec != None):
-            coordinate = to_SkyCoord(ra, dec)
-        ra = coordinate.ra.hour
-        dec = coordinate.dec.deg
-        target = mainTarget(unitnum = self._unitnum, observer = self.observer, target_ra = ra, target_dec = dec, target_name = target_name)
+        target = mainTarget(unitnum = self.unitnum, observer = self.observer, target_ra = ra, target_dec = dec)
         altaz = target.altaz()
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
 
         # Check coordinates
         if altaz.alt.deg < self._min_altitude:
             self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
-            raise ValueError('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+            return False
         
-        # Slewing 
-        self.unpark()
-        #self.status = self.get_status()
-        self.condition = 'busy'
+        # Check whether the mount is parked
+        else:
+            status = self.get_status()
+            result_unpark = True
+            if status['at_parked']:
+                result_unpark = self.unpark()
+            if not result_unpark:
+                return False
+        
+        # Slew
         self.device.mount_goto_ra_dec_j2000(ra, dec)
-        time.sleep(5*self._checktime)
-        self.status = self.get_status()
-        while not self.status['is_stationary']:
+        time.sleep(self._checktime)
+        status = self.get_status()
+        while not status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
-        time.sleep(2*self._checktime)
-        self.condition = 'idle'
-        self.status = self.get_status()
-        self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(self.status['ra'], self.status['dec'], self.status['alt'], self.status['az']))
+            if abort_action.is_set():
+                self.abort()
+                self._log.warning('Telescope parking is aborted')
+                return False
+        self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
+        time.sleep(self._settle_time)
+        status = self.get_status()
+        self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(status['ra'], status['dec'], status['alt'], status['az']))
         if not tracking:
             self.tracking_off()
+        else:
+            self.tracking_on()
+        return True
     
     def slew_altaz(self,
-                   coordinate : SkyCoord = None,
-                   alt : float = None,
-                   az : float = None,
+                   alt : float,
+                   az : float,
+                   abort_action : Event,
                    tracking = False):
         """
         Slews the telescope to the specified Alt-Azimuth coordinate.
@@ -343,71 +382,75 @@ class mainTelescope_pwi4(mainConfig):
             If True, tracking will be enabled after slewing.
         """
      
-        if coordinate == None:
-            coordinate = SkyCoord(az, alt, frame = 'altaz', unit ='deg')
-        alt = coordinate.alt.deg
-        az = coordinate.az.deg
         self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
-        
+
         # Check coordinates
         if alt < self._min_altitude:
             self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
-            raise ValueError('Destination altitude below limit (%.1fdeg)' %alt)
-
-        # Slewing 
-        self.unpark()
-        #self.status = self.get_status()
-        self.condition = 'busy'
+            return False
+        
+        else:
+            status = self.get_status()
+            result_unpark = True
+            if status['at_parked']:
+                result_unpark = self.unpark()
+            if not result_unpark:
+                return False
+        
+        # Slew
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
-        time.sleep(5*self._checktime)
-        self.status = self.get_status()
-        while not self.status['is_stationary']:
+        time.sleep(self._checktime)
+        status = self.get_status()
+        while not status['is_stationary']:
             time.sleep(self._checktime)
             self.status = self.get_status()
-        time.sleep(2*self._checktime)
-        self.condition = 'idle'
-        self.status = self.get_status()
+            if abort_action.is_set():
+                self.abort()
+                self._log.warning('Telescope parking is aborted')
+                return False
+        self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
+        time.sleep(self._settle_time)    
+        status = self.get_status()
         self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(self.status['alt'], self.status['az']))
         if tracking:
             self.tracking_on()
-    
+        else:
+            self.tracking_off()
+        return True
+
     def tracking_on(self):
         """
         Activates the tracking mode of the mount.
         """
         
-        self.status = self.get_status()
-        if not self.status['is_tracking']:
+        status = self.get_status()
+        if not status['is_tracking']:
             self.device.mount_tracking_on()
             self._log.info('Tracking activated')
         else:
             self._log.critical('Tracking failed')
-            raise SystemError('Tracking failed')
-        self.status = self.get_status()
+            return False
+        return True
         
     def tracking_off(self):
         """
         Deactivates the tracking mode of the mount.
         """
         
-        self.status = self.get_status()
-        if self.status['is_tracking']:
-            self.device.mount_tracking_off()
+        status = self.get_status()
+        if status['is_tracking']:
+            device.mount_tracking_off()
             self._log.info('Tracking deactivated')
         else:
             self._log.critical('Untracking failed')
-            raise SystemError('Untracking failed')
-        self.status = self.get_status()
-        
+            return False
+        return True        
+    
     def abort(self):
         """
         Abort the movement of the mount
-        """
-        
+        """        
         self.device.mount_stop()
-        self.condition = 'aborted'
-        self._log.warning('Telescope aborted')
-        self.status = self.get_status()
     
 
 # %%

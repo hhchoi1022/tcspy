@@ -41,7 +41,7 @@ class MultiAction:
     
     def abort(self):
         self.abort_action.set()
-        #self.queue = Queue()
+        self.queue = Queue()
         def consumer(abort_action):
             while True:
                 params = self.queue.get()
@@ -83,7 +83,7 @@ A.abort()
 
 #%% Cool/Warm
 from tcspy.action.level1 import Cool, Warm
-array_kwargs_cool = dict(settemperature = 20, tolerance = 1)
+array_kwargs_cool = dict(settemperature = 15, tolerance = 1)
 array_kwargs_warm = dict(settemperature = 10, tolerance = 1)
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_cool, function= Cool)
 #A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_warm, function= Warm)
@@ -95,7 +95,7 @@ A.abort()
 from tcspy.action.level1 import Park, Unpark
 array_kwargs = dict()
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Park)
-A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Unpark)
+#A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Unpark)
 A.run()
 #%%
 A.abort()
@@ -173,10 +173,9 @@ array_kwargs_1 = dict(exptime = 5,
                       binning  = 1,
                       ra  = None,
                       dec  = None,
-                      alt  = 50,
-                      az  = 270,
-                      target_name  = 'Test',
-                      target  = target_NGC1566
+                      alt  = 40,
+                      az  = 300,
+                      target_name  = 'Test'
                       )
 
 array_kwargs_2 = dict(exptime = 5,
@@ -188,8 +187,8 @@ array_kwargs_2 = dict(exptime = 5,
                       dec  = None,
                       alt  = 50,
                       az  = 270,
-                      target_name  = 'Test',
-                      target  = target_NGC1566
+                      target_name  = 'Test'
+                      #target  = target_NGC1566
                       )
 array_kwargs = list([array_kwargs_1, array_kwargs_2])
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= SingleObservation)

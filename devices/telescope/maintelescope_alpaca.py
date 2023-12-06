@@ -77,7 +77,6 @@ class mainTelescope_Alpaca(mainConfig):
         status['alt'] = None
         status['az'] = None
         status['at_parked'] = None
-        status['at_home'] = None
         status['is_connected'] = False
         status['is_tracking'] = None
         status['is_slewing'] = None
@@ -116,10 +115,6 @@ class mainTelescope_Alpaca(mainConfig):
                 pass
             try:
                 status['at_parked'] = self.device.AtPark
-            except:
-                pass
-            try:
-                status['at_home'] = self.device.AtHome
             except:
                 pass
             try:
