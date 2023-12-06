@@ -69,66 +69,55 @@ class mainConfig:
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_CHECKTIME=0.5)
 
-        telescope_params = dict(TELESCOPE_DEVICE='Alpaca',  # Alpaca or PWI4
+        telescope_params = dict(TELESCOPE_DEVICETYPE='PWI4',  # Alpaca or PWI4
                                 TELESCOPE_HOSTIP='10.0.106.%d' % portnum,
-                                TELESCOPE_PORTNUM='11111',
+                                TELESCOPE_PORTNUM='8220',
                                 TELESCOPE_DEVICENUM=0,
-                                TELESCOPE_PARKALT=0,
-                                TELESCOPE_PARKAZ=270,
+                                TELESCOPE_PARKALT=40,
+                                TELESCOPE_PARKAZ=300,
                                 TELESCOPE_RMSRA=0.15,
                                 TELESCOPE_RMSDEC=0.15,
                                 TELESCOPE_CHECKTIME=0.5,
                                 TELESCOPE_DIAMETER=0.5,
                                 TELESCOPE_APAREA=0.196,
                                 TELESCOPE_FOCALLENGTH=1500,
-                                TELESCOPE_SETTLETIME=2, #seconds
+                                TELESCOPE_SETTLETIME=3, #seconds
                                 )
         camera_params = dict(CAMERA_HOSTIP='10.0.106.%d' % portnum,
                              CAMERA_PORTNUM='11111',
                              CAMERA_DEVICENUM=0,
-                             CAMERA_NAME='Moravian C3-61000',
-                             CAMERA_CCDNAME='IMX455',
+                             #CAMERA_NAME='Moravian C3-61000',
+                             #CAMERA_CCDNAME='IMX455',
                              CAMERA_PIXSIZE=3.76,  # micron
-                             CAMERA_GAIN=1,
-                             CAMERA_READNOISE=3.51,
-                             CAMERA_DARKNOISE=0.1,
-                             CAMERA_MINEXPOSURE=19.5,  # microseconds
                              CAMERA_CHECKTIME=0.5)
                              
         filterwheel_params = dict(FTWHEEL_HOSTIP='10.0.106.%d' % portnum,
                                   FTWHEEL_PORTNUM='11111',
                                   FTWHEEL_DEVICENUM=0,
-                                  FTWHEEL_NAME='',
                                   FTWHEEL_CHECKTIME=0.5)
 
         focuser_params = dict(FOCUSER_HOSTIP='10.0.106.%d' % portnum,
                               FOCUSER_PORTNUM='11111',
                               FOCUSER_DEVICENUM=0,
-                              FOCUSER_NAME='',
-                              FOCUSER_CHECKTIME=0.5,
-                              FOCUSER_HALTTOL=10000,
-                              FOCUSER_WARNTOL=5000)
-        
+                              #FOCUSER_NAME='',
+                              FOCUSER_CHECKTIME=0.5)
+                
         target_params = dict(TARGET_MINALT=0,
                              TARGET_MAXALT=90,
                              TARGET_MAX_SUNALT=None,
                              TARGET_MOONSEP=40,
-                             TARGET_MAXAIRMASS=None
-                             )
+                             TARGET_MAXAIRMASS=None)
         
         image_params = dict(FILENAME_FORMAT= "$$TELESCOP$$-$$UTCDATE$$-$$UTCTIME$$-$$OBJECT$$-$$FILTER$$-$$EXPTIME$$s-$$FRAMENUM$$.fits",
-                            IMAGE_PATH=f'/data1/obsdata/7DT%.2d/images/'%(self.unitnum),
-                           )
+                            IMAGE_PATH=f'/data1/obsdata/7DT%.2d/images/'%(self.unitnum))
         
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT='[%(levelname)s]%(asctime)-15s | %(message)s',
-                             LOGGER_PATH= f'/data1/obsdata/7DT%.2d/log/'%(self.unitnum),
-                             )
+                             LOGGER_PATH= f'/data1/obsdata/7DT%.2d/log/'%(self.unitnum))
 
-        general_params = dict(TCSPY_VERSION='Version 2.0',
-                              TCSPY_NAME='TCSpy'
-                              )
+        general_params = dict(TCSPY_VERSION='Version 3.0',
+                              TCSPY_NAME='TCSpy')
 
         make_configfile(observer_params, filename='Observer.config')
         make_configfile(telescope_params, filename='Telescope.config')
@@ -149,8 +138,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=7)
-    A._initialize_config(portnum = 10)
+    A = mainConfig(unitnum=10)
+    A._initialize_config(portnum = 15)
 
 # %%
 # %%

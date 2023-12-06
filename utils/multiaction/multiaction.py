@@ -56,8 +56,8 @@ class MultiAction:
         for telescope, kwargs in zip(self.array_telescope, self.array_kwargs):
             self.queue.put({"telescope": telescope, "kwargs": kwargs })
 #%% Define telescopes
-IntDevice_1 = IntegratedDevice(unitnum = 6, tel_type = 'pwi')
-IntDevice_2 = IntegratedDevice(unitnum = 7, tel_type = 'pwi')
+IntDevice_1 = IntegratedDevice(unitnum = 21)
+IntDevice_2 = IntegratedDevice(unitnum = 22)
 array_telescope = list([IntDevice_1, IntDevice_2])
 
 # Test
@@ -76,17 +76,17 @@ from tcspy.action.level1 import TrackingOn, TrackingOff
 array_kwargs_trackingon = dict()
 array_kwargs_trackingoff = dict()
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_trackingon, function= TrackingOn)
-A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_trackingoff, function= TrackingOff)
+#A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_trackingoff, function= TrackingOff)
 A.run()
 #%%
 A.abort()
 
 #%% Cool/Warm
 from tcspy.action.level1 import Cool, Warm
-array_kwargs_cool = dict(settemperature = -15, tolerance = 1)
+array_kwargs_cool = dict(settemperature = 10, tolerance = 1)
 array_kwargs_warm = dict(settemperature = 10, tolerance = 1)
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_cool, function= Cool)
-#A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_warm, function= Warm)
+A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_warm, function= Warm)
 A.run()
 #%%
 A.abort()
@@ -139,7 +139,7 @@ A.abort()
 from tcspy.action.level1.exposure import Exposure
 from tcspy.utils.target import mainTarget
 from tcspy.devices.observer import mainObserver
-target_NGC1566 = mainTarget(unitnum = 1, observer = mainObserver(unitnum = 1), target_alt = 30, target_az= 270, target_name = 'NGC1566')
+target_NGC1566 = mainTarget(unitnum = 1, observer = mainObserver(unitnum = 1), target_alt = 50, target_az= 270, target_name = 'NGC1566')
 array_kwargs_1 = dict(frame_number = 0,
                     exptime = 5,
                     filter_ = 'm400',
@@ -185,8 +185,8 @@ array_kwargs_2 = dict(exptime = 5,
                       binning  = 1,
                       ra  = None,
                       dec  = None,
-                      alt  = 50,
-                      az  = 270,
+                      alt  = 40,
+                      az  = 300,
                       target_name  = 'Test'
                       #target  = target_NGC1566
                       )

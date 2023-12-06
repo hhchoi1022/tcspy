@@ -198,7 +198,7 @@ class mainTelescope_Alpaca(mainConfig):
                 pass
             else:
                 #self.device.Park()
-                self.device.SlewToAltAzAsync(az, alt, tracking = False)
+                self.device.SlewToAltAzAsync(az, alt)
             time.sleep(self._checktime)
             while self.device.Slewing:
                 time.sleep(self._checktime)

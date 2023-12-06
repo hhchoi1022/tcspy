@@ -12,10 +12,9 @@ from tcspy.devices.safetymonitor import mainSafetyMonitor
 class IntegratedDevice(mainConfig):
     
     def __init__(self,
-                 unitnum : int,
-                 tel_type : str = 'Alpaca'):
+                 unitnum : int):
         super().__init__(unitnum= unitnum)
-        self.tel_type = tel_type
+        self.tel_type = self.config['TELESCOPE_DEVICETYPE'].lower()
         self.camera = None
         self.telescope = None
         self.focuser = None
@@ -27,7 +26,7 @@ class IntegratedDevice(mainConfig):
 
     def _set_devices(self):
         self.camera = self._get_camera()
-        self.telescope = self._get_telescope(tel_type = self.tel_type)
+        self.telescope = self._get_telescope()
         self.focuser = self._get_focuser()
         self.filterwheel = self._get_filterwheel()
         self.weather = self._get_weather()
@@ -68,9 +67,8 @@ class IntegratedDevice(mainConfig):
     def _get_camera(self):
         return mainCamera(unitnum= self.unitnum)
 
-    def _get_telescope(self,
-                       tel_type : str = 'Alpaca'):
-        if tel_type.upper() == 'ALPACA':
+    def _get_telescope(self):
+        if self.tel_type == 'alpaca':
             return mainTelescope_Alpaca(unitnum= self.unitnum)
         else:
             return mainTelescope_pwi4(unitnum= self.unitnum)
@@ -91,3 +89,5 @@ class IntegratedDevice(mainConfig):
         return mainSafetyMonitor(unitnum = self.unitnum)
     
 
+
+# %%

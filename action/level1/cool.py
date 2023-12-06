@@ -42,20 +42,20 @@ class Cool(Interface_Runnable, Interface_Abortable):
         return True
     
     def abort(self):
-        if self.Idevice.camera.device.CoolerOn:
-            if self.Idevice.camera.device.CCDTemperature < self.Idevice.camera.device.CCDTemperature -20:
+        if self.IDevice.camera.device.CoolerOn:
+            if self.IDevice.camera.device.CCDTemperature < self.IDevice.camera.device.CCDTemperature -20:
                 self._log.critical(f'Turning off when the CCD Temperature below ambient may lead to damage to the sensor.')
-                self.Idevice.camera.cooler_off()
+                self.IDevice.camera.cooler_off()
             else:
-                self.Idevice.camera.cooler_off()
+                self.IDevice.camera.cooler_off()
         else:
             pass
 # %%
 if __name__ == '__main__':
-    tel1 = IntegratedDevice(unitnum = 1)
-    tel2 = IntegratedDevice(unitnum = 2)
-    abort_action = Event()
-    Cool(tel1, abort_action).run(-20)
+    tel1 = IntegratedDevice(unitnum = 21)
+    tel2 = IntegratedDevice(unitnum = 22)
+    #abort_action = Event()
+    c = Cool(tel1, abort_action)
 
 
 #%%
