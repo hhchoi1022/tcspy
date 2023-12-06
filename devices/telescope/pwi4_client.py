@@ -692,3 +692,4 @@ def list_to_comma_separated_string(value_list):
     """
 
     return ",".join([str(x) for x in value_list])
+# %%

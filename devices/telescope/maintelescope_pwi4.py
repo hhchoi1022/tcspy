@@ -66,7 +66,6 @@ class mainTelescope_pwi4(mainConfig):
         self.device = PWI4(self.config['TELESCOPE_HOSTIP'], self.config['TELESCOPE_PORTNUM'])
         self.status = self.get_status()
     
-    @property
     def get_status(self):
         """
         Get the current status of the telescope.
@@ -153,14 +152,12 @@ class mainTelescope_pwi4(mainConfig):
         self._log.info('Connecting to the telescope...')
         status = self.get_status()
         try:
-            #self._update_PWI_status()
             if not status['is_connected']:
                 self.device.mount_connect()
             time.sleep(self._checktime)
             while not status['is_connected']:
                 time.sleep(self._checktime)
                 status = self.get_status() #
-                #self._update_PWI_status()
             if status['is_connected']:
                 self._log.info('Telescope connected')
         except:
@@ -177,14 +174,12 @@ class mainTelescope_pwi4(mainConfig):
         self._log.info('Disconnecting to the telescope...')
         status = self.get_status()
         try:
-            self._update_PWI_status()
             if status['is_connected']:
                 self.device.mount_disconnect()
             time.sleep(self._checktime)
             while status['is_connected']:
                 time.sleep(self._checktime)
                 status = self.get_status() #
-                #self._update_PWI_status()
             if not status['is_connected']:
                 self._log.info('Telescope disconnected')
         except:
@@ -234,7 +229,7 @@ class mainTelescope_pwi4(mainConfig):
         status = self.get_status()
         # Check the mount is enabled to slew
         result_enable = True
-        if status['is_parked']:
+        if status['at_parked']:
             result_enable = self.enable_mount()
         if not result_enable:
             return False
@@ -439,7 +434,7 @@ class mainTelescope_pwi4(mainConfig):
         
         status = self.get_status()
         if status['is_tracking']:
-            device.mount_tracking_off()
+            self.device.mount_tracking_off()
             self._log.info('Tracking deactivated')
         else:
             self._log.critical('Untracking failed')
@@ -455,8 +450,6 @@ class mainTelescope_pwi4(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    config = mainConfig().config
-    config['TELESCOPE_PORTNUM'] = 8220
-    device = PWI4(config['TELESCOPE_HOSTIP'], config['TELESCOPE_PORTNUM'])
-    Tel = mainTelescope_pwi4(device = device, observer = mainObserver(**config))
+    tel  =mainTelescope_pwi4(unitnum = 6)
+    
 #%%

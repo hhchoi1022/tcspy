@@ -91,4 +91,3 @@ class IntegratedDevice(mainConfig):
         return mainSafetyMonitor(unitnum = self.unitnum)
     
 
-# %%

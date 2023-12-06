@@ -56,8 +56,8 @@ class MultiAction:
         for telescope, kwargs in zip(self.array_telescope, self.array_kwargs):
             self.queue.put({"telescope": telescope, "kwargs": kwargs })
 #%% Define telescopes
-IntDevice_1 = IntegratedDevice(unitnum = 1)
-IntDevice_2 = IntegratedDevice(unitnum = 2)
+IntDevice_1 = IntegratedDevice(unitnum = 6, tel_type = 'pwi')
+IntDevice_2 = IntegratedDevice(unitnum = 7, tel_type = 'pwi')
 array_telescope = list([IntDevice_1, IntDevice_2])
 
 # Test
@@ -76,14 +76,14 @@ from tcspy.action.level1 import TrackingOn, TrackingOff
 array_kwargs_trackingon = dict()
 array_kwargs_trackingoff = dict()
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_trackingon, function= TrackingOn)
-#A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_trackingoff, function= TrackingOff)
+A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_trackingoff, function= TrackingOff)
 A.run()
 #%%
 A.abort()
 
 #%% Cool/Warm
 from tcspy.action.level1 import Cool, Warm
-array_kwargs_cool = dict(settemperature = 15, tolerance = 1)
+array_kwargs_cool = dict(settemperature = -15, tolerance = 1)
 array_kwargs_warm = dict(settemperature = 10, tolerance = 1)
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_cool, function= Cool)
 #A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_warm, function= Warm)
