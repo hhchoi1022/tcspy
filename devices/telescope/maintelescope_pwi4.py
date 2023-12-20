@@ -349,9 +349,9 @@ class mainTelescope_pwi4(mainConfig):
         self.device.mount_goto_ra_dec_j2000(ra, dec)
         time.sleep(self._checktime)
         status = self.get_status()
-        while not status['is_stationary']:
+        while status['is_slewing']:
             time.sleep(self._checktime)
-            self.status = self.get_status()
+            status = self.get_status()
             if abort_action.is_set():
                 self.abort()
                 self._log.warning('Telescope parking is aborted')
@@ -359,7 +359,7 @@ class mainTelescope_pwi4(mainConfig):
         self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
         time.sleep(self._settle_time)
         status = self.get_status()
-        self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(status['ra'], status['dec'], status['alt'], status['az']))
+        self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(float(status['ra']), float(status['dec']), float(status['alt']), float(status['az'])))
         if not tracking:
             try:
                 self.tracking_off()
@@ -412,9 +412,9 @@ class mainTelescope_pwi4(mainConfig):
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
         time.sleep(self._checktime)
         status = self.get_status()
-        while not status['is_stationary']:
+        while status['is_slewing']:
             time.sleep(self._checktime)
-            self.status = self.get_status()
+            status = self.get_status()
             if abort_action.is_set():
                 self.abort()
                 self._log.warning('Telescope parking is aborted')
@@ -422,7 +422,7 @@ class mainTelescope_pwi4(mainConfig):
         self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
         time.sleep(self._settle_time)    
         status = self.get_status()
-        self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(self.status['alt'], self.status['az']))
+        self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(float(status['alt']), float(status['az'])))
         if not tracking:
             try:
                 self.tracking_off()
@@ -442,11 +442,14 @@ class mainTelescope_pwi4(mainConfig):
         
         status = self.get_status()
         if not status['is_tracking']:
-            self.device.mount_tracking_on()
-            self._log.info('Tracking activated')
+            try:
+                self.device.mount_tracking_on()
+            except:
+                self._log.critical('Tracking failed')
+                raise TrackingFailedException('Tracking failed')
         else:
-            self._log.critical('Tracking failed')
-            raise TrackingFailedException('Tracking failed')
+            pass
+        self._log.info('Tracking activated')
         return True
         
     def tracking_off(self):
@@ -456,11 +459,13 @@ class mainTelescope_pwi4(mainConfig):
         
         status = self.get_status()
         if status['is_tracking']:
-            self.device.mount_tracking_off()
-            self._log.info('Tracking deactivated')
+            try:
+                self.device.mount_tracking_off()
+            except:
+                self._log.critical('Untracking failed')
+                raise TrackingFailedException('Untracking failed')
         else:
-            self._log.critical('Untracking failed')
-            raise TrackingFailedException('Untracking failed')
+            self._log.info('Tracking deactivated')
         return True        
     
     def abort(self):
@@ -472,6 +477,7 @@ class mainTelescope_pwi4(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    tel  =mainTelescope_pwi4(unitnum = 6)
+    tel  =mainTelescope_pwi4(unitnum = 1)
+    tel.slew_altaz(alt = 35, az = 270, abort_action = Event())
     
 #%%

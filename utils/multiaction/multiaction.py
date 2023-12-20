@@ -56,9 +56,13 @@ class MultiAction:
         for telescope, kwargs in zip(self.array_telescope, self.array_kwargs):
             self.queue.put({"telescope": telescope, "kwargs": kwargs })
 #%% Define telescopes
-IntDevice_1 = IntegratedDevice(unitnum = 21)
-IntDevice_2 = IntegratedDevice(unitnum = 22)
-array_telescope = list([IntDevice_1, IntDevice_2])
+IntDevice_1 = IntegratedDevice(unitnum = 1)
+IntDevice_2 = IntegratedDevice(unitnum = 2)
+IntDevice_3 = IntegratedDevice(unitnum = 3)
+IntDevice_6 = IntegratedDevice(unitnum = 6)
+IntDevice_7 = IntegratedDevice(unitnum = 7)
+IntDevice_9 = IntegratedDevice(unitnum = 9)
+array_telescope = list([IntDevice_1, IntDevice_2, IntDevice_3, IntDevice_6, IntDevice_7, IntDevice_9])
 
 # Test
 """LEVEL 1"""
@@ -117,17 +121,20 @@ A.abort()
 
 #%% ChangeFilter
 from tcspy.action.level1 import ChangeFilter
-array_kwarg1 = dict(filter_ = 'm400')
-array_kwarg2 = dict(filter_ = 'm450')
+array_kwarg1 = dict(filter_ = 'r')
+array_kwarg2 = dict(filter_ = 'r')
 array_kwargs = list([array_kwarg1, array_kwarg2])
+
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= ChangeFilter)
+A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwarg1, function= ChangeFilter)
+
 A.run()
 #%%
 A.abort()
 
 #%% ChangeFocus
 from tcspy.action.level1 import ChangeFocus
-array_kwargs = dict(position = 10000)
+array_kwargs = dict(position = 7500)
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= ChangeFocus)
 A.run()
 #%%
@@ -142,22 +149,29 @@ from tcspy.devices.observer import mainObserver
 target_NGC1566 = mainTarget(unitnum = 1, observer = mainObserver(unitnum = 1), target_alt = 50, target_az= 270, target_name = 'NGC1566')
 array_kwargs_1 = dict(frame_number = 0,
                     exptime = 5,
-                    filter_ = 'g',
-                    imgtype = 'light',
+                    filter_ = None,
+                    imgtype = 'bias',
                     binning = 1,
-                    target_name = None,
-                    target = target_NGC1566
+                    target_name = 'bias01',
+                    target = None
                     )
 array_kwargs_2 = dict(frame_number = 0,
                     exptime = 5,
-                    filter_ = 'g',
-                    imgtype = 'light',
+                    filter_ = None,
+                    imgtype = 'bias',
                     binning = 1,
-                    target_name = None,
-                    target = target_NGC1566
+                    target_name = 'bias03',
+                    target = None
                     )
 array_kwargs = list([array_kwargs_1, array_kwargs_2])
-A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs, function= Exposure)
+A = MultiAction(array_telescope= [IntDevice_1], array_kwargs= array_kwargs_1, function= Exposure)
+#A = MultiAction(array_telescope= [IntDevice_1,IntDevice_2], array_kwargs= array_kwargs_1, function= Exposure)
+#A = MultiAction(array_telescope= [IntDevice_1,IntDevice_2,IntDevice_3], array_kwargs= array_kwargs_1, function= Exposure)
+#A = MultiAction(array_telescope= [IntDevice_1,IntDevice_2,IntDevice_3,IntDevice_6], array_kwargs= array_kwargs_1, function= Exposure)
+#A = MultiAction(array_telescope= [IntDevice_1,IntDevice_2,IntDevice_3,IntDevice_6,IntDevice_7], array_kwargs= array_kwargs_1, function= Exposure)
+#A = MultiAction(array_telescope= [IntDevice_1,IntDevice_2,IntDevice_3,IntDevice_6,IntDevice_7,IntDevice_9], array_kwargs= array_kwargs_1, function= Exposure)
+
+
 A.run()
 #%%
 A.abort()

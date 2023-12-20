@@ -170,7 +170,10 @@ class mainFilterwheel(mainConfig):
                 self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
         
         # Change filter
-        self.device.Position = filter_
+        try:
+            self.device.Position = filter_
+        except:
+            pass
         time.sleep(self._checktime)
         while not self.device.Position == filter_:
             time.sleep(self._checktime)

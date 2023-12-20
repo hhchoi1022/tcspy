@@ -1,3 +1,4 @@
+#%%
 from astropy.io import ascii
 import time
 from astropy.time import Time
@@ -181,20 +182,23 @@ class mainFocuser(mainConfig):
             The position to move the device to
         """
     
-        self.status = self.get_status()
-        if (position <= 0) | (position > self.status['maxstep']):
-            self._log.critical('Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep']))
-            raise FocusChangeFailedException('Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep']))
+        maxstep = self.device.MaxStep
+        if (position <= 1000) | (position > maxstep):
+            self._log.critical('Set position is out of bound of this focuser (Min : %d Max : %d)'%(1000, maxstep))
+            raise FocusChangeFailedException('Set position is out of bound of this focuser (Min : %d Max : %d)'%(1000, maxstep))
         else:
-            self._log.info('Moving focuser position... (Current : %s To : %s)'%(self.status['position'], position))
+            current_position = self.device.Position
+            self._log.info('Moving focuser position... (Current : %s To : %s)'%(current_position, position))
             self.device.Move(position)
             time.sleep(self._checktime)
-            while self.device.IsMoving:
+            while not np.abs(current_position - position) < 10:
+                current_position = self.device.Position
                 time.sleep(self._checktime)
                 if abort_action.is_set():
                     self._log.warning('Focuser moving is aborted')
                     raise AbortionException('Focuser moving is aborted')
-            self._log.info('Focuser position is set (Current : %s)'%(self.status['position']))
+            current_position = self.device.Position
+            self._log.info('Focuser position is set (Current : %s)'%(position))
         return True
         
     def abort(self):
@@ -206,9 +210,7 @@ class mainFocuser(mainConfig):
 # %% Test
 if __name__ == '__main__':
     #Focus = Focuser('192.168.0.4:11111', 0)
-    F = mainFocuser(unitnum = 1)
+    F = mainFocuser(unitnum = 2)
     F.connect()
-    F.move(19000)
-    F.disconnect()
-
+    F.move(8000, Event())
 # %%

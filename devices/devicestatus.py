@@ -103,6 +103,8 @@ class DeviceStatus(Interface):
         try:
             if self.IDevice.focuser.device.Connected:
                 status = 'idle'
+            if self.IDevice.focuser.device.IsMoving:
+                status = 'busy'
         except:
             pass
         return status
