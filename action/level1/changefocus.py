@@ -18,7 +18,8 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
         self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
 
     def run(self,
-            position: int):
+            position: int = None,
+            relative_position : int = None):
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         if self.IDevice_status.focuser.lower() == 'disconnected':

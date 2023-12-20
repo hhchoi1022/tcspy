@@ -71,7 +71,8 @@ class SequentialObservation(Interface_Runnable, Interface_Abortable):
             return  AbortionException(f'[{type(self).__name__}] is aborted.')
         
         for target in target_tbl:
-            last_filter = self.IDevice.filterwheel.
+            filterwheel_status = self.IDevice.filterwheel.get_status()
+            focus_status
             
             
         
