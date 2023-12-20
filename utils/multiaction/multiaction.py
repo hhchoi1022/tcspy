@@ -107,8 +107,8 @@ A.abort()
 #%% SlewAltAz/SlewRADec
 from tcspy.action.level1.slewAltAz import SlewAltAz
 from tcspy.action.level1.slewRADec import SlewRADec
-array_kwargs_slewAltAz = dict(alt = 40,
-                              az  = 270,
+array_kwargs_slewAltAz = dict(alt = 30,
+                              az  = 180,
                               tracking = False)
 array_kwargs_slewRADec = dict(ra = 300,
                               dec  = 40,
