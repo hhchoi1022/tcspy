@@ -5,6 +5,7 @@ from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
+from tcspy.utils.exception import *
 
 class ChangeFilter(Interface_Runnable, Interface_Abortable):
     
@@ -22,29 +23,31 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         # Check device connection
         if self.IDevice_status.filterwheel.lower() == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
-            return False
+            raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
             self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Start action
         if self.IDevice_status.filterwheel.lower() == 'idle':
-            result_move = self.IDevice.filterwheel.move(filter_ = filter_)
+            try:
+                result_move = self.IDevice.filterwheel.move(filter_ = filter_)
+            except FilterChangeFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: filterwheel move failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel move failure.')
+                
         elif self.IDevice_status.filterwheel.lower() == 'busy':
             self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is busy.')
-            return False
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel is busy.')
         else:
             self._log.critical(f'[{type(self).__name__}] is failed: filterwheel status error.')
-            return False
-        
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel status error.')
+
         if result_move:
             self._log.info(f'[{type(self).__name__}] is finished.')
-        else:
-            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel move failure.')
-            return False
-        return True
+            return True
     
     def abort(self):
         return

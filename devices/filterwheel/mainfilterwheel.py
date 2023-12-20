@@ -7,6 +7,7 @@ from alpaca.filterwheel import FilterWheel
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
+from tcspy.utils.exception import *
 
 # %%
 class mainFilterwheel(mainConfig):
@@ -119,7 +120,7 @@ class mainFilterwheel(mainConfig):
                 self._log.info('Filterwheel connected')
         except:
             self._log.warning('Connection failed')
-            return False
+            raise ConnectionException('Connection failed')
         return True
     
     @Timeout(5, 'Timeout')
@@ -139,7 +140,7 @@ class mainFilterwheel(mainConfig):
                 self._log.info('Filterwheel is disconnected')
         except:
             self._log.warning('Disconnect failed')
-            return False
+            raise ConnectionException('Disconnect failed')
         return True
             
     def move(self,
@@ -157,14 +158,14 @@ class mainFilterwheel(mainConfig):
         if isinstance(filter_, str):
             if not filter_ in self.filtnames:
                 self._log.critical(f'Filter {filter_} is not implemented [{self.filtnames}]')
-                return False
+                raise FilterChangeFailedException(f'Filter {filter_} is not implemented [{self.filtnames}]')
             else:
                 self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, filter_))
                 filter_ = self._filtname_to_position(filter_)
         else:
             if filter_ > len(self.filtnames):
                 self._log.critical(f'Position "{filter_}" is not implemented')
-                return False
+                raise FilterChangeFailedException(f'Position "{filter_}" is not implemented')
             else:
                 self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
         
@@ -198,7 +199,7 @@ class mainFilterwheel(mainConfig):
             A list of all filter names configured for the filter wheel.
         """
         if self.device.Names is None:
-            raise ValueError("No filter information is registered")
+            raise FilterRegisterException("No filter information is registered")
         filtnames = self.device.Names
         return filtnames
         
@@ -212,7 +213,7 @@ class mainFilterwheel(mainConfig):
             A list of all filter offsets configured for the filter wheel.
         """
         if self.device.Names is None:
-            raise ValueError("No filter information is registered")
+            raise FilterRegisterException("No filter information is registered")
         filtoffsets = self.device.FocusOffsets
         filtnames = self.device.Names
         info_offset = dict(zip(filtnames, filtoffsets))
@@ -238,6 +239,7 @@ class mainFilterwheel(mainConfig):
             return self.filtnames[position]  
         except:
             self._log.warning('Position "%s" is out of range of the filterwheel'%position)
+            raise FilterRegisterException('Position "%s" is out of range of the filterwheel'%position)
         
     def _filtname_to_position(self,
                               filtname : str) -> int:
@@ -259,6 +261,7 @@ class mainFilterwheel(mainConfig):
             return self.filtnames.index(filtname)
         except:
             self._log.warning('%s is not implemented in the filterwheel'%filtname)
+            raise FilterRegisterException('%s is not implemented in the filterwheel'%filtname)
     
     def _is_connected(self) -> bool:
         """
@@ -289,9 +292,12 @@ class mainFilterwheel(mainConfig):
     def calc_offset(self,
                     current_filt : str,
                     changed_filt : str) -> int:
-        offset_current = self.offsets[current_filt]
-        offset_changed = self.offsets[changed_filt]
-        return offset_current - offset_changed
+        try:
+            offset_current = self.offsets[current_filt]
+            offset_changed = self.offsets[changed_filt]
+            return offset_current - offset_changed
+        except:
+            raise FilterRegisterException(f'Filter: {current_filt}, {changed_filt} is not registered')
 
         
         

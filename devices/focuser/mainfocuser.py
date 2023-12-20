@@ -9,6 +9,8 @@ from alpaca.focuser import Focuser
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
+from tcspy.utils.exception import *
+
 # %%
 class mainFocuser(mainConfig):
     """
@@ -144,7 +146,7 @@ class mainFocuser(mainConfig):
                 self._log.info('Focuser connected')
         except:
             self._log.warning('Connection failed')
-            return False
+            raise ConnectionException('Connection failed')
         return True
         
     @Timeout(5, 'Timeout')
@@ -164,7 +166,7 @@ class mainFocuser(mainConfig):
                 self._log.info('Focuser disconnected')
         except:
             self._log.warning('Disconnect failed')
-            return False
+            return ConnectionException('Disconnect failed')
         return True
             
     def move(self,
@@ -181,9 +183,8 @@ class mainFocuser(mainConfig):
     
         self.status = self.get_status()
         if (position <= 0) | (position > self.status['maxstep']):
-            logtxt = 'Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep'])
-            self._log.critical(logtxt)
-            return
+            self._log.critical('Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep']))
+            raise FocusChangeFailedException('Set position is out of bound of this focuser (Min : %d Max : %d)'%(0, self.status['maxstep']))
         else:
             self._log.info('Moving focuser position... (Current : %s To : %s)'%(self.status['position'], position))
             self.device.Move(position)
@@ -192,7 +193,7 @@ class mainFocuser(mainConfig):
                 time.sleep(self._checktime)
                 if abort_action.is_set():
                     self._log.warning('Focuser moving is aborted')
-                    return 
+                    raise AbortionException('Focuser moving is aborted')
             self._log.info('Focuser position is set (Current : %s)'%(self.status['position']))
         return True
         

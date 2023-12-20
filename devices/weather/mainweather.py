@@ -10,6 +10,7 @@ from alpaca.observingconditions import ObservingConditions
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
+from tcspy.utils.exception import *
 
 # %%
 class mainWeather(mainConfig):
@@ -173,7 +174,7 @@ class mainWeather(mainConfig):
                 self._log.info('Weather device connected')
         except:
             self._log.warning('Connection failed')
-            return False
+            raise ConnectionException('Connection failed')
         return True
     
     @Timeout(5, 'Timeout')
@@ -193,7 +194,7 @@ class mainWeather(mainConfig):
                 self._log.info('Weather device is disconnected')
         except:
             self._log.warning('Disconnect failed')
-            return False
+            raise ConnectionException('Disconnect failed')
         return True
                 
 

@@ -5,6 +5,7 @@ from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
+from tcspy.utils.exception import * 
 
 class Park(Interface_Runnable, Interface_Abortable):
     
@@ -23,27 +24,31 @@ class Park(Interface_Runnable, Interface_Abortable):
         status_telescope = self.IDevice_status.telescope.lower()
         if status_telescope == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-            return False
+            return ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
         # Start action
         
         if status_telescope == 'busy':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is busy.')
-            return False
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: telescope is busy.')
         else:
-            result_park = self.IDevice.telescope.park(abort_action = self.abort_action)
-        
+            try:
+                result_park = self.IDevice.telescope.park(abort_action = self.abort_action)
+            except ParkingFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed')
+                ActionFailedException(f'[{type(self).__name__}] is failed: telescope park failure.')
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')        
+
         if result_park:
             self._log.info(f'[{type(self).__name__}] is finished.')
-        else:
-            self._log.critical(f'[{type(self).__name__}] is failed: telescope park failure.')
-            return False
         return True
             
     def abort(self):

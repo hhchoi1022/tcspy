@@ -11,6 +11,7 @@ from alpaca.camera import Camera
 from alpaca.camera import ImageArrayElementTypes
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
+from tcspy.utils.exception import *
 from tcspy.configuration import mainConfig
 
 
@@ -294,7 +295,7 @@ class mainCamera(mainConfig):
                 self._log.info('Camera connected')
         except:
             self._log.warning('Connection failed')
-            return False
+            raise ConnectionError('Connection failed')
         return True
         
     
@@ -315,21 +316,21 @@ class mainCamera(mainConfig):
                 self._log.info('Camera disconnected')
         except:
             self._log.warning('Disconnect failed')
-            return False
+            raise ConnectionError('Connection failed')
         return True
     
     def cooler_on(self):
         if self.device.CanSetCCDTemperature:
             self.device.CoolerOn = True
         else:
-            return False
+            raise CoolingFailedException()
         return True
 
     def cooler_off(self):
         if self.device.CanSetCCDTemperature:
             self.device.CoolerOn = False
         else:
-            return False
+            raise CoolingFailedException()
         return True
             
     def cool(self,
@@ -355,7 +356,7 @@ class mainCamera(mainConfig):
                     if abort_action.is_set():
                         self.device.CoolerOn = False
                         self._log.warning('Camera cooling is aborted')
-                        return False
+                        raise AbortionException('Camera cooling is aborted')
                     current_temperature = self.device.CCDTemperature
                     cooler_power = None
                     if self.device.CanGetCoolerPower:
@@ -372,7 +373,7 @@ class mainCamera(mainConfig):
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
                         self._log.critical('Cooling operation has stalled')
-                        return False
+                        raise CoolingFailedException('Cooling operation has stalled')
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
                     time.sleep(5)
@@ -384,10 +385,10 @@ class mainCamera(mainConfig):
                 return True
             else:
                 self._log.warning('Cooling is not implemented on this device')
-                return False
+                raise CoolingFailedException('Cooling is not implemented on this device')
         except TimeoutError as e:
             self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
-            return False
+            raise CoolingFailedException('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
     
     def warm(self,
              abort_action : Event,
@@ -417,7 +418,7 @@ class mainCamera(mainConfig):
                     if abort_action.is_set():
                         self.device.CoolerOn = False
                         self._log.warning('Camera warming is aborted')
-                        return False
+                        raise AbortionException('Camera cooling is aborted')
                     current_temperature = self.device.CCDTemperature
                     cooler_power = None
                     if self.device.CanGetCoolerPower:
@@ -433,8 +434,8 @@ class mainCamera(mainConfig):
 
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
-                        self._log.critical('Cooling operation has stalled')
-                        return False
+                        self._log.critical('Warming operation has stalled')
+                        raise WarmingFailedException('Warming operation has stalled')
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
                     time.sleep(5)
@@ -446,11 +447,11 @@ class mainCamera(mainConfig):
                 self._log.info('Warning finished. Current temperature: %.1f' % current_temperature)
                 return True
             else:
-                self._log.warning('Cooling is not implemented on this device')
-                return False
+                self._log.warning('Warming is not implemented on this device')
+                raise WarmingFailedException('Warming is not implemented on this device')
         except TimeoutError as e:
             self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
-            return False
+            raise WarmingFailedException('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
     
     def exposure(self,
                  abort_action : Event,
@@ -489,7 +490,7 @@ class mainCamera(mainConfig):
         # Set imagetype & exposure time & is_light
         if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'LIGHT']:
             self._log.critical(f'Type "{imgtype}" is not set as imagetype')
-            return False
+            raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
 
         # Exposure
         self.device.StartExposure(Duration = exptime, Light = is_light)
@@ -498,7 +499,7 @@ class mainCamera(mainConfig):
             if abort_action.is_set():
                 self._log.warning('Camera exposure is aborted')
                 self.abort()
-                return False
+                raise AbortionException('Camera exposure is aborted')
             time.sleep(self._checktime)
         imginfo, status = self.get_imginfo()
         # Modify image information if camera returns too detailed exposure time
@@ -512,7 +513,6 @@ class mainCamera(mainConfig):
         """
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
-        return
     
     def _set_binning(self,
                      binning :int = 1):

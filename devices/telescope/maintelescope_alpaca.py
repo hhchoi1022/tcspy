@@ -14,6 +14,7 @@ from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
 from tcspy.utils import to_SkyCoord
 from tcspy.utils.target import mainTarget
+from tcspy.utils.exception import *
 
 #%%
 class mainTelescope_Alpaca(mainConfig):
@@ -153,7 +154,7 @@ class mainTelescope_Alpaca(mainConfig):
                 self._log.info('Telescope connected')
         except:
             self._log.warning('Connection failed')
-            return False
+            raise ConnectionException('Connection failed')
         return True
     
     @Timeout(5, 'Timeout') 
@@ -173,7 +174,7 @@ class mainTelescope_Alpaca(mainConfig):
                 self._log.info('Telescope is disconnected')
         except:
             self._log.warning('Disconnect failed')
-            return False
+            raise ConnectionException('Disconnect failed')
         return True
         
     def park(self,
@@ -197,7 +198,6 @@ class mainTelescope_Alpaca(mainConfig):
             if self.device.AtPark:
                 pass
             else:
-                #self.device.Park()
                 self.device.SlewToAltAzAsync(az, alt)
             time.sleep(self._checktime)
             while self.device.Slewing:
@@ -205,13 +205,12 @@ class mainTelescope_Alpaca(mainConfig):
                 if abort_action.is_set():
                     self.abort()
                     self._log.warning('Telescope parking is aborted')
-                    return False
+                    raise AbortionException('Telescope parking is aborted')
             time.sleep(self._checktime)
-            #self.status = self.get_status()
             self._log.info('Telescope parked')
         else:
             self._log.critical('Parking failed')
-            return False
+            raise ParkingFailedException('Parking failed')
         return True
     
     def unpark(self):
@@ -228,7 +227,7 @@ class mainTelescope_Alpaca(mainConfig):
             return True
         else:
             self._log.critical('Unparking failed')
-            return False
+            raise ParkingFailedException('Unparking failed')
         
 
     def slew_radec(self,
@@ -260,13 +259,16 @@ class mainTelescope_Alpaca(mainConfig):
         # Check coordinates
         if altaz.alt.deg < self._min_altitude:
             self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
-            return False
+            raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
         
         # Slewing 
         else:
             if self.device.CanSlewAsync:
                 if self.device.AtPark:
-                    self.unpark()
+                    try:
+                        self.unpark()
+                    except ParkingFailedException:
+                        raise SlewingFailedException('Telescope slewing is failed : Unpark failed')
                 #self.device.Tracking = False 
                 #while self.device.Tracking:
                 #    time.sleep(self._checktime)
@@ -277,17 +279,25 @@ class mainTelescope_Alpaca(mainConfig):
                     if abort_action.is_set():
                         self.abort()
                         self._log.warning('Telescope slewing is aborted')
-                        return False
+                        raise AbortionException('Telescope slewing is aborted')
                 self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
                 time.sleep(self._settle_time)
                 self.status = self.get_status()
                 self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(self.status['ra'], self.status['dec'], self.status['alt'], self.status['az']))
                 if not tracking:
-                    self.device.Tracking = False
+                    try:
+                        self.tracking_off()
+                    except TrackingFailedException:
+                        raise SlewingFailedException('Telescope slewing is failed : Tracking failed')
+                else:
+                    try:
+                        self.tracking_on()
+                    except TrackingFailedException:
+                        raise SlewingFailedException('Telescope slewing is failed : Tracking failed')                    
                 return True
             else:
                 self._log.critical('Slewing failed')
-                return False
+                raise SlewingFailedException('Slewing failed')
             
     def slew_altaz(self,
                    alt : float,
@@ -314,16 +324,16 @@ class mainTelescope_Alpaca(mainConfig):
         # Check coordinates
         if alt < self._min_altitude:
             self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
-            return False
+            raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %alt)
         
         # Slewing 
         else:
             if self.device.CanSlewAsync:
                 if self.device.AtPark:
-                    self.unpark()
-                #self.device.Tracking = False
-                #while self.device.Tracking:
-                #    time.sleep(self._checktime)
+                    try:
+                        self.unpark()
+                    except ParkingFailedException:
+                        raise SlewingFailedException('Unpark failed')
                 self.device.SlewToAltAzAsync(az, alt)
                 time.sleep(self._checktime)
                 while self.device.Slewing:
@@ -331,17 +341,20 @@ class mainTelescope_Alpaca(mainConfig):
                     if abort_action.is_set():
                         self.abort()
                         self._log.warning('Telescope slewing is aborted')
-                        return False
+                        raise AbortionException('Telescope slewing is aborted')
                 self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
                 time.sleep(self._settle_time)
                 self.status = self.get_status()
                 self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(self.status['alt'], self.status['az']))
                 if tracking:
-                    self.device.Tracking = True
+                    try:
+                        self.tracking_on()
+                    except TrackingFailedException:
+                        raise SlewingFailedException('Tracking failed')
                 return True
             else:
                 self._log.critical('Slewing failed')
-                return False
+                raise SlewingFailedException('Slewing failed')
 
     def tracking_on(self):
         """
@@ -359,7 +372,7 @@ class mainTelescope_Alpaca(mainConfig):
             return True
         else:
             self._log.critical('Tracking failed')
-            return False
+            raise TrackingFailedException('Tracking failed')
     
     def tracking_off(self):
         """
@@ -377,7 +390,7 @@ class mainTelescope_Alpaca(mainConfig):
             return True
         else:
             self._log.critical('Untracking failed')
-            return False
+            raise TrackingFailedException('Untracking failed')
     
     def abort(self):
         """

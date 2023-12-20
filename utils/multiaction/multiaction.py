@@ -83,10 +83,10 @@ A.abort()
 
 #%% Cool/Warm
 from tcspy.action.level1 import Cool, Warm
-array_kwargs_cool = dict(settemperature = 10, tolerance = 1)
-array_kwargs_warm = dict(settemperature = 10, tolerance = 1)
+array_kwargs_cool = dict(settemperature = 15, tolerance = 1)
+array_kwargs_warm = dict(settemperature = 15, tolerance = 1)
 A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_cool, function= Cool)
-A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_warm, function= Warm)
+#A = MultiAction(array_telescope= array_telescope, array_kwargs= array_kwargs_warm, function= Warm)
 A.run()
 #%%
 A.abort()
@@ -142,7 +142,7 @@ from tcspy.devices.observer import mainObserver
 target_NGC1566 = mainTarget(unitnum = 1, observer = mainObserver(unitnum = 1), target_alt = 50, target_az= 270, target_name = 'NGC1566')
 array_kwargs_1 = dict(frame_number = 0,
                     exptime = 5,
-                    filter_ = 'm400',
+                    filter_ = 'g',
                     imgtype = 'light',
                     binning = 1,
                     target_name = None,
@@ -150,7 +150,7 @@ array_kwargs_1 = dict(frame_number = 0,
                     )
 array_kwargs_2 = dict(frame_number = 0,
                     exptime = 5,
-                    filter_ = 'm450',
+                    filter_ = 'g',
                     imgtype = 'light',
                     binning = 1,
                     target_name = None,
@@ -174,7 +174,7 @@ array_kwargs_1 = dict(exptime = 5,
                       ra  = None,
                       dec  = None,
                       alt  = 40,
-                      az  = 300,
+                      az  = 270,
                       target_name  = 'Test'
                       )
 
@@ -186,7 +186,7 @@ array_kwargs_2 = dict(exptime = 5,
                       ra  = None,
                       dec  = None,
                       alt  = 40,
-                      az  = 300,
+                      az  = 270,
                       target_name  = 'Test'
                       #target  = target_NGC1566
                       )

@@ -7,6 +7,7 @@ from tcspy.utils.target import mainTarget
 from tcspy.utils.image import mainImage
 from tcspy.utils.logger import mainLogger
 from tcspy.action.level1.changefilter import ChangeFilter
+from tcspy.utils.exception import *
 
 class Exposure(Interface_Runnable, Interface_Abortable):
     
@@ -53,14 +54,14 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             trigger_abort_disconnected = True
             self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
         if trigger_abort_disconnected:
-            return False
+            raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
 
         # Action
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Set target
         if not target:
@@ -71,21 +72,26 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         if imgtype.upper() == 'LIGHT':
             if not filter_:
                 self._log.critical('Filter must be determined for LIGHT frame')
-                return False
+                raise ActionFailedException('Filter must be determined for LIGHT frame')
             changefilter = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action)    
-            result_changefilter = changefilter.run(str(filter_))
-        
-        # Check the filterchange succeeds or not
-        if not result_changefilter:
-            self._log.critical(f'[{type(self).__name__}] is failed: filterchange failure.')
-            return False
-            
+            try:
+                result_changefilter = changefilter.run(str(filter_))
+            except ConnectionException:
+                self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
+                raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: filterchange failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: filterchange failure.')
+
         # Exposure 
         # Check whether the process is aborted
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Check device connection
         camera = self.IDevice.camera
@@ -93,10 +99,10 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         
         if status_camera.lower() == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
-            return False
+            raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
         elif status_camera.lower() == 'busy':
-            self._log.critical(f'[{type(self).__name__}] is failed: focuser is busy.')
-            return False
+            self._log.critical(f'[{type(self).__name__}] is failed: camera is busy.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is busy.')
         elif status_camera.lower() == 'idle':
             # Exposure camera
             if imgtype.upper() == 'BIAS':
@@ -113,23 +119,28 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 exptime = exptime
                 is_light = True
             self._log.info(f'[%s] Start exposure... (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
-            imginfo = camera.exposure(exptime = float(exptime),
-                                      imgtype = imgtype,
-                                      binning = int(binning),
-                                      is_light = is_light,
-                                      abort_action = self.abort_action)
-            if imginfo:
-                self._log.info(f'[%s] Exposure finished (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
-            else:
+            try:
+                imginfo = camera.exposure(exptime = float(exptime),
+                                         imgtype = imgtype,
+                                         binning = int(binning),
+                                         is_light = is_light,
+                                         abort_action = self.abort_action)
+            except ExposureFailedException:
                 self.abort()
                 self._log.critical(f'[{type(self).__name__}] is failed: camera exposure failure.')
-                return False
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: camera exposure failure.')
+            except AbortionException:
+                self.abort()
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            if imginfo:
+                self._log.info(f'[%s] Exposure finished (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
             
             # Save image
             if self.abort_action.is_set():
                 self.abort()
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-                return False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
             
             status = self.IDevice.status
             try:
@@ -147,7 +158,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 self._log.info(f'Saved!: %s)'%(filepath))
             except:
                 self._log.critical(f'[{type(self).__name__}] is failed: mainImage save failure.')
-                return False
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: mainImage save failure.')
         return True
 
     def abort(self):

@@ -10,6 +10,7 @@ from tcspy.utils.target import mainTarget
 from tcspy.action.level1.slewRADec import SlewRADec
 from tcspy.action.level1.slewAltAz import SlewAltAz
 from tcspy.action.level1.exposure import Exposure
+from tcspy.utils.exception import *
 #%%
 class SingleObservation(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
@@ -49,52 +50,79 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             trigger_abort_disconnected = True
             self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered') 
         if trigger_abort_disconnected:
-            return False
+            return ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
         
         # Slewing when not aborted
         if self.abort_action.is_set():
             self.abort()
-            return False
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            return  AbortionException(f'[{type(self).__name__}] is aborted.')
+        
         if not target:
             target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name)
-        
-        if target.status['coordtype'] == None:
-            result_slew = True
-        
+         
+        # Slewing
         elif target.status['coordtype'] == 'radec':
-            slew = SlewRADec(Integrated_device = self.IDevice, abort_action= self.abort_action)
-            result_slew = slew.run(ra = target.status['ra'], dec = target.status['dec'])
-        
+            try:
+                slew = SlewRADec(Integrated_device = self.IDevice, abort_action= self.abort_action)
+                result_slew = slew.run(ra = target.status['ra'], dec = target.status['dec'])
+            except ConnectionException:
+                self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+                raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
+
         elif target.status['coordtype'] == 'altaz':
-            slew = SlewAltAz(Integrated_device = self.IDevice, abort_action= self.abort_action)
-            result_slew = slew.run(alt = target.status['alt'], az = target.status['az'])
-        
+            try:
+                slew = SlewAltAz(Integrated_device = self.IDevice, abort_action= self.abort_action)
+                result_slew = slew.run(alt = target.status['alt'], az = target.status['az'])
+            except ConnectionException:
+                self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+                raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
+
         else:
-            raise ValueError(f'Coordinate type of the target : {target.status["coordtype"]} is not defined')
-        
-        # Check result_slew == True
-        if not result_slew:
-            self._log.critical('Slewing failed.')
-            return False
+            raise ActionFailedException(f'Coordinate type of the target : {target.status["coordtype"]} is not defined')
         
         # Exposure when not aborted
         if self.abort_action.is_set():
             self.abort()
-            return False
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            return  AbortionException(f'[{type(self).__name__}] is aborted.')
         
         exposure = Exposure(Integrated_device = self.IDevice, abort_action = self.abort_action)
         result_all_exposure = []
+        
         for frame_number in range(count):
-            result_exposure = exposure.run(frame_number = frame_number,
-                                           exptime = exptime,
-                                           filter_ = filter_,
-                                           imgtype = imgtype,
-                                           binning = binning,
-                                           target_name = target_name,
-                                           target = target
-                                           )
-            result_all_exposure.append(result_exposure)
+            try:
+                result_exposure = exposure.run(frame_number = frame_number,
+                                            exptime = exptime,
+                                            filter_ = filter_,
+                                            imgtype = imgtype,
+                                            binning = binning,
+                                            target_name = target_name,
+                                            target = target
+                                            )
+                result_all_exposure.append(result_exposure)
+            except ConnectionException:
+                self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
+                raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: exposure failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
         return all(result_all_exposure)
             
     def abort(self):

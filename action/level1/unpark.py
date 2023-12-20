@@ -5,6 +5,7 @@ from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.utils.logger import mainLogger
 from tcspy.interfaces import *
+from tcspy.utils.exception import *
 
 class Unpark(Interface_Runnable, Interface_Abortable):
     
@@ -22,28 +23,22 @@ class Unpark(Interface_Runnable, Interface_Abortable):
         status_telescope = self.Idevice_status.telescope.lower()
         if status_telescope == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-            return False
-        
-        # If not aborted, execute the action
-        if self.abort_action.is_set():
-            self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return False
-        
+            raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+
         # Start action
         if status_telescope == 'busy':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is busy.')
-            return False
-        elif status_telescope == 'parked':
-            result_unpark = self.IDevice.telescope.unpark()
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: telescope is busy.')
         else:
-            result_unpark = True
-        
+            try:
+                result_unpark = self.IDevice.telescope.unpark()
+            except ParkingFailedException:
+                self._log.info(f'[{type(self).__name__}] is finished.')
+                self._log.critical(f'[{type(self).__name__}] is failed')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: telescope unpark failure.')
+                
         if result_unpark:
             self._log.info(f'[{type(self).__name__}] is finished.')
-        else:
-            self._log.critical(f'[{type(self).__name__}] is failed: telescope unpark failure.')
-            return False
         return True
     
     def abort(self):
@@ -53,7 +48,7 @@ class Unpark(Interface_Runnable, Interface_Abortable):
 if __name__ == '__main__':
     device = IntegratedDevice(unitnum = 2)
     abort_action = Event()
-    s =Park(device, abort_action= abort_action)
+    s =Unpark(device, abort_action= abort_action)
     s.run()
 
 # %%

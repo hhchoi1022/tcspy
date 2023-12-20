@@ -7,6 +7,7 @@ from alpaca.safetymonitor import SafetyMonitor
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
+from tcspy.utils.exception import *
 # %%
 class mainSafetyMonitor(mainConfig):
     """
@@ -97,7 +98,7 @@ class mainSafetyMonitor(mainConfig):
                 self._log.info('SafetyMonitor is connected')
         except:
             self._log.warning('Connection failed')
-            return False
+            raise ConnectionException('Connection failed')
         return True
     
     @Timeout(5, 'Timeout')
@@ -117,7 +118,7 @@ class mainSafetyMonitor(mainConfig):
                 self._log.info('SafetyMonitor is disconnected')
         except:
             self._log.warning('Disconnect failed')
-            return False
+            raise ConnectionException('Disconnect failed')
         return True
 # %%
 if __name__ == '__main__':

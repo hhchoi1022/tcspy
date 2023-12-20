@@ -59,8 +59,8 @@ class Connect(Interface_Runnable):
         return
 # %%
 if __name__ == '__main__':
-    tel1 = IntegratedDevice(unitnum = 1)
-    tel2 = IntegratedDevice(unitnum = 2)
+    tel1 = IntegratedDevice(unitnum = 21)
+    tel2 = IntegratedDevice(unitnum = 22)
     c1 = Connect(tel1, abort_action = Event())
     A = c1.run()
     #c2.run()

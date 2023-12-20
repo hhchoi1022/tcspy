@@ -5,6 +5,7 @@ from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
+from tcspy.utils.exception import *
 
 class SlewRADec(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
@@ -25,36 +26,40 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
         status_telescope = self.IDevice_status.telescope.lower()
         if status_telescope == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-            return False
+            raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
 
         # Check abort_action
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Start action
         self._log.info(f'[{type(self).__name__}] is triggered.')
         if status_telescope == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-            return False
+            raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
         elif status_telescope == 'parked' :
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is parked.')
-            return False
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: telescope is parked.')
         elif status_telescope == 'busy':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is busy.')
-            return False
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: telescope is busy.')
         else:
-            result_slew = telescope.slew_radec(ra = float(ra),
-                                               dec = float(dec),
-                                               abort_action = self.abort_action,
-                                               tracking = True)
+            try:
+                result_slew = telescope.slew_radec(ra = float(ra),
+                                                   dec = float(dec),
+                                                   abort_action = self.abort_action,
+                                                   tracking = True)
+            except SlewingFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: telescope slew_altaz failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: telescope slew_altaz failure.')
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         if result_slew:
             self._log.info(f'[{type(self).__name__}] is finished.')
-        else:
-            self._log.critical(f'[{type(self).__name__}] is failed: telescope slew_radec failure.')
-            return False
         return True
     
     # For faster trigger of abort action
@@ -66,11 +71,9 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
             pass   
 #%%
 if __name__ == '__main__':
-    device = IntegratedDevice(unitnum = 2)
+    device = IntegratedDevice(unitnum = 21)
     abort_action = Event()
     s =SlewRADec(device, abort_action= abort_action)
-    s.run(ra = 0, dec= 50)
-    device.tel.slew_altaz(alt = 30, az = 270)
-    
+    s.run(ra = 0, dec= 40)
 
 # %%

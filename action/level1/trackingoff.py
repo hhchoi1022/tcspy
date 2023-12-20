@@ -5,6 +5,7 @@ from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
+from tcspy.utils.exception import *
 
 class TrackingOff(Interface_Runnable, Interface_Abortable):
     
@@ -22,34 +23,26 @@ class TrackingOff(Interface_Runnable, Interface_Abortable):
         # Check device connection
         if self.IDevice_status.telescope.lower() == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-            return False
-        
-        # If not aborted, execute the action
-        if self.abort_action.is_set():
-            self.abort()
-            return False
+            raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
         
         # Start action
         status_telescope = self.IDevice_status.telescope.lower()
         if status_telescope == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-            return False
+            raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
         elif status_telescope == 'parked' :
             self._log.critical(f'[{type(self).__name__}] is failed: telescope is parked.')
-            return False
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: telescope is parked.')
         else:
-            result_tracking = self.IDevice.telescope.tracking_off()
-            
+            try:
+                result_tracking = self.IDevice.telescope.tracking_off()
+            except TrackingFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: telescope trackingOff failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: telescope trackingOff failure.')
+
         if result_tracking:
             self._log.info(f'[{type(self).__name__}] is finished.')
-        else:
-            self._log.critical(f'[{type(self).__name__}] is failed: telescope trackingOff failure.')
-            return False
         return True
         
     def abort(self):
-        status_telescope = self.IDevice_status.telescope.lower()
-        if status_telescope == 'busy':
-            self.IDevice.telescope.abort()
-        else:
-            pass
+        return 

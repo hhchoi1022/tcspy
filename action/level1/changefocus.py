@@ -5,6 +5,7 @@ from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
+from tcspy.utils.exception import *
 
 class ChangeFocus(Interface_Runnable, Interface_Abortable):
     
@@ -22,29 +23,33 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
         # Check device connection
         if self.IDevice_status.focuser.lower() == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: focuser is disconnected.')
-            return False
+            raise ConnectionException(f'[{type(self).__name__}] is failed: focuser is disconnected.')
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Start action
         if self.IDevice_status.focuser.lower() == 'idle':
-            result_move = self.IDevice.focuser.move(position = position)
+            try:
+                result_move = self.IDevice.focuser.move(position = position, abort_action= self.abort_action)
+            except FocusChangeFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: focuser move failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser move failure.')            
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
         elif self.IDevice_status.focuser.lower() == 'busy':
             self._log.critical(f'[{type(self).__name__}] is failed: focuser is busy.')
-            return False
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser is busy.')
         else:
             self._log.critical(f'[{type(self).__name__}] is failed: focuser status error.')
-            return False
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser status error.')
 
         if result_move:
             self._log.info(f'[{type(self).__name__}] is finished.')
-        else:
-            self._log.critical(f'[{type(self).__name__}] is failed: focuser move failure.')
-            return False
         return True
     
     def abort(self):
