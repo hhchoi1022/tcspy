@@ -31,7 +31,7 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
-        
+         
         # Start action
         if self.IDevice_status.focuser.lower() == 'idle':
             try:

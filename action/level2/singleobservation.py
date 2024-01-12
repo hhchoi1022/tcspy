@@ -50,14 +50,14 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             trigger_abort_disconnected = True
             self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered') 
         if trigger_abort_disconnected:
-            return ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
+            raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
         
         # Slewing when not aborted
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return  AbortionException(f'[{type(self).__name__}] is aborted.')
+            raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
         if not target:
             target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name)
@@ -98,7 +98,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return  AbortionException(f'[{type(self).__name__}] is aborted.')
+            raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
         exposure = Exposure(Integrated_device = self.IDevice, abort_action = self.abort_action)
         result_all_exposure = []
