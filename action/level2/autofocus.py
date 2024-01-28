@@ -20,7 +20,7 @@ from astropy.stats import sigma_clipped_stats
 from photutils import DAOStarFinder, aperture_photometry, CircularAperture
 from photutils.detection import find_peaks
 #%%
-file_key = '/data2/Autofocus/Test_samples/240112/7DT01/*.fits'
+file_key = '/data2/Autofocus/Test_samples/231207/7DT01/*.fits'
 files = sorted(glob.glob(file_key))
 #%%
 file = files[4]
@@ -56,14 +56,17 @@ def calc_norm_variance(array):
     return FM
 #%%
 import cv2
+from astropy.stats import sigma_clip
 def fparam(data):
         # compute the Laplacian of the image and then return the focus
         # measure, which is simply the variance of the Laplacian
         return cv2.Laplacian(data, cv2.CV_64F).var()
 all_FM = []
+all_fwhm = []
 crop_size = 2000
 source_size = 30
 focusposlist = []
+all_fwhm_error = []
 for file in files:
     
     data = np.array(fits.getdata(file), dtype = float)
@@ -72,6 +75,8 @@ for file in files:
     mean, median, std = sigma_clipped_stats(data_cropped, sigma=3.0)
     data_cropped -= median
     threshold = 30 * std
+    fwhm_x_all = []
+    fwhm_y_all = []
     from astropy.convolution import convolve
     from photutils.segmentation import make_2dgaussian_kernel
     kernel = make_2dgaussian_kernel(3.0, size=5)  # FWHM = 3.0
@@ -86,9 +91,45 @@ for file in files:
         #plt.show()
         FM += calc_norm_variance(source_segment)
         ##############
+        #gauss_init = models.Gaussian2D(amplitude=np.max(source_segment),
+        #                                x_mean=(np.max(bbox.shape)+10)//2, y_mean=(np.max(bbox.shape)+10)//2)
+        #fitter = fitting.LevMarLSQFitter()
+        #x, y = np.meshgrid(np.arange(0, len(source_segment[0,:]), 1), np.arange(0, len(source_segment[:,0]), 1))
+        #gauss_fit = fitter(gauss_init, x,y, source_segment)
+        #fwhm_x = 2 * np.sqrt(2 * np.log(2)) * gauss_fit.x_stddev.value
+        #fwhm_y = 2 * np.sqrt(2 * np.log(2)) * gauss_fit.y_stddev.value
+        #fwhm_x_all.append(fwhm_x)
+        #fwhm_y_all.append(fwhm_y)
+        # Project onto 1D arrays for x and y directions
+        projection_x = np.sum(source_segment, axis=0)  # Sum along the y-axis
+        projection_y = np.sum(source_segment, axis=1)  # Sum along the x-axis
+        # Fit Gaussian to the projections
+        def gaussian_fit(data, axis_values):
+            g_init = models.Gaussian1D(amplitude=data.max(), mean=axis_values[np.argmax(data)], stddev=1.0)
+            fit_p = fitting.LevMarLSQFitter()
+            gaussian_fit = fit_p(g_init, axis_values, data)
+            return gaussian_fit
+        x = np.linspace(-5, 5, len(projection_x))
+        y = np.linspace(-5, 5, len(projection_y))
+        fit_x = gaussian_fit(projection_x, x)
+        fit_y = gaussian_fit(projection_y, y)
+        fwhm_x = 2 * np.sqrt(2 * np.log(2)) * fit_x.stddev.value
+        fwhm_y = 2 * np.sqrt(2 * np.log(2)) * fit_y.stddev.value
+        fwhm_x_all.append(fwhm_x)
+        fwhm_y_all.append(fwhm_y)
+        
+        
         # 여기에 Gaussian fitting (2D or 1D) 추가하기 with error
         ##############
     all_FM.append(FM)
+    fwhm_x_all_clipped = sigma_clip(fwhm_x_all, sigma_lower = 3, sigma_upper = 5, maxiters = 3, cenfunc = 'median', stdfunc = 'std', masked = False)
+    fwhm_y_all_clipped = sigma_clip(fwhm_y_all, sigma_lower = 3, sigma_upper = 5, maxiters = 3, cenfunc = 'median', stdfunc = 'std', masked = False)
+
+    fwhm_mean = (np.mean(fwhm_x_all_clipped) + np.mean(fwhm_y_all_clipped))/2
+    
+    all_fwhm.append(fwhm_mean)
+    all_fwhm_error.append(np.sqrt(np.std(fwhm_x_all_clipped)**2 + np.std(fwhm_y_all_clipped)**2))
+    
 #%%
 plt.imshow(convolved_data, vmin = data_c_mean-data_c_std, vmax = data_c_mean + data_c_std)
 plt.colorbar()
@@ -96,12 +137,28 @@ plt.colorbar()
 plt.imshow(data_cropped, vmin = data_c_mean-data_c_std, vmax = data_c_mean + data_c_std)
 plt.colorbar()
 #%%
-position = (source['xcentroid'], source['ycentroid'])
-gauss_init = models.Gaussian2D(amplitude=source['peak'],
-                                x_mean=10, y_mean=10)
-fit_data = crop_image(crop_data, int(position[0]), int(position[1]), 20)
-fitter = fitting.LevMarLSQFitter()
-gauss_fit = fitter(gauss_init, x,y, fit_data)
-    # Extract FWHM
-fwhm = gauss_fit.x_stddev
+fig, ax1 = plt.subplots()
+ax2 = ax1.twinx()
+# Plot the first scatter plot on the left y-axis (ax1)
+ax1.scatter(focusposlist, all_FM, color='blue', label='Focus Meature (FM)')
+ax1.set_xlabel('X-axis')
+ax1.set_ylabel('Y-axis 1', color='blue')
+ax1.tick_params('y', colors='blue')
+# Plot the second scatter plot on the right y-axis (ax2)
+ax2.scatter(focusposlist, all_fwhm, facecolor = 'none', edgecolor ='red', label='FWHM')
+ax2.errorbar(focusposlist, all_fwhm, all_fwhm_error, fmt = 'none', ecolor ='k')
+ax2.set_ylim(0, 30)
+ax2.set_ylabel('Y-axis 2', color='red')
+ax2.tick_params('y', colors='red')
 
+# Display the legend for both scatter plots
+ax1.legend(loc='upper left')
+ax2.legend(loc='upper right')
+
+# %%
+plt.plot(fwhm_y_all)
+# %%
+focusposlist[22]
+# %%
+all_FM[22]
+# %%
