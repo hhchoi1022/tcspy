@@ -286,7 +286,23 @@ class PWI4:
 
     def focuser_stop(self):
         return self.request_with_status("/focuser/stop")
+    
+    def autofocus_start(self):
+        # Added by Hyeonho Choi manually
+        return self.request_with_status("/autofocus/start")
 
+    def autofocus_stop(self):
+        # Added by Hyeonho Choi manually
+        return self.request_with_status("/autofocus/stop")
+    
+    def fans_on(self):
+        # Added by Hyeonho Choi manually
+        return self.request_with_status("/fans/on")
+    
+    def fans_off(self):
+        # Added by Hyeonho Choi manually
+        return self.request_with_status("/fans/off")
+    
     def rotator_connect(self):
         # Added in PWI 4.0.99 Beta 2
         return self.request_with_status("/rotator/connect")
@@ -294,7 +310,6 @@ class PWI4:
     def rotator_disconnect(self):
         # Added in PWI 4.0.99 Beta 2
         return self.request_with_status("/rotator/disconnect")
-
 
     def rotator_enable(self):
         return self.request_with_status("/rotator/enable")

@@ -5,7 +5,7 @@ import time
 from astropy.time import Time
 from threading import Event
 
-from tcspy.devices.telescope.pwi4_client import PWI4 # PWI4 API 
+from tcspy.devices import PWI4 # PWI4 API 
 from tcspy.configuration import mainConfig
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.logger import mainLogger
@@ -190,7 +190,7 @@ class mainTelescope_pwi4(mainConfig):
             raise ConnectionException('Disconnect failed')
         return True
     
-    def enable_mount(self):
+    def enable(self):
         for axis_index in range(2):
             PWI_status = self.PWI_status
             try:
@@ -204,7 +204,7 @@ class mainTelescope_pwi4(mainConfig):
             self._log.info('Both axis are enabled ')
         return True
     
-    def disable_mount(self):
+    def disable(self):
         for axis_index in range(2):
             PWI_status = self.PWI_status
             try:
@@ -231,7 +231,7 @@ class mainTelescope_pwi4(mainConfig):
         # Check the mount is enabled to slew
         if status['at_parked']:
             try:
-                self.enable_mount()
+                self.enable()
             except MountEnableFailedException:
                 raise ParkingFailedException('Telescope parking is failed : Mount enable failed')
         
@@ -252,10 +252,10 @@ class mainTelescope_pwi4(mainConfig):
                 raise AbortionException('Telescope parking is aborted')
         time.sleep(self._checktime)
         
-        # Disable mount when disable_mount == True
+        # Disable mount when disable == True
         if disable_mount:
             try:
-                self.disable_mount()
+                self.disable()
             except MountEnableFailedException:
                 self._log.critical('Parking failed')
                 raise ParkingFailedException('Telescope parking is failed : Mount disable failed')
@@ -269,7 +269,7 @@ class mainTelescope_pwi4(mainConfig):
         
         self._log.info('Unparking telescope...')
         try:
-            self.enable_mount()
+            self.enable()
             self._log.info('Telescope unparked')
         except MountEnableFailedException:
             self._log.critical('Unparking failed')

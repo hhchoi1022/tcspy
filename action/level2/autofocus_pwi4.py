@@ -1,25 +1,6 @@
 #%%
-import time
-import numpy as np
-import os
-import glob
-from astropy.io import fits
-import re
-import numpy as np
-from scipy.ndimage import convolve
-from photutils.segmentation import detect_threshold, detect_sources
-from astropy.stats import sigma_clipped_stats, sigma_clip
-from photutils.utils import circular_footprint
-from photutils.detection import DAOStarFinder
-from astropy.nddata import Cutout2D
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from astropy.io import fits
-from astropy.modeling import models, fitting
-from astropy.stats import sigma_clipped_stats
-from photutils import DAOStarFinder, aperture_photometry, CircularAperture
-from photutils.detection import find_peaks
-import sep
+from tcspy.devices import PWI4
+
 #%%
 file_key = '/Users/hhchoi1022/Test_samples/231207/7DT01/*.fits'
 files = sorted(glob.glob(file_key))

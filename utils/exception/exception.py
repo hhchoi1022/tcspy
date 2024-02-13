@@ -17,6 +17,8 @@ class FindingHomeFailedException(Exception):
     pass
 
 
+
+
 # Camera
 
 class ExposureFailedException(Exception):
@@ -32,6 +34,12 @@ class CoolingFailedException(Exception):
 # Focuser
 
 class FocusChangeFailedException(Exception):
+    pass
+
+class FocuserEnableFailedException(Exception):
+    pass
+
+class AutofocusFailedException(Exception):
     pass
 
 # Filterwheel
