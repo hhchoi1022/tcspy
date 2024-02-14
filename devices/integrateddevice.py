@@ -3,11 +3,14 @@ from tcspy.configuration import mainConfig
 from tcspy.devices.camera import mainCamera
 from tcspy.devices.telescope import mainTelescope_Alpaca
 from tcspy.devices.telescope import mainTelescope_pwi4
+from tcspy.devices.focuser import mainFocuser_Alpaca
+from tcspy.devices.focuser import mainFocuser_pwi4
 from tcspy.devices.focuser import mainFocuser
 from tcspy.devices.filterwheel import mainFilterwheel
 from tcspy.devices.observer import mainObserver
 from tcspy.devices.weather import mainWeather
 from tcspy.devices.safetymonitor import mainSafetyMonitor
+from tcspy.utils.error import *
 
 class IntegratedDevice(mainConfig):
     
@@ -15,6 +18,7 @@ class IntegratedDevice(mainConfig):
                  unitnum : int):
         super().__init__(unitnum= unitnum)
         self.tel_type = self.config['TELESCOPE_DEVICETYPE'].lower()
+        self.focus_type = self.config['FOCUSER_DEVICETYPE'].lower()
         self.camera = None
         self.telescope = None
         self.focuser = None
@@ -68,13 +72,20 @@ class IntegratedDevice(mainConfig):
         return mainCamera(unitnum= self.unitnum)
 
     def _get_telescope(self):
-        if self.tel_type == 'alpaca':
+        if self.tel_type.lower() == 'alpaca':
             return mainTelescope_Alpaca(unitnum= self.unitnum)
-        else:
+        elif self.tel_type.lower() == 'pwi4':
             return mainTelescope_pwi4(unitnum= self.unitnum)
+        else: 
+            return TelTypeError(f'Telescope Type "{self.focus_type}" is not defined')
 
     def _get_focuser(self):
-        return mainFocuser(unitnum= self.unitnum)
+        if self.focus_type.lower() == 'alpaca':
+            return mainFocuser_Alpaca(unitnum= self.unitnum)
+        elif self.focus_type.lower() == 'pwi4':
+            return mainFocuser_pwi4(unitnum= self.unitnum)
+        else:
+            return FocuserTypeError(f'Focuser Type "{self.focus_type}" is not defined')
     
     def _get_filterwheel(self):
         return mainFilterwheel(unitnum= self.unitnum)

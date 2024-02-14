@@ -13,7 +13,7 @@ from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
 
 # %%
-class mainFocuser(mainConfig):
+class mainFocuser_pwi4(mainConfig):
     """
     A class for controlling a Focuser device.
 
@@ -43,7 +43,7 @@ class mainFocuser(mainConfig):
         super().__init__(unitnum = unitnum)
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['FOCUSER_CHECKTIME'])
-        self.device = PWI4(self.config['TELESCOPE_HOSTIP'], self.config['TELESCOPE_PORTNUM'])
+        self.device = PWI4(self.config['FOCUSER_HOSTIP'], self.config['FOCUSER_PORTNUM'])
         self.status = self.get_status()
         
     def get_status(self) -> dict:
@@ -191,10 +191,18 @@ class mainFocuser(mainConfig):
         return True
     
     def fans_on(self):
-        self.device.fans_on()
+        try:
+            self.device.fans_on()
+        except:
+            raise FocusFansFailedException('Fans cannot be turned on')
+        return True
 
     def fans_off(self):
-        self.device.fans_off()
+        try:
+            self.device.fans_off()
+        except:
+            raise FocusFansFailedException('Fans cannot be turned off')
+        return True
 
     def autofocus_start(self, 
                         abort_action : Event):

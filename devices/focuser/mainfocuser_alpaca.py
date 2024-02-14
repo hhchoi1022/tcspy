@@ -13,7 +13,7 @@ from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
 
 # %%
-class mainFocuser(mainConfig):
+class mainFocuser_Alpaca(mainConfig):
     """
     A class for controlling a Focuser device.
 

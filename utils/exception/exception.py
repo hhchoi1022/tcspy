@@ -42,6 +42,9 @@ class FocuserEnableFailedException(Exception):
 class AutofocusFailedException(Exception):
     pass
 
+class FocusFansFailedException(Exception):
+    pass
+
 # Filterwheel
 
 class FilterChangeFailedException(Exception):

@@ -9,9 +9,11 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int,
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration/',
                  **kwargs):
         self.unitnum = unitnum
-        configfilekey = os.path.dirname(__file__)+f'/unit{self.unitnum}'+'/*.config'
+        self.configpath = configpath + '7DT%.2d' % self.unitnum + '/'
+        configfilekey = self.configpath + '*.config'
         self._configfiles = glob.glob(configfilekey)
         if len(self._configfiles) == 0:
             print('No configuration file is found.\nTo make default configuration files, run tcspy.configuration.make_config')
@@ -28,9 +30,8 @@ class mainConfig:
         return all_config
 
     def _initialize_config(self,
-                           portnum: int,
-                           savedir=f'{os.path.dirname(__file__)}'):
-        savepath = savedir + f'/unit{self.unitnum}/'
+                           portnum: int):
+        savepath = self.configpath
         if not os.path.exists(savepath):
             os.makedirs(savepath, exist_ok=True)
 
@@ -40,6 +41,7 @@ class mainConfig:
             with open(savepath + filename, 'w') as f:
                 json.dump(dict_params, f, indent=4)
             print('New configuration file made : %s' % (savepath+filename))
+            
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) ######
         observer_params = dict(OBSERVER_LONGITUDE= -70.7804,
                                OBSERVER_LATITUDE= -30.4704,
@@ -86,18 +88,18 @@ class mainConfig:
         camera_params = dict(CAMERA_HOSTIP='10.0.106.%d' % portnum,
                              CAMERA_PORTNUM='11111',
                              CAMERA_DEVICENUM=0,
-                             #CAMERA_NAME='Moravian C3-61000',
-                             #CAMERA_CCDNAME='IMX455',
                              CAMERA_PIXSIZE=3.76,  # micron
                              CAMERA_CHECKTIME=0.5)
                              
         filterwheel_params = dict(FTWHEEL_HOSTIP='10.0.106.%d' % portnum,
                                   FTWHEEL_PORTNUM='11111',
                                   FTWHEEL_DEVICENUM=0,
-                                  FTWHEEL_CHECKTIME=0.5)
+                                  FTWHEEL_CHECKTIME=0.5,
+                                  FTWHEEL_OFFSETFILE =f"{savepath}filter.offset")
 
-        focuser_params = dict(FOCUSER_HOSTIP='10.0.106.%d' % portnum,
-                              FOCUSER_PORTNUM='11111',
+        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
+                              FOCUSER_HOSTIP='10.0.106.%d' % portnum,
+                              FOCUSER_PORTNUM='8220',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 1000,
                               FOCUSER_MAXSTEP= 50000,
@@ -139,8 +141,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=20)
-    A._initialize_config(portnum = 25)
+    A = mainConfig(unitnum=1)
+    A._initialize_config(portnum = 6)
 
 # %%
 # %%

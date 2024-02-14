@@ -1,1 +1,1 @@
-from .coordinateError import CoordinateError
+from .error import *
