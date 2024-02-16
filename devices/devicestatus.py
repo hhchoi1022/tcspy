@@ -101,10 +101,22 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IDevice.focuser.device.Connected:
-                status = 'idle'
-            if self.IDevice.focuser.device.IsMoving:
-                status = 'busy'
+            focuser = self.IDevice.focuser
+            # Alpaca device
+            if self.IDevice.tel_type.lower() == 'alpaca':
+                if focuser.device.Connected:
+                    status = 'idle'
+                if focuser.device.IsMoving:
+                    status = 'busy'
+            # PWI4 device
+            else:
+                focuser_status = focuser.device.status()
+                if focuser_status.focuser.is_connected:
+                    status = 'idle'
+                if focuser_status.focuser.is_enabled == False:
+                    status = 'parked'
+                if focuser_status.focuser.is_moving:
+                    status = 'busy'
         except:
             pass
         return status

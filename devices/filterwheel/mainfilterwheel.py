@@ -2,12 +2,14 @@
 from astropy.io import ascii
 from astropy.time import Time
 import time
+import json
 from alpaca.filterwheel import FilterWheel
 
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
+from tcspy.utils import FocusModel
 
 # %%
 class mainFilterwheel(mainConfig):
@@ -36,13 +38,14 @@ class mainFilterwheel(mainConfig):
     def __init__(self,
                  unitnum : int,
                  **kwargs):
-        
         super().__init__(unitnum = unitnum)
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._checktime = float(self.config['FTWHEEL_CHECKTIME'])
         self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])        
         self.filtnames = None
         self.offsets = None
+        self.filtnames = self._get_all_filt_names()
+        self.offsets = self._get_all_filt_offset()
         self.status = self.get_status()
         
     def get_status(self) -> dict:
@@ -64,14 +67,6 @@ class mainFilterwheel(mainConfig):
         status['offset'] = None
 
         if self.device.Connected:
-            try:
-                self.filtnames = self._get_all_filt_names()
-            except:
-                pass
-            try:
-                self.offsets = self._get_all_filt_offset()
-            except:
-                pass
             try:              
                 filtinfo = self._get_current_filtinfo()
             except:
@@ -215,11 +210,21 @@ class mainFilterwheel(mainConfig):
         1. filtnames : list
             A list of all filter offsets configured for the filter wheel.
         """
+        '''
         if self.device.Names is None:
             raise FilterRegisterException("No filter information is registered")
         filtoffsets = self.device.FocusOffsets
         filtnames = self.device.Names
-        info_offset = dict(zip(filtnames, filtoffsets))
+        info_offset = dict(zip(filtnames, filtoffsets))'''
+        with open(self.config['FTWHEEL_OFFSETFILE'], 'r') as f:
+            info_offset = json.load(f)
+            del info_offset['updated_date']
+        filters_in_config = set(info_offset.keys())
+        filters_in_device = set(self._get_all_filt_names())
+        if filters_in_device.issubset(filters_in_config):
+            pass
+        else:
+            raise FilterRegisterException('Registered filters are not matched with configured filters')
         return info_offset
     
     def _position_to_filtname(self,
@@ -290,15 +295,15 @@ class mainFilterwheel(mainConfig):
         
         position = self.device.Position
         filtname = self._position_to_filtname(position = position)
-        return dict( position = position, name = self.filtnames[position], offset = self.offsets[filtname])
+        return dict( position = position, name = self.filtnames[position], offset = self.offsets[filtname]['offset'])
     
     def calc_offset(self,
                     current_filt : str,
                     changed_filt : str) -> int:
         try:
-            offset_current = self.offsets[current_filt]
-            offset_changed = self.offsets[changed_filt]
-            return offset_current - offset_changed
+            offset_current = self.offsets[current_filt]['offset']
+            offset_changed = self.offsets[changed_filt]['offset']
+            return offset_changed - offset_current
         except:
             raise FilterRegisterException(f'Filter: {current_filt}, {changed_filt} is not registered')
 
@@ -306,9 +311,9 @@ class mainFilterwheel(mainConfig):
         
 # %% Test
 if __name__ == '__main__':
-    F = mainFilterwheel(unitnum= 1)
+    F = mainFilterwheel(unitnum= 21)
     F.connect()
-    F.move('NoFilter', return_focus_offset= True)
-    F.disconnect()
+    #F.move('NoFilter', return_focus_offset= True)
+    #F.disconnect()
 
 # %%

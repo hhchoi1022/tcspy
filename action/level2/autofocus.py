@@ -10,6 +10,7 @@ from tcspy.utils.exception import *
 from tcspy.utils.logger import mainLogger
 
 from tcspy.action.level1 import ChangeFocus
+from tcspy.action.level1 import ChangeFilter
 
 #%%
 
@@ -23,9 +24,15 @@ class Autofocus(Interface_Runnable, Interface_Abortable):
         self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
     
     def run(self,
+            filter_ : str,
             use_offset : bool = False):
+        
+        self._log.info(f'[{type(self).__name__}] is triggered.')
+        # Check device status
         status_camera = self.IDevice_status.camera
         status_focuser = self.IDevice_status.focuser
+        status_telescope = self.IDevice_status.telescope
+        status_filterwheel = self.IDevice_status.filterwheel
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -33,9 +40,14 @@ class Autofocus(Interface_Runnable, Interface_Abortable):
         if status_focuser.lower() == 'disconnected':
             trigger_abort_disconnected = True
             self._log.critical(f'Focuser is disconnected. Action "{type(self).__name__}" is not triggered')
+        if status_telescope.lower() == 'disconnected':
+            trigger_abort_disconnected = True
+            self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered')
+        if status_filterwheel.lower() == 'disconnected':
+            trigger_abort_disconnected = True
+            self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
         if trigger_abort_disconnected:
             raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
-        # Done
         
         # Abort action when triggered
         if self.abort_action.is_set():
@@ -45,7 +57,30 @@ class Autofocus(Interface_Runnable, Interface_Abortable):
         
         # When use_offset == True, move focusvalue based on the offset 
         if use_offset:
-            ChangeFocus
+            info_filterwheel = self.IDevice.filterwheel.get_status()
+            current_filter = info_filterwheel['filter']
+            offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
+            self._log(f'Focuser is moving with the offset of {offset}[{current_filter} > {filter_}]')
+            try:
+                result_focus = ChangeFocus(self.IDevice).run(position = offset, is_relative= True)
+                result_filterchange = ChangeFilter(self.IDevice).run(filter_ = filter_)
+            except ConnectionException:
+                self._log.critical(f'[{type(self).__name__}] is failed: Either focuser or filterwheel is disconnected.')                
+                raise ConnectionException(f'[{type(self).__name__}] is failed: Either focuser or filterwheel is disconnected.')                
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: focuser or filterwheel movement failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser or filterwheel movement failure.')
+        
+        # run Autofocus
+        info_focuser = self.IDevice.focuser.get_status()
+        self._log(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}')
+        
+        
+        
+            
     
 
         

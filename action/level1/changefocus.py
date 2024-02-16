@@ -19,7 +19,7 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
 
     def run(self,
             position: int = None,
-            relative_position : int = None):
+            is_relative : bool = False):
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         if self.IDevice_status.focuser.lower() == 'disconnected':
@@ -35,6 +35,9 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
         # Start action
         if self.IDevice_status.focuser.lower() == 'idle':
             try:
+                info_focuser = self.IDevice.focuser.get_status()
+                if is_relative:
+                    position = info_focuser['position'] + position
                 result_move = self.IDevice.focuser.move(position = position, abort_action= self.abort_action)
             except FocusChangeFailedException:
                 self._log.critical(f'[{type(self).__name__}] is failed: focuser move failure.')
