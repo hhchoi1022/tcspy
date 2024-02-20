@@ -539,10 +539,10 @@ class mainCamera(mainConfig):
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
-    A = mainCamera(unitnum = 6)
+    A = mainCamera(unitnum = 1)
     A.connect()
 
-    C = A.exposure(exptime = 0, imgtype = 'bias')
+    C = A.exposure(exptime = 0, imgtype = 'bias', abort_action= Event(), binning = 1, is_light = False)
     
     #%%
     data = np.array(imginfo['data'])

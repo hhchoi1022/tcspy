@@ -224,7 +224,7 @@ class mainFilterwheel(mainConfig):
         if filters_in_device.issubset(filters_in_config):
             pass
         else:
-            raise FilterRegisterException('Registered filters are not matched with configured filters')
+            raise FilterRegisterException(f'Registered filters are not matched with configured filters \n Configured = [{filters_in_config}] \n Registered = [{filters_in_device}]')
         return info_offset
     
     def _position_to_filtname(self,
@@ -311,8 +311,9 @@ class mainFilterwheel(mainConfig):
         
 # %% Test
 if __name__ == '__main__':
-    F = mainFilterwheel(unitnum= 21)
-    F.connect()
+    F = mainFilterwheel(unitnum= 1)
+    #F.connect()
+    print(F.device.Names)
     #F.move('NoFilter', return_focus_offset= True)
     #F.disconnect()
 

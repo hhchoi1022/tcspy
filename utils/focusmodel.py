@@ -20,7 +20,7 @@ class FocusModel:
     
     def __init__(self, 
                  unitnum : int,
-                 config_path : str = '/home/hhchoi1022/tcspy/configuration/',
+                 config_path : str = '/home/kds/tcspy/configuration/',
                  filtinfo_file : str = 'filtinfo.config',
                  offset_file : str = 'filter.offset'):
         self.unitnum = unitnum
@@ -209,6 +209,6 @@ class FocusModel:
         print(f'{self._offset_file} is updated')
 # %%
 if __name__ == '__main__':
-    A = FocusModel(21)
-    A.update_params(list_offsets = [100,200,100,100,0,100,200,300], list_errors= [10,20,10,10,0,10,15,30])
+    A = FocusModel(2)
+    A.update_params(list_offsets = [100,200,100,100,0,100,300], list_errors= [10,20,10,10,0,10,15])
 #%%

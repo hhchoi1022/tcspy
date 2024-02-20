@@ -6,7 +6,6 @@ import numpy as np
 from threading import Event
 
 from tcspy.devices import PWI4
-
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig

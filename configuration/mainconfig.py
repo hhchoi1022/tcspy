@@ -9,7 +9,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int,
-                 configpath : str = '/home/hhchoi1022/tcspy/configuration/',
+                 configpath : str = '/home/kds/tcspy/configuration/',
                  **kwargs):
         self.unitnum = unitnum
         self.configpath = configpath + '7DT%.2d' % self.unitnum + '/'
@@ -142,7 +142,7 @@ class mainConfig:
 # %% Temporary running
 if __name__ == '__main__':
     A = mainConfig(unitnum=1)
-    A._initialize_config(portnum = 6)
+    #A._initialize_config(portnum = 6)
 
 # %%
 # %%

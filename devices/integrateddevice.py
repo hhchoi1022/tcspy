@@ -5,13 +5,12 @@ from tcspy.devices.telescope import mainTelescope_Alpaca
 from tcspy.devices.telescope import mainTelescope_pwi4
 from tcspy.devices.focuser import mainFocuser_Alpaca
 from tcspy.devices.focuser import mainFocuser_pwi4
-from tcspy.devices.focuser import mainFocuser
 from tcspy.devices.filterwheel import mainFilterwheel
 from tcspy.devices.observer import mainObserver
 from tcspy.devices.weather import mainWeather
 from tcspy.devices.safetymonitor import mainSafetyMonitor
 from tcspy.utils.error import *
-
+#%%
 class IntegratedDevice(mainConfig):
     
     def __init__(self,
@@ -101,3 +100,7 @@ class IntegratedDevice(mainConfig):
         return mainSafetyMonitor(unitnum = self.unitnum)
     
 
+
+# %%
+IDevice = IntegratedDevice(unitnum = 1)
+#%%
