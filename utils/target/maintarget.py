@@ -58,6 +58,7 @@ class mainTarget(mainConfig):
                  target_alt : float = None,
                  target_az : float = None,
                  target_name : str = '',
+                 target_obsmode : str = 'Single',
                  **kwargs):
         
         super().__init__(unitnum = unitnum)
@@ -71,6 +72,7 @@ class mainTarget(mainConfig):
         self.alt = target_alt
         self.az = target_az
         self.name = target_name
+        self.obsmode = target_obsmode
         self._target = None
         self._coordtype = None
         
@@ -135,6 +137,7 @@ class mainTarget(mainConfig):
         targetinfo['coordtype'] = None
         targetinfo['hourangle'] = None
         targetinfo['is_observable'] = None
+        targetinfo['obsmode'] = self.obsmode
         
         if self._coordtype == 'altaz':
             targetinfo['alt'] = "{:.3f}".format(self.alt)

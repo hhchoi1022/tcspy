@@ -19,6 +19,7 @@ class IntegratedDevice(mainConfig):
         super().__init__(unitnum= unitnum)
         self.tel_type = self.config['TELESCOPE_DEVICETYPE'].lower()
         self.focus_type = self.config['FOCUSER_DEVICETYPE'].lower()
+        self.name = '7DT%.2d' % self.unitnum
         self.camera = None
         self.telescope = None
         self.focuser = None

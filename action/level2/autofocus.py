@@ -62,8 +62,8 @@ class Autofocus(Interface_Runnable, Interface_Abortable):
             offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
             self._log(f'Focuser is moving with the offset of {offset}[{current_filter} > {filter_}]')
             try:
-                result_focus = ChangeFocus(self.IDevice).run(position = offset, is_relative= True)
-                result_filterchange = ChangeFilter(self.IDevice).run(filter_ = filter_)
+                result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
+                result_filterchange = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action).run(filter_ = filter_)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: Either focuser or filterwheel is disconnected.')                
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Either focuser or filterwheel is disconnected.')                
@@ -77,6 +77,31 @@ class Autofocus(Interface_Runnable, Interface_Abortable):
         # run Autofocus
         info_focuser = self.IDevice.focuser.get_status()
         self._log(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}')
+        try:
+            result_autofocus = self.IDevice.focuser.autofocus_start(abort_action = self.abort_action)
+        except AbortionException:
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        except AutofocusFailedException:
+            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Autofocus process is failed')
+        
+        if result_autofocus:
+            self._log.info(f'[{type(self).__name__}] is finished')
+            return True
+    
+    def abort(self):
+        info_focuser = self.IDevice.focuser.get_status()
+        if info_focuser['is_autofousing']:
+            self.IDevice.focuser.autofocus_stop()
+        if info_focuser['is_moving']:
+            self.IDevice.focuser.abort()
+        return 
+
+        
+        
+        
+
         
         
         

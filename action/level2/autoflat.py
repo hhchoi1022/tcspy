@@ -13,7 +13,7 @@ from tcspy.action.level1.exposure import Exposure
 from tcspy.action.level2.autofocus import Autofocus
 from tcspy.utils.exception import *
 #%%
-class SingleObservation(Interface_Runnable, Interface_Abortable):
+class AutoFlat(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
                  Integrated_device : IntegratedDevice,
                  abort_action : Event):
@@ -33,7 +33,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             alt : float = None,
             az : float = None,
             target_name : str = None,
-            target_obsmode : str = 'Single',
+            target : mainTarget = None,
             autofocus_before_start : bool = False
             ):
         
@@ -61,10 +61,11 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
-        target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name, target_obsmode = target_obsmode)
+        if not target:
+            target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name)
          
         # Slewing
-        if target.status['coordtype'] == 'radec':
+        elif target.status['coordtype'] == 'radec':
             try:
                 slew = SlewRADec(Integrated_device = self.IDevice, abort_action= self.abort_action)
                 result_slew = slew.run(ra = target.status['ra'], dec = target.status['dec'])
@@ -121,13 +122,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         for frame_number in range(count):
             try:
                 result_exposure = exposure.run(frame_number = frame_number,
-                                                exptime = exptime,
-                                                filter_ = filter_,
-                                                imgtype = imgtype,
-                                                binning = binning,
-                                                target_name = target_name,
-                                                target = target
-                                                )
+                                               exptime = exptime,
+                                               filter_ = filter_,
+                                               imgtype = imgtype,
+                                               binning = binning,
+                                               target_name = target_name,
+                                               target = target
+                                               )
                 result_all_exposure.append(result_exposure)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')

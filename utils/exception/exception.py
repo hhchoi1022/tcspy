@@ -63,3 +63,6 @@ class ConnectionException(Exception):
 
 class ActionFailedException(Exception):
     pass
+
+class SpecmodeRegisterException(Exception):
+    pass

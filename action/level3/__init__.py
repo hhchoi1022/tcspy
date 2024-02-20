@@ -1,1 +1,1 @@
-from ..level2.singleobservation import SingleObservation
+from .singleobservation import SingleObservation

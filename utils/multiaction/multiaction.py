@@ -176,7 +176,7 @@ A.run()
 #%%
 A.abort()
 #%%
-from tcspy.action.level2.singleobservation import SingleObservation
+from action.level3.singleobservation import SingleObservation
 from tcspy.utils.target import mainTarget
 from tcspy.devices.observer import mainObserver
 target_NGC1566 = mainTarget(unitnum = 1, observer = mainObserver(unitnum = 1),target_ra = 300, target_dec = 60, target_alt = 30, target_az= 270, target_name = 'NGC1566')
