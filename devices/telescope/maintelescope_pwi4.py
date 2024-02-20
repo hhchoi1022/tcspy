@@ -5,7 +5,7 @@ import time
 from astropy.time import Time
 from threading import Event
 
-from tcspy.devices.telescope.pwi4_client import PWI4 # PWI4 API 
+from tcspy.devices import PWI4 # PWI4 API 
 from tcspy.configuration import mainConfig
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.logger import mainLogger
