@@ -11,6 +11,7 @@ from tcspy.utils.target import mainTarget
 from tcspy.action.level1.slewRADec import SlewRADec
 from tcspy.action.level1.slewAltAz import SlewAltAz
 from tcspy.action.level1.exposure import Exposure
+from tcspy.action.level2.singleobservation import SingleObservation
 from tcspy.utils.exception import *
 #%%
 class SequentialObservation(Interface_Runnable, Interface_Abortable):
@@ -21,23 +22,43 @@ class SequentialObservation(Interface_Runnable, Interface_Abortable):
         self.IDevice_status = DeviceStatus(self.IDevice)
         self.abort_action = abort_action
         self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
-    
-    def run(self,
-            target_tbl : Table,
-            autofocus_when_init : bool,
-            autofocus_when_filterchange : bool,
-            autofocus_period : bool,
-            use_focusoffset : bool 
-            ):
-        """ _Test_
-        target_tbl = ascii.read('/home/hhchoi1022/tcspy/action/Daily_202312201403.csv')
-        autofocus_when_init = True
-        autofocus_when_filterchange = True
-        autofocus_period = 60
-        use_focusoffset = True
 
-        """
-        
+    def _get_exposure_info(self,
+                           filter_str : str,
+                           exptime_str : str,
+                           count_str : str,
+                           binning_str : str = '1'):
+        filter_list = filter_str.split(',')
+        exptime_list = exptime_str.split(',')
+        count_list = count_str.split(',')
+        binning_list = binning_str.split(',')
+        exposure_info = dict()
+        exposure_info['filter'] = filter_list
+        exposure_info['exptime'] = exptime_list
+        exposure_info['count'] = count_list
+        exposure_info['binning'] = binning_list
+        len_filt = len(filter_list)        
+        for name, value in exposure_info.items():
+            len_value = len(value)
+            if len_filt != len_value:
+                exposure_info[name] = [value[0]] * len_filt
+        return exposure_info
+
+    def run(self,
+            exptime_str : float,
+            filter_str : str,
+            count_str : str,
+            binning_str : str = '1',
+            imgtype : str = 'Light',
+            ra : float = None,
+            dec : float = None,
+            alt : float = None,
+            az : float = None,
+            target_name : str = None,
+            target_obsmode : str = 'Single',
+            autofocus_before_start : bool = False,
+            autofocus_when_filterchange : bool = False
+            ):
         # Check condition of the instruments for this Action
         status_filterwheel = self.IDevice_status.filterwheel
         status_camera = self.IDevice_status.camera
@@ -56,24 +77,18 @@ class SequentialObservation(Interface_Runnable, Interface_Abortable):
             return ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
         
-        # Slewing when not aborted
+        # Abort when triggered
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             return  AbortionException(f'[{type(self).__name__}] is aborted.')
                 
         # SingleObservation
+        exposure_info = self._get_exposure_info(filter_str= filter_str, exptime_str = exptime_str, count_str= count_str, binning_str= binning_str)
         
-        # Exposure when not aborted
-        if self.abort_action.is_set():
-            self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            return  AbortionException(f'[{type(self).__name__}] is aborted.')
+        target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name, target_obsmode = 'Spec')                
         
-        for target in target_tbl:
-            filterwheel_status = self.IDevice.filterwheel.get_status()
-            focus_status
-            
+        
             
         
     def abort(self):

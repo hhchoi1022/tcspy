@@ -21,6 +21,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.IDevice_status = DeviceStatus(self.IDevice)
         self.abort_action = abort_action
         self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        
+        
     
     def run(self, 
             exptime : float,
@@ -36,6 +38,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             target_obsmode : str = 'Single',
             autofocus_before_start : bool = False
             ):
+        
+        
         
         # Check condition of the instruments for this Action
         status_filterwheel = self.IDevice_status.filterwheel

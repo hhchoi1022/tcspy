@@ -111,7 +111,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
         
-        # Slewing when not aborted
+        # Abort when triggered
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
