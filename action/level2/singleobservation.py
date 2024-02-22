@@ -7,10 +7,10 @@ from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
 from tcspy.utils.target import mainTarget
-from tcspy.action.level1.slewRADec import SlewRADec
-from tcspy.action.level1.slewAltAz import SlewAltAz
-from tcspy.action.level1.exposure import Exposure
-from tcspy.action.level2.autofocus import Autofocus
+from tcspy.action.level1 import SlewRADec
+from tcspy.action.level1 import SlewAltAz
+from tcspy.action.level1 import Exposure
+from tcspy.action.level2 import AutoFocus
 from tcspy.utils.exception import *
 #%%
 class SingleObservation(Interface_Runnable, Interface_Abortable):
@@ -102,7 +102,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         # Autofocus when activated
         if autofocus_before_start:
             try:
-                result_autofocus = Autofocus(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_).run()
+                result_autofocus = AutoFocus(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')

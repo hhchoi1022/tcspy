@@ -14,7 +14,7 @@ from tcspy.action.level1 import ChangeFilter
 
 #%%
 
-class Autofocus(Interface_Runnable, Interface_Abortable):
+class AutoFocus(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
                  Integrated_device : IntegratedDevice,
                  abort_action : Event):
@@ -65,18 +65,34 @@ class Autofocus(Interface_Runnable, Interface_Abortable):
                 result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
                 result_filterchange = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action).run(filter_ = filter_)
             except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: Either focuser or filterwheel is disconnected.')                
-                raise ConnectionException(f'[{type(self).__name__}] is failed: Either focuser or filterwheel is disconnected.')                
+                self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
             except AbortionException:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: focuser or filterwheel movement failure.')
-                raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser or filterwheel movement failure.')
+                self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+        
+        # Change filter when needed
+        info_filterwheel = self.IDevice.filterwheel.get_status()
+        current_filter = info_filterwheel['filter']
+        if not current_filter == filter_:
+            try:
+                result_filterchange = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action).run(filter_ = filter_)
+            except ConnectionException:
+                self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
         
         # run Autofocus
         info_focuser = self.IDevice.focuser.get_status()
-        self._log(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}')
+        self._log.info(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}')
         try:
             result_autofocus = self.IDevice.focuser.autofocus_start(abort_action = self.abort_action)
         except AbortionException:

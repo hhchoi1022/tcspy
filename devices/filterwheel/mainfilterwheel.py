@@ -221,9 +221,7 @@ class mainFilterwheel(mainConfig):
             del info_offset['updated_date']
         filters_in_config = set(info_offset.keys())
         filters_in_device = set(self._get_all_filt_names())
-        if filters_in_device.issubset(filters_in_config):
-            pass
-        else:
+        if not filters_in_config.issubset(filters_in_device):
             raise FilterRegisterException(f'Registered filters are not matched with configured filters \n Configured = [{filters_in_config}] \n Registered = [{filters_in_device}]')
         return info_offset
     
@@ -311,10 +309,7 @@ class mainFilterwheel(mainConfig):
         
 # %% Test
 if __name__ == '__main__':
-    F = mainFilterwheel(unitnum= 1)
-    #F.connect()
-    print(F.device.Names)
-    #F.move('NoFilter', return_focus_offset= True)
-    #F.disconnect()
+    F = mainFilterwheel(unitnum= 8)
+    F.connect()
 
 # %%

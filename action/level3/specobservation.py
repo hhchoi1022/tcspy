@@ -11,12 +11,7 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils.target import mainTarget
 from tcspy.utils.multiaction import MultiAction
 
-
-from tcspy.action.level1.slewRADec import SlewRADec
-from tcspy.action.level1.slewAltAz import SlewAltAz
-from tcspy.action.level1.exposure import Exposure
-from tcspy.action.level2.autofocus import Autofocus
-from tcspy.action.level2.singleobservation import SingleObservation
+from tcspy.action.level2 import SingleObservation
 
 from tcspy.utils.exception import *
 #%%

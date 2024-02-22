@@ -51,3 +51,5 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
     
     def abort(self):
         return
+
+# %%

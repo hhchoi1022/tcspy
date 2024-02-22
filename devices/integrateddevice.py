@@ -101,6 +101,3 @@ class IntegratedDevice(mainConfig):
     
 
 
-# %%
-IDevice = IntegratedDevice(unitnum = 1)
-#%%

@@ -162,7 +162,7 @@ class mainFocuser_pwi4(mainConfig):
             The position to move the device to
         """
         maxstep =  self.config['FOCUSER_MAXSTEP']
-        minstep =  self.config['FOCUSER_MAXSTEP']
+        minstep =  self.config['FOCUSER_MINSTEP']
         if (position <= minstep) | (position > maxstep):
             self._log.critical('Set position is out of bound of this focuser (Min : %d Max : %d)'%(minstep, maxstep))
             raise FocusChangeFailedException('Set position is out of bound of this focuser (Min : %d Max : %d)'%(minstep, maxstep))
@@ -184,6 +184,7 @@ class mainFocuser_pwi4(mainConfig):
                     status =  self.get_status()
                     current_position = status['position']
                     raise AbortionException('Focuser moving is aborted (Current : %s)'%(current_position))
+            time.sleep(5 * self._checktime)
             status =  self.get_status()
             current_position = status['position']
             self._log.info('Focuser position is set (Current : %s)'%(current_position))
@@ -224,6 +225,7 @@ class mainFocuser_pwi4(mainConfig):
         status =  self.get_status()
         while status['is_moving']:
             status =  self.get_status()
+        time.sleep(3 * self._checktime)
         status =  self.get_status()
         if status['is_autofocus_success']:
             self._log.info('Autofocus complete! (Best position : %s (%s))'%(status['autofocus_bestposition'], status['autofocus_tolerance']))

@@ -1,1 +1,1 @@
-from .singleobservation import SingleObservation
+from .specobservation import SpecObservation

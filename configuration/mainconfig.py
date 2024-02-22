@@ -141,8 +141,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=1)
-    #A._initialize_config(portnum = 6)
+    A = mainConfig(unitnum=3)
+    A._initialize_config(portnum = 8)
 
 # %%
 # %%

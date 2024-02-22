@@ -346,7 +346,7 @@ class mainTelescope_pwi4(mainConfig):
                     raise SlewingFailedException('Telescope slewing is failed : Unparking failed')
         
         # Slew
-        self.device.mount_goto_ra_dec_j2000(ra, dec)
+        self.device.mount_goto_ra_dec_j2000(target.ra_hour, target.dec_deg)
         time.sleep(self._checktime)
         status = self.get_status()
         while status['is_slewing']:

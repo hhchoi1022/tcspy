@@ -59,7 +59,7 @@ class Park(Interface_Runnable, Interface_Abortable):
             pass
 #%%
 if __name__ == '__main__':
-    device = IntegratedDevice(unitnum = 2)
+    device = IntegratedDevice(unitnum = 8)
     abort_action = Event()
     s =Park(device, abort_action= abort_action)
     s.run()

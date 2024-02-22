@@ -4,6 +4,8 @@ from .connect import Connect
 from .cool import Cool
 from .disconnect import Disconnect
 from .exposure import Exposure 
+from .fansoff import FansOff
+from .fanson import FansOn
 from .park import Park
 from .slewRADec import SlewRADec
 from .slewAltAz import SlewAltAz

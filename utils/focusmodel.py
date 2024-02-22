@@ -209,6 +209,6 @@ class FocusModel:
         print(f'{self._offset_file} is updated')
 # %%
 if __name__ == '__main__':
-    A = FocusModel(2)
-    A.update_params(list_offsets = [100,200,100,100,0,100,300], list_errors= [10,20,10,10,0,10,15])
+    A = FocusModel(5)
+    A.update_params()
 #%%
