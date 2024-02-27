@@ -101,8 +101,8 @@ class mainConfig:
                               FOCUSER_HOSTIP='10.0.106.%d' % portnum,
                               FOCUSER_PORTNUM='8220',
                               FOCUSER_DEVICENUM=0,
-                              FOCUSER_MINSTEP= 1000,
-                              FOCUSER_MAXSTEP= 50000,
+                              FOCUSER_MINSTEP= 2000,
+                              FOCUSER_MAXSTEP= 14000,
                               FOCUSER_CHECKTIME=0.5)
                 
         target_params = dict(TARGET_MINALT=0,

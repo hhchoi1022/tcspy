@@ -25,8 +25,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
     
     def run(self,
             filter_ : str,
-            use_offset : bool = False):
-        
+            use_offset : bool):
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device status
         status_camera = self.IDevice_status.camera
@@ -55,26 +54,25 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
-        # When use_offset == True, move focusvalue based on the offset 
         if use_offset:
             info_filterwheel = self.IDevice.filterwheel.get_status()
             current_filter = info_filterwheel['filter']
-            offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
-            self._log(f'Focuser is moving with the offset of {offset}[{current_filter} > {filter_}]')
-            try:
-                result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
-                result_filterchange = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action).run(filter_ = filter_)
-            except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-                raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-            except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-                raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-        
-        # Change filter when needed
+            if not current_filter == filter_:
+                offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
+                self._log(f'Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
+                try:
+                    result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
+                except ConnectionException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                    raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                except AbortionException:
+                    self._log.warning(f'[{type(self).__name__}] is aborted.')
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                except ActionFailedException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+                    raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+            
+        # Change filter
         info_filterwheel = self.IDevice.filterwheel.get_status()
         current_filter = info_filterwheel['filter']
         if not current_filter == filter_:

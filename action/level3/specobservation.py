@@ -130,19 +130,19 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                 binning_info = exposure_info['binning']
                 result_all_exposure = []
                 for filter_, exptime, count, binning in zip(filter_info, exptime_info, count_info, binning_info):
-                    action = SingleObservation(Integrated_device= IDevice, abort_action = self.abort_action)
+                    observation = SingleObservation(Integrated_device= IDevice, abort_action = self.abort_action)
                     result_exposure = False
                     try:
-                        result_exposure = action.run(exptime = exptime, 
-                                                     count = count, 
-                                                     filter_ = filter_, 
-                                                     imgtype = imgtype,
-                                                     binning = binning,
-                                                     ra = ra, 
-                                                     dec = dec, 
-                                                     target_name = target_name, 
-                                                     target_obsmode = 'Spec', 
-                                                     autofocus_before_start= autofocus_before_start)
+                        result_exposure = observation.run(exptime = exptime, 
+                                                          count = count, 
+                                                          filter_ = filter_, 
+                                                          imgtype = imgtype,
+                                                          binning = binning,
+                                                          ra = ra, 
+                                                          dec = dec, 
+                                                          target_name = target_name, 
+                                                          target_obsmode = 'Spec', 
+                                                          autofocus_before_start= autofocus_before_start)
                     except ConnectionException:
                         self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
                         raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')

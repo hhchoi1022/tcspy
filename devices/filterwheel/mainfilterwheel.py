@@ -301,7 +301,10 @@ class mainFilterwheel(mainConfig):
         try:
             offset_current = self.offsets[current_filt]['offset']
             offset_changed = self.offsets[changed_filt]['offset']
-            return offset_changed - offset_current
+            offset = offset_changed - offset_current
+            if (offset_changed == -999) | (offset_current == -999):
+                offset = 0 
+            return offset
         except:
             raise FilterRegisterException(f'Filter: {current_filt}, {changed_filt} is not registered')
 

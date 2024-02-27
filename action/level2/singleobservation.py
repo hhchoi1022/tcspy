@@ -10,6 +10,7 @@ from tcspy.utils.target import mainTarget
 from tcspy.action.level1 import SlewRADec
 from tcspy.action.level1 import SlewAltAz
 from tcspy.action.level1 import Exposure
+from tcspy.action.level1 import ChangeFocus
 from tcspy.action.level2 import AutoFocus
 from tcspy.utils.exception import *
 #%%
@@ -36,11 +37,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             az : float = None,
             target_name : str = None,
             target_obsmode : str = 'Single',
+            use_offset : bool = True,
             autofocus_before_start : bool = False
             ):
-        
-        
-        
         # Check condition of the instruments for this Action
         status_filterwheel = self.IDevice_status.filterwheel
         status_camera = self.IDevice_status.camera
@@ -98,6 +97,24 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 
         else:
             raise ActionFailedException(f'Coordinate type of the target : {target.status["coordtype"]} is not defined')
+        
+        # When use_offset == True, move focusvalue based on the offset 
+        if use_offset:
+            info_filterwheel = self.IDevice.filterwheel.get_status()
+            current_filter = info_filterwheel['filter']
+            offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
+            self._log(f'Focuser is moving with the offset of {offset}[{current_filter} > {filter_}]')
+            try:
+                result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
+            except ConnectionException:
+                self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
         
         # Autofocus when activated
         if autofocus_before_start:
