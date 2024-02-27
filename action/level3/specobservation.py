@@ -89,31 +89,31 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             ):
         
         # Check condition of the instruments for this Action
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
-        status_telescope = self.IDevice_status.telescope
-        trigger_abort_disconnected = False
-        if status_camera.lower() == 'disconnected':
-            trigger_abort_disconnected = True
-            self._log.critical(f'Camera is disconnected. Action "{type(self).__name__}" is not triggered')
-        if status_filterwheel.lower() == 'disconnected':
-            trigger_abort_disconnected = True
-            self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
-        if status_telescope.lower() == 'disconnected':
-            trigger_abort_disconnected = True
-            self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered') 
-        if trigger_abort_disconnected:
-            raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
-        # Done
-        
+        status_all_telescopes = self.IDevices_status_dict()
+        for IDevice_name, IDevice_status in status_all_telescopes.items():
+            status_filterwheel = IDevice_status['filterwheel']
+            status_camera = IDevice_status['camera']
+            status_telescope = IDevice_status['telescope']
+            status_focuser = IDevice_status['focuser']
+            if status_filterwheel.lower() == 'dicconnected':
+                self._log.critical(f'{IDevice_name} filterwheel is disconnected.')
+            if status_camera.lower() == 'dicconnected':
+                self._log.critical(f'{IDevice_name} camera is disconnected.')
+            if status_telescope.lower() == 'dicconnected':
+                self._log.critical(f'{IDevice_name} telescope is disconnected.')
+            if status_focuser.lower() == 'dicconnected':
+                self._log.critical(f'{IDevice_name} focuser is disconnected.')
+                
         # Abort when triggered
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
+        # Construct target instance
         target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name, target_obsmode = 'Spec')                
         
+        # Get filter information
         specmode_dict = self._get_filters_from_specmodes(specmode = specmode)
         
         result_all_telescope = dict()
