@@ -167,7 +167,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 
                 # Apply offset
                 offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
-                self._log(f'Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
+                self._log.info(f'Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
                 try:
                     result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
                 except ConnectionException:
