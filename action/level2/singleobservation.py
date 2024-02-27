@@ -204,11 +204,11 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             exposure = Exposure(Integrated_device = self.IDevice, abort_action = self.abort_action)
             for frame_number in range(count):
                 try:
-                    result_exposure = exposure.run(frame_number = frame_number,
-                                                    exptime = exptime,
+                    result_exposure = exposure.run(frame_number = int(frame_number),
+                                                    exptime = float(exptime),
                                                     filter_ = filter_,
                                                     imgtype = imgtype,
-                                                    binning = binning,
+                                                    binning = int(binning),
                                                     target_name = target_name,
                                                     target = target
                                                     )
