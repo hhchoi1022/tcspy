@@ -39,7 +39,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             exposure_info['count'] = count_list[0]
             exposure_info['binning'] = binning_list[0]
         else:
-            filter_list = filter_str.split(',')        
+            filter_list = filter_str.split(',')
             len_filt = len(filter_list)        
             for name, value in exposure_info.items():
                 len_value = len(value)
