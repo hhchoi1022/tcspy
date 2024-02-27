@@ -232,3 +232,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self.IDevice.telescope.abort()
     
 # %%
+IDevice = IntegratedDevice(1)
+abort_action = Event()
+S = SingleObservation(IDevice, abort_action)
+# %%
+S.run('5,5', '2,2', 'g,r', '1', ra = 240, dec = -15, autofocus_before_start = True, autofocus_when_filterchange= True)
+# %%
