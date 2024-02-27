@@ -11,6 +11,7 @@ from tcspy.action.level1 import SlewRADec
 from tcspy.action.level1 import SlewAltAz
 from tcspy.action.level1 import Exposure
 from tcspy.action.level1 import ChangeFocus
+from tcspy.action.level1 import ChangeFilter
 from tcspy.action.level2 import AutoFocus
 from tcspy.utils.exception import *
 #%%
@@ -22,23 +23,44 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.IDevice_status = DeviceStatus(self.IDevice)
         self.abort_action = abort_action
         self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
-        
-        
+
+    def _get_exposure_info(self,
+                           filter_str : str,
+                           exptime_str : str,
+                           count_str : str,
+                           binning_str : str):
+        exptime_list = exptime_str.split(',')
+        count_list = count_str.split(',')
+        binning_list = binning_str.split(',')
+        exposure_info = dict()
+        if filter_str == None:
+            exposure_info['filter'] = filter_str
+            exposure_info['exptime'] = exptime_list[0]
+            exposure_info['count'] = count_list[0]
+            exposure_info['binning'] = binning_list[0]
+        else:
+            filter_list = filter_str.split(',')        
+            len_filt = len(filter_list)        
+            for name, value in exposure_info.items():
+                len_value = len(value)
+                if len_filt != len_value:
+                    exposure_info[name] = [value[0]] * len_filt
+        return exposure_info
     
     def run(self, 
-            exptime : float,
-            count : int = 1,
-            filter_ : str = None,
+            exptime_str : str,
+            count_str : str,
+            filter_str : str = None, # When filter_str == None: Exposure with current filter
+            binning_str : str = '1',
             imgtype : str = 'Light',
-            binning : int = 1,
-            ra : float = None,
+            ra : float = None, # When radec == None: do not move 
             dec : float = None,
-            alt : float = None,
+            alt : float = None, # When altaz == None: do not move 
             az : float = None,
             target_name : str = None,
-            target_obsmode : str = 'Single',
-            use_offset : bool = True,
-            autofocus_before_start : bool = False
+            obsmode : str = 'Single',
+            autofocus_before_start : bool = False,
+            autofocus_when_filterchange : bool = False
             ):
         # Check condition of the instruments for this Action
         status_filterwheel = self.IDevice_status.filterwheel
@@ -64,7 +86,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
-        target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name, target_obsmode = target_obsmode)
+        target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name, target_obsmode = obsmode)
          
         # Slewing
         if target.status['coordtype'] == 'radec':
@@ -94,32 +116,21 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             except ActionFailedException:
                 self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
-
         else:
             raise ActionFailedException(f'Coordinate type of the target : {target.status["coordtype"]} is not defined')
-        
-        # When use_offset == True, move focusvalue based on the offset 
-        if use_offset:
-            info_filterwheel = self.IDevice.filterwheel.get_status()
-            current_filter = info_filterwheel['filter']
-            offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
-            self._log(f'Focuser is moving with the offset of {offset}[{current_filter} > {filter_}]')
-            try:
-                result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
-            except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-                raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-            except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-                raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-        
-        # Autofocus when activated
+
+        # Get exposure information
+        exposure_info = self._get_exposure_info(filter_str= filter_str, exptime_str= exptime_str, count_str= count_str, binning_str= binning_str)
+        filter_info = exposure_info['filter']
+        exptime_info = exposure_info['exptime']
+        count_info = exposure_info['count']
+        binning_info = exposure_info['binning']
+
+        # Autofocus before beginning the first observation set 
         if autofocus_before_start:
             try:
-                result_autofocus = AutoFocus(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_)
+                filter_ = filter_info[0]
+                result_autofocus = AutoFocus(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_, use_offset = True)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
@@ -129,36 +140,84 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             except ActionFailedException:
                 self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
                 pass
-        
-        # Exposure when not aborted
-        if self.abort_action.is_set():
-            self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise  AbortionException(f'[{type(self).__name__}] is aborted.')
-        
-        exposure = Exposure(Integrated_device = self.IDevice, abort_action = self.abort_action)
+            
         result_all_exposure = []
+        for filter_, exptime, count, binning in zip(filter_info, exptime_info, count_info, binning_info):
+            info_filterwheel = self.IDevice.filterwheel.get_status()
+            current_filter = info_filterwheel['filter']
+            is_filter_changed = (current_filter != filter_)
+            
+            if is_filter_changed:
+                # Filterchange
+                try:    
+                    result_filterchange = ChangeFilter(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_)
+                except ConnectionException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                    raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                except AbortionException:
+                    self._log.warning(f'[{type(self).__name__}] is aborted.')
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                except ActionFailedException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
+                    raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
+                
+                # Apply offset
+                offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
+                self._log(f'Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
+                try:
+                    result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
+                except ConnectionException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                    raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                except AbortionException:
+                    self._log.warning(f'[{type(self).__name__}] is aborted.')
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                except ActionFailedException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+                    raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+                
+                # Autofocus when filter changed
+                if autofocus_when_filterchange:
+                    try:
+                        result_autofocus = AutoFocus(Integrated_device= self.IDevice, abort_action = self.abort_action).run(filter_ = filter_, use_offset = False)
+                    except ConnectionException:
+                        self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                        raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                    except AbortionException:
+                        self._log.warning(f'[{type(self).__name__}] is aborted.')
+                        raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                    except ActionFailedException:
+                        self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
+                        pass
         
-        for frame_number in range(count):
-            try:
-                result_exposure = exposure.run(frame_number = frame_number,
-                                                exptime = exptime,
-                                                filter_ = filter_,
-                                                imgtype = imgtype,
-                                                binning = binning,
-                                                target_name = target_name,
-                                                target = target
-                                                )
-                result_all_exposure.append(result_exposure)
-            except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
-                raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
-            except AbortionException:
+            # Exposure when not aborted
+            if self.abort_action.is_set():
+                self.abort()
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: exposure failure.')
-                raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
+                raise  AbortionException(f'[{type(self).__name__}] is aborted.')
+            
+            # Exposure
+            exposure = Exposure(Integrated_device = self.IDevice, abort_action = self.abort_action)
+            for frame_number in range(count):
+                try:
+                    result_exposure = exposure.run(frame_number = frame_number,
+                                                    exptime = exptime,
+                                                    filter_ = filter_,
+                                                    imgtype = imgtype,
+                                                    binning = binning,
+                                                    target_name = target_name,
+                                                    target = target
+                                                    )
+                    result_all_exposure.append(result_exposure)
+                except ConnectionException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
+                    raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
+                except AbortionException:
+                    self._log.warning(f'[{type(self).__name__}] is aborted.')
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                except ActionFailedException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: exposure failure.')
+                    raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
         return all(result_all_exposure)
             
     def abort(self):
@@ -172,3 +231,4 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         if status_telescope.lower() == 'busy':
             self.IDevice.telescope.abort()
     
+# %%
