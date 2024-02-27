@@ -202,7 +202,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             
             # Exposure
             exposure = Exposure(Integrated_device = self.IDevice, abort_action = self.abort_action)
-            for frame_number in range(count):
+            for frame_number in range(int(count)):
                 try:
                     result_exposure = exposure.run(frame_number = int(frame_number),
                                                     exptime = float(exptime),
