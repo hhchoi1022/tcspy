@@ -20,7 +20,7 @@ class FocusModel:
     
     def __init__(self, 
                  unitnum : int,
-                 config_path : str = '/home/kds/tcspy/configuration/',
+                 config_path : str = '../configuration/',
                  filtinfo_file : str = 'filtinfo.config',
                  offset_file : str = 'filter.offset'):
         self.unitnum = unitnum
@@ -175,7 +175,7 @@ class FocusModel:
         if visualize:
             plt.figure(dpi = 300, figsize = (6,4))
         for filter_ in self.filters:
-            tbls_matched = match_table(tbl_filter_dict[filter_], tbl_filter_dict[self.filters[0]], key = 'obsdate', tolerance = 0.1)
+            tbls_matched = match_table(tbl_filter_dict[filter_], tbl_filter_dict[self.filters[0]], key = 'obsdate', tolerance = 0.2)
             if len(tbls_matched)>0:
                 tbls_matched['focusdiff'] = tbls_matched['focus_1']-tbls_matched['focus_2']
                 sigma_clip_mask = sigma_clip(tbls_matched['focusdiff'], sigma_lower =2, sigma_upper=2, masked = True).mask
@@ -214,5 +214,5 @@ class FocusModel:
 if __name__ == '__main__':
     A = FocusModel(5)
     imkey = '/large_data/obsdata/7DT10/*/*.fits'
-    A.update_params()
+    A.calc_model_params(imkey, Time('2024-01-01'))
 #%%
