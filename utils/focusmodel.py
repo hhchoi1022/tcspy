@@ -76,7 +76,16 @@ class FocusModel:
                           filter_key : str = 'FILTER',
                           temperature_key : str = None,
                           visualize : bool = True):
-        
+        '''
+        imkey = '/large_data/obsdata/7DT09/*/*.fits'
+        start_obsdate : Time('2024-01-01')
+        end_obsdate : Time = Time.now()
+        focusval_key : str = 'FOCUSPOS'
+        obsdate_key : str = 'DATE-LOC'
+        filter_key : str = 'FILTER'
+        temperature_key : str = None
+        visualize : bool = True
+        '''
         # submodule for matching two astropy tables based on specific key & tolerance
         def match_table(tbl1, tbl2, key, tolerance = 0.01):
             from astropy.table import hstack
@@ -175,7 +184,7 @@ class FocusModel:
         if visualize:
             plt.figure(dpi = 300, figsize = (6,4))
         for filter_ in self.filters:
-            tbls_matched = match_table(tbl_filter_dict[filter_], tbl_filter_dict[self.filters[0]], key = 'obsdate', tolerance = 0.2)
+            tbls_matched = match_table(tbl_filter_dict[filter_], tbl_filter_dict[self.filters[0]], key = 'obsdate', tolerance = 0.1)
             if len(tbls_matched)>0:
                 tbls_matched['focusdiff'] = tbls_matched['focus_1']-tbls_matched['focus_2']
                 sigma_clip_mask = sigma_clip(tbls_matched['focusdiff'], sigma_lower =2, sigma_upper=2, masked = True).mask
@@ -212,7 +221,7 @@ class FocusModel:
         print(f'{self._offset_file} is updated')
 # %%
 if __name__ == '__main__':
-    A = FocusModel(5)
-    imkey = '/large_data/obsdata/7DT10/*/*.fits'
+    A = FocusModel(9)
+    imkey = '/large_data/obsdata/7DT09/*/*.fits'
     A.calc_model_params(imkey, Time('2024-01-01'))
 #%%
