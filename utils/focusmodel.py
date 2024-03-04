@@ -72,7 +72,7 @@ class FocusModel:
                           start_obsdate : Time,
                           end_obsdate : Time = Time.now(),
                           focusval_key : str = 'FOCUSPOS',
-                          obsdate_key : str = 'DATE_LOC',
+                          obsdate_key : str = 'DATE-LOC',
                           filter_key : str = 'FILTER',
                           temperature_key : str = None,
                           visualize : bool = True):
@@ -210,5 +210,6 @@ class FocusModel:
 # %%
 if __name__ == '__main__':
     A = FocusModel(5)
+    imkey = '/large_data/obsdata/7DT10/*/*.fits'
     A.update_params()
 #%%
