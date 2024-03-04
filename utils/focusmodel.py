@@ -124,14 +124,16 @@ class FocusModel:
             try:
                 focusval = image_hdr[focusval_key]
                 filter_ = image_hdr[filter_key]
-                if temperature_key:
-                    temperature = image_hdr[temperature_key]
-                    all_temp.append(temperature)
                 imlist.append(image)
                 all_obsdate.append(obsdate)
                 all_obsdatetime.append(obsdate)
                 all_focusval.append(focusval)
                 all_filter.append(filter_)                
+                if temperature_key:
+                    temperature = image_hdr[temperature_key]
+                else:
+                    temperature = None
+                all_temp.append(temperature)
             except:
                 pass
         tbl = Table()
