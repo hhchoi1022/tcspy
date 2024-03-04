@@ -256,7 +256,7 @@ class FocusModel:
         print(f'{self._offset_file} is updated')
 # %%
 if __name__ == '__main__':
-    unitnum = 2
+    unitnum = 11
     FModel = FocusModel(unitnum)
     folder = '/large_data/obsdata/7DT%.2d' %unitnum
     offset_vallist, offset_stdlist = FModel.calc_model_params(folder, start_obsdate = Time('2024-02-01'))
