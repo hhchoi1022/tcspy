@@ -98,7 +98,7 @@ class FocusModel:
             They are horizontally combined in the order of tbl1, tbl2
             -----
             '''
-            
+             
             matched_tbl = Table()
             for obs in tbl1:
                 ol_idx = (np.abs(obs[key] - tbl2[key]) < tolerance)
