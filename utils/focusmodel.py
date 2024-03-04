@@ -13,6 +13,7 @@ from astropy.stats import sigma_clip
 
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
 
 #%%
 
@@ -68,8 +69,9 @@ class FocusModel:
         return format_
 
     def calc_model_params(self,
-                          imkey : str,
-                          start_obsdate : Time,
+                          folder : str,
+                          file_key : str = '*.fits',
+                          start_obsdate : Time = TIme('2023-01-01'),
                           end_obsdate : Time = Time.now(),
                           focusval_key : str = 'FOCUSPOS',
                           obsdate_key : str = 'DATE-LOC',
@@ -118,9 +120,34 @@ class FocusModel:
                     matched_tbl = vstack([matched_tbl, compare_tbl])
 
             return matched_tbl
-         
+        
+        def get_filelist_in_duration(folder : str,
+                                     start_obsdate : Time,
+                                     end_obsdate : Time,
+                                     file_key : str, 
+                                     format_dt = ['%Y-%m-%d', '%Y%m%d', '%y-%m-%d', '%y%m%d']):
+            dirlist = os.listdir(folder)
+            dir_in_durationlist = []
+            dt_list = []
+            for format_component in format_dt:
+                for dirname in dirlist:
+                    try:
+                        dt = datetime.datetime.strptime(dirname, format_component)
+                        dt_list.append(dt)
+                        dir_in_durationlist.append(dirname)
+                    except:
+                        pass
+            dir_index = (start_obsdate < Time(dt_list)) & (Time(dt_list) < end_obsdate)
+            dirlist_in_duration = dirlist_in_duration[dir_index]
+            filekeylist_in_duration = [os.path.join(folder, dirname, file_key) for dirname in dirlist_in_duration]
+            files_in_duration = []
+            for filekey in filekeylist_in_duration:
+                filelist = glob.glob(filekey)
+                files_in_duration.append(filelist)
+            return files_in_duration
+            
         # Collect data for the calculation
-        imagelist = glob.glob(imkey)
+        imagelist = get_filelist_in_duration(folder, start_obsdate = start_obsdate, end_obsdate = end_obsdate, file_key = file_key)
         all_obsdate = []
         all_focusval = []
         all_filter = []
