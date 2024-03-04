@@ -14,6 +14,7 @@ from astropy.stats import sigma_clip
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
+from tqdm import tqdm
 
 #%%
 
@@ -71,7 +72,8 @@ class FocusModel:
     def calc_model_params(self,
                           folder : str,
                           file_key : str = '*.fits',
-                          start_obsdate : Time = TIme('2023-01-01'),
+                          filter_offset_zero : str = 'r',
+                          start_obsdate : Time = Time('2023-01-01'),
                           end_obsdate : Time = Time.now(),
                           focusval_key : str = 'FOCUSPOS',
                           obsdate_key : str = 'DATE-LOC',
@@ -79,8 +81,9 @@ class FocusModel:
                           temperature_key : str = None,
                           visualize : bool = True):
         '''
-        imkey = '/large_data/obsdata/7DT09/*/*.fits'
-        start_obsdate : Time('2024-01-01')
+        folder = '/large_data/obsdata/7DT09/'
+        file_key = '*.fits'
+        start_obsdate : Time = Time('2024-01-01')
         end_obsdate : Time = Time.now()
         focusval_key : str = 'FOCUSPOS'
         obsdate_key : str = 'DATE-LOC'
@@ -127,34 +130,38 @@ class FocusModel:
                                      file_key : str, 
                                      format_dt = ['%Y-%m-%d', '%Y%m%d', '%y-%m-%d', '%y%m%d']):
             dirlist = os.listdir(folder)
-            dir_in_durationlist = []
+            dirlist_in_duration = []
             dt_list = []
             for format_component in format_dt:
                 for dirname in dirlist:
                     try:
                         dt = datetime.datetime.strptime(dirname, format_component)
                         dt_list.append(dt)
-                        dir_in_durationlist.append(dirname)
+                        dirlist_in_duration.append(dirname)
                     except:
                         pass
             dir_index = (start_obsdate < Time(dt_list)) & (Time(dt_list) < end_obsdate)
-            dirlist_in_duration = dirlist_in_duration[dir_index]
+            dirlist_in_duration = np.array(dirlist_in_duration)[dir_index]
             filekeylist_in_duration = [os.path.join(folder, dirname, file_key) for dirname in dirlist_in_duration]
             files_in_duration = []
             for filekey in filekeylist_in_duration:
                 filelist = glob.glob(filekey)
-                files_in_duration.append(filelist)
+                files_in_duration.extend(filelist)
             return files_in_duration
             
         # Collect data for the calculation
+        print(f"Counting images... \n Duration = {start_obsdate.isot} - {end_obsdate.isot}")
         imagelist = get_filelist_in_duration(folder, start_obsdate = start_obsdate, end_obsdate = end_obsdate, file_key = file_key)
+        print(f"{len(imagelist)} images are found")
         all_obsdate = []
         all_focusval = []
         all_filter = []
         all_obsdatetime = []
         all_temp = []
         imlist = []
-        for image in imagelist:
+        pbar = tqdm(imagelist)
+        for image in pbar:
+            pbar.set_description("Collecting header information...")
             image_hdr = fits.getheader(image)
             obsdate = Time(image_hdr[obsdate_key])
             try:
@@ -206,12 +213,13 @@ class FocusModel:
             filter_color[filter_] = colorset[i]
 
         # Calculate focus offsets based on first filters
+        print('Calculating filter offset...')
         focusdiffmean_all = []
         focusdiffstd_all = []
         if visualize:
             plt.figure(dpi = 300, figsize = (6,4))
         for filter_ in self.filters:
-            tbls_matched = match_table(tbl_filter_dict[filter_], tbl_filter_dict[self.filters[0]], key = 'obsdate', tolerance = 0.1)
+            tbls_matched = match_table(tbl_filter_dict[filter_], tbl_filter_dict[filter_offset_zero], key = 'obsdate', tolerance = 0.1)
             if len(tbls_matched)>0:
                 tbls_matched['focusdiff'] = tbls_matched['focus_1']-tbls_matched['focus_2']
                 sigma_clip_mask = sigma_clip(tbls_matched['focusdiff'], sigma_lower =2, sigma_upper=2, masked = True).mask
@@ -248,7 +256,9 @@ class FocusModel:
         print(f'{self._offset_file} is updated')
 # %%
 if __name__ == '__main__':
-    A = FocusModel(9)
-    imkey = '/large_data/obsdata/7DT09/*/*.fits'
-    A.calc_model_params(imkey, Time('2024-01-01'))
+    unitnum = 2
+    FModel = FocusModel(unitnum)
+    folder = '/large_data/obsdata/7DT%.2d' %unitnum
+    offset_vallist, offset_stdlist = FModel.calc_model_params(folder, start_obsdate = Time('2024-02-01'))
+    FModel.update_params(offset_vallist, offset_stdlist)
 #%%
