@@ -109,7 +109,7 @@ class FocusModel:
                     matched_tbl = vstack([matched_tbl, compare_tbl])
 
             return matched_tbl
-        
+         
         # Collect data for the calculation
         imagelist = glob.glob(imkey)
         all_obsdate = []
