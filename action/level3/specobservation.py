@@ -53,27 +53,49 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             self._log.critical(f'Specmode[{specmode}] is not registered in "{self._specmode_folder}"')
             raise SpecmodeRegisterException(f'Specmode[{specmode}] is not registered in "{self._specmode_folder}"')
     
-    def _get_exposure_info(self,
-                           filter_str : str,
-                           exptime_str : str,
-                           count_str : str,
-                           binning_str : str = '1'):
-        filter_list = filter_str.split(',')
-        exptime_list = exptime_str.split(',')
-        count_list = count_str.split(',')
-        binning_list = binning_str.split(',')
-        exposure_info = dict()
-        exposure_info['filter'] = filter_list
-        exposure_info['exptime'] = exptime_list
-        exposure_info['count'] = count_list
-        exposure_info['binning'] = binning_list
+    def _format_kwargs(self,
+                       filter_str : str,
+                       exptime_str : str,
+                       count_str : str,
+                       binning_str : str = '1',
+                       imgtype : str = 'Light',
+                       ra : float = None,
+                       dec : float = None,
+                       alt : float = None,
+                       az : float = None,
+                       target_name : str = None,
+                       obsmode : str = 'Spec',
+                       objtype : str = None,
+                       autofocus_before_start : bool = True,
+                       autofocus_when_filterchange : bool = True):
+        format_kwargs = dict()
+        format_kwargs['filter_str'] = filter_str
+        format_kwargs['exptime_str'] = exptime_str
+        format_kwargs['count_str'] = count_str
+        format_kwargs['binning_str'] = binning_str
+        filter_list = format_kwargs['filter_str'].split(',')
         len_filt = len(filter_list)        
-        for name, value in exposure_info.items():
-            len_value = len(value)
-            if len_filt != len_value:
-                exposure_info[name] = [value[0]] * len_filt
-        return exposure_info
-          
+        
+        # Exposure information
+        for kwarg, value in format_kwargs.items():
+            valuelist = value.split(',')
+            if len_filt != len(valuelist):
+                valuelist = [valuelist[0]] * len_filt
+            formatted_value = ','.join(valuelist)
+            format_kwargs[kwarg] = formatted_value
+        
+        format_kwargs['imgtype'] = imgtype
+        format_kwargs['ra'] = ra
+        format_kwargs['dec'] = dec
+        format_kwargs['alt'] = alt
+        format_kwargs['az'] = az
+        format_kwargs['target_name'] = target_name
+        format_kwargs['obsmode'] = obsmode
+        format_kwargs['objtype'] = objtype
+        format_kwargs['autofocus_before_start'] = autofocus_before_start
+        format_kwargs['autofocus_when_filterchange'] = autofocus_when_filterchange
+        return format_kwargs
+
     def run(self, 
             exptime_str : str,
             count_str : str,
@@ -85,7 +107,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             alt : float = None,
             az : float = None,
             target_name : str = None,
-            autofocus_before_start : bool = True
+            autofocus_before_start : bool = True,
+            autofocus_when_filterchange : bool = True
             ):
         
         # Check condition of the instruments for this Action
