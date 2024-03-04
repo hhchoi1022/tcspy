@@ -67,7 +67,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                        obsmode : str = 'Spec',
                        objtype : str = None,
                        autofocus_before_start : bool = True,
-                       autofocus_when_filterchange : bool = True):
+                       autofocus_when_filterchange : bool = True,
+                       **kwargs):
         format_kwargs = dict()
         format_kwargs['filter_str'] = filter_str
         format_kwargs['exptime_str'] = exptime_str
@@ -83,7 +84,10 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                 valuelist = [valuelist[0]] * len_filt
             formatted_value = ','.join(valuelist)
             format_kwargs[kwarg] = formatted_value
-        
+        for key, value in kwargs.items():
+            format_kwargs[key] = value
+        return format_kwargs
+        '''        
         format_kwargs['imgtype'] = imgtype
         format_kwargs['ra'] = ra
         format_kwargs['dec'] = dec
@@ -94,7 +98,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         format_kwargs['objtype'] = objtype
         format_kwargs['autofocus_before_start'] = autofocus_before_start
         format_kwargs['autofocus_when_filterchange'] = autofocus_when_filterchange
-        return format_kwargs
+        '''
 
     def run(self, 
             exptime_str : str,
