@@ -66,6 +66,21 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             autofocus_before_start : bool = False,
             autofocus_when_filterchange : bool = False
             ):
+        """
+        exptime_str = '5,5'
+        count_str = '2,2'
+        filter_str = 'g,r'
+        binning_str = '1'
+        imgtype = 'Light'
+        ra = 166.50
+        dec = -58.0666
+        alt = None
+        az = None
+        target_name = None
+        obsmode = 'Single'
+        autofocus_before_start = True
+        autofocus_when_filterchange= True
+        """
         # Check condition of the instruments for this Action
         status_filterwheel = self.IDevice_status.filterwheel
         status_camera = self.IDevice_status.camera
@@ -152,18 +167,6 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             is_filter_changed = (current_filter != filter_)
             
             if is_filter_changed:
-                # Filterchange
-                try:    
-                    result_filterchange = ChangeFilter(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_)
-                except ConnectionException:
-                    self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
-                    raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
-                except AbortionException:
-                    self._log.warning(f'[{type(self).__name__}] is aborted.')
-                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
-                except ActionFailedException:
-                    self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
-                    raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
                 
                 # Apply offset
                 offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
@@ -180,6 +183,19 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
                 
+                # Filterchange
+                try:    
+                    result_filterchange = ChangeFilter(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_)
+                except ConnectionException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                    raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                except AbortionException:
+                    self._log.warning(f'[{type(self).__name__}] is aborted.')
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                except ActionFailedException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
+                    raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
+
                 # Autofocus when filter changed
                 if autofocus_when_filterchange:
                     try:
@@ -237,8 +253,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
     
 # %%
 if __name__ == '__main__':
-    IDevice = IntegratedDevice(1)
+    IDevice = IntegratedDevice(2)
     abort_action = Event()
     S = SingleObservation(IDevice, abort_action)
-    S.run('5,5', '2,2', 'g,r', '1', ra = 240, dec = -15, autofocus_before_start = True, autofocus_when_filterchange= True)
+    S.run('5,5', '2,2', 'g,r', '1', ra = 166.5, dec = -58.0666 , autofocus_before_start = True, autofocus_when_filterchange= True)
 # %%

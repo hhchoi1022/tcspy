@@ -9,7 +9,7 @@ from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
 from tcspy.utils.target import mainTarget
-from tcspy.utils.multiaction import MultiAction
+from tcspy.action import MultiAction
 
 from tcspy.action.level2 import SingleObservation
 
