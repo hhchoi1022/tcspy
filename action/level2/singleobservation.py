@@ -256,5 +256,5 @@ if __name__ == '__main__':
     IDevice = IntegratedDevice(2)
     abort_action = Event()
     S = SingleObservation(IDevice, abort_action)
-    S.run('5,5', '2,2', 'g,r', '1', ra = 166.5, dec = -58.0666 , autofocus_before_start = True, autofocus_when_filterchange= True)
+    S.run('5,5', '2,2', 'g,r', '1', ra = 166.5, dec = -58.0666 , autofocus_before_start = False, autofocus_when_filterchange= False)
 # %%

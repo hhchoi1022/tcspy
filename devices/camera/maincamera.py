@@ -170,6 +170,10 @@ class mainCamera(mainConfig):
             except:
                 pass
             try:
+                status['egain'] = self.device.ElectronsPerADU
+            except:
+                pass
+            try:
                 status['ccdtemp'] = round(self.device.CCDTemperature,1)
             except:
                 pass

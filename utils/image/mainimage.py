@@ -165,7 +165,8 @@ class mainImage(mainConfig):
         info['COL-POWE'] = None
         if self._caminfo:
             info['INSTRUME'] = self._format_header(self._caminfo['name_cam'], 'Detector instrument name')
-            info['EGAIN'] = self._format_header(self._caminfo['gain'], 'Eletrconic gain in e-/ADU')
+            info['GAIN'] = self._format_header(self._caminfo['gain'], 'Gain from the camera configuration')
+            info['EGAIN'] = self._format_header(self._caminfo['egain'], 'Eletrconic gain in e-/ADU')
             info['CCD-TEMP'] = self._format_header(self._caminfo['ccdtemp'], 'CCD temperature')
             info['COL-POWE'] = self._format_header(self._caminfo['power_cooler'], 'CCD cooler power (100 for maximum)')
         return info
