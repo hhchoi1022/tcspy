@@ -132,48 +132,6 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         # Run Multiple actions
         multiaction = MultiAction(array_telescope = self.IDevices_dict.values, array_kwargs = all_params_obs.values, function = SingleObservation)
         multiaction.run()
-        
-        '''
-            result_telescope = False
-            if not IDevice_name in specmode_dict.keys():
-                raise SpecmodeRegisterException(f'{IDevice_name} is not registered in the specmode [{specmode}] file')
-            else:            
-                filter_str = ','.join(specmode_dict[IDevice_name])
-                exposure_info = self._get_exposure_info(filter_str = filter_str, exptime_str = exptime_str, count_str = count_str, binning_str = binning_str)
-                filter_info = exposure_info['filter']
-                exptime_info = exposure_info['exptime']
-                count_info = exposure_info['count']
-                binning_info = exposure_info['binning']
-                result_all_exposure = []
-                for filter_, exptime, count, binning in zip(filter_info, exptime_info, count_info, binning_info):
-                    observation = SingleObservation(Integrated_device= IDevice, abort_action = self.abort_action)
-                    result_exposure = False
-                    try:
-                        result_exposure = observation.run(exptime = exptime, 
-                                                          count = count, 
-                                                          filter_ = filter_, 
-                                                          imgtype = imgtype,
-                                                          binning = binning,
-                                                          ra = ra, 
-                                                          dec = dec, 
-                                                          target_name = target_name, 
-                                                          target_obsmode = 'Spec', 
-                                                          autofocus_before_start= autofocus_before_start, 
-                                                          autofocus_when_filterchange = autofocus_when_filterchange)
-                    except ConnectionException:
-                        self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-                        raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-                    except AbortionException:
-                        self._log.warning(f'[{type(self).__name__}] is aborted.')
-                        raise AbortionException(f'[{type(self).__name__}] is aborted.')
-                    except ActionFailedException:
-                        self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
-                        raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
-                    result_all_exposure.append(result_exposure)
-                result_telescope = all(result_all_exposure)
-            result_all_telescope[IDevice_name] = result_telescope
-        return result_all_telescope        
-    '''
             
     def abort(self):
         status_filterwheel = self.IDevice_status.filterwheel
