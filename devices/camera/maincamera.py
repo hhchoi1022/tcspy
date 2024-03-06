@@ -170,6 +170,10 @@ class mainCamera(mainConfig):
             except:
                 pass
             try:
+                status['egain'] = self.device.ElectronsPerADU
+            except:
+                pass
+            try:
                 status['ccdtemp'] = round(self.device.CCDTemperature,1)
             except:
                 pass
@@ -230,7 +234,7 @@ class mainCamera(mainConfig):
             imginfo_alpaca = self.device.ImageArrayInfo
             if imginfo_alpaca.ImageElementType == ImageArrayElementTypes.Int32:
                 if status['maxADU'] <= 65535:
-                    img_dtype = np.int16 
+                    img_dtype = np.uint16 
                 else:
                     img_dtype = np.int32
             elif imginfo_alpaca.ImageElementType == ImageArrayElementTypes.Double:
@@ -539,17 +543,8 @@ class mainCamera(mainConfig):
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
-    A = mainCamera(unitnum = 1)
-    A.connect()
-
-    C = A.exposure(exptime = 0, imgtype = 'bias', abort_action= Event(), binning = 1, is_light = False)
-    
-    #%%
-    data = np.array(imginfo['data'])
-    plt.figure(dpi = 300)
-    plt.imshow(data, vmin = 100, vmax= 150)
-    plt.colorbar()
-    plt.show()
+    A = mainCamera(unitnum = 2)
+    C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= Event(), binning = 1, is_light = False)
 
 #%%
     #A.cooler_off(warmuptime=10)

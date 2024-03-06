@@ -9,7 +9,7 @@ from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
 from tcspy.utils.target import mainTarget
-from tcspy.utils.multiaction import MultiAction
+from tcspy.action import MultiAction
 
 from tcspy.action.level2 import SingleObservation
 
@@ -53,27 +53,32 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             self._log.critical(f'Specmode[{specmode}] is not registered in "{self._specmode_folder}"')
             raise SpecmodeRegisterException(f'Specmode[{specmode}] is not registered in "{self._specmode_folder}"')
     
-    def _get_exposure_info(self,
-                           filter_str : str,
-                           exptime_str : str,
-                           count_str : str,
-                           binning_str : str = '1'):
-        filter_list = filter_str.split(',')
-        exptime_list = exptime_str.split(',')
-        count_list = count_str.split(',')
-        binning_list = binning_str.split(',')
-        exposure_info = dict()
-        exposure_info['filter'] = filter_list
-        exposure_info['exptime'] = exptime_list
-        exposure_info['count'] = count_list
-        exposure_info['binning'] = binning_list
+    def _format_kwargs(self,
+                       filter_str : str,
+                       exptime_str : str,
+                       count_str : str,
+                       binning_str : str = '1',
+                       **kwargs):
+        format_kwargs = dict()
+        format_kwargs['filter_str'] = filter_str
+        format_kwargs['exptime_str'] = exptime_str
+        format_kwargs['count_str'] = count_str
+        format_kwargs['binning_str'] = binning_str
+        filter_list = format_kwargs['filter_str'].split(',')
         len_filt = len(filter_list)        
-        for name, value in exposure_info.items():
-            len_value = len(value)
-            if len_filt != len_value:
-                exposure_info[name] = [value[0]] * len_filt
-        return exposure_info
-          
+        
+        # Exposure information
+        for kwarg, value in format_kwargs.items():
+            valuelist = value.split(',')
+            if len_filt != len(valuelist):
+                valuelist = [valuelist[0]] * len_filt
+            formatted_value = ','.join(valuelist)
+            format_kwargs[kwarg] = formatted_value
+        # Other information
+        for key, value in kwargs.items():
+            format_kwargs[key] = value
+        return format_kwargs
+    
     def run(self, 
             exptime_str : str,
             count_str : str,
@@ -85,7 +90,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             alt : float = None,
             az : float = None,
             target_name : str = None,
-            autofocus_before_start : bool = True
+            autofocus_before_start : bool = True,
+            autofocus_when_filterchange : bool = True
             ):
         
         # Check condition of the instruments for this Action
@@ -116,8 +122,18 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         # Get filter information
         specmode_dict = self._get_filters_from_specmodes(specmode = specmode)
         
-        result_all_telescope = dict()
+        # Define parameters for SingleObservation module for all telescopes
+        all_params_obs = dict()
         for IDevice_name, IDevice in self.IDevices_dict.items():
+            filter_str = ','.join(specmode_dict[IDevice_name])
+            params_obs = self._format_kwargs(filter_str = filter_str, exptime_str = exptime_str, count_str = count_str, binning_str = binning_str, imgtype = imgtype, ra = ra, dec = dec, alt = alt, az = az, target_name = target_name, obsmode = 'Spec', autofocus_before_start = autofocus_before_start, autofocus_when_filterchange = autofocus_when_filterchange)
+            all_params_obs[IDevice_name] = params_obs
+        
+        # Run Multiple actions
+        multiaction = MultiAction(array_telescope = self.IDevices_dict.values, array_kwargs = all_params_obs.values, function = SingleObservation)
+        multiaction.run()
+        
+        '''
             result_telescope = False
             if not IDevice_name in specmode_dict.keys():
                 raise SpecmodeRegisterException(f'{IDevice_name} is not registered in the specmode [{specmode}] file')
@@ -142,7 +158,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                                                           dec = dec, 
                                                           target_name = target_name, 
                                                           target_obsmode = 'Spec', 
-                                                          autofocus_before_start= autofocus_before_start)
+                                                          autofocus_before_start= autofocus_before_start, 
+                                                          autofocus_when_filterchange = autofocus_when_filterchange)
                     except ConnectionException:
                         self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
                         raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -156,6 +173,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                 result_telescope = all(result_all_exposure)
             result_all_telescope[IDevice_name] = result_telescope
         return result_all_telescope        
+    '''
             
     def abort(self):
         status_filterwheel = self.IDevice_status.filterwheel

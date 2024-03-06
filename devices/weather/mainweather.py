@@ -75,17 +75,24 @@ class mainWeather(mainConfig):
         status['name'] = None
         status['is_safe'] = None
         status['temperature'] = None
+        status['dewpoint'] = None
         status['humidity'] = None
         status['pressure'] = None
         status['windspeed'] = None
+        status['windgust'] = None
+        status['winddirection'] = None
         status['skybrightness'] = None
+        status['skytemperature'] = None
         status['cloudfraction'] = None
         status['rainrate'] = None
         status['fwhm'] = None
         status['constraints'] = self.constraints
 
         if self.device.Connected:
-            self._update()
+            try:
+                self._update()
+            except:
+                pass
             try:
                 status['update_time'] = Time.now().isot
             except:

@@ -165,7 +165,8 @@ class mainImage(mainConfig):
         info['COL-POWE'] = None
         if self._caminfo:
             info['INSTRUME'] = self._format_header(self._caminfo['name_cam'], 'Detector instrument name')
-            info['EGAIN'] = self._format_header(self._caminfo['gain'], 'Eletrconic gain in e-/ADU')
+            info['GAIN'] = self._format_header(self._caminfo['gain'], 'Gain from the camera configuration')
+            info['EGAIN'] = self._format_header(self._caminfo['egain'], 'Eletrconic gain in e-/ADU')
             info['CCD-TEMP'] = self._format_header(self._caminfo['ccdtemp'], 'CCD temperature')
             info['COL-POWE'] = self._format_header(self._caminfo['power_cooler'], 'CCD cooler power (100 for maximum)')
         return info
@@ -233,12 +234,14 @@ class mainImage(mainConfig):
         info['OBJCTAZ'] = None
         info['OBJCTHA'] = None
         if self._targetinfo:
-            info['OBJECT'] = self._format_header(self._targetinfo['name'], 'Name of the target')
+            info['OBJECT'] = self._format_header(self._targetinfo['name'], 'Name of the target')            
+            info['OBJTYPE'] = self._format_header(self._targetinfo['objtype'], 'Type of the target')
             info['OBJCTRA'] = self._format_header(self._targetinfo['ra'], 'Right ascension of the target')
             info['OBJCTDEC'] = self._format_header(self._targetinfo['dec'], 'Declination of the target')
             info['OBJCTALT'] = self._format_header(self._targetinfo['alt'], 'Altitude of the target')
             info['OBJCTAZ'] = self._format_header(self._targetinfo['az'], 'Azimuth of the target')
             info['OBJCTHA'] = self._format_header(self._targetinfo['hourangle'], 'Hourangle of the target')
+            info['OBSMODE'] = self._format_header(self._targetinfo['obsmode'], 'Mode of the observation')
         return info
     
     @property
