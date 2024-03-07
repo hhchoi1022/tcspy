@@ -15,16 +15,14 @@ from tcspy.action.level2 import SingleObservation
 
 from tcspy.utils.exception import *
 #%%
-class SpecObservation(Interface_Runnable, Interface_Abortable):
+class DeepObservation(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
                  array_IntegratedDevice : List[IntegratedDevice],
-                 abort_action : Event,
-                 specmode_folder : str = '../../configuration/specmode/u10/'):
+                 abort_action : Event):
         self.IDevices_list = array_IntegratedDevice
         self.IDevices_dict = self._get_IDevices_dict()
         self.IDevices_status_dict = self._get_IDevice_status_dict()
         self.abort_action = abort_action
-        self._specmode_folder = specmode_folder
         self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
     
     def _get_IDevices_dict(self):
@@ -40,19 +38,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             name_IDevice = IDevice.name
             IDevices_status_dict[name_IDevice] = DeviceStatus(IDevice)
         return IDevices_status_dict
-    
-    def _get_filters_from_specmodes(self,
-                                    specmode : str):
-        specmode_file = self._specmode_folder + f'{specmode}.specmode'
-        is_exist_specmodefile = os.path.isfile(specmode_file)
-        if is_exist_specmodefile:
-            with open(specmode_file, 'r') as f:
-                specmode_dict = json.load(f)
-            return specmode_dict
-        else:
-            self._log.critical(f'Specmode[{specmode}] is not registered in "{self._specmode_folder}"')
-            raise SpecmodeRegisterException(f'Specmode[{specmode}] is not registered in "{self._specmode_folder}"')
-    
+
     def _format_kwargs(self,
                        filter_str : str,
                        exptime_str : str,
@@ -82,7 +68,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
     def run(self, 
             exptime_str : str,
             count_str : str,
-            specmode : str,
+            filter_str : str,
             binning_str : str = '1',
             imgtype : str = 'Light',
             ra : float = None,
@@ -96,7 +82,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             ):
         
         self._log.info(f'[{type(self).__name__}] is triggered.')
-
+        
         # Check condition of the instruments for this Action
         status_all_telescopes = self.IDevices_status_dict()
         for IDevice_name, IDevice_status in status_all_telescopes.items():
@@ -121,33 +107,29 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         
         # Get target instance
         target = mainTarget(unitnum = self.IDevice.unitnum, 
-                            observer = self.IDevice.observer,
+                            observer = self.IDevice.observer, 
                             target_ra = ra, 
                             target_dec = dec, 
                             target_alt = alt, 
-                            target_az = az,
+                            target_az = az, 
                             target_name = target_name, 
-                            target_obsmode = 'Spec',
-                            target_objtype = objtype)                
-        
-        # Get filter information
-        specmode_dict = self._get_filters_from_specmodes(specmode = specmode)
+                            target_obsmode = 'Deep',
+                            target_objtype = objtype)                 
         
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
         for IDevice_name, IDevice in self.IDevices_dict.items():
-            filter_str = ','.join(specmode_dict[IDevice_name])
             params_obs = self._format_kwargs(filter_str = filter_str, 
-                                             exptime_str = exptime_str,
+                                             exptime_str = exptime_str, 
                                              count_str = count_str, 
-                                             binning_str = binning_str,
-                                             imgtype = imgtype,
+                                             binning_str = binning_str, 
+                                             imgtype = imgtype, 
                                              ra = target.ra, 
-                                             dec = target.dec,
+                                             dec = target.dec, 
                                              alt = target.alt, 
-                                             az = target.az,
+                                             az = target.az, 
                                              target_name = target.name, 
-                                             obsmode = target.obsmode,
+                                             obsmode = target.obsmode, 
                                              objtype = target.objtype,
                                              autofocus_before_start = autofocus_before_start, 
                                              autofocus_when_filterchange = autofocus_when_filterchange)
@@ -158,7 +140,6 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         multiaction.run()
         
         self._log.info(f'[{type(self).__name__}] is finished')
-
             
     def abort(self):
         status_filterwheel = self.IDevice_status.filterwheel

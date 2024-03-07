@@ -13,7 +13,7 @@ from matplotlib import cm
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
 #%%
-class mainTarget(mainConfig):
+class SingleTarget(mainConfig):
     """
     Parameters
     ----------
@@ -402,12 +402,12 @@ class mainTarget(mainConfig):
                               ra : float,
                               dec : float,
                               frame : str = 'icrs') -> SkyCoord:
-        return SkyCoord(ra = float(ra), dec = float(dec), frame = frame, unit = (u.deg, u.deg))
+        return SkyCoord(ra = ra, dec = dec, frame = frame, unit = (u.deg, u.deg))
 
     def _get_coordinate_altaz(self,
                               alt : float,
                               az : float) -> SkyCoord:
-        return SkyCoord(alt = float(alt), az = float(az), frame = 'altaz', unit = u.deg)
+        return SkyCoord(alt = alt, az = az, frame = 'altaz', unit = u.deg)
         
     def _get_target(self,
                     coord,
@@ -415,12 +415,12 @@ class mainTarget(mainConfig):
         return FixedTarget(coord = coord, name = target_name)
     
     def _get_constraints(self,
-                        TARGET_MINALT : float = None,
-                        TARGET_MAXALT : float = None,
-                        TARGET_MAX_SUNALT : float = None,
-                        TARGET_MOONSEP : float = None,
-                        TARGET_MAXAIRMASS : float = None,
-                        **kwargs) -> list:
+                         TARGET_MINALT : float = None,
+                         TARGET_MAXALT : float = None,
+                         TARGET_MAX_SUNALT : float = None,
+                         TARGET_MOONSEP : float = None,
+                         TARGET_MAXAIRMASS : float = None,
+                         **kwargs) -> list:
         constraint_all = []
         if (TARGET_MINALT != None) & (TARGET_MAXALT != None):
             constraint_altitude = AltitudeConstraint(min = TARGET_MINALT * u.deg, max = TARGET_MAXALT * u.deg, boolean_constraint = True)
@@ -440,13 +440,9 @@ class mainTarget(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    unitnum = 1
-    config = mainConfig(unitnum = unitnum).config
-    observer = mainObserver(unitnum = unitnum)
-    A = mainTarget(unitnum, observer, target_ra= 300.23, target_dec = 20.22, target_name = 'Center')
-    
-    A
-    #%%
-    b= A.meridiantime()
-    A.risetime()
-#%%
+    unitnum = 21
+    observer = mainObserver(21)
+    ra = np.array([30,50,60])
+    dec = np.array([-10,-20,-30])
+    T = mainTarget(unitnum = 21, observer = observer, target_ra = ra, target_dec = dec)
+# %%

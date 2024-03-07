@@ -1,2 +1,2 @@
-from .SQL_func import *
+from .SQL_connector import SQL_Connector
 from .load_IMSNG import *

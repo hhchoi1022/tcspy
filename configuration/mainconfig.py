@@ -9,7 +9,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int,
-                 configpath : str = '/home/kds/tcspy/configuration/',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration/',
                  **kwargs):
         self.unitnum = unitnum
         self.configpath = configpath + '7DT%.2d' % self.unitnum + '/'
@@ -30,7 +30,8 @@ class mainConfig:
         return all_config
 
     def _initialize_config(self,
-                           portnum: int):
+                           ip_address: str = '10.0.106.6',
+                           portnum : int = '11111'):
         savepath = self.configpath
         if not os.path.exists(savepath):
             os.makedirs(savepath, exist_ok=True)
@@ -50,8 +51,8 @@ class mainConfig:
                                OBSERVER_NAME='Hyeonho Choi',
                                OBSERVER_OBSERVATORY='7DT%.2d' % self.unitnum
                                )
-        weather_params = dict(WEATHER_HOSTIP='10.0.106.%d' % portnum,
-                              WEATHER_PORTNUM='11111',
+        weather_params = dict(WEATHER_HOSTIP= ip_address,
+                              WEATHER_PORTNUM= portnum,
                               WEATHER_DEVICENUM=0,
                               WEATHER_CHECKTIME=0.5,
                               WEATHER_HUMIDITY=85,
@@ -61,18 +62,18 @@ class mainConfig:
                               WEATHER_TEMPERATURE_LOWER=40,
                               WEATHER_WINDSPEED=20)
 
-        dome_params = dict(DOME_HOSTIP='10.0.106.%d' % portnum,
-                           DOME_PORTNUM='11111',
+        dome_params = dict(DOME_HOSTIP= ip_address,
+                           DOME_PORTNUM=portnum,
                            DOME_DEVICENUM=0,
                            DOME_CHECKTIME=0.5)
         
-        safetymonitor_params = dict(SAFEMONITOR_HOSTIP='10.0.106.%d' % portnum,
-                                    SAFEMONITOR_PORTNUM='11111',
+        safetymonitor_params = dict(SAFEMONITOR_HOSTIP= ip_address,
+                                    SAFEMONITOR_PORTNUM=portnum,
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_CHECKTIME=0.5)
 
         telescope_params = dict(TELESCOPE_DEVICETYPE='PWI4',  # Alpaca or PWI4
-                                TELESCOPE_HOSTIP='10.0.106.%d' % portnum,
+                                TELESCOPE_HOSTIP= ip_address,
                                 TELESCOPE_PORTNUM='8220',
                                 TELESCOPE_DEVICENUM=0,
                                 TELESCOPE_PARKALT=40,
@@ -85,27 +86,27 @@ class mainConfig:
                                 TELESCOPE_FOCALLENGTH=1500,
                                 TELESCOPE_SETTLETIME=3, #seconds
                                 )
-        camera_params = dict(CAMERA_HOSTIP='10.0.106.%d' % portnum,
-                             CAMERA_PORTNUM='11111',
+        camera_params = dict(CAMERA_HOSTIP= ip_address,
+                             CAMERA_PORTNUM=portnum,
                              CAMERA_DEVICENUM=0,
                              CAMERA_PIXSIZE=3.76,  # micron
                              CAMERA_CHECKTIME=0.5)
                              
-        filterwheel_params = dict(FTWHEEL_HOSTIP='10.0.106.%d' % portnum,
-                                  FTWHEEL_PORTNUM='11111',
+        filterwheel_params = dict(FTWHEEL_HOSTIP= ip_address,
+                                  FTWHEEL_PORTNUM=portnum,
                                   FTWHEEL_DEVICENUM=0,
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{savepath}filter.offset")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
-                              FOCUSER_HOSTIP='10.0.106.%d' % portnum,
+        focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
+                              FOCUSER_HOSTIP= ip_address,
                               FOCUSER_PORTNUM='8220',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
                               FOCUSER_CHECKTIME=0.5)
                 
-        target_params = dict(TARGET_MINALT=0,
+        target_params = dict(TARGET_MINALT=30,
                              TARGET_MAXALT=90,
                              TARGET_MAX_SUNALT=None,
                              TARGET_MOONSEP=40,
@@ -141,8 +142,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=3)
-    A._initialize_config(portnum = 8)
+    A = mainConfig(unitnum=21)
+    A._initialize_config(ip_address='127.0.0.1', portnum = 32323)
 
 # %%
 # %%

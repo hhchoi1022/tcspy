@@ -1,1 +1,2 @@
-from .maintarget import mainTarget
+from .singletarget import SingleTarget
+from .multitarget import MultiTarget

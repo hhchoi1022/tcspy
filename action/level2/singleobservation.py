@@ -63,9 +63,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             az : float = None,
             target_name : str = None,
             obsmode : str = 'Single',
+            objtype : str = None,
             autofocus_before_start : bool = False,
             autofocus_when_filterchange : bool = False
             ):
+        
+        self._log.info(f'[{type(self).__name__}] is triggered.')
+
         """
         exptime_str = '5,5'
         count_str = '2,2'
@@ -105,13 +109,22 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
-        target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name, target_obsmode = obsmode)
+        # Set target
+        target = mainTarget(unitnum = self.IDevice.unitnum, 
+                            observer = self.IDevice.observer, 
+                            target_ra = ra, 
+                            target_dec = dec, 
+                            target_alt = alt, 
+                            target_az = az, 
+                            target_name = target_name, 
+                            target_obsmode = obsmode,
+                            target_objtype= objtype)
          
         # Slewing
         if target.status['coordtype'] == 'radec':
             try:
                 slew = SlewRADec(Integrated_device = self.IDevice, abort_action= self.abort_action)
-                result_slew = slew.run(ra = target.status['ra'], dec = target.status['dec'])
+                result_slew = slew.run(ra = target.ra, dec = target.dec)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -125,7 +138,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         elif target.status['coordtype'] == 'altaz':
             try:
                 slew = SlewAltAz(Integrated_device = self.IDevice, abort_action= self.abort_action)
-                result_slew = slew.run(alt = target.status['alt'], az = target.status['az'])
+                result_slew = slew.run(alt = target.alt, az = target.az)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -226,8 +239,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                     imgtype = imgtype,
                                                     binning = int(binning),
                                                     target_name = target_name,
-                                                    target = target
-                                                    )
+                                                    target = target)
                     result_all_exposure.append(result_exposure)
                 except ConnectionException:
                     self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
@@ -238,6 +250,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 except ActionFailedException:
                     self._log.critical(f'[{type(self).__name__}] is failed: exposure failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
+            
+        self._log.info(f'[{type(self).__name__}] is finished')
+        
         return all(result_all_exposure)
             
     def abort(self):
