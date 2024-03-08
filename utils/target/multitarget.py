@@ -60,10 +60,9 @@ class MultiTarget(mainConfig):
                  targets_ra : np.array,
                  targets_dec : np.array,
                  targets_name : np.array = None,
-                 unitnum : int = 1,
                  **kwargs):
         
-        super().__init__(unitnum = unitnum)
+        super().__init__(unitnum = observer.unitnum)
         self._observer = observer
         self._astroplan_observer = observer.status['observer']
         self._constraints = self._get_constraints(**self.config)
@@ -86,27 +85,33 @@ class MultiTarget(mainConfig):
             date = Time.now()
         start_year = date.datetime.year
         start_date = Time(datetime.datetime(year = start_year, month = 1, day = 1))
-        end_date = Time(datetime.datetime(year = start_year +1 , month = 12, day = 31))
+        end_date = Time(datetime.datetime(year = start_year+1 , month = 1, day = 1))
 
         expanded_arrays_observability = []
+        expanded_arrays_altitude_midnight = []
         expanded_arrays_date = []
         current_date = start_date
         while current_date <= end_date:
-            observablity = self.is_event_observable(current_date)
+            print(f"Calculating observability of the {len(self.coordinate)} targets on {current_date.strftime('%Y-%m-%d')}")
+            midnight = Time((self._observer.tonight(current_date)[0].jd + self._observer.tonight(current_date)[1].jd )/2, format = 'jd')
+            alt_at_midnight = self.altaz(midnight).alt.value
+            expanded_arrays_altitude_midnight.append(alt_at_midnight)
+            observablity = self.is_ever_observable(current_date)
             expanded_arrays_observability.append(observablity)
             expanded_arrays_date.append(current_date.datetime)
             current_date += time_grid_resolution * u.day
 
-        observablity_array = np.hstack(expanded_arrays_observability)
+        observablity_array = np.array(expanded_arrays_observability).T
+        altitude_array = np.array(expanded_arrays_altitude_midnight).T
         date_array = np.array(expanded_arrays_date)
         
         all_observability = []
         # Find the indices where the value changes
-        for target_observability in observablity_array:
+        for target_observability, target_altitude in zip(observablity_array, altitude_array):
             if all(target_observability):
                 risedate = 'Always'
                 setdate = 'Always'
-                bestdate = 'Always'
+                bestdate = date_array[np.argmax(target_altitude)]
             elif all(~target_observability):
                 risedate = 'Never'
                 setdate = 'Never'
@@ -118,18 +123,14 @@ class MultiTarget(mainConfig):
                 # Find index where observability True to False
                 setdate_index = np.where(np.diff(target_observability.astype(int)) == -1)[0] + 1
                 setdate = date_array[setdate_index[0]]
-                if risedate > setdate:
-                    setdate_after_risedate = date_array[setdate_index[1]]
-                else:
-                    setdate_after_risedate = setdate
-                bestdate_timestamp  = (risedate.timestamp() + setdate_after_risedate.timestamp()) / 2
-                bestdate = datetime.datetime.fromtimestamp(bestdate_timestamp)
+                bestdate = date_array[np.argmax(target_altitude)]
             all_observability.append((risedate, setdate, bestdate))
         
         return np.array(all_observability)
         
     def is_ever_observable(self,
-                           utctime : datetime or Time = None) -> List[bool]:
+                           utctime : datetime or Time = None,
+                           time_grid_resolution = 1 * u.hour) -> List[bool]:
         """
         Determines whether the target is observable during the specified time
 
@@ -151,7 +152,7 @@ class MultiTarget(mainConfig):
         starttime = tonight[0]
         endtime = tonight[1]
         time_range = [starttime, endtime]
-        return is_observable(constraints = self._constraints, observer = self._astroplan_observer, targets = self.target_astroplan, time_range = time_range)
+        return is_observable(constraints = self._constraints, observer = self._astroplan_observer, targets = self.target_astroplan, time_range = time_range, time_grid_resolution = time_grid_resolution)
     
 
     def is_always_observable(self,
@@ -357,94 +358,7 @@ if __name__ == '__main__':
     idx = np.random.randint(0, len(target_tbl), size = 100)
     m = MultiTarget(observer = observer, targets_ra = target_tbl['RA'][idx], targets_dec = target_tbl['De'][idx], targets_name = target_tbl['objname'][idx])
     start = time.perf_counter()
+    rsb = m.rise_best_set_date()
     print(time.perf_counter() - start)
     
 #%%
-
-# %%
-
-
-observer = ephem.Observer()
-observer.lat = '-30.4704'  # Latitude in degrees (for example, London's latitude)
-observer.lon = '-70.7804'    # Longitude in degrees (for example, London's longitude)
-observer.elevation = 1580    # Elevation in meters (optional)
-observer.horizon = 40
-#%%
-
-target = ephem.FixedBody()
-target._ra = ephem.hours('20:14:32')  # Example RA coordinate in hours
-target._dec = ephem.degrees('-30:26:29')  # Example Dec coordinate in degrees
-
-#%%
-dt = datetime.utcnow()
-rise_time = print(observer.next_rising(target, start = dt))
-
-start_date = Time('2024-01-01').to_datetime()
-end_date = Time('2025-12-31').to_datetime()
-current_date = start_date
-while current_date <= end_date:
-    observer.date = current_date
-    rise_time = observer.next_rising(target)
-    if (rise_time.datetime() - current_date).total_seconds()/86400 > 1:
-        print(rise_time)
-    if (rise_time.datetime() - current_date).total_seconds()/86400 < -1:
-        print(rise_time)
-    current_date += timedelta(days = 1)
-# %%
-start_date = Time('2023-9-01').to_datetime()
-end_date = Time('2024-12-31').to_datetime()
-from datetime import datetime
-start_date = datetime.utcnow()
-end_date = start_date + timedelta(days=300)
-# Iterate over dates within the search range
-rise_date = None
-set_date = None
-while current_date <= end_date:
-    observer.date = current_date.strftime('%Y/%m/%d %H:%M:%S')
-    
-    try:
-        rise_time = observer.next_rising(target)
-        if observer.previous_setting(target) < rise_time:
-            rise_date = current_date
-            break
-    except ephem.NeverUpError:
-        pass
-    
-    current_date += timedelta(days=1)
-
-# Reset current_date for finding set date
-current_date = rise_date if rise_date else start_date
-
-while current_date <= end_date:
-    observer.date = current_date.strftime('%Y/%m/%d %H:%M:%S')
-    
-    try:
-        set_time = observer.next_setting(target)
-        if observer.previous_rising(target) < set_time:
-            set_date = current_date
-            break
-    except ephem.NeverUpError:
-        pass
-    
-    current_date += timedelta(days=1)
-
-if rise_date:
-    print("Rise date:", rise_date.strftime('%Y-%m-%d'))
-else:
-    print("Target does not rise within the specified range.")
-
-if set_date:
-    print("Set date:", set_date.strftime('%Y-%m-%d'))
-else:
-    print("Target does not set within the specified range.")
-
-# %%
-sitka = ephem.Observer()
-sitka.date = '1999/6/27'
-sitka.lat = '57:10'
-sitka.lon = '-135:15'
-# %%
-m = ephem.Mars()
-# %%
-print(sitka.next_transit(m))
-# %%
