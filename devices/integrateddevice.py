@@ -101,3 +101,7 @@ class IntegratedDevice(mainConfig):
     
 
 
+
+# %%
+IntegratedDevice(21)
+# %%
