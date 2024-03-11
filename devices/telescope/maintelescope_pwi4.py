@@ -11,7 +11,6 @@ from tcspy.devices.observer import mainObserver
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import to_SkyCoord
 from tcspy.utils import Timeout
-from tcspy.utils.target import mainTarget
 from tcspy.utils.exception import *
 #%%
 
@@ -326,8 +325,9 @@ class mainTelescope_pwi4(mainConfig):
         5. tracking : bool, optional
             Whether to turn tracking on after slewing
         """
-        
-        target = mainTarget(unitnum = self.unitnum, observer = self.observer, target_ra = float(ra), target_dec = float(dec))
+        from tcspy.utils.target.singletarget import SingleTarget
+
+        target = SingleTarget(unitnum = self.unitnum, observer = self.observer, target_ra = float(ra), target_dec = float(dec))
         altaz = target.altaz()
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
 

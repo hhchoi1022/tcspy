@@ -13,7 +13,7 @@ from tcspy.utils.logger import mainLogger
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
 from tcspy.utils import to_SkyCoord
-from tcspy.utils.target import SingleTarget
+
 from tcspy.utils.exception import *
 
 #%%
@@ -250,7 +250,7 @@ class mainTelescope_Alpaca(mainConfig):
         5. tracking : bool, optional
             Whether to start tracking after slewing to the target. Default is True.
         """
-        
+        from tcspy.utils.target import SingleTarget
         target = SingleTarget(unitnum = self.unitnum, observer = self.observer, target_ra = float(ra), target_dec = float(dec))
         altaz = target.altaz()
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))

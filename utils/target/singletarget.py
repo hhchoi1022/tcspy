@@ -8,7 +8,6 @@ from astropy.time import Time
 import numpy as np
 import datetime
 import matplotlib.pyplot as plt
-from matplotlib import cm
 # TCSpy modules
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
@@ -444,5 +443,4 @@ if __name__ == '__main__':
     observer = mainObserver(21)
     ra = np.array([30,50,60])
     dec = np.array([-10,-20,-30])
-    T = mainTarget(unitnum = 21, observer = observer, target_ra = ra, target_dec = dec)
 # %%

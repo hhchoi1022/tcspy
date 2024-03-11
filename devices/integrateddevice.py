@@ -1,8 +1,6 @@
 #%%
 from tcspy.configuration import mainConfig
 from tcspy.devices.camera import mainCamera
-from tcspy.devices.telescope import mainTelescope_Alpaca
-from tcspy.devices.telescope import mainTelescope_pwi4
 from tcspy.devices.focuser import mainFocuser_Alpaca
 from tcspy.devices.focuser import mainFocuser_pwi4
 from tcspy.devices.filterwheel import mainFilterwheel
@@ -10,6 +8,8 @@ from tcspy.devices.observer import mainObserver
 from tcspy.devices.weather import mainWeather
 from tcspy.devices.safetymonitor import mainSafetyMonitor
 from tcspy.utils.error import *
+from tcspy.devices.telescope import mainTelescope_Alpaca
+from tcspy.devices.telescope import mainTelescope_pwi4
 #%%
 class IntegratedDevice(mainConfig):
     

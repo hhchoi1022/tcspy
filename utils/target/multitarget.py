@@ -1,21 +1,17 @@
 #%%
 # Other modules
 from astroplan import FixedTarget, is_event_observable, is_observable, is_always_observable
-from astroplan import AltitudeConstraint, AirmassConstraint, MoonSeparationConstraint, GalacticLatitudeConstraint, AtNightConstraint
-from astroplan import months_observable
+from astroplan import AltitudeConstraint
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 import numpy as np
 import datetime
-import matplotlib.pyplot as plt
-from matplotlib import cm
 from typing import List
 # TCSpy modules
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
 from tcspy.utils.target.db_target import SQL_Connector
-import ephem
 
 #%%
 class MultiTarget(mainConfig):
@@ -75,17 +71,16 @@ class MultiTarget(mainConfig):
     def __repr__(self):
         return f'MultiTarget[n_target = {len(self.coordinate)}]'
     
-    def rise_best_set_date(self,
-                           date : Time = None,
-                           time_grid_resolution = 1 # day
-                           ):
+    def rts_date(self,
+                 year : int = None,
+                 time_grid_resolution = 1 # day
+                 ):
         
         # If start_date & end_date are not specified, defaults to current year
-        if date == None:
-            date = Time.now()
-        start_year = date.datetime.year
-        start_date = Time(datetime.datetime(year = start_year, month = 1, day = 1))
-        end_date = Time(datetime.datetime(year = start_year+1 , month = 1, day = 1))
+        if year == None:
+            year = Time.now().datetime.year
+        start_date = Time(datetime.datetime(year = year, month = 1, day = 1))
+        end_date = Time(datetime.datetime(year = year+1 , month = 1, day = 1))
 
         expanded_arrays_observability = []
         expanded_arrays_altitude_midnight = []

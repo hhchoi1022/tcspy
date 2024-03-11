@@ -23,7 +23,7 @@ class FocusModel:
     def __init__(self, 
                  unitnum : int,
                  config_path : str = '../configuration/',
-                 filtinfo_file : str = 'filtinfo.config',
+                 filtinfo_file : str = 'filtinfo.spcemode',
                  offset_file : str = 'filter.offset'):
         self.unitnum = unitnum
         self.name_telescope = '7DT%.2d' % self.unitnum
