@@ -3,7 +3,6 @@
 import glob
 import os
 from astropy.io import ascii
-from astropy.table import Table
 import json
 
 class mainConfig:
@@ -60,9 +59,9 @@ class mainConfig:
             print('New configuration file made : %s' % (savepath+filename))
             
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
-        telescope_params = dict(TELESCOPE_DEVICETYPE='PWI4',  # Alpaca or PWI4
+        telescope_params = dict(TELESCOPE_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                                 TELESCOPE_HOSTIP= ip_address,
-                                TELESCOPE_PORTNUM='8220',
+                                TELESCOPE_PORTNUM='32323',
                                 TELESCOPE_DEVICENUM=0,
                                 TELESCOPE_PARKALT=40,
                                 TELESCOPE_PARKAZ=300,
@@ -86,9 +85,9 @@ class mainConfig:
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{savepath_unit}filter.offset")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
+        focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='8220',
+                              FOCUSER_PORTNUM='32323',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -136,18 +135,22 @@ class mainConfig:
         
         target_params = dict(TARGET_MINALT=30,
                              TARGET_MAXALT=90,
-                             TARGET_MAX_SUNALT=None,
                              TARGET_MOONSEP=40,
-                             TARGET_MAXAIRMASS=None)
+                             TARGET_SUNALT_PREPARE=-5,
+                             TARGET_SUNALT_ASTRO=-18,
+                             TARGET_WEIGHT_ALT = 0.5,
+                             TARGET_WEIGHT_PRIORITY = 0.5)
 
         version_params = dict(TCSPY_VERSION='Version 3.0',
                               TCSPY_NAME='TCSpy')
 
 
         DB_params = dict(DB_HOSTIP='localhost',
-                         DB_ID='',
-                         DB_PWD='lksdf1020')
-
+                         DB_ID='hhchoi',
+                         DB_PWD='lksdf1020',
+                         DB_NAME='target')
+        
+        specmode_params = dict(SPECMODE_FOLDER=f'{self._configfilepath_global}specmode/u10/')
         
         make_configfile(telescope_params, filename='Telescope.config')
         make_configfile(camera_params, filename='Camera.config')
@@ -164,6 +167,7 @@ class mainConfig:
         make_configfile(dome_params, filename='Dome.config', savepath= self._configfilepath_global)
         make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self._configfilepath_global)
         make_configfile(DB_params, filename = 'DB.config', savepath= self._configfilepath_global)
+        make_configfile(specmode_params, filename = 'specmode.config', savepath= self._configfilepath_global)
 
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
@@ -171,8 +175,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=1)
-    A._initialize_config(ip_address='10.0.106.6', portnum = 11111)
+    A = mainConfig(unitnum=21)
+    A._initialize_config(ip_address='127.0.0.1', portnum = 32323)
 
 # %%
 # %%

@@ -4,6 +4,7 @@ import mysql.connector
 from astropy.table import Table
 import uuid
 import mysql
+import numpy as np
 #%%
 
 class SQL_Connector:
@@ -18,7 +19,7 @@ class SQL_Connector:
         self.pwd_user = pwd_user
         self.host_user = host_user
         self.db_name = db_name
-        self.set_db(db_name = db_name)
+        self.connect(db_name = db_name)
     
     # DB
     def create_db(self,
@@ -31,8 +32,8 @@ class SQL_Connector:
         self.exec(f"REMOVE DATABASE {db_name}")
         #print(f"DATABASE {db_name} REMOVED")
     
-    def set_db(self,
-               db_name : str):
+    def connect(self,
+                db_name : str):
         self.db_name = db_name
         self.connector = mysql.connector.connect(
         host= self.host_user,
@@ -48,11 +49,6 @@ class SQL_Connector:
         for db_name in self.cursor:
             pass
             print(db_name[0])
-    # Table 
-    def create_tbl(self,
-                   tbl_name : str):
-        self.exec(f"CREATE TABLE {tbl_name} ")
-        #print(f"TABLE {tbl_name} CREATED")
 
     def remove_tbl(self,
                    tbl_name : str):
@@ -81,7 +77,7 @@ class SQL_Connector:
         column_names = [column[0] for column in self.cursor.fetchall()]
         return column_names
     
-    def insert_data(self,
+    def insert_rows(self,
                     tbl_name : str,
                     data : Table
                     ):
@@ -96,19 +92,30 @@ class SQL_Connector:
         list_values = [tuple(row) for row in values.tolist()]
         self.cursor.executemany(sql_command, list_values)
         self.connector.commit()
-        #print(self.cursor.rowcount, "was inserted.")
     
-    def update_data(self,
-                    tbl_name : str,
-                    update_value : str,
-                    update_key : str,
-                    id_value : str,
-                    id_key : str = 'id'
-                    ):
-        sql_command = f"UPDATE {tbl_name} SET {update_key} = '{update_value}' WHERE {id_key} = '{id_value}'"
+    def update_row(self,
+                   tbl_name : str,
+                   update_value : list or str,
+                   update_key : list or str,
+                   id_value : str,
+                   id_key : str = 'id'
+                   ):
+        
+        if isinstance(update_value,str):
+            update_command = f"{update_key} = '{update_value}'"
+        elif isinstance(update_value, (list, np.ndarray)):
+            update_command_list = []
+            for i in range(len(update_value)):
+                value = update_value[i]
+                key = update_key [i]
+                command_single = f"{key} = '{value}'"
+                update_command_list.append(command_single)
+            update_command = ','.join(update_command_list)
+        else:
+            print(f'Input type ({type(update_value)}) is not supported')
+        sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
         self.exec(sql_command)
         self.connector.commit()
-        #print(self.cursor.rowcount, "record(s) affected")
     
     def get_data(self,
                  tbl_name : str,
@@ -140,16 +147,16 @@ class SQL_Connector:
     def set_data_id(self,
                     tbl_name : str,
                     update_all : bool = False):
-        values = self.get_data(tbl_name = tbl_name, select_key = 'id,idx')
-        id_values = values['id']
-        idx_values = values['idx']
-        if update_all:
-            indices = idx_values
-        else:
-            indices = [index for value, index in zip(id_values, idx_values) if value == '' or value is None]
-        uuidlist = [uuid.uuid4().hex for i in range(len(indices))]
-        for id_, index in zip(uuidlist, indices):
-            self.update_data(tbl_name = tbl_name, update_value = id_, update_key = 'id', id_value = index, id_key='idx')
+        values_all = self.get_data(tbl_name = tbl_name, select_key = 'id,idx')
+        values_to_update = values_all
+        if not update_all:
+            rows_to_update = [any(row[name] is None for name in ['id']) for row in values_all]
+            values_to_update =  values_all[rows_to_update]
+        uuidlist = [uuid.uuid4().hex for i in range(len(values_to_update))]
+        
+        for id_, index in zip(uuidlist, values_to_update['idx']):
+            self.update_row(tbl_name = tbl_name, update_value = id_, update_key = 'id', id_value = index, id_key='idx')
 
-
+    def close(self):
+        self.connector.close()
 # %%

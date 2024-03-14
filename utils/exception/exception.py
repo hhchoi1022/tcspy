@@ -66,3 +66,6 @@ class ActionFailedException(Exception):
 
 class SpecmodeRegisterException(Exception):
     pass
+
+class ObsModeRegisterException(Exception):
+    pass

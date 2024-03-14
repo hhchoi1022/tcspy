@@ -56,12 +56,3 @@ class Cool(Interface_Runnable, Interface_Abortable):
                 self.IDevice.camera.cooler_off()
         else:
             pass
-# %%
-if __name__ == '__main__':
-    tel1 = IntegratedDevice(unitnum = 21)
-    tel2 = IntegratedDevice(unitnum = 22)
-    #abort_action = Event()
-    c = Cool(tel1, abort_action)
-
-
-#%%

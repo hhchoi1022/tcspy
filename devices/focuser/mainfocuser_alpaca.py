@@ -200,12 +200,30 @@ class mainFocuser_Alpaca(mainConfig):
             current_position = self.device.Position
             self._log.info('Focuser position is set (Current : %s)'%(position))
         return True
+    
+    def fans_on(self):
+        print('Fans operation is not implemented in Alpaca Telescope')
+        return True
+    
+    def fans_off(self):
+        print('Fans operation is not implemented in Alpaca Telescope')
+        return True
+    
+    def autofocus_start(self, abort_action : Event):
+        print('Autofocus is not implemented in Alpaca Telescope')
+        return True
+    
+    def autofocus_start(self, abort_action : Event):
+        print('Autofocus is not implemented in Alpaca Telescope')
+        return True
         
     def abort(self):
         """
         Abort the movement of the Focuser device
         """
         self.device.Halt()   
+
+        
         
 # %% Test
 if __name__ == '__main__':

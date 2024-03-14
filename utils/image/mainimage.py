@@ -26,6 +26,18 @@ class mainImage(mainConfig):
                  target_info : dict = None,
                  weather_info : dict = None
                  ):
+        '''
+        frame_number = int(frame_number)
+        config_info = self.IDevice.config
+        image_info = imginfo
+        camera_info = status['camera']
+        telescope_info = status['telescope']
+        filterwheel_info = status['filterwheel']
+        focuser_info = status['focuser']
+        observer_info = status['observer']
+        target_info = target.status
+        weather_info = status['weather']
+        '''
         
         self._framenum = frame_number
         self._configinfo = config_info
@@ -228,16 +240,22 @@ class mainImage(mainConfig):
     def _add_targetinfo_to_hdr(self):
         info = dict()
         info['OBJECT'] = None
+        info['OBJTYPE'] = None
         info['OBJCTRA'] = None
-        info['OBJCTDEC'] = None
+        info['OBJCTDE'] = None
+        info['OBJCTRA1'] = None
+        info['OBJCTDE1'] = None
         info['OBJCTALT'] = None
         info['OBJCTAZ'] = None
         info['OBJCTHA'] = None
+        info['OBSMODE'] = None
         if self._targetinfo:
             info['OBJECT'] = self._format_header(self._targetinfo['name'], 'Name of the target')            
             info['OBJTYPE'] = self._format_header(self._targetinfo['objtype'], 'Type of the target')
             info['OBJCTRA'] = self._format_header(self._targetinfo['ra'], 'Right ascension of the target')
-            info['OBJCTDEC'] = self._format_header(self._targetinfo['dec'], 'Declination of the target')
+            info['OBJCTDE'] = self._format_header(self._targetinfo['dec'], 'Declination of the target')
+            info['OBJCTRA1'] = self._format_header(self._targetinfo['ra_hour_hms'], 'Right ascension of the target in hms format')
+            info['OBJCTDE1'] = self._format_header(self._targetinfo['dec_deg_dms'], 'Declination of the target in dms format')
             info['OBJCTALT'] = self._format_header(self._targetinfo['alt'], 'Altitude of the target')
             info['OBJCTAZ'] = self._format_header(self._targetinfo['az'], 'Azimuth of the target')
             info['OBJCTHA'] = self._format_header(self._targetinfo['hourangle'], 'Hourangle of the target')
@@ -259,6 +277,7 @@ class mainImage(mainConfig):
         hdu = fits.PrimaryHDU()
         hdu.data = self._imginfo['data']
         for key, value in all_info.items():
+            
             hdu.header[key] = (value['value'],str(value['note']))
         return hdu
     

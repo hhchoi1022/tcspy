@@ -1,6 +1,5 @@
 #%%
 from threading import Event
-
 from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *

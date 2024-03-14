@@ -69,11 +69,4 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
             self.IDevice.telescope.abort()
         else:
             pass   
-#%%
-if __name__ == '__main__':
-    device = IntegratedDevice(unitnum = 21)
-    abort_action = Event()
-    s =SlewRADec(device, abort_action= abort_action)
-    s.run(ra = 0, dec= 40)
-
 # %%

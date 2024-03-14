@@ -6,7 +6,7 @@ from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
-from tcspy.utils.target import mainTarget
+from tcspy.utils.target import SingleTarget
 from tcspy.action.level1 import SlewRADec
 from tcspy.action.level1 import SlewAltAz
 from tcspy.action.level1 import Exposure
@@ -82,6 +82,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         az = None
         target_name = None
         obsmode = 'Single'
+        objtype = None
         autofocus_before_start = True
         autofocus_when_filterchange= True
         """
@@ -110,21 +111,28 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Set target
-        target = mainTarget(unitnum = self.IDevice.unitnum, 
-                            observer = self.IDevice.observer, 
-                            target_ra = ra, 
-                            target_dec = dec, 
-                            target_alt = alt, 
-                            target_az = az, 
-                            target_name = target_name, 
-                            target_obsmode = obsmode,
-                            target_objtype= objtype)
+        target = SingleTarget(observer = self.IDevice.observer, 
+                              ra = ra, 
+                              dec = dec, 
+                              alt = alt, 
+                              az = az, 
+                              name = target_name, 
+                              objtype= objtype,
+                              
+                              exptime = exptime_str,
+                              count = count_str,
+                              filter_ = filter_str,
+                              binning = binning_str,
+                              obsmode = obsmode
+                              )
+        target_info = target.target_info
+        exposure_info = target.exposure_info
          
         # Slewing
         if target.status['coordtype'] == 'radec':
             try:
                 slew = SlewRADec(Integrated_device = self.IDevice, abort_action= self.abort_action)
-                result_slew = slew.run(ra = target.ra, dec = target.dec)
+                result_slew = slew.run(ra = float(target_info['ra']), dec = float(target_info['dec']))
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -138,7 +146,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         elif target.status['coordtype'] == 'altaz':
             try:
                 slew = SlewAltAz(Integrated_device = self.IDevice, abort_action= self.abort_action)
-                result_slew = slew.run(alt = target.alt, az = target.az)
+                result_slew = slew.run(alt = float(target_info['alt']), az = float(target_info['az']))
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -268,8 +276,11 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
     
 # %%
 if __name__ == '__main__':
-    IDevice = IntegratedDevice(2)
+    from tcspy.action.level1 import Connect
+    IDevice = IntegratedDevice(21)
     abort_action = Event()
+    C = Connect(IDevice, abort_action)
+    C.run()
     S = SingleObservation(IDevice, abort_action)
     S.run('5,5', '2,2', 'g,r', '1', ra = 166.5, dec = -58.0666 , autofocus_before_start = False, autofocus_when_filterchange= False)
 # %%

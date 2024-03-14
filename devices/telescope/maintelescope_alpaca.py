@@ -251,7 +251,7 @@ class mainTelescope_Alpaca(mainConfig):
             Whether to start tracking after slewing to the target. Default is True.
         """
         from tcspy.utils.target import SingleTarget
-        target = SingleTarget(unitnum = self.unitnum, observer = self.observer, target_ra = float(ra), target_dec = float(dec))
+        target = SingleTarget(observer = self.observer, ra = float(ra), dec = float(dec))
         altaz = target.altaz()
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
 
@@ -268,9 +268,9 @@ class mainTelescope_Alpaca(mainConfig):
                         self.unpark()
                     except ParkingFailedException:
                         raise SlewingFailedException('Telescope slewing is failed : Unpark failed')
-                #self.device.Tracking = False 
-                #while self.device.Tracking:
-                #    time.sleep(self._checktime)
+                self.device.Tracking = True 
+                while not self.device.Tracking:
+                    time.sleep(self._checktime)
                 self.device.SlewToCoordinatesAsync(target.ra_hour, target.dec_deg)
                 time.sleep(self._checktime)
                 while self.device.Slewing:
@@ -390,6 +390,10 @@ class mainTelescope_Alpaca(mainConfig):
         else:
             self._log.critical('Untracking failed')
             raise TrackingFailedException('Untracking failed')
+    
+    def find_home(self):
+        print('Find home is not implemented in Alpaca Telescope')
+        pass
     
     def abort(self):
         """

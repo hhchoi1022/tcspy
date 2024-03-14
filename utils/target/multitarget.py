@@ -348,12 +348,12 @@ class MultiTarget(mainConfig):
 if __name__ == '__main__':
     import time
     S = SQL_Connector()
-    target_tbl = S.get_data(tbl_name = 'RIS', select_key = '*')
+    target_tbl = S.get_data(tbl_name = 'Daily', select_key = '*')
     observer = mainObserver(unitnum = 21)
     idx = np.random.randint(0, len(target_tbl), size = 100)
     m = MultiTarget(observer = observer, targets_ra = target_tbl['RA'][idx], targets_dec = target_tbl['De'][idx], targets_name = target_tbl['objname'][idx])
     start = time.perf_counter()
-    rsb = m.rise_best_set_date()
+    rsb = m.risetime()
     print(time.perf_counter() - start)
     
 #%%

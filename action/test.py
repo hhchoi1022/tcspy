@@ -5,7 +5,7 @@ from tcspy.devices import IntegratedDevice
 abort_action = Event()
 
 #%%
-IDevice = IntegratedDevice(8)
+IDevice = IntegratedDevice(21)
 #%%
 ChangeFilter(IDevice, abort_action= abort_action).run('g')
 IDevice.filterwheel.get_status()
@@ -16,13 +16,18 @@ IDevice.focuser.get_status()
 Cool(IDevice, abort_action).run(10, 1)
 IDevice.camera.get_status()
 # %%
-Exposure(IDevice, abort_action).run(1, 10, imgtype = 'BIAS')
+E = Exposure(IDevice, abort_action)
+E.run(frame_number = 1, exptime = 1, filter_ = 'g', imgtype = 'BIAS')
+E.run(frame_number = 1, exptime = 1, filter_ = 'r', imgtype = 'DARK')
+E.run(frame_number = 1, exptime = 1, filter_ = 'i', imgtype ='Light', binning = 1, target_name = 'ABC', objtype = None, obsmode = 'Single')
 # %%
 FansOn(IDevice, abort_action).run()
 # %%
 FansOff(IDevice, abort_action).run()
 # %%
 Park(IDevice, abort_action).run()
+IDevice.telescope.get_status()
+
 # %%
 SlewAltAz(IDevice, abort_action).run(alt = 40, az = 180)
 IDevice.telescope.get_status()

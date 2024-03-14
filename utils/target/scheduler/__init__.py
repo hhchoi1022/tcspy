@@ -1,1 +1,1 @@
-from .update_daily_target import Update_daily_target
+from .dailytarget import Update_daily_target

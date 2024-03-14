@@ -1,7 +1,5 @@
 #%%
 # Other modules
-import os
-import json
 from astroplan import FixedTarget, is_event_observable
 from astroplan import AltitudeConstraint, AirmassConstraint, MoonSeparationConstraint, GalacticLatitudeConstraint, AtNightConstraint
 import astropy.units as u
@@ -13,8 +11,6 @@ import matplotlib.pyplot as plt
 # TCSpy modules
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
-from tcspy.utils.exception import *
-
 #%%
 class SingleTarget(mainConfig):
     """
@@ -54,50 +50,44 @@ class SingleTarget(mainConfig):
     """
     
     def __init__(self,
+                 unitnum : int,
                  observer : mainObserver,
-                 
-                 # Target information
-                 ra : float = None,
-                 dec : float = None,
-                 alt : float = None,
-                 az : float = None,
-                 name : str = '',
-                 objtype : str = None,
-                 
-                 # Observation information
-                 exptime : float or str = None,
-                 count : int or str = None,
-                 filter_ : str = None,
-                 binning : int or str = 1,
-                 obsmode : str = None):
+                 target_ra : float = None,
+                 target_dec : float = None,
+                 target_alt : float = None,
+                 target_az : float = None,
+                 target_name : str = '',
+                 target_obsmode : str = 'Single',
+                 target_objtype : str = None,
+                 **kwargs):
         
-        super().__init__()
+        super().__init__(unitnum = unitnum)
         self._observer = observer
         self._astroplan_observer = observer.status['observer']
         self._constraints = self._get_constraints(**self.config)
-
-        self.ra = ra
-        self.dec = dec
+        self.ra = target_ra
+        self.dec = target_dec
         self.ra_hour = None
         self.dec_deg = None
-        self.alt = alt
-        self.az = az
-        self.name = name
-        self.objtype = objtype
+        self.alt = target_alt
+        self.az = target_az
+        self.name = target_name
+        self.obsmode = target_obsmode
+        self.objtype = target_objtype
         self._target = None
         self._coordtype = None
         
-        if (not isinstance(alt, type(None))) & (not isinstance(az, type(None))):
+        if (not isinstance(target_alt, type(None))) & (not isinstance(target_az, type(None))):
             self._coordtype = 'altaz'
-            self.alt = alt
-            self.az = az
-            self.coordinate = self._get_coordinate_altaz(alt = alt, az = az)
-            self._target = self._get_target(self.coordinate, name)
+            self.alt = target_alt
+            self.az = target_az
+            self.coordinate = self._get_coordinate_altaz(alt = target_alt, az = target_az)
+            self._target = self._get_target(self.coordinate, target_name)
      
-        if (not isinstance(ra, type(None))) & (not isinstance(dec, type(None))):
+        if (not isinstance(target_ra, type(None))) & (not isinstance(target_dec, type(None))):
             self._coordtype = 'radec'
-            self.coordinate = self._get_coordinate_radec(ra = ra, dec = dec)
-            self._target = self._get_target(self.coordinate, name)
+            self.coordinate = self._get_coordinate_radec(ra = target_ra, dec = target_dec)
+            self._target = self._get_target(self.coordinate, target_name)
             altaz = self.altaz()
             self.ra = self.coordinate.ra.deg
             self.dec = self.coordinate.dec.deg
@@ -106,100 +96,17 @@ class SingleTarget(mainConfig):
             self.alt = altaz.alt.value
             self.az = altaz.az.value
             
-        elif (isinstance(alt, type(None))) & (isinstance(az, type(None))) & (isinstance(ra, type(None))) & (isinstance(dec, type(None))):
+        
+        elif (isinstance(target_alt, type(None))) & (isinstance(target_az, type(None))) & (isinstance(target_ra, type(None))) & (isinstance(target_dec, type(None))):
             pass
         
         else:
             pass
-            
-        self.exptime = exptime
-        self.count = count
-        self.filter_ = filter_
-        self.binning = binning
-        self.obsmode = obsmode
-        self.exist_exposureinfo = False
-        if (self.exptime is not None) & (self.count is not None) & (self.filter_ is not None) & (self.binning is not None) & (self.obsmode is not None):
-            self.exist_exposureinfo = True
-                    
-    def __repr__(self):
-        txt = f'SingleTarget(Name = {self.name}, TargetType = {self._coordtype}, ExposureInfo = {self.exist_exposureinfo})'
-        return txt
+            #raise ValueError('Coordinate of the target cannot be defined.')
+                        
+        self.status = self.get_status()
 
-    def _get_filters_from_specmodes(self,
-                                    specmode : str):
-        specmode_file = self.config['SPECMODE_FOLDER'] + f'{specmode}.specmode'
-        is_exist_specmodefile = os.path.isfile(specmode_file)
-        if is_exist_specmodefile: 
-            with open(specmode_file, 'r') as f:
-                specmode_dict = json.load(f)
-            return specmode_dict
-        else:
-            raise SpecmodeRegisterException(f'Specmode[{specmode}] is not registered in "{self.config["SPECMODE_FOLDER"]}"')
-       
-    def _format_expinfo(self,
-                        filter_str : str,
-                        exptime_str : str,
-                        count_str : str,
-                        binning_str : str = '1',
-                        ):
-        format_expinfo = dict()
-        format_expinfo['filter_str'] = filter_str
-        format_expinfo['exptime_str'] = exptime_str
-        format_expinfo['count_str'] = count_str
-        format_expinfo['binning_str'] = binning_str
-        filter_list = format_expinfo['filter_str'].split(',')
-        len_filt = len(filter_list)        
-        
-        # Exposure information
-        for kwarg, value in format_expinfo.items():
-            valuelist = value.split(',')
-            if len_filt != len(valuelist):
-                valuelist = [valuelist[0]] * len_filt
-            formatted_value = ','.join(valuelist)
-            format_expinfo[kwarg] = formatted_value
-
-        return format_expinfo
-
-    @property
-    def status(self):
-        return{**self.exposure_info, **self.target_info}
-    
-    @property
-    def exposure_info(self):
-        
-        exposureinfo = dict()
-        exposureinfo['exptime'] = self.exptime
-        exposureinfo['count'] = self.count
-        exposureinfo['filter'] = self.filter_
-        exposureinfo['binning'] = self.binning
-        exposureinfo['obsmode'] = self.obsmode
-        
-        # Check whether all exposure information is inputted
-        if self.exist_exposureinfo:
-            if self.obsmode.upper() == 'SPEC':
-                filter_info = self._get_filters_from_specmodes(specmode = exposureinfo['filter'])
-                filter_str = ','.join(list(filter_info.values())[0])
-                            
-            elif self.obsmode.upper() in ['DEEP','SEARCH','SINGLE']:
-                filter_str = exposureinfo['filter']
-            
-            else:
-                ObsModeRegisterException(f'Specmode[{self.obsmode}] is not registered in [Spec, Deep, Search, Single]')
-                
-            format_exposure = self._format_expinfo(filter_str = str(filter_str),
-                                                   exptime_str = str(self.exptime),
-                                                   count_str = str(self.count),
-                                                   binning_str = str(self.binning))
-            exposureinfo['exptime'] = format_exposure['exptime_str']
-            exposureinfo['count'] = format_exposure['count_str']
-            exposureinfo['filter'] = exposureinfo['filter']
-            exposureinfo['binning'] = format_exposure['binning_str']
-            exposureinfo['obsmode'] = self.obsmode
-            
-        return exposureinfo
-    
-    @property
-    def target_info(self):
+    def get_status(self):
         """
         Returns a dictionary with information about the current status of the target.
         
@@ -226,13 +133,12 @@ class SingleTarget(mainConfig):
         targetinfo['dec'] = None
         targetinfo['ra_hour'] = None
         targetinfo['dec_deg'] = None
-        targetinfo['ra_hour_hms'] = None
-        targetinfo['dec_deg_dms'] = None
         targetinfo['alt'] = None
         targetinfo['az'] = None
         targetinfo['coordtype'] = None
         targetinfo['hourangle'] = None
         targetinfo['is_observable'] = None
+        targetinfo['obsmode'] = self.obsmode
         targetinfo['objtype'] = self.objtype
         
         if self._coordtype == 'altaz':
@@ -246,15 +152,26 @@ class SingleTarget(mainConfig):
             targetinfo['dec'] = "{:.4f}".format(self.dec)
             targetinfo['ra_hour'] = "{:.4f}".format(self.ra_hour)
             targetinfo['dec_deg'] = "{:.4f}".format(self.dec_deg)
-            targetinfo['ra_hour_hms'] = self.coordinate.ra.to_string(unit="hourangle", sep=":", precision=2, pad=True)
-            targetinfo['dec_deg_dms'] = self.coordinate.dec.to_string(unit="deg", sep=":", precision=2, pad=True)
             targetinfo['alt'] = "{:.3f}".format(self.alt)
             targetinfo['az'] = "{:.3f}".format(self.az)
             targetinfo['coordtype'] = self._coordtype
             targetinfo['hourangle'] = "{:.3f}".format(self.hourangle(utctime = targetinfo['update_time']).value,3)
-            targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time']) 
+            targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time'])
         else:
-            pass
+            targetinfo = dict()
+            targetinfo['update_time'] = Time.now().isot
+            targetinfo['jd'] = "{:.6f}".format(Time.now().jd)
+            targetinfo['name'] = self.name
+            targetinfo['ra'] = None
+            targetinfo['dec'] = None
+            targetinfo['ra_hour'] = None
+            targetinfo['dec_deg'] = None
+            targetinfo['alt'] = None
+            targetinfo['az'] = None
+            targetinfo['coordtype'] = None
+            targetinfo['hourangle'] = None
+            targetinfo['is_observable'] = None
+            
         return targetinfo
     
     def is_observable(self,
@@ -516,7 +433,6 @@ class SingleTarget(mainConfig):
 if __name__ == '__main__':
     unitnum = 21
     observer = mainObserver(21)
-    ra = 150.444
-    dec = -20.5523
-    S = SingleTarget(observer = observer, ra = ra, dec = dec, exptime = 10, count = 5, filter_ = 'g', binning=  1, obsmode ='Single')
+    ra = np.array([30,50,60])
+    dec = np.array([-10,-20,-30])
 # %%

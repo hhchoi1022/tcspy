@@ -3,11 +3,11 @@ from threading import Event
 from tcspy.devices import IntegratedDevice
 from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *
-from tcspy.utils.target import mainTarget
+from tcspy.utils.target import SingleTarget
 from tcspy.utils.image import mainImage
 from tcspy.utils.logger import mainLogger
-from tcspy.action.level1.changefilter import ChangeFilter
 from tcspy.utils.exception import *
+from tcspy.action.level1.changefilter import ChangeFilter
 
 class Exposure(Interface_Runnable, Interface_Abortable):
     
@@ -26,20 +26,18 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             imgtype : str = 'Light',
             binning : int = 1,
             target_name : str = None,
-            target : mainTarget = None):
-        """_summary_
-
-        Args:
-            frame_number =1
-            exptime =5
-            filter_ ='g'
-            imgtype = 'Light'
-            binning =1
-            target_name =None
-            target = None
-
-        Raises:
-            ValueError: _description_
+            objtype = None,
+            obsmode = 'Single'):
+        
+        """
+        frame_number = 1
+        exptime = 1
+        filter_ : str = None
+        imgtype : str = 'BIAS'
+        binning : int = 1
+        target_name : str = None
+        objtype = None
+        obsmode = 'Single'
         """
         
         # Check condition of the instruments for this Action
@@ -56,7 +54,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         if trigger_abort_disconnected:
             raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
-
+        
         # Action
         if self.abort_action.is_set():
             self.abort()
@@ -64,8 +62,16 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Set target
-        if not target:
-            target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_name = target_name)
+        target = SingleTarget(observer = self.IDevice.observer,
+                              name = target_name,
+                              exptime = exptime,
+                              count = 1,
+                              filter_ = filter_,
+                              binning = binning,
+                              objtype = objtype,
+                              obsmode = obsmode)
+        exposure_info = target.exposure_info
+        target_info = target.target_info
         
         # Move filter
         result_changefilter = True
@@ -75,7 +81,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 raise ActionFailedException('Filter must be determined for LIGHT frame')
             changefilter = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action)    
             try:
-                result_changefilter = changefilter.run(str(filter_))
+                result_changefilter = changefilter.run(str(exposure_info['filter']))
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
@@ -106,25 +112,23 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         elif status_camera.lower() == 'idle':
             # Exposure camera
             if imgtype.upper() == 'BIAS':
-                exptime = camera.device.ExposureMin
+                exposure_info['exptime'] = camera.device.ExposureMin
                 self._log.warning('Input exposure time is set to the minimum value for BIAS image')
                 is_light = False
-            if imgtype.upper() == 'DARK':
-                exptime = exptime
+            elif imgtype.upper() == 'DARK':
                 is_light = False
-            if imgtype.upper() == 'FLAT':
-                exptime = exptime
+            elif imgtype.upper() == 'FLAT':
                 is_light = True
-            if imgtype.upper() in 'LIGHT':
-                exptime = exptime
+            else:
                 is_light = True
             self._log.info(f'[%s] Start exposure... (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
             try:
-                imginfo = camera.exposure(exptime = float(exptime),
-                                         imgtype = imgtype,
-                                         binning = int(binning),
-                                         is_light = is_light,
-                                         abort_action = self.abort_action)
+                imginfo = camera.exposure(exptime = float(exposure_info['exptime']),
+                                          imgtype = imgtype,
+                                          binning = int(exposure_info['binning']),
+                                          is_light = is_light,
+                                          abort_action = self.abort_action)
+                
             except ExposureFailedException:
                 self.abort()
                 self._log.critical(f'[{type(self).__name__}] is failed: camera exposure failure.')
@@ -156,6 +160,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                                 weather_info = status['weather'])
                 filepath = img.save()
                 self._log.info(f'Saved!: %s)'%(filepath))
+                
             except:
                 self._log.critical(f'[{type(self).__name__}] is failed: mainImage save failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: mainImage save failure.')
@@ -173,7 +178,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
 # %%
 
 if __name__ == '__main__':
-    device = IntegratedDevice(unitnum = 1)
+    device = IntegratedDevice(unitnum = 21)
     abort_action = Event()
     #device.filt.connect()
     #device.cam.connect()

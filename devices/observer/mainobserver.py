@@ -448,8 +448,6 @@ class mainObserver(mainConfig):
 # %%
 if __name__ == '__main__':
     from tcspy.configuration import mainConfig
-    obs = mainObserver(unitnum = 1)
-    from tcspy.utils.target import mainTarget
-    tar = mainTarget(unitnum = 4, observer = obs, target_ra = 10.0, target_dec = -25)
-    tar.staralt()
+    obs = mainObserver(unitnum = 1)    #tar = mainTarget(unitnum = 4, observer = obs, target_ra = 10.0, target_dec = -25)
+    #tar.staralt()
 # %%
