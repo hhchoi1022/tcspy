@@ -160,7 +160,6 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             raise ActionFailedException(f'Coordinate type of the target : {target.status["coordtype"]} is not defined')
 
         # Get exposure information
-        exposure_info = self._get_exposure_info(filter_str= filter_str, exptime_str= exptime_str, count_str= count_str, binning_str= binning_str)
         filter_info = exposure_info['filter']
         exptime_info = exposure_info['exptime']
         count_info = exposure_info['count']
@@ -246,8 +245,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                     filter_ = filter_,
                                                     imgtype = imgtype,
                                                     binning = int(binning),
-                                                    target_name = target_name,
-                                                    target = target)
+                                                    target_name = target_name)
                     result_all_exposure.append(result_exposure)
                 except ConnectionException:
                     self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')

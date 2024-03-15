@@ -69,7 +69,7 @@ class DailyTarget(mainConfig):
             constraint.moon_separation = self.config['TARGET_MOONSEP']
         constraint.astroplan = constraint_astroplan
         return constraint
-
+    
     def _get_moonsep(self,
                      multitarget : MultiTarget):
         '''
@@ -81,8 +81,26 @@ class DailyTarget(mainConfig):
         all_coords = multitarget.coordinate
         moon_coord = SkyCoord(ra =self.obsinfo.moon_radec.ra.value, dec = self.obsinfo.moon_radec.dec.value, unit = 'deg')
         moonsep = np.array(SkyCoord.separation(all_coords, moon_coord).value).round(2)
-        return moonsep
+        return moonsep        
+        
+    def _get_risetime(self,
+                      multitarget : MultiTarget,
+                      **kwargs):
+        if len(multitarget.coordinate) == 1:
+            risetime = [multitarget.risetime(**kwargs)]
+        else:
+            risetime = multitarget.risetime(**kwargs)
+        return Time(risetime)
     
+    def _get_settime(self,
+                     multitarget : MultiTarget,
+                     **kwargs):
+        if len(multitarget.coordinate) == 1:
+            settime = [multitarget.settime(**kwargs)]
+        else:
+            settime = multitarget.settime(**kwargs)
+        return Time(settime)
+        
     def _get_transit_besttime(self,
                               multitarget : MultiTarget):
         
@@ -123,10 +141,16 @@ class DailyTarget(mainConfig):
         obs_tbl['fraction_obs'] = ['%.2f'%fraction for fraction in observability_tbl['fraction of time observable']]
         key = observability_tbl['fraction of time observable'] > fraction_observable
         obs_tbl = obs_tbl[key]
+        
+    def connect(self):
+        self.sql.connect()
+    
+    def disconnect(self):
+        self.sql.disconnect()
     
     def initialize(self, 
-                   initialize_all : bool = False):
-        self.sql.connect(db_name = 'target')
+                   initialize_all : bool = False):        
+        self.connect()
         target_tbl_all = self.data
         
         # If there is targets with no "id", set ID for each target
@@ -136,15 +160,14 @@ class DailyTarget(mainConfig):
             target_tbl_all = self.data
         
         target_tbl_to_update = target_tbl_all
-        column_names_to_update = ['risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
+        column_names_to_update = ['exptime','count','filter','exptime_tot', 'ntelescope', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
         
         # If initialize_all == False, filter the target table that requires update 
         if not initialize_all:
-            rows_to_update = [any(row[name] is None for name in column_names_to_update) for row in target_tbl_all]
+            rows_to_update = [any(row[name] is None or row[name] == '' for name in column_names_to_update) for row in target_tbl_all]
             target_tbl_to_update =  target_tbl_all[rows_to_update]
         
         if len(target_tbl_to_update) == 0:
-            self.sql.close()
             return 
         
         multitarget = MultiTarget(observer = self.observer,
@@ -152,16 +175,36 @@ class DailyTarget(mainConfig):
                                   targets_dec = target_tbl_to_update['De'],
                                   targets_name = target_tbl_to_update['objname'])
         
-        risetime = multitarget.risetime(utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
-        settime = multitarget.settime(utctime = self.utctime)
+        # Target information 
+        risetime = self._get_risetime(multitarget = multitarget, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
+        settime = self._get_settime(multitarget = multitarget, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
         transittime, maxalt, besttime = self._get_transit_besttime(multitarget = multitarget)
         moonsep = self._get_moonsep(multitarget = multitarget)
-        values_updated = np.array([risetime.isot, transittime.isot, settime.isot, besttime.isot, maxalt, moonsep]).T
+        targetinfo_listdict = [{'risetime' : rt, 'transittime' : tt, 'settime' : st, 'besttime' : bt, 'maxalt' : mt, 'moonsep': ms} for rt, tt, st, bt, mt, ms in zip(risetime.isot, transittime.isot, settime.isot, besttime.isot, maxalt, moonsep)]
         
-        for i, value in enumerate(values_updated):
-            target_to_update = target_tbl_to_update[i]    
-            self.sql.update_row(tbl_name = self.tblname, update_value = value, update_key = column_names_to_update, id_value= target_to_update['id'], id_key = 'id')
-        self.sql.close()
+        from tcspy.utils.target import SingleTarget
+        
+        # Exposure information
+        exposureinfo_listdict = []
+        for target in target_tbl_to_update:
+            try:
+                S = SingleTarget(observer = self.observer, 
+                                exptime = target['exptime'], 
+                                count = target['count'], 
+                                filter_ = target['filter'], 
+                                binning = target['binning'], 
+                                obsmode = target['obsmode'],
+                                ntelescope = target['ntelescope'])
+                exposureinfo_listdict.append(S.exposure_info)
+            except:
+                exposureinfo_listdict.append(dict(status = 'error'))
+
+        values_update_dict = [{**targetinfo_dict, **exposureinfo_dict} for targetinfo_dict, exposureinfo_dict in zip(targetinfo_listdict, exposureinfo_listdict)]
+                
+        for i, value in enumerate(values_update_dict):
+            target_to_update = target_tbl_to_update[i]  
+            self.sql.update_row(tbl_name = self.tblname, update_value = list(value.values()), update_key = list(value.keys()), id_value= target_to_update['id'], id_key = 'id')
+        print(f'{len(target_tbl_to_update)} targets are updated')
     
     def _scorer(self,
                 utctime : Time,
@@ -178,24 +221,23 @@ class DailyTarget(mainConfig):
                                   targets_dec = target_tbl_for_scoring['De'],
                                   targets_name = target_tbl_for_scoring['objname'])
         
-        def calc_totexptime(target):
-        
         multitarget_altaz = multitarget.altaz(utctimes = utctime)
         multitarget_alt = multitarget_altaz.alt.value
         multitarget_priority = target_tbl_for_scoring['priority'].astype(float)
         
         score = np.ones(len(target_tbl_for_scoring))
         # Applying constraints
-        constraint_moonsep = target_tbl['moonsep'].astype(float) > self.constraints.moon_separation
+        constraint_moonsep = target_tbl_for_scoring['moonsep'].astype(float) > self.constraints.moon_separation
         score *= constraint_moonsep
         
-        constraint_altitude = multitarget_alt > self.constraints.minalt
-        score *= constraint_altitude
+        constraint_altitude_min = multitarget_alt > self.constraints.minalt
+        score *= constraint_altitude_min
         
-        constraint_altitude = multitarget_alt < self.constraints.maxalt
-        score *= constraint_altitude
+        constraint_altitude_max = multitarget_alt < self.constraints.maxalt
+        score *= constraint_altitude_max
         
-        constraint_set = utctime < self.obsnight.sunrise_astro
+        constraint_set = (utctime + target_tbl_for_scoring['exptime_tot'].astype(float) * u.s < Time(target_tbl_for_scoring['settime'])) & (utctime + target_tbl_for_scoring['exptime_tot'].astype(float) * u.s < self.obsnight.sunrise_astro)
+        score *= constraint_set
         
         constraint_night = self.observer.is_night(utctimes = utctime)
         score *= constraint_night
@@ -218,30 +260,42 @@ class DailyTarget(mainConfig):
         return target_tbl_for_scoring[idx_best], score_best
     
     def best_target(self,
-                    utctime : Time = Time.now()):
-        self.sql.connect(db_name = 'target')
+                    utctime : Time = Time.now(),
+                    duplicate : bool = False):
+        if not self.sql.connected:
+            self.connect()
         all_targets = self.data
-        column_names_for_scoring = ['risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
+        column_names_for_scoring = ['exptime','count','filter','exptime_tot', 'ntelescope', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
         
         # If one of the targets do not have the required information, calculate
-        rows_to_update = [any(row[name] is None for name in column_names_for_scoring) for row in all_targets]
+        rows_to_update = [any(row[name] is None or row[name] == '' for name in column_names_for_scoring) for row in all_targets]
         target_tbl_to_update =  all_targets[rows_to_update]
         if len(target_tbl_to_update) > 0:
             self.initialize(initialize_all= False)
-            print(f'{len(target_tbl_to_update)} targets are updated')
         
         import time
         start = time.perf_counter()
-        all_targets = self.data
-        #all_targets['']
-        target_best, target_score = self._scorer(utctime = utctime, target_tbl = all_targets, duplicate = False)        
-        print(time.perf_counter() - start)    
-        self.sql.close()
-        return target_best, target_score
+        target_all = self.data
+        idx_ToO = all_targets['objtype'] == 'ToO'
+        target_ToO = target_all[idx_ToO]
+        target_ordinary = target_all[~idx_ToO]
+        
+        exist_ToO = (len(target_ToO) > 0)
+        if exist_ToO:
+            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ToO, duplicate = duplicate)        
+            if target_score > 0:
+                return target_best, target_score
+        
+        target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary, duplicate = duplicate)        
+        if target_score > 0:
+            return target_best, target_score
+        else:
+            return None, target_score
     
     @property
     def data(self):
-        self.sql.connect(db_name = 'target')
+        if not self.sql.connected:
+            self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
 
     
@@ -251,7 +305,7 @@ D =  DailyTarget()
 # %%
 A = D.initialize(initialize_all= False)
 # %%
-D.best_target(Time.now() + 10 * u.hour)
+D.best_target(Time.now() - 3 * u.hour)
 #%%
 D._get_moonsep(target_tbl =  D.get_data()[150:220])
 # %%

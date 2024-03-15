@@ -40,12 +40,12 @@ TrackingOn(IDevice, abort_action).run()
 # %%
 from tcspy.action.level2 import * 
 # %%
-AutoFocus(IDevice1, abort_action).run(filter_ = 'g')
+AutoFocus(IDevice, abort_action).run(filter_ = 'g', use_offset = True)
 
 # %%
 IDevice.filterwheel.get_status()
 # %%
-SingleObservation(IDevice, abort_action).run(10, 1, 'i', ra =210, dec = -22, autofocus_before_start = True)
+SingleObservation(IDevice, abort_action).run(10, 1, 'i', ra =150, dec = -22, autofocus_before_start = True)
 # %%
 IDevice1 = IntegratedDevice(1)
 IDevice2 = IntegratedDevice(2)

@@ -69,7 +69,8 @@ class SingleTarget(mainConfig):
                  count : int or str = None,
                  filter_ : str = None,
                  binning : int or str = 1,
-                 obsmode : str = None):
+                 obsmode : str = None,
+                 ntelescope : int = 1):
         
         super().__init__()
         self._observer = observer
@@ -117,6 +118,7 @@ class SingleTarget(mainConfig):
         self.filter_ = filter_
         self.binning = binning
         self.obsmode = obsmode
+        self.ntelescope = ntelescope
         self.exist_exposureinfo = False
         if (self.exptime is not None) & (self.count is not None) & (self.filter_ is not None) & (self.binning is not None) & (self.obsmode is not None):
             self.exist_exposureinfo = True
@@ -151,13 +153,18 @@ class SingleTarget(mainConfig):
         len_filt = len(filter_list)        
         
         # Exposure information
+        format_explistinfo = dict()
         for kwarg, value in format_expinfo.items():
             valuelist = value.split(',')
             if len_filt != len(valuelist):
                 valuelist = [valuelist[0]] * len_filt
             formatted_value = ','.join(valuelist)
             format_expinfo[kwarg] = formatted_value
-
+            format_explistinfo[kwarg] = valuelist
+        totexp = 0
+        for exptime, count in zip(format_explistinfo['exptime_str'], format_explistinfo['count_str']):
+            totexp += float(exptime) * float(count)
+        format_expinfo['exptime_tot'] = totexp
         return format_expinfo
 
     @property
@@ -173,15 +180,19 @@ class SingleTarget(mainConfig):
         exposureinfo['filter'] = self.filter_
         exposureinfo['binning'] = self.binning
         exposureinfo['obsmode'] = self.obsmode
+        exposureinfo['ntelescope'] = self.ntelescope
         
         # Check whether all exposure information is inputted
         if self.exist_exposureinfo:
             if self.obsmode.upper() == 'SPEC':
                 filter_info = self._get_filters_from_specmodes(specmode = exposureinfo['filter'])
                 filter_str = ','.join(list(filter_info.values())[0])
+                exposureinfo['ntelescope'] = len(filter_info.keys())
                             
             elif self.obsmode.upper() in ['DEEP','SEARCH','SINGLE']:
                 filter_str = exposureinfo['filter']
+                if exposureinfo['ntelescope'] is None:
+                    exposureinfo['ntelescope'] = 1
             
             else:
                 ObsModeRegisterException(f'Specmode[{self.obsmode}] is not registered in [Spec, Deep, Search, Single]')
@@ -195,6 +206,7 @@ class SingleTarget(mainConfig):
             exposureinfo['filter'] = exposureinfo['filter']
             exposureinfo['binning'] = format_exposure['binning_str']
             exposureinfo['obsmode'] = self.obsmode
+            exposureinfo['exptime_tot'] = format_exposure['exptime_tot']
             
         return exposureinfo
     

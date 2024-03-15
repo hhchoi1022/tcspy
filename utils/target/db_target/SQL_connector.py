@@ -19,9 +19,40 @@ class SQL_Connector:
         self.pwd_user = pwd_user
         self.host_user = host_user
         self.db_name = db_name
-        self.connect(db_name = db_name)
+        self.connect()
     
-    # DB
+    def __repr__(self):
+        txt = f"MySQL(DB = {self.db_name}, Address = {self.id_user}@{self.host_user})"
+        return txt
+    
+    
+    def connect(self):
+        self.connector = mysql.connector.connect(
+        host= self.host_user,
+        user=self.id_user,
+        password=self.pwd_user,
+        database = self.db_name
+        )
+        self.cursor = self.connector.cursor()
+        self.exec = self.cursor.execute
+        self.connected = True
+        
+    def disconnect(self):
+        self.connector.close()
+        self.connected = False
+    
+    # DB operator
+    
+    @property
+    def databases(self):
+        self.exec(f"SHOW DATABASES")
+        return [db_name[0] for db_name in self.cursor]
+    
+    def change_db(self,
+                  db_name : str):
+        self.db_name = db_name
+        self.connect()
+        
     def create_db(self,
                   db_name : str):
         self.exec(f"CREATE DATABASE {db_name}")
@@ -32,33 +63,17 @@ class SQL_Connector:
         self.exec(f"REMOVE DATABASE {db_name}")
         #print(f"DATABASE {db_name} REMOVED")
     
-    def connect(self,
-                db_name : str):
-        self.db_name = db_name
-        self.connector = mysql.connector.connect(
-        host= self.host_user,
-        user=self.id_user,
-        password=self.pwd_user,
-        database = self.db_name
-        )
-        self.cursor = self.connector.cursor()
-        self.exec = self.cursor.execute
-    
-    def show_db(self):
-        self.exec(f"SHOW DATABASES")
-        for db_name in self.cursor:
-            pass
-            print(db_name[0])
+    # Table operator
 
+    @property
+    def tables(self):
+        self.exec(f"SHOW TABLES")
+        return [tbl_name[0] for tbl_name in self.cursor]
+        
     def remove_tbl(self,
                    tbl_name : str):
         self.exec(f"REMOVE TABLE {tbl_name} ")
         #print(f"TABLE {tbl_name} REMOVED")
-    
-    def show_tbl(self):
-        self.exec(f"SHOW TABLES")
-        for tbl_name in self.cursor:
-            print(tbl_name[0])
     
     def initialize_tbl(self,
                        tbl_name : str):
@@ -66,6 +81,7 @@ class SQL_Connector:
         #print(f"TABLE {tbl_name} INITIALIZED")
     
     # functions
+    
     def execute(self,
                 command : str):
         self.exec(command)
@@ -157,6 +173,10 @@ class SQL_Connector:
         for id_, index in zip(uuidlist, values_to_update['idx']):
             self.update_row(tbl_name = tbl_name, update_value = id_, update_key = 'id', id_value = index, id_key='idx')
 
-    def close(self):
-        self.connector.close()
+
+# %%
+S = SQL_Connector()
+
+#%%
+S.databases
 # %%
