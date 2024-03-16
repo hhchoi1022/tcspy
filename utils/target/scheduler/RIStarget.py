@@ -100,8 +100,8 @@ class RISTarget(mainConfig):
                                           targets_name = target_tbl_to_update['objname'])
         
         # Target information 
-        risedate, bestdate, setdate = celestialobject.rts_date(year = self.utctime.datetime.year, time_grid_resolution= 0.3)
-        targetinfo_listdict = [{'risetime' : rt, 'transittime' : tt, 'settime' : st, 'besttime' : bt, 'maxalt' : mt, 'moonsep': ms} for rt, tt, st, bt, mt, ms in zip(risetime.isot, transittime.isot, settime.isot, besttime.isot, maxalt, moonsep)]
+        rbs_date = celestialobject.rts_date(year = self.utctime.datetime.year, time_grid_resolution= 0.3)
+        targetinfo_listdict = [{'risedate' : rd, 'bestdate' : bd, 'setdate' : sd} for rd, bd, sd in rbs_date]
         
         from tcspy.utils.target import SingleTarget
         
@@ -126,17 +126,16 @@ class RISTarget(mainConfig):
             target_to_update = target_tbl_to_update[i]  
             self.sql.update_row(tbl_name = self.tblname, update_value = list(value.values()), update_key = list(value.keys()), id_value= target_to_update['id'], id_key = 'id')
         print(f'{len(target_tbl_to_update)} targets are updated')
-    
+
+
     def _scorer(self,
                 utctime : Time,
                 target_tbl : Table,
-                duplicate : bool = False):
+                mode : str = 'best' # best or urgent
+                ):
         
         target_tbl_for_scoring = target_tbl
-        if not duplicate:
-            unscheduled_idx = (target_tbl['status'] == 'unscheduled')
-            target_tbl_for_scoring = target_tbl[unscheduled_idx]
-        
+
         celestialobject = CelestialObject(observer = self.observer,
                                   targets_ra = target_tbl_for_scoring['RA'],
                                   targets_dec = target_tbl_for_scoring['De'],
@@ -182,30 +181,20 @@ class RISTarget(mainConfig):
     
     def best_target(self,
                     utctime : Time = Time.now(),
-                    duplicate : bool = False):
+                    size : int = 300
+                    ):
         if not self.sql.connected:
             self.connect()
         all_targets = self.data
-        column_names_for_scoring = ['exptime','count','filter','exptime_tot', 'ntelescope', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
+        column_names_for_scoring = ['risedate', 'bestdate', 'setdate']
         
         # If one of the targets do not have the required information, calculate
         rows_to_update = [any(row[name] is None or row[name] == '' for name in column_names_for_scoring) for row in all_targets]
         target_tbl_to_update =  all_targets[rows_to_update]
         if len(target_tbl_to_update) > 0:
-            self.initialize(initialize_all= False)
+            self.initialize(initialize_all= True)
         
-        import time
-        start = time.perf_counter()
         target_all = self.data
-        idx_ToO = all_targets['objtype'] == 'ToO'
-        target_ToO = target_all[idx_ToO]
-        target_ordinary = target_all[~idx_ToO]
-        
-        exist_ToO = (len(target_ToO) > 0)
-        if exist_ToO:
-            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ToO, duplicate = duplicate)        
-            if target_score > 0:
-                return target_best, target_score
         
         target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary, duplicate = duplicate)        
         if target_score > 0:
