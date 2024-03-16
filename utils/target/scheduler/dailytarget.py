@@ -292,6 +292,10 @@ class DailyTarget(mainConfig):
         else:
             return None, target_score
     
+    def insert(self,
+               target_tbl : Table):
+        self.sql.insert_rows(tbl_name = self.tblname, data = target_tbl)
+    
     @property
     def data(self):
         if not self.sql.connected:

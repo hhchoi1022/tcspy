@@ -19,39 +19,39 @@ from astroplan import AltitudeConstraint, MoonSeparationConstraint
 class RISTarget(mainConfig):
     
     def __init__(self,
-                 utctime : Time = Time.now(),
+                 utcdate : Time = Time.now(),
                  tbl_name : str = 'RIS'):
         super().__init__()       
         self.observer = mainObserver(unitnum= 1)
         self.tblname = tbl_name
         self.sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
         self.constraints = self._set_constrints()
-        self.utctime = utctime
-        self.obsinfo = self._set_obs_info(utctime = utctime)
-        self.obsnight = self._set_obsnight(utctime = utctime, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
+        self.utcdate = utcdate
+        self.obsinfo = self._set_obs_info(utctime = utcdate)
+        self.obsnight = self._set_obsnight(utctime = utcdate, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
 
     def _set_obs_info(self,
-                      utctime : Time = Time.now()):
+                      utcdate : Time = Time.now()):
         class info: pass
-        info.moon_phase = self.observer.moon_phase(utctime)
-        info.moon_radec = self.observer.moon_radec(utctime)
-        info.sun_radec = self.observer.sun_radec(utctime)
+        info.moon_phase = self.observer.moon_phase(utcdate)
+        info.moon_radec = self.observer.moon_radec(utcdate)
+        info.sun_radec = self.observer.sun_radec(utcdate)
         info.observer_info = self.observer.get_status()
         info.observer_astroplan = self.observer._observer
-        info.is_night = self.observer.is_night(utctime)
+        info.is_night = self.observer.is_night(utcdate)
         return info
     
     def _set_obsnight(self,
-                      utctime : Time = Time.now(),
+                      utcdate : Time = Time.now(),
                       horizon_prepare : float = -5,
                       horizon_astro : float = -18):
         class night: pass
-        night.sunrise_prepare = self.observer.tonight(time = utctime, horizon = horizon_prepare)[1]
+        night.sunrise_prepare = self.observer.tonight(time = utcdate, horizon = horizon_prepare)[1]
         night.sunset_prepare = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_prepare)
         night.sunrise_astro = self.observer.sun_risetime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
         night.sunset_astro = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
         night.midnight = Time((night.sunset_astro.jd + night.sunrise_astro.jd)/2, format = 'jd')
-        night.time_inputted = utctime
+        night.time_inputted = utcdate
         night.current = Time.now()
         return night
 
@@ -100,7 +100,7 @@ class RISTarget(mainConfig):
                                           targets_name = target_tbl_to_update['objname'])
         
         # Target information 
-        rbs_date = celestialobject.rts_date(year = self.utctime.datetime.year, time_grid_resolution= 0.3)
+        rbs_date = celestialobject.rts_date(year = self.utcdate.datetime.year, time_grid_resolution= 0.3)
         targetinfo_listdict = [{'risedate' : rd, 'bestdate' : bd, 'setdate' : sd} for rd, bd, sd in rbs_date]
         
         from tcspy.utils.target import SingleTarget
@@ -126,63 +126,12 @@ class RISTarget(mainConfig):
             target_to_update = target_tbl_to_update[i]  
             self.sql.update_row(tbl_name = self.tblname, update_value = list(value.values()), update_key = list(value.keys()), id_value= target_to_update['id'], id_key = 'id')
         print(f'{len(target_tbl_to_update)} targets are updated')
-
-
-    def _scorer(self,
-                utctime : Time,
-                target_tbl : Table,
-                mode : str = 'best' # best or urgent
-                ):
-        
-        target_tbl_for_scoring = target_tbl
-
-        celestialobject = CelestialObject(observer = self.observer,
-                                  targets_ra = target_tbl_for_scoring['RA'],
-                                  targets_dec = target_tbl_for_scoring['De'],
-                                  targets_name = target_tbl_for_scoring['objname'])
-        
-        celestialobject_altaz = celestialobject.altaz(utctimes = utctime)
-        celestialobject_alt = celestialobject_altaz.alt.value
-        celestialobject_priority = target_tbl_for_scoring['priority'].astype(float)
-        
-        score = np.ones(len(target_tbl_for_scoring))
-        # Applying constraints
-        constraint_moonsep = target_tbl_for_scoring['moonsep'].astype(float) > self.constraints.moon_separation
-        score *= constraint_moonsep
-        
-        constraint_altitude_min = celestialobject_alt > self.constraints.minalt
-        score *= constraint_altitude_min
-        
-        constraint_altitude_max = celestialobject_alt < self.constraints.maxalt
-        score *= constraint_altitude_max
-        
-        constraint_set = (utctime + target_tbl_for_scoring['exptime_tot'].astype(float) * u.s < Time(target_tbl_for_scoring['settime'])) & (utctime + target_tbl_for_scoring['exptime_tot'].astype(float) * u.s < self.obsnight.sunrise_astro)
-        score *= constraint_set
-        
-        constraint_night = self.observer.is_night(utctimes = utctime)
-        score *= constraint_night
-        
-        # Scoring
-        weight_sum = self.config['TARGET_WEIGHT_ALT'] + self.config['TARGET_WEIGHT_PRIORITY']
-        weight_alt = self.config['TARGET_WEIGHT_ALT'] / weight_sum
-        weight_priority = self.config['TARGET_WEIGHT_PRIORITY'] / weight_sum
-        
-        celestialobject_alt = np.array([0 if target_alt <= 0 else target_alt for target_alt in celestialobject_alt])
-        score_relative_alt = weight_alt * np.clip(0, 1, (celestialobject_alt) / (np.abs(target_tbl_for_scoring['maxalt'])))
-        
-        highest_priority = np.max(celestialobject_priority)
-        score_weight = weight_priority* (celestialobject_priority / highest_priority)
-
-        score_all = (score_relative_alt  + score_weight) 
-        score *= score_all
-        idx_best = np.argmax(score)
-        score_best = score[idx_best]
-        return target_tbl_for_scoring[idx_best], score_best
     
-    def best_target(self,
-                    utctime : Time = Time.now(),
-                    size : int = 300
-                    ):
+    def select_best_targets(self,
+                            utcdate : Time = Time.now(),
+                            size : int = 300,
+                            mode : str = 'best' # best or urgent
+                            ):
         if not self.sql.connected:
             self.connect()
         all_targets = self.data
@@ -194,13 +143,40 @@ class RISTarget(mainConfig):
         if len(target_tbl_to_update) > 0:
             self.initialize(initialize_all= True)
         
-        target_all = self.data
-        
-        target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary, duplicate = duplicate)        
-        if target_score > 0:
-            return target_best, target_score
+        target_tbl = self.data
+        target_always_idx = target_tbl['risedate'] == 'Always'
+        target_neverup_idx = target_tbl['risedate'] == 'Never'
+        target_normal_idx =  ~(target_always_idx | target_neverup_idx)
+        target_tbl_always = target_tbl[target_always_idx]
+        target_tbl_neverup = target_tbl[target_neverup_idx]
+        target_tbl_normal = target_tbl[target_normal_idx]
+
+        target_tbl_observable_idx =  (Time(target_tbl_normal['risedate']) < utcdate) & (utcdate < Time(target_tbl_normal['setdate']))
+        if mode.upper() == 'BEST':
+            target_tbl_for_scoring = target_tbl[target_tbl_observable_idx | target_tbl_always]
+            target_tbl_for_scoring['days_until_besttime'] = np.abs(Time(target_tbl_for_scoring['bestdate']) - utcdate)
+            target_tbl_for_scoring.sort('days_until_bestdate', inverse = True)
+            return target_tbl_for_scoring[:size]
+        elif mode.upper() == 'urgent':
+            target_tbl_for_scoring = target_tbl[target_tbl_observable_idx]
+            target_tbl_for_scoring['days_until_setdate'] = np.abs(Time(target_tbl_for_scoring['setdate']) - utcdate)
+            target_tbl_for_scoring.sort('days_until_bestdate', inverse = True)
+            return target_tbl_for_scoring[:size]
+    
+    def to_Daily(self,
+                 target_tbl : Table):
+        self.sql.insert_rows(tbl_name = 'Daily', data = target_tbl)
+    
+    def update_targets_count(self,
+                             targets_id : list or np.array,
+                             targets_count : int or list or np.array
+                             ):
+        if isinstance(targets_count, int):
+            targets_count = list(targets_count) * len(targets_id)
         else:
-            return None, target_score
+            if len(targets_id) != len(targets_count):
+                raise ValueError('size of targets_id is not consistent to sie of targets_count')
+        self.sql.update_row(tbl_name = self.tblname, update_value = targets_count, update_key = 'obs_count', id_value = targets_id, id_key = 'id')
     
     @property
     def data(self):
