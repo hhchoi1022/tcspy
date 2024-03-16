@@ -16,11 +16,11 @@ from astroplan import AltitudeConstraint, MoonSeparationConstraint
 
 # %%
 
-class DailyTarget(mainConfig):
+class RISTarget(mainConfig):
     
     def __init__(self,
                  utctime : Time = Time.now(),
-                 tbl_name : str = 'Daily'):
+                 tbl_name : str = 'RIS'):
         super().__init__()       
         self.observer = mainObserver(unitnum= 1)
         self.tblname = tbl_name
@@ -63,84 +63,8 @@ class DailyTarget(mainConfig):
             constraint_astroplan.append(constraint_altitude)
             constraint.minalt = self.config['TARGET_MINALT']
             constraint.maxalt = self.config['TARGET_MAXALT']
-        if self.config['TARGET_MOONSEP'] != None:
-            constraint_gallatitude = MoonSeparationConstraint(min = self.config['TARGET_MOONSEP'] * u.deg, max = None)
-            constraint_astroplan.append(constraint_gallatitude)
-            constraint.moon_separation = self.config['TARGET_MOONSEP']
         constraint.astroplan = constraint_astroplan
-        return constraint
-    
-    def _get_moonsep(self,
-                     celestialobject : CelestialObject):
-        '''
-        celestialobject = CelestialObject(observer = self.observer, 
-                            targets_ra = target_tbl['RA'], 
-                            targets_dec = target_tbl['De'],    
-                            targets_name = target_tbl['objname'])
-        '''
-        all_coords = celestialobject.coordinate
-        moon_coord = SkyCoord(ra =self.obsinfo.moon_radec.ra.value, dec = self.obsinfo.moon_radec.dec.value, unit = 'deg')
-        moonsep = np.array(SkyCoord.separation(all_coords, moon_coord).value).round(2)
-        return moonsep        
-        
-    def _get_risetime(self,
-                      celestialobject : CelestialObject,
-                      **kwargs):
-        if len(celestialobject.coordinate) == 1:
-            risetime = [celestialobject.risetime(**kwargs)]
-        else:
-            risetime = celestialobject.risetime(**kwargs)
-        return Time(risetime)
-    
-    def _get_settime(self,
-                     celestialobject : CelestialObject,
-                     **kwargs):
-        if len(celestialobject.coordinate) == 1:
-            settime = [celestialobject.settime(**kwargs)]
-        else:
-            settime = celestialobject.settime(**kwargs)
-        return Time(settime)
-        
-    def _get_transit_besttime(self,
-                              celestialobject : CelestialObject):
-        
-        all_time_hourangle = celestialobject.hourangle(self.obsnight.midnight)
-        all_hourangle_converted = [hourangle if (hourangle -12 < 0) else hourangle-24 for hourangle in all_time_hourangle.value]
-        all_target_altaz_at_sunset = celestialobject.altaz(utctimes=self.obsnight.sunset_astro)
-        all_target_altaz_at_sunrise = celestialobject.altaz(utctimes=self.obsnight.sunrise_astro)
-        all_transittime = self.obsnight.midnight - all_hourangle_converted * u.hour
-        all_besttime = []
-        all_maxalt = []
-        for i, target_info in enumerate(zip(all_transittime, celestialobject.coordinate)):
-            target_time_transit, target_coord = target_info
-            if (target_time_transit > self.obsnight.sunset_astro) & (target_time_transit < self.obsnight.sunrise_astro):
-                maxaltaz = self.obsinfo.observer_astroplan.altaz(target_time_transit, target = target_coord)
-                maxalt = np.round(maxaltaz.alt.value,2)
-                all_besttime.append(target_time_transit)
-            else:
-                sunset_alt = all_target_altaz_at_sunset[i].alt.value
-                sunrise_alt = all_target_altaz_at_sunrise[i].alt.value
-                maxalt = np.round(np.max([sunset_alt, sunrise_alt]),2)
-                if sunset_alt > sunrise_alt:
-                    all_besttime.append(self.obsnight.sunset_astro)
-                else:
-                    all_besttime.append(self.obsnight.sunrise_astro)
-            all_maxalt.append(maxalt)
-        return all_transittime, all_maxalt, Time(all_besttime)
-
-    def _get_target_observable(self,
-                               celestialobject : CelestialObject,
-                               fraction_observable : float = 0.1):
-        '''
-        celestialobject = CelestialObject(observer = self.observer, 
-                                  targets_ra = target_tbl['RA'], 
-                                  targets_dec = target_tbl['De'],    
-                                  targets_name = target_tbl['objname'])
-        '''
-        observability_tbl = observability_table(constraints = self.constraints, observer = celestialobject._astroplan_observer, targets = celestialobject.coordinate , time_range = [self.obsnight.sunset_astro, self.obsnight.sunrise_astro], time_grid_resolution = 20 * u.minute)
-        obs_tbl['fraction_obs'] = ['%.2f'%fraction for fraction in observability_tbl['fraction of time observable']]
-        key = observability_tbl['fraction of time observable'] > fraction_observable
-        obs_tbl = obs_tbl[key]
+        return constraint  
         
     def connect(self):
         self.sql.connect()
@@ -160,7 +84,7 @@ class DailyTarget(mainConfig):
             target_tbl_all = self.data
         
         target_tbl_to_update = target_tbl_all
-        column_names_to_update = ['exptime','count','filter','exptime_tot', 'ntelescope', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
+        column_names_to_update = ['risedate', 'bestdate', 'setdate']
         
         # If initialize_all == False, filter the target table that requires update 
         if not initialize_all:
@@ -171,15 +95,12 @@ class DailyTarget(mainConfig):
             return 
         
         celestialobject = CelestialObject(observer = self.observer,
-                                  targets_ra = target_tbl_to_update['RA'],
-                                  targets_dec = target_tbl_to_update['De'],
-                                  targets_name = target_tbl_to_update['objname'])
+                                          targets_ra = target_tbl_to_update['RA'],
+                                          targets_dec = target_tbl_to_update['De'],
+                                          targets_name = target_tbl_to_update['objname'])
         
         # Target information 
-        risetime = self._get_risetime(celestialobject = celestialobject, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
-        settime = self._get_settime(celestialobject = celestialobject, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
-        transittime, maxalt, besttime = self._get_transit_besttime(celestialobject = celestialobject)
-        moonsep = self._get_moonsep(celestialobject = celestialobject)
+        risedate, bestdate, setdate = celestialobject.rts_date(year = self.utctime.datetime.year, time_grid_resolution= 0.3)
         targetinfo_listdict = [{'risetime' : rt, 'transittime' : tt, 'settime' : st, 'besttime' : bt, 'maxalt' : mt, 'moonsep': ms} for rt, tt, st, bt, mt, ms in zip(risetime.isot, transittime.isot, settime.isot, besttime.isot, maxalt, moonsep)]
         
         from tcspy.utils.target import SingleTarget

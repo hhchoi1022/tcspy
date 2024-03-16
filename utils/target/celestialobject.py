@@ -14,7 +14,7 @@ from tcspy.configuration import mainConfig
 from tcspy.utils.target.db_target import SQL_Connector
 
 #%%
-class MultiTarget(mainConfig):
+class CelestialObject(mainConfig):
     """
     Parameters
     ----------
