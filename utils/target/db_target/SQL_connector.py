@@ -97,16 +97,11 @@ class SQL_Connector:
                     tbl_name : str,
                     data : Table
                     ):
-        colnames = data.colnames
-        colnames_string = ', '.join(colnames)
-        dtype_list = ['%s'] * len(colnames)
-        dtype_str =  ', '.join(dtype_list)
-        
-        sql_command = f"INSERT INTO {tbl_name} ({colnames_string}) VALUES ({dtype_str}) "
-
-        values = data.to_pandas().to_numpy()
-        list_values = [tuple(row) for row in values.tolist()]
-        self.cursor.executemany(sql_command, list_values)
+        common_colnames = [col for col in data.colnames if col in self.get_colnames(tbl_name)]
+        placeholders = ', '.join(['%s'] * len(common_colnames))
+        sql_command = f"INSERT INTO {tbl_name} ({', '.join(common_colnames)}) VALUES ({placeholders})"
+        values = [tuple(row[col] for col in common_colnames) for row in data]
+        self.cursor.executemany(sql_command, values)
         self.connector.commit()
     
     def update_row(self,

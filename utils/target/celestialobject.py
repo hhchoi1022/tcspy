@@ -73,7 +73,7 @@ class CelestialObject(mainConfig):
     
     def rts_date(self,
                  year : int = None,
-                 time_grid_resolution = 1 # day
+                 time_grid_resolution : float = 3 # timegrid for checking the observability 
                  ):
         
         # If start_date & end_date are not specified, defaults to current year
@@ -91,10 +91,10 @@ class CelestialObject(mainConfig):
             midnight = Time((self._observer.tonight(current_date)[0].jd + self._observer.tonight(current_date)[1].jd )/2, format = 'jd')
             alt_at_midnight = self.altaz(midnight).alt.value
             expanded_arrays_altitude_midnight.append(alt_at_midnight)
-            observablity = self.is_ever_observable(current_date)
+            observablity = self.is_ever_observable(current_date, time_grid_resolution= time_grid_resolution * u.hour)
             expanded_arrays_observability.append(observablity)
             expanded_arrays_date.append(current_date.datetime)
-            current_date += time_grid_resolution * u.day
+            current_date += 1 * u.day
 
         observablity_array = np.array(expanded_arrays_observability).T
         altitude_array = np.array(expanded_arrays_altitude_midnight).T
@@ -119,7 +119,7 @@ class CelestialObject(mainConfig):
                 setdate_index = np.where(np.diff(target_observability.astype(int)) == -1)[0] + 1
                 setdate = date_array[setdate_index[0]]
                 bestdate = date_array[np.argmax(target_altitude)]
-            all_observability.append((risedate, setdate, bestdate))
+            all_observability.append((risedate, bestdate, setdate))
         
         return np.array(all_observability)
         
