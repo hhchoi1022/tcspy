@@ -3,7 +3,7 @@
 #%%
 from tcspy.utils.target import CelestialObject
 from tcspy.configuration import mainConfig
-from tcspy.utils.target.db_target import SQL_Connector
+from tcspy.utils.databases import SQL_Connector
 from tcspy.devices.observer import mainObserver
 
 from astropy.table import Table 
@@ -17,7 +17,7 @@ import tqdm
 
 # %%
 
-class RISTarget(mainConfig):
+class DB_RIS(mainConfig):
     
     def __init__(self,
                  utcdate : Time = Time.now(),
@@ -65,9 +65,17 @@ class RISTarget(mainConfig):
             constraint_astroplan.append(constraint_altitude)
             constraint.minalt = self.config['TARGET_MINALT']
             constraint.maxalt = self.config['TARGET_MAXALT']
+        if self.config['TARGET_MOONSEP'] != None:
+            constraint_moonsep = MoonSeparationConstraint(min = self.config['TARGET_MOONSEP'] * u.deg, max = None)
+            constraint_astroplan.append(constraint_moonsep)
+            constraint.moonsep = self.config['TARGET_MOONSEP']
         constraint.astroplan = constraint_astroplan
         return constraint  
-        
+    
+    @property    
+    def connected(self):
+        return self.sql.connected
+    
     def connect(self):
         self.sql.connect()
     
@@ -149,6 +157,7 @@ class RISTarget(mainConfig):
             self.initialize(initialize_all= True)
         
         target_tbl = self.data
+        print('Checking Observability of the targets...')
         celestialobject = CelestialObject(observer = self.observer,
                                           targets_ra = target_tbl['RA'],
                                           targets_dec = target_tbl['De'],
@@ -164,12 +173,13 @@ class RISTarget(mainConfig):
         target_normal_idx =  ~(target_always_idx | target_neverup_idx)
         target_tbl_for_scoring = target_tbl[target_tbl_observable_idx & target_normal_idx]
 
+        print('Selecting targets with the best score...')
         if mode.upper() == 'BEST':
-            target_tbl_for_scoring['days_until_bestdate'] = np.abs(Time(target_tbl_for_scoring['bestdate']) - utcdate)
+            target_tbl_for_scoring['days_until_bestdate'] = np.abs((Time(target_tbl_for_scoring['bestdate']) - utcdate).jd)
             target_tbl_for_scoring.sort('days_until_bestdate', reverse = False)
             return target_tbl_for_scoring[:size]
         elif mode.upper() == 'URGENT':
-            target_tbl_for_scoring['days_until_setdate'] = np.abs(Time(target_tbl_for_scoring['setdate']) - utcdate)
+            target_tbl_for_scoring['days_until_setdate'] = np.abs((Time(target_tbl_for_scoring['setdate']) - utcdate).jd)
             target_tbl_for_scoring.sort('days_until_setdate', reverse = False)
             return target_tbl_for_scoring[:size]
     
@@ -193,16 +203,3 @@ class RISTarget(mainConfig):
         if not self.sql.connected:
             self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
-
-    
-
-# %%
-D =  RISTarget()
-# %%
-A = D.initialize(initialize_all= False)
-# %%
-best_targets  =D.select_best_targets(utcdate = Time.now(), size =10, mode = 'best', observable_minimum_hour= 3)
-
-# %%
-D.to_Daily(target_tbl = best_targets)
-# %%

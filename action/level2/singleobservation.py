@@ -24,23 +24,23 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.abort_action = abort_action
         self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
 
-    def _get_exposure_info(self,
-                           filter_str : str,
-                           exptime_str : str,
-                           count_str : str,
-                           binning_str : str):
-        exptime_list = exptime_str.split(',')
-        count_list = count_str.split(',')
-        binning_list = binning_str.split(',')
+    def _exposureinfo_to_list(self,
+                              filter_ : str,
+                              exptime : str,
+                              count : str,
+                              binning : str):
+        exptime_list = exptime.split(',')
+        count_list = count.split(',')
+        binning_list = binning.split(',')
         exposure_info = dict()
-        if filter_str == None:
-            exposure_info['filter'] = filter_str
+        if filter_ == None:
+            exposure_info['filter_'] = filter_
             exposure_info['exptime'] = exptime_list[0]
             exposure_info['count'] = count_list[0]
             exposure_info['binning'] = binning_list[0]
         else:
-            filter_list = filter_str.split(',')
-            exposure_info['filter'] = filter_list
+            filter_list = filter_.split(',')
+            exposure_info['filter_'] = filter_list
             exposure_info['exptime'] = exptime_list
             exposure_info['count'] = count_list
             exposure_info['binning'] = binning_list
@@ -52,10 +52,10 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         return exposure_info
     
     def run(self, 
-            exptime_str : str,
-            count_str : str,
-            filter_str : str = None, # When filter_str == None: Exposure with current filter
-            binning_str : str = '1',
+            exptime : str,
+            count : str,
+            filter_ : str = None, # When filter_ == None: Exposure with current filter_
+            binning : str = '1',
             imgtype : str = 'Light',
             ra : float = None, # When radec == None: do not move 
             dec : float = None,
@@ -63,29 +63,52 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             az : float = None,
             target_name : str = None,
             obsmode : str = 'Single',
+            specmode : str = None,
+            ntelescope : int = 1,
             objtype : str = None,
             autofocus_before_start : bool = False,
-            autofocus_when_filterchange : bool = False
+            autofocus_when_filterchange : bool = False,
+            **kwargs
             ):
         
         self._log.info(f'[{type(self).__name__}] is triggered.')
 
         """
-        exptime_str = '5,5'
-        count_str = '2,2'
-        filter_str = 'g,r'
-        binning_str = '1'
+        
+        # Target 1
+        exptime= '10,10'
+        count= '5,5'
+        filter_= 'm450,m475'
+        binning= '1,1'
         imgtype = 'Light'
-        ra = 166.50
-        dec = -58.0666
+        ra= '200.4440'
+        dec= '-20.5520'
         alt = None
         az = None
-        target_name = None
-        obsmode = 'Single'
+        target_name = "NGC3147"
+        obsmode= 'Spec'
+        specmode = 'specall'
+        objtype = 'ToO'
+        ntelescope = 1
+        autofocus_before_start= True
+        autofocus_when_filterchange= True
+        
+        exptime= '10,10'
+        count= '5,5'
+        filter_= 'g,r'
+        binning= '1,1'
+        imgtype = 'Light'
+        ra= '200.4440'
+        dec= '-20.5520'
+        target_name = "NGC3147"
+        obsmode= 'Single'
+        specmode = None
         objtype = None
-        autofocus_before_start = True
+        autofocus_before_start= True
         autofocus_when_filterchange= True
         """
+        
+        
         # Check condition of the instruments for this Action
         status_filterwheel = self.IDevice_status.filterwheel
         status_camera = self.IDevice_status.camera
@@ -119,11 +142,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               name = target_name, 
                               objtype= objtype,
                               
-                              exptime = exptime_str,
-                              count = count_str,
-                              filter_ = filter_str,
-                              binning = binning_str,
-                              obsmode = obsmode
+                              exptime = exptime,
+                              count = count,
+                              filter_ = filter_,
+                              binning = binning, 
+                              obsmode = obsmode,
+                              specmode = specmode,
+                              ntelescope = ntelescope
                               )
         target_info = target.target_info
         exposure_info = target.exposure_info
@@ -160,10 +185,11 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             raise ActionFailedException(f'Coordinate type of the target : {target.status["coordtype"]} is not defined')
 
         # Get exposure information
-        filter_info = exposure_info['filter']
-        exptime_info = exposure_info['exptime']
-        count_info = exposure_info['count']
-        binning_info = exposure_info['binning']
+        observation_params = self._exposureinfo_to_list(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
+        filter_info = observation_params['filter_']
+        exptime_info = observation_params['exptime']
+        count_info = observation_params['count']
+        binning_info = observation_params['binning']
 
         # Autofocus before beginning the first observation set 
         if autofocus_before_start:
@@ -245,7 +271,14 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                     filter_ = filter_,
                                                     imgtype = imgtype,
                                                     binning = int(binning),
-                                                    target_name = target_name)
+                                                    obsmode = obsmode,
+                                                    
+                                                    ra = ra,
+                                                    dec = dec,
+                                                    alt = alt,
+                                                    az = az,
+                                                    target_name = target_name,
+                                                    objtype = objtype)
                     result_all_exposure.append(result_exposure)
                 except ConnectionException:
                     self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
@@ -280,5 +313,14 @@ if __name__ == '__main__':
     C = Connect(IDevice, abort_action)
     C.run()
     S = SingleObservation(IDevice, abort_action)
-    S.run('5,5', '2,2', 'g,r', '1', ra = 166.5, dec = -58.0666 , autofocus_before_start = False, autofocus_when_filterchange= False)
+    S.run(exptime = '5,5', 
+          count = '2,2', 
+          filter_ = 'specall', 
+          binning = '1', 
+          imgtype = 'Light',
+          ra = 256.5, 
+          dec = -58.0666 , 
+          obsmode = 'Spec',
+          autofocus_before_start = False, 
+          autofocus_when_filterchange= False)
 # %%

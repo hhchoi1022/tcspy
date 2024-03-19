@@ -445,9 +445,3 @@ class mainObserver(mainConfig):
         if not isinstance(utctimes, Time):
             utctimes = Time(utctimes)
         return self._observer.moon_illumination(utctimes)
-# %%
-if __name__ == '__main__':
-    from tcspy.configuration import mainConfig
-    obs = mainObserver(unitnum = 1)    #tar = mainTarget(unitnum = 4, observer = obs, target_ra = 10.0, target_dec = -25)
-    #tar.staralt()
-# %%

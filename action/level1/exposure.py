@@ -20,14 +20,23 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
 
     def run(self,
+            # Exposure information
             frame_number : int,
             exptime : float,
             filter_ : str = None,
             imgtype : str = 'Light',
             binning : int = 1,
-            target_name : str = None,
-            objtype = None,
-            obsmode = 'Single'):
+            obsmode = 'Single',
+            gain = 0,
+            
+            # Target information            
+            ra : float = None,
+            dec : float = None,
+            alt : float = None,
+            az : float = None,
+            target_name : str = '',
+            objtype : str = None,
+            ):
         
         """
         frame_number = 1
@@ -62,16 +71,21 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Set target
-        target = SingleTarget(observer = self.IDevice.observer,
-                              name = target_name,
+        target = SingleTarget(observer = self.IDevice.observer, 
+                              ra = ra, 
+                              dec = dec, 
+                              alt = alt, 
+                              az = az, 
+                              name = target_name, 
+                              objtype= objtype,
+                              
                               exptime = exptime,
                               count = 1,
                               filter_ = filter_,
-                              binning = binning,
-                              objtype = objtype,
-                              obsmode = obsmode)
+                              binning = binning, 
+                              obsmode = obsmode,
+                              )
         exposure_info = target.exposure_info
-        target_info = target.target_info
         
         # Move filter
         result_changefilter = True
@@ -81,7 +95,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 raise ActionFailedException('Filter must be determined for LIGHT frame')
             changefilter = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action)    
             try:
-                result_changefilter = changefilter.run(str(exposure_info['filter']))
+                result_changefilter = changefilter.run(str(filter_))
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
@@ -112,7 +126,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         elif status_camera.lower() == 'idle':
             # Exposure camera
             if imgtype.upper() == 'BIAS':
-                exposure_info['exptime'] = camera.device.ExposureMin
+                exptime = camera.device.ExposureMin
                 self._log.warning('Input exposure time is set to the minimum value for BIAS image')
                 is_light = False
             elif imgtype.upper() == 'DARK':
@@ -123,10 +137,11 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 is_light = True
             self._log.info(f'[%s] Start exposure... (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
             try:
-                imginfo = camera.exposure(exptime = float(exposure_info['exptime']),
+                imginfo = camera.exposure(exptime = float(exptime),
                                           imgtype = imgtype,
-                                          binning = int(exposure_info['binning']),
+                                          binning = int(binning),
                                           is_light = is_light,
+                                          gain = gain,
                                           abort_action = self.abort_action)
                 
             except ExposureFailedException:
@@ -183,5 +198,5 @@ if __name__ == '__main__':
     #device.filt.connect()
     #device.cam.connect()
     e =Exposure(device, abort_action)
-    e.run(1, exptime = 1, filter_ = 'g')
+    e.run(1, exptime = 1, filter_ = 'g', gain = 2750)
 # %%

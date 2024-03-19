@@ -325,7 +325,7 @@ class mainTelescope_pwi4(mainConfig):
         5. tracking : bool, optional
             Whether to turn tracking on after slewing
         """
-        from utils.target.singletarget import SingleTarget
+        from tcspy.utils.target.singletarget import SingleTarget
 
         target = SingleTarget(observer = self.observer, ra = float(ra), dec = float(dec))
         altaz = target.altaz()

@@ -8,7 +8,7 @@ from tcspy.devices import DeviceStatus
 from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
-from tcspy.utils.target import mainTarget
+from tcspy.utils.target import SingleTarget
 from tcspy.action import MultiAction
 
 from tcspy.action.level2 import SingleObservation
@@ -18,12 +18,22 @@ from tcspy.utils.exception import *
 class DeepObservation(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
                  array_IntegratedDevice : List[IntegratedDevice],
-                 abort_action : Event):
+                 abort_action : Event,
+                 specmode_folder : str = '../../configuration/specmode/u10/'):
+        self.observer = array_IntegratedDevice[0].observer
         self.IDevices_list = array_IntegratedDevice
         self.IDevices_dict = self._get_IDevices_dict()
         self.IDevices_status_dict = self._get_IDevice_status_dict()
         self.abort_action = abort_action
-        self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        self._specmode_folder = specmode_folder
+        self._log = self._set_all_log()
+    
+    def _set_all_log(self):
+        all_log_dict = dict()
+        for IDevice_name, IDevice in self.IDevices_dict.items():
+            log = mainLogger(unitnum = IDevice.unitnum, logger_name = __name__+str(IDevice.unitnum)).log()
+            all_log_dict[IDevice_name] = log
+        return all_log_dict
     
     def _get_IDevices_dict(self):
         IDevices_dict = dict()
@@ -36,40 +46,41 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         IDevices_status_dict = dict()
         for IDevice in self.IDevices_list:
             name_IDevice = IDevice.name
-            IDevices_status_dict[name_IDevice] = DeviceStatus(IDevice)
+            IDevices_status_dict[name_IDevice] = DeviceStatus(IDevice).dict
         return IDevices_status_dict
-
-    def _format_kwargs(self,
-                       filter_str : str,
-                       exptime_str : str,
-                       count_str : str,
-                       binning_str : str = '1',
+    
+    def _get_filters_from_specmodes(self,
+                                    specmode : str):
+        specmode_file = self._specmode_folder + f'{specmode}.specmode'
+        is_exist_specmodefile = os.path.isfile(specmode_file)
+        if is_exist_specmodefile:
+            with open(specmode_file, 'r') as f:
+                specmode_dict = json.load(f)
+            return specmode_dict
+        else:
+            self._log.critical(f'Specmode[{specmode}] is not registered in "{self._specmode_folder}"')
+            raise SpecmodeRegisterException(f'Specmode[{specmode}] is not registered in "{self._specmode_folder}"')
+    
+    def _format_params(self,
+                       imgtype : str = 'Light',
+                       autofocus_before_start = True,
+                       autofocus_when_filterchange = True,
                        **kwargs):
         format_kwargs = dict()
-        format_kwargs['filter_str'] = filter_str
-        format_kwargs['exptime_str'] = exptime_str
-        format_kwargs['count_str'] = count_str
-        format_kwargs['binning_str'] = binning_str
-        filter_list = format_kwargs['filter_str'].split(',')
-        len_filt = len(filter_list)        
-        
-        # Exposure information
-        for kwarg, value in format_kwargs.items():
-            valuelist = value.split(',')
-            if len_filt != len(valuelist):
-                valuelist = [valuelist[0]] * len_filt
-            formatted_value = ','.join(valuelist)
-            format_kwargs[kwarg] = formatted_value
+        format_kwargs['imgtype'] = imgtype
+        format_kwargs['autofocus_before_start'] = autofocus_before_start
+        format_kwargs['autofocus_when_filterchange'] = autofocus_when_filterchange
+
         # Other information
         for key, value in kwargs.items():
             format_kwargs[key] = value
         return format_kwargs
     
     def run(self, 
-            exptime_str : str,
-            count_str : str,
-            filter_str : str,
-            binning_str : str = '1',
+            exptime : str,
+            count : str,
+            filter_ : str,
+            binning : str = '1',
             imgtype : str = 'Light',
             ra : float = None,
             dec : float = None,
@@ -78,14 +89,30 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             target_name : str = None,
             objtype : str = None,
             autofocus_before_start : bool = True,
-            autofocus_when_filterchange : bool = True
+            autofocus_when_filterchange : bool = True,
             ):
         
-        self._log.info(f'[{type(self).__name__}] is triggered.')
+        """ Test
+        exptime= '10,10'
+        count= '5,5'
+        filter_ = 'g,r'
+        binning= '1,1'
+        imgtype = 'Light'
+        ra= '200.4440'
+        dec= '-20.5520'
+        alt = None
+        az = None
+        target_name = "NGC3147"
+        objtype = 'ToO'
+        autofocus_before_start= True
+        autofocus_when_filterchange= True
+        
+        """
         
         # Check condition of the instruments for this Action
-        status_all_telescopes = self.IDevices_status_dict()
+        status_all_telescopes = self.IDevices_status_dict
         for IDevice_name, IDevice_status in status_all_telescopes.items():
+            self._log[IDevice_name].info(f'[{type(self).__name__}] is triggered.')
             status_filterwheel = IDevice_status['filterwheel']
             status_camera = IDevice_status['camera']
             status_telescope = IDevice_status['telescope']
@@ -105,42 +132,45 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
+        ntelescope = len(self.IDevices_list)
         # Get target instance
-        target = mainTarget(unitnum = self.IDevice.unitnum, 
-                            observer = self.IDevice.observer, 
-                            target_ra = ra, 
-                            target_dec = dec, 
-                            target_alt = alt, 
-                            target_az = az, 
-                            target_name = target_name, 
-                            target_obsmode = 'Deep',
-                            target_objtype = objtype)                 
+        singletarget = SingleTarget(observer = self.observer,
+                                    ra = ra, 
+                                    dec = dec, 
+                                    alt = alt, 
+                                    az = az,
+                                    name = target_name,
+                                    objtype = objtype,
+                                    
+                                    exptime = exptime,
+                                    count = count,
+                                    filter_ = filter_,
+                                    binning = binning,
+                                    obsmode = 'Deep',
+                                    ntelescope= ntelescope)                
+        
+        # Get filter information
+        exposure_params = singletarget.exposure_info
+        target_params = singletarget.target_info
         
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
         for IDevice_name, IDevice in self.IDevices_dict.items():
-            params_obs = self._format_kwargs(filter_str = filter_str, 
-                                             exptime_str = exptime_str, 
-                                             count_str = count_str, 
-                                             binning_str = binning_str, 
-                                             imgtype = imgtype, 
-                                             ra = target.ra, 
-                                             dec = target.dec, 
-                                             alt = target.alt, 
-                                             az = target.az, 
-                                             target_name = target.name, 
-                                             obsmode = target.obsmode, 
-                                             objtype = target.objtype,
-                                             autofocus_before_start = autofocus_before_start, 
-                                             autofocus_when_filterchange = autofocus_when_filterchange)
+            params_obs = self._format_params(imgtype= imgtype, 
+                                             autofocus_before_start= autofocus_before_start, 
+                                             autofocus_when_filterchange= autofocus_when_filterchange, 
+                                             **exposure_params,
+                                             **target_params)
+            params_obs.update(filter_ = filter_)
             all_params_obs[IDevice_name] = params_obs
         
         # Run Multiple actions
-        multiaction = MultiAction(array_telescope = self.IDevices_dict.values, array_kwargs = all_params_obs.values, function = SingleObservation)
+        multiaction = MultiAction(array_telescope = self.IDevices_dict.values(), array_kwargs = all_params_obs.values(), function = SingleObservation)
         multiaction.run()
         
-        self._log.info(f'[{type(self).__name__}] is finished')
-            
+        for IDevice_name, IDevice_status in status_all_telescopes.items():
+            self._log[IDevice_name].info(f'[{type(self).__name__}] is finished')
+
     def abort(self):
         status_filterwheel = self.IDevice_status.filterwheel
         status_camera = self.IDevice_status.camera
@@ -152,4 +182,9 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         if status_telescope.lower() == 'busy':
             self.IDevice.telescope.abort()
     
+# %%
+IDevice_1 = IntegratedDevice(21)
+#%%
+abort_action = Event()
+S  = DeepObservation([IDevice_1], abort_action)
 # %%

@@ -306,7 +306,7 @@ class mainFilterwheel(mainConfig):
                 offset = 0 
             return offset
         except:
-            raise FilterRegisterException(f'Filter: {current_filt}, {changed_filt} is not registered')
+            raise FilterRegisterException(f'Filter: one of {current_filt}, {changed_filt} is not registered')
 
         
         

@@ -64,11 +64,12 @@ class SingleTarget(mainConfig):
                  name : str = '',
                  objtype : str = None,
                  
-                 # Observation information
+                 # Exposure information
                  exptime : float or str = None,
                  count : int or str = None,
                  filter_ : str = None,
                  binning : int or str = 1,
+                 specmode : str = None,
                  obsmode : str = None,
                  ntelescope : int = 1):
         
@@ -79,14 +80,14 @@ class SingleTarget(mainConfig):
 
         self.ra = ra
         self.dec = dec
-        self.ra_hour = None
-        self.dec_deg = None
         self.alt = alt
         self.az = az
         self.name = name
         self.objtype = objtype
         self._target = None
         self._coordtype = None
+        self.ra_hour = None
+        self.dec_deg = None
         
         if (not isinstance(alt, type(None))) & (not isinstance(az, type(None))):
             self._coordtype = 'altaz'
@@ -117,6 +118,7 @@ class SingleTarget(mainConfig):
         self.count = count
         self.filter_ = filter_
         self.binning = binning
+        self.specmode = specmode
         self.obsmode = obsmode
         self.ntelescope = ntelescope
         self.exist_exposureinfo = False
@@ -127,16 +129,19 @@ class SingleTarget(mainConfig):
         txt = f'SingleTarget(Name = {self.name}, TargetType = {self._coordtype}, ExposureInfo = {self.exist_exposureinfo})'
         return txt
 
-    def _get_filters_from_specmodes(self,
-                                    specmode : str):
-        specmode_file = self.config['SPECMODE_FOLDER'] + f'{specmode}.specmode'
+    def get_filters_from_specmode(self):
+        specmode_file = self.config['SPECMODE_FOLDER'] + f'{self.specmode}.specmode'
         is_exist_specmodefile = os.path.isfile(specmode_file)
         if is_exist_specmodefile: 
             with open(specmode_file, 'r') as f:
                 specmode_dict = json.load(f)
-            return specmode_dict
+            all_filters_dict = dict()
+            for tel_name, filters in specmode_dict.items():
+                filters_str = ','.join(filters)
+                all_filters_dict[tel_name] = filters_str
+            return all_filters_dict
         else:
-            raise SpecmodeRegisterException(f'Specmode[{specmode}] is not registered in "{self.config["SPECMODE_FOLDER"]}"')
+            raise SpecmodeRegisterException(f'Specmode : {self.specmode} is not registered in {self.config["SPECMODE_FOLDER"]}')
        
     def _format_expinfo(self,
                         filter_str : str,
@@ -145,11 +150,11 @@ class SingleTarget(mainConfig):
                         binning_str : str = '1',
                         ):
         format_expinfo = dict()
-        format_expinfo['filter_str'] = filter_str
-        format_expinfo['exptime_str'] = exptime_str
-        format_expinfo['count_str'] = count_str
-        format_expinfo['binning_str'] = binning_str
-        filter_list = format_expinfo['filter_str'].split(',')
+        format_expinfo['filter_'] = filter_str
+        format_expinfo['exptime'] = exptime_str
+        format_expinfo['count'] = count_str
+        format_expinfo['binning'] = binning_str
+        filter_list = format_expinfo['filter_'].split(',')
         len_filt = len(filter_list)        
         
         # Exposure information
@@ -162,7 +167,7 @@ class SingleTarget(mainConfig):
             format_expinfo[kwarg] = formatted_value
             format_explistinfo[kwarg] = valuelist
         totexp = 0
-        for exptime, count in zip(format_explistinfo['exptime_str'], format_explistinfo['count_str']):
+        for exptime, count in zip(format_explistinfo['exptime'], format_explistinfo['count']):
             totexp += float(exptime) * float(count)
         format_expinfo['exptime_tot'] = totexp
         return format_expinfo
@@ -177,37 +182,46 @@ class SingleTarget(mainConfig):
         exposureinfo = dict()
         exposureinfo['exptime'] = self.exptime
         exposureinfo['count'] = self.count
-        exposureinfo['filter'] = self.filter_
+        exposureinfo['filter_'] = self.filter_
         exposureinfo['binning'] = self.binning
         exposureinfo['obsmode'] = self.obsmode
+        exposureinfo['specmode'] = self.specmode
+        exposureinfo['specmode_filter'] = None
         exposureinfo['ntelescope'] = self.ntelescope
         
         # Check whether all exposure information is inputted
         if self.exist_exposureinfo:
-            if self.obsmode.upper() == 'SPEC':
-                filter_info = self._get_filters_from_specmodes(specmode = exposureinfo['filter'])
-                filter_str = ','.join(list(filter_info.values())[0])
-                exposureinfo['ntelescope'] = len(filter_info.keys())
-                            
-            elif self.obsmode.upper() in ['DEEP','SEARCH','SINGLE']:
-                filter_str = exposureinfo['filter']
-                if exposureinfo['ntelescope'] is None:
-                    exposureinfo['ntelescope'] = 1
-            
-            else:
-                ObsModeRegisterException(f'Specmode[{self.obsmode}] is not registered in [Spec, Deep, Search, Single]')
-                
+            filter_str = exposureinfo['filter_']
             format_exposure = self._format_expinfo(filter_str = str(filter_str),
                                                    exptime_str = str(self.exptime),
                                                    count_str = str(self.count),
                                                    binning_str = str(self.binning))
-            exposureinfo['exptime'] = format_exposure['exptime_str']
-            exposureinfo['count'] = format_exposure['count_str']
-            exposureinfo['filter'] = exposureinfo['filter']
-            exposureinfo['binning'] = format_exposure['binning_str']
+
+            exposureinfo['exptime'] = format_exposure['exptime']
+            exposureinfo['count'] = format_exposure['count']
+            exposureinfo['filter_'] = format_exposure['filter_']
+            exposureinfo['binning'] = format_exposure['binning']
             exposureinfo['obsmode'] = self.obsmode
+            exposureinfo['specmode'] = self.specmode
             exposureinfo['exptime_tot'] = format_exposure['exptime_tot']
-            
+        
+        elif self.specmode:
+            filter_info = self.get_filters_from_specmode()
+            filter_str = list(filter_info.values())[0]
+            format_exposure = self._format_expinfo(filter_str = str(filter_str),
+                                                   exptime_str = str(self.exptime),
+                                                   count_str = str(self.count),
+                                                   binning_str = str(self.binning))
+            exposureinfo['exptime'] = format_exposure['exptime']
+            exposureinfo['count'] = format_exposure['count']
+            exposureinfo['filter_'] = exposureinfo['filter_']
+            exposureinfo['binning'] = format_exposure['binning']
+            exposureinfo['obsmode'] = self.obsmode
+            exposureinfo['specmode'] = self.specmode
+            exposureinfo['exptime_tot'] = format_exposure['exptime_tot']
+            exposureinfo['specmode_filter'] = filter_info
+            exposureinfo['ntelescope'] = len(filter_info.keys())    
+        
         return exposureinfo
     
     @property
@@ -530,5 +544,41 @@ if __name__ == '__main__':
     observer = mainObserver(21)
     ra = 150.444
     dec = -20.5523
-    S = SingleTarget(observer = observer, ra = ra, dec = dec, exptime = 10, count = 5, filter_ = 'g', binning=  1, obsmode ='Single')
+    S = SingleTarget(observer = observer, 
+                     ra = ra, 
+                     dec = dec, 
+                     exptime = 10,
+                     filter_ = 'g',
+                     count = 5, 
+                     binning=  1, 
+                     obsmode ='Spec',
+                     specmode = 'specall')
+    S = SingleTarget(observer = observer, 
+                     ra = ra, 
+                     dec = dec, 
+                     exptime = 10,
+                     filter_ = None,
+                     count = 5, 
+                     binning=  1, 
+                     obsmode ='Spec',
+                     specmode = 'specall')
+    S = SingleTarget(observer = observer, 
+                     ra = ra, 
+                     dec = dec, 
+                     exptime = 10,
+                     filter_ = None,
+                     count = 5, 
+                     binning=  1, 
+                     obsmode ='Spec',
+                     specmode = 'specall')
+    S = SingleTarget(observer = observer, 
+                     ra = ra, 
+                     dec = dec, 
+                     exptime = 10,
+                     filter_ = None,
+                     count = 5, 
+                     binning=  1, 
+                     obsmode ='Spec',
+                     specmode = None)
+
 # %%

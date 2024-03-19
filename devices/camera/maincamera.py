@@ -9,6 +9,7 @@ from threading import Event
 
 from alpaca.camera import Camera
 from alpaca.camera import ImageArrayElementTypes
+from alpaca.exceptions import *
 from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.utils.exception import *
@@ -457,12 +458,24 @@ class mainCamera(mainConfig):
             self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
             raise WarmingFailedException('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
     
+    def _update_gain(self,
+                    gain : int = 0):
+        try:
+            if self.device.Gain != gain:
+                self.device.Gain = gain
+            else:
+                pass
+        except NotImplementedException as e:
+            self._log.critical(e)
+            pass
+    
     def exposure(self,
                  abort_action : Event,
                  exptime : float,
                  imgtype : str,
                  binning : int,
-                 is_light : bool
+                 is_light : bool,
+                 gain : int = 0
                  ):
         """
         Capture a light frame with the connected camera.
@@ -482,6 +495,9 @@ class mainCamera(mainConfig):
         1. imginfo : dict
             A dictionary containing the following information about the captured image, as returned by get_imginfo()
         """
+        
+        # Set Gain
+        self._update_gain(gain = gain)
         
         # Set binning 
         self._set_binning(binning = binning)
@@ -543,10 +559,7 @@ class mainCamera(mainConfig):
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
-    A = mainCamera(unitnum = 2)
-    C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= Event(), binning = 1, is_light = False)
-
-#%%
-    #A.cooler_off(warmuptime=10)
-    A.disconnect()
+    A = mainCamera(unitnum = 21)
+    #C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= Event(), binning = 1, is_light = False)
+    A.device.Gain
 # %%

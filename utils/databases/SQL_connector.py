@@ -93,14 +93,26 @@ class SQL_Connector:
         column_names = [column[0] for column in self.cursor.fetchall()]
         return column_names
     
+    def get_column_data_types(self, 
+                              tbl_name: str):
+        sql_query = f"SHOW COLUMNS FROM {tbl_name}"
+        self.cursor.execute(sql_query)
+        column_info = self.cursor.fetchall()
+        column_data_types = {col[0]: col[1] for col in column_info}
+        return column_data_types
+    
     def insert_rows(self,
                     tbl_name : str,
-                    data : Table
-                    ):
-        common_colnames = [col for col in data.colnames if col in self.get_colnames(tbl_name)]
+                    data : Table):
+        data_str = data.copy()
+        for colname in data_str.columns:
+            data_str[colname] = data_str[colname].astype(str)
+        data_str.remove_column('idx')
+
+        common_colnames = [col for col in data_str.colnames if col in self.get_colnames(tbl_name)]
         placeholders = ', '.join(['%s'] * len(common_colnames))
         sql_command = f"INSERT INTO {tbl_name} ({', '.join(common_colnames)}) VALUES ({placeholders})"
-        values = [tuple(row[col] for col in common_colnames) for row in data]
+        values = [tuple(row[col] if row[col] != 'None' else None for col in common_colnames) for row in data_str]
         self.cursor.executemany(sql_command, values)
         self.connector.commit()
     

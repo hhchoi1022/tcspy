@@ -11,8 +11,6 @@ from typing import List
 # TCSpy modules
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
-from tcspy.utils.target.db_target import SQL_Connector
-
 #%%
 class CelestialObject(mainConfig):
     """
@@ -69,7 +67,8 @@ class CelestialObject(mainConfig):
         self.name = targets_name
         
     def __repr__(self):
-        return f'Astroobject[n_objects = {len(self.coordinate)}]'
+        txt = f'CelestialObject[n_objects = {len(self.coordinate)}]'
+        return txt
     
     def rts_date(self,
                  year : int = None,
