@@ -61,7 +61,7 @@ class mainConfig:
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
         telescope_params = dict(TELESCOPE_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                                 TELESCOPE_HOSTIP= ip_address,
-                                TELESCOPE_PORTNUM='32323',
+                                TELESCOPE_PORTNUM='32324',
                                 TELESCOPE_DEVICENUM=0,
                                 TELESCOPE_PARKALT=40,
                                 TELESCOPE_PARKAZ=300,
@@ -87,7 +87,7 @@ class mainConfig:
 
         focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='32323',
+                              FOCUSER_PORTNUM='32324',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -152,6 +152,10 @@ class mainConfig:
         
         specmode_params = dict(SPECMODE_FOLDER=f'{self._configfilepath_global}specmode/u10/')
         
+        startup_params = dict(STARTUP_ALT = 40,
+                              STARTUP_AZ = 300,
+                              STARTUP_CCDTEMP = -10)
+        
         make_configfile(telescope_params, filename='Telescope.config')
         make_configfile(camera_params, filename='Camera.config')
         make_configfile(filterwheel_params, filename='FilterWheel.config')
@@ -176,7 +180,7 @@ class mainConfig:
 # %% Temporary running
 if __name__ == '__main__':
     A = mainConfig(unitnum=21)
-    A._initialize_config(ip_address='127.0.0.1', portnum = 32323)
+    A._initialize_config(ip_address='127.0.0.1', portnum = 32324)
 
 # %%
 # %%

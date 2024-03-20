@@ -52,8 +52,7 @@ class Connect(Interface_Runnable):
         self._log.info('='*30)
         self._log.info(f'[{type(self).__name__}] is finished.')
         time.sleep(1)
-        devices_status = self.IDevice_status.dict
-        return devices_status
+        return True
     
     def abort(self):
         return

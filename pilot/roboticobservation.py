@@ -8,7 +8,6 @@ from tcspy.action.level1 import *
 from tcspy.action.level2 import *
 from tcspy.action.level3 import *
 from tcspy.configuration import mainConfig
-from tcspy.utils.target import singletarget
 from tcspy.utils.databases import DB
 #%%
 
@@ -32,7 +31,9 @@ class RoboticObservation(mainConfig):
 R = RoboticObservation()
 # %%
 import astropy.units as u
-R.DB.Daily.best_target(Time.now() - 5 * u.hour)
+target, score = R.DB.Daily.best_target(Time.now() - 5 * u.hour)
 # %%
-R.DB.Daily.data
+R.DB.Daily.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
+# %%
+target
 # %%

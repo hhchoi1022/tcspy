@@ -218,12 +218,17 @@ class DB_Daily(mainConfig):
     def _scorer(self,
                 utctime : Time,
                 target_tbl : Table,
-                duplicate : bool = False):
+                duplicate : bool = False 
+                ):
         
         target_tbl_for_scoring = target_tbl
         if not duplicate:
             unscheduled_idx = (target_tbl['status'] == 'unscheduled')
             target_tbl_for_scoring = target_tbl[unscheduled_idx]
+        
+        # Exit when no observable target
+        if len(target_tbl_for_scoring) == 0:
+            return None, None
         
         celestialobject = CelestialObject(observer = self.observer,
                                   targets_ra = target_tbl_for_scoring['RA'],
@@ -250,6 +255,10 @@ class DB_Daily(mainConfig):
         
         constraint_night = self.observer.is_night(utctimes = utctime)
         score *= constraint_night
+        
+        # Exit when no observable target
+        if np.sum(score) == 0:
+            return None, None
         
         # Scoring
         weight_sum = self.config['TARGET_WEIGHT_ALT'] + self.config['TARGET_WEIGHT_PRIORITY']
@@ -282,8 +291,6 @@ class DB_Daily(mainConfig):
         if len(target_tbl_to_update) > 0:
             self.initialize(initialize_all= False)
         
-        import time
-        start = time.perf_counter()
         target_all = self.data
         idx_ToO = all_targets['objtype'] == 'ToO'
         target_ToO = target_all[idx_ToO]
@@ -292,15 +299,15 @@ class DB_Daily(mainConfig):
         exist_ToO = (len(target_ToO) > 0)
         if exist_ToO:
             target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ToO, duplicate = duplicate)        
-            if target_score > 0:
-                print(target_best, target_score)
+            if target_score:
                 return target_best, target_score
         
-        target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary, duplicate = duplicate)        
-        if target_score > 0:
-            return target_best, target_score
-        else:
-            return None, target_score
+        exist_ordinary = (len(target_ordinary) > 0)
+        if exist_ordinary:
+            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary, duplicate = duplicate)        
+            if target_score:
+                return target_best, target_score
+        return None, None
     
     def insert(self,
                target_tbl : Table):
@@ -322,13 +329,3 @@ class DB_Daily(mainConfig):
         if not self.sql.connected:
             self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
-
-# %%
-D = DB_Daily(tbl_name = 'Daily_bkup2')
-
-# %%
-D.initialize(True)
-D.best_target(Time.now() - 5 * u.hour)
-# %%
-self =D
-# %%
