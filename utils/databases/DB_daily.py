@@ -329,3 +329,7 @@ class DB_Daily(mainConfig):
         if not self.sql.connected:
             self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
+# %%
+if __name__ == '__main__':
+    D = DB_Daily()
+# %%

@@ -70,7 +70,7 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
             pass 
 #%%
 if __name__ == '__main__':
-    device = IntegratedDevice(unitnum = )
+    device = IntegratedDevice(unitnum = 1)
     abort_action = Event()
     s =SlewAltAz(device, abort_action)
     s.run(alt=20, az= 270, tracking = True)  
