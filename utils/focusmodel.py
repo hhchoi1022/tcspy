@@ -23,7 +23,7 @@ class FocusModel:
     def __init__(self, 
                  unitnum : int,
                  config_path : str = '../configuration/',
-                 filtinfo_file : str = 'filtinfo.spcemode',
+                 filtinfo_file : str = 'filtinfo.specmode',
                  offset_file : str = 'filter.offset'):
         self.unitnum = unitnum
         self.name_telescope = '7DT%.2d' % self.unitnum
@@ -219,7 +219,7 @@ class FocusModel:
         if visualize:
             plt.figure(dpi = 300, figsize = (6,4))
         for filter_ in self.filters:
-            tbls_matched = match_table(tbl_filter_dict[filter_], tbl_filter_dict[filter_offset_zero], key = 'obsdate', tolerance = 0.1)
+            tbls_matched = match_table(tbl_filter_dict[filter_], tbl_filter_dict[filter_offset_zero], key = 'obsdate', tolerance = 0.3)
             if len(tbls_matched)>0:
                 tbls_matched['focusdiff'] = tbls_matched['focus_1']-tbls_matched['focus_2']
                 sigma_clip_mask = sigma_clip(tbls_matched['focusdiff'], sigma_lower =2, sigma_upper=2, masked = True).mask
@@ -256,7 +256,7 @@ class FocusModel:
         print(f'{self._offset_file} is updated')
 # %%
 if __name__ == '__main__':
-    unitnum = 11
+    unitnum = 10
     FModel = FocusModel(unitnum)
     folder = '/large_data/obsdata/7DT%.2d' %unitnum
     offset_vallist, offset_stdlist = FModel.calc_model_params(folder, start_obsdate = Time('2024-02-01'))
