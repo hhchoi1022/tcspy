@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration/',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration/',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -59,9 +59,9 @@ class mainConfig:
             print('New configuration file made : %s' % (savepath+filename))
             
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
-        telescope_params = dict(TELESCOPE_DEVICETYPE='PWI4',  # Alpaca or PWI4
+        telescope_params = dict(TELESCOPE_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                                 TELESCOPE_HOSTIP= ip_address,
-                                TELESCOPE_PORTNUM='8220',
+                                TELESCOPE_PORTNUM='32323',
                                 TELESCOPE_DEVICENUM=0,
                                 TELESCOPE_PARKALT=40,
                                 TELESCOPE_PARKAZ=300,
@@ -85,9 +85,9 @@ class mainConfig:
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{savepath_unit}filter.offset")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
+        focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='8220',
+                              FOCUSER_PORTNUM='32323',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -154,7 +154,8 @@ class mainConfig:
         
         startup_params = dict(STARTUP_ALT = 40,
                               STARTUP_AZ = 300,
-                              STARTUP_CCDTEMP = -10)
+                              STARTUP_CCDTEMP = -10,
+                              STARTUP_CCDTEMP_TOLERANCE = 1)
         
         make_configfile(telescope_params, filename='Telescope.config')
         make_configfile(camera_params, filename='Camera.config')
@@ -172,6 +173,7 @@ class mainConfig:
         make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self._configfilepath_global)
         make_configfile(DB_params, filename = 'DB.config', savepath= self._configfilepath_global)
         make_configfile(specmode_params, filename = 'specmode.config', savepath= self._configfilepath_global)
+        make_configfile(startup_params, filename = 'startup.config', savepath= self._configfilepath_global)
 
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
@@ -179,8 +181,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=2)
-    A._initialize_config(ip_address='10.0.106.7', portnum = 11111)
+    A = mainConfig(unitnum=21)
+    A._initialize_config(ip_address='127.0.0.1', portnum = 32323)
 
 # %%
 # %%
