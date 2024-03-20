@@ -116,7 +116,7 @@ class StartUp(mainConfig):
         multi_cool = MultiAction(array_telescope= self.devices.values(), array_kwargs= params_cool, function = Cool, abort_action = self.abort_action)
         multi_cool.run()
         result_multi_cool = multi_cool.get_results().copy()
-        timeout = 60
+        timeout = 600
         start_time = time.time()
         while all(key in result_multi_cool for key in self.devices) == False:
             if time.time() - start_time > timeout:
@@ -142,4 +142,17 @@ class StartUp(mainConfig):
     
     def abort(self):
         self.abort_action.set()
+        for IDevice_name, IDevice in self.devices.items():
+            self.log[IDevice_name].warning(f'[{type(self).__name__}] is aborted.')
     
+    
+
+# %%
+if __name__ == '__main__':
+    
+    M = MultiTelescopes([IntegratedDevice(1),IntegratedDevice(2)])
+    abort_action = Event()
+    S = StartUp(M, abort_action = abort_action)
+    
+    
+# %%

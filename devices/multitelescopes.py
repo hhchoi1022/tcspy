@@ -13,6 +13,10 @@ class MultiTelescopes:
         self._devices_list = array_IntegratedDevice
         self.devices = self._get_telescopes()
         self.log = self._get_all_logs()
+        
+    def __repr__(self):
+        txt=  f'MultiTelescopes[{list(self.devices.keys())}]'
+        return txt
     
     def _get_telescopes(self):
         IDevices_dict = dict()
@@ -39,7 +43,7 @@ class MultiTelescopes:
     def remove(self,
                IDevice_name):
         self.devices.pop(IDevice_name)
-        self.log.pop[IDevice_name]
+        self.log.pop(IDevice_name)
 
     @property
     def status(self):
@@ -49,3 +53,14 @@ class MultiTelescopes:
             IDevices_status_dict[name_IDevice] = DeviceStatus(IDevice).dict
         return IDevices_status_dict
     
+# %%
+if __name__ == '__main__':
+    IDevice_1 = IntegratedDevice(1)
+    IDevice_2 = IntegratedDevice(2)
+    M =  MultiTelescopes([IDevice_1, IDevice_2])
+
+    import time
+    start = time.time()
+    A = M.status
+    print(time.time() -start)
+# %%

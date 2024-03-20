@@ -99,3 +99,4 @@ class IntegratedDevice(mainConfig):
     def _get_safetymonitor(self):
         return mainSafetyMonitor(unitnum = self.unitnum)
     
+# %%
