@@ -156,7 +156,10 @@ class mainConfig:
                               STARTUP_AZ = 300,
                               STARTUP_CCDTEMP = -10,
                               STARTUP_CCDTEMP_TOLERANCE = 1)
-        
+
+        shutdown_params = dict(SHUTDOWN_CCDTEMP = 20,
+                              SHUTDOWN_CCDTEMP_TOLERANCE = 1)
+                
         make_configfile(telescope_params, filename='Telescope.config')
         make_configfile(camera_params, filename='Camera.config')
         make_configfile(filterwheel_params, filename='FilterWheel.config')
@@ -174,6 +177,8 @@ class mainConfig:
         make_configfile(DB_params, filename = 'DB.config', savepath= self._configfilepath_global)
         make_configfile(specmode_params, filename = 'specmode.config', savepath= self._configfilepath_global)
         make_configfile(startup_params, filename = 'startup.config', savepath= self._configfilepath_global)
+        make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self._configfilepath_global)
+
 
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)

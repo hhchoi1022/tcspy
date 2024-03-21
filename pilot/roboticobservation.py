@@ -41,6 +41,8 @@ class RoboticObservation(mainConfig):
         print('Updating databases...')
         return DB(utctime = utctime)
     
+    def observation(self):
+    
     
     
 # %%

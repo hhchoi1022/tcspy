@@ -12,7 +12,7 @@ from typing import List
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
 #%%
-class CelestialObject(mainConfig):
+class MultiTarget(mainConfig):
     """
     Parameters
     ----------
@@ -67,7 +67,7 @@ class CelestialObject(mainConfig):
         self.name = targets_name
         
     def __repr__(self):
-        txt = f'CelestialObject[n_objects = {len(self.coordinate)}]'
+        txt = f'MultiTarget[n_targets = {len(self.coordinate)}]'
         return txt
     
     def rts_date(self,

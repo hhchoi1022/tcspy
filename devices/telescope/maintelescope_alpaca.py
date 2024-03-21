@@ -332,7 +332,10 @@ class mainTelescope_Alpaca(mainConfig):
                     try:
                         self.unpark()
                     except ParkingFailedException:
-                        raise SlewingFailedException('Unpark failed')
+                        raise SlewingFailedException('Telescope slewing is failed : Unpark failed')
+                self.device.Tracking = False 
+                while self.device.Tracking:
+                    time.sleep(self._checktime)
                 self.device.SlewToAltAzAsync(az, alt)
                 time.sleep(self._checktime)
                 while self.device.Slewing:

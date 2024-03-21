@@ -1,2 +1,2 @@
 from .singletarget import SingleTarget
-from .celestialobject import CelestialObject
+from .multitarget import MultiTarget

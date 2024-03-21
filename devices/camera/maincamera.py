@@ -357,7 +357,7 @@ class mainCamera(mainConfig):
                 consecutive_stable_iterations = 0
                 current_temperature = self.device.CCDTemperature
 
-                while not self.device.CCDTemperature - settemperature < tolerance:
+                while not np.abs(self.device.CCDTemperature - settemperature) < tolerance:
                     if abort_action.is_set():
                         self.device.CoolerOn = False
                         self._log.warning('Camera cooling is aborted')
@@ -370,7 +370,7 @@ class mainCamera(mainConfig):
                     # Calculate the gradient
                     gradient = current_temperature - prev_temperature
                     
-                    if gradient > -0.1:  # Adjust the threshold as needed
+                    if gradient > -0.3:  # Adjust the threshold as needed
                         consecutive_stable_iterations += 1
                     else:
                         consecutive_stable_iterations = 0
@@ -386,7 +386,7 @@ class mainCamera(mainConfig):
                     # Update the previous temperature for the next iteration
                     prev_temperature = current_temperature
 
-                self._log.info('Cooling finished. Current temperature: %.1f' % current_temperature)
+                self._log.info('Cooling finished. Current temperature: %.1f' % self.device.CCDTemperature)
                 return True
             else:
                 self._log.warning('Cooling is not implemented on this device')
@@ -419,7 +419,7 @@ class mainCamera(mainConfig):
                 consecutive_stable_iterations = 0
                 current_temperature = self.device.CCDTemperature
                 
-                while not self.device.CCDTemperature - settemperature > tolerance:
+                while not np.abs(self.device.CCDTemperature - settemperature) < tolerance:
                     if abort_action.is_set():
                         self.device.CoolerOn = False
                         self._log.warning('Camera warming is aborted')
@@ -432,7 +432,7 @@ class mainCamera(mainConfig):
                     # Calculate the gradient
                     gradient = current_temperature - prev_temperature
                     
-                    if gradient < 0.1:  # Adjust the threshold as needed
+                    if gradient < 0.3:  # Adjust the threshold as needed
                         consecutive_stable_iterations += 1
                     else:
                         consecutive_stable_iterations = 0
@@ -449,7 +449,7 @@ class mainCamera(mainConfig):
                     prev_temperature = current_temperature
                 self.device.CoolerOn = False
 
-                self._log.info('Warning finished. Current temperature: %.1f' % current_temperature)
+                self._log.info('Warning finished. Current temperature: %.1f' % self.device.CCDTemperature)
                 return True
             else:
                 self._log.warning('Warming is not implemented on this device')

@@ -7,13 +7,15 @@ from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
 from tcspy.utils.target import SingleTarget
+from tcspy.utils.exception import *
+
 from tcspy.action.level1 import SlewRADec
 from tcspy.action.level1 import SlewAltAz
 from tcspy.action.level1 import Exposure
 from tcspy.action.level1 import ChangeFocus
 from tcspy.action.level1 import ChangeFilter
 from tcspy.action.level2 import AutoFocus
-from tcspy.utils.exception import *
+
 #%%
 class SingleObservation(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
