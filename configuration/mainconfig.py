@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/hhchoi1022/tcspy/configuration/',
+                 configpath : str = '/home/kds/tcspy/configuration/',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -59,9 +59,9 @@ class mainConfig:
             print('New configuration file made : %s' % (savepath+filename))
             
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
-        telescope_params = dict(TELESCOPE_DEVICETYPE='Alpaca',  # Alpaca or PWI4
+        telescope_params = dict(TELESCOPE_DEVICETYPE='PWI4',  # Alpaca or PWI4
                                 TELESCOPE_HOSTIP= ip_address,
-                                TELESCOPE_PORTNUM='32323',
+                                TELESCOPE_PORTNUM='8220',
                                 TELESCOPE_DEVICENUM=0,
                                 TELESCOPE_PARKALT=40,
                                 TELESCOPE_PARKAZ=300,
@@ -85,9 +85,9 @@ class mainConfig:
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{savepath_unit}filter.offset")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
+        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='32323',
+                              FOCUSER_PORTNUM='8220',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -112,8 +112,8 @@ class mainConfig:
         # Share configuration
         
 
-        weather_params = dict(WEATHER_HOSTIP= ip_address,
-                              WEATHER_PORTNUM= portnum,
+        weather_params = dict(WEATHER_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
+                              WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
                               WEATHER_CHECKTIME=0.5,
                               WEATHER_HUMIDITY=85,
@@ -128,8 +128,8 @@ class mainConfig:
                            DOME_DEVICENUM=0,
                            DOME_CHECKTIME=0.5)
         
-        safetymonitor_params = dict(SAFEMONITOR_HOSTIP= ip_address,
-                                    SAFEMONITOR_PORTNUM=portnum,
+        safetymonitor_params = dict(SAFEMONITOR_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
+                                    SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_CHECKTIME=0.5)
         
@@ -152,14 +152,16 @@ class mainConfig:
         
         specmode_params = dict(SPECMODE_FOLDER=f'{self._configfilepath_global}specmode/u10/')
         
-        startup_params = dict(STARTUP_ALT = 40,
-                              STARTUP_AZ = 300,
+        startup_params = dict(STARTUP_ALT = 50,
+                              STARTUP_AZ = 60,
                               STARTUP_CCDTEMP = -10,
                               STARTUP_CCDTEMP_TOLERANCE = 1)
 
-        shutdown_params = dict(SHUTDOWN_CCDTEMP = 20,
-                              SHUTDOWN_CCDTEMP_TOLERANCE = 1)
-                
+        shutdown_params = dict(SHUTDOWN_ALT = 50,
+                               SHUTDOWN_AZ = 60,
+                               SHUTDOWN_CCDTEMP = 10,
+                               SHUTDOWN_CCDTEMP_TOLERANCE = 1)
+        
         make_configfile(telescope_params, filename='Telescope.config')
         make_configfile(camera_params, filename='Camera.config')
         make_configfile(filterwheel_params, filename='FilterWheel.config')
@@ -186,8 +188,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=21)
-    A._initialize_config(ip_address='127.0.0.1', portnum = 32323)
+    A = mainConfig(unitnum=11)
+    A._initialize_config(ip_address='10.0.106.9', portnum = 11111)
 
 # %%
 # %%

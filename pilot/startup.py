@@ -152,10 +152,10 @@ class StartUp(mainConfig):
 # %%
 if __name__ == '__main__':
     
-    M = MultiTelescopes([IntegratedDevice(21)])
+    M = MultiTelescopes([IntegratedDevice(10), IntegratedDevice(11),  IntegratedDevice(1)])
     abort_action = Event()
     S = StartUp(M, abort_action = abort_action)
-    S.run()
+    
     
     
 # %%
