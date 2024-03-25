@@ -151,29 +151,25 @@ if __name__ == '__main__':
     IDevice_10 = IntegratedDevice(10)
     IDevice_11 = IntegratedDevice(11)
     M = MultiTelescopes([IDevice_1, IDevice_10, IDevice_11])
-#%%
-abort_action = Event()
-S  = DeepObservation(M, abort_action)
-#%%
-exptime= '60,60'
-count= '1,1'
-filter_ = 'g,r'
-binning= '2,2'
-imgtype = 'Light'
-ra= '150.11667'
-dec= '2.20556'
-alt = None
-az = None
-target_name = "COSMOS"
-objtype = 'Commissioning'
-autofocus_before_start= True
-autofocus_when_filterchange= True
-# %%
-S.run(exptime = exptime, count = count, filter_ = filter_,
-      binning = binning, imgtype = imgtype, ra = ra, dec = dec,
-      alt = alt, az = az, target_name = target_name, objtype = objtype,
-      autofocus_before_start= autofocus_before_start,
-      autofocus_when_filterchange= autofocus_when_filterchange)
-# %%
-S.abort()
-# %%
+    abort_action = Event()
+    S  = DeepObservation(M, abort_action)
+    exptime= '60,60'
+    count= '1,1'
+    filter_ = 'g,r'
+    binning= '2,2'
+    imgtype = 'Light'
+    ra= '150.11667'
+    dec= '2.20556'
+    alt = None
+    az = None
+    target_name = "COSMOS"
+    objtype = 'Commissioning'
+    autofocus_before_start= True
+    autofocus_when_filterchange= True
+    S.run(exptime = exptime, count = count, filter_ = filter_,
+        binning = binning, imgtype = imgtype, ra = ra, dec = dec,
+        alt = alt, az = az, target_name = target_name, objtype = objtype,
+        autofocus_before_start= autofocus_before_start,
+        autofocus_when_filterchange= autofocus_when_filterchange)
+    S.abort()
+    # %%

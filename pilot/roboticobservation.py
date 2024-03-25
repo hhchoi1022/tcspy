@@ -42,6 +42,7 @@ class RoboticObservation(mainConfig):
         return DB(utctime = utctime)
     
     def observation(self):
+        pass
     
     
     
