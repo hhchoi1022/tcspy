@@ -1,8 +1,8 @@
 #%%
 from threading import Event
 
-from tcspy.devices import IntegratedDevice
-from tcspy.devices import DeviceStatus
+from tcspy.devices import SingleTelescope
+from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
 from tcspy.utils.exception import * 
@@ -10,12 +10,12 @@ from tcspy.utils.exception import *
 class Warm(Interface_Runnable, Interface_Abortable):
     
     def __init__(self, 
-                 Integrated_device : IntegratedDevice,
+                 singletelescope : SingleTelescope,
                  abort_action : Event):
-        self.IDevice = Integrated_device
-        self.Idevice_status = DeviceStatus(self.IDevice)
+        self.telescope = singletelescope
+        self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
-        self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self,
             settemperature : float,
@@ -23,7 +23,7 @@ class Warm(Interface_Runnable, Interface_Abortable):
         
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
-        if self.Idevice_status.camera.lower() == 'disconnected':
+        if self.telescope_status.camera.lower() == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
             return ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
 
@@ -34,7 +34,7 @@ class Warm(Interface_Runnable, Interface_Abortable):
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         try:
-            result_warm = self.IDevice.camera.warm(settemperature = settemperature,
+            result_warm = self.telescope.camera.warm(settemperature = settemperature,
                                                    tolerance= tolerance,
                                                    abort_action = self.abort_action)
         except WarmingFailedException:

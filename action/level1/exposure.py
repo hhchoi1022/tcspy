@@ -1,7 +1,7 @@
 #%%
 from threading import Event
-from tcspy.devices import IntegratedDevice
-from tcspy.devices import DeviceStatus
+from tcspy.devices import SingleTelescope
+from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.image import mainImage
@@ -12,12 +12,12 @@ from tcspy.action.level1.changefilter import ChangeFilter
 class Exposure(Interface_Runnable, Interface_Abortable):
     
     def __init__(self, 
-                 Integrated_device : IntegratedDevice,
+                 singletelescope : SingleTelescope,
                  abort_action : Event):
-        self.IDevice = Integrated_device
-        self.IDevice_status = DeviceStatus(self.IDevice)
+        self.telescope = singletelescope
+        self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
-        self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self,
             # Exposure information
@@ -34,7 +34,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             dec : float = None,
             alt : float = None,
             az : float = None,
-            target_name : str = '',
+            name : str = '',
             objtype : str = None,
             ):
         
@@ -44,15 +44,24 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         filter_ : str = None
         imgtype : str = 'BIAS'
         binning : int = 1
-        target_name : str = None
+        name : str = None
         objtype = None
         obsmode = 'Single'
+        gain = 0
+        ra : float = None
+        dec : float = None
+        alt : float = None
+        az : float = None
+        name : str = ''
+        objtype : str = None
+
+
         """
         
         # Check condition of the instruments for this Action
         self._log.info(f'[{type(self).__name__}] is triggered.')
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
+        status_filterwheel = self.telescope_status.filterwheel
+        status_camera = self.telescope_status.camera
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -71,12 +80,12 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Set target
-        target = SingleTarget(observer = self.IDevice.observer, 
+        target = SingleTarget(observer = self.telescope.observer, 
                               ra = ra, 
                               dec = dec, 
                               alt = alt, 
                               az = az, 
-                              name = target_name, 
+                              name = name, 
                               objtype= objtype,
                               
                               exptime = exptime,
@@ -93,7 +102,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             if not filter_:
                 self._log.critical('Filter must be determined for LIGHT frame')
                 raise ActionFailedException('Filter must be determined for LIGHT frame')
-            changefilter = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action)    
+            changefilter = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action)    
             try:
                 result_changefilter = changefilter.run(str(filter_))
             except ConnectionException:
@@ -114,8 +123,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Check device connection
-        camera = self.IDevice.camera
-        status_camera = self.IDevice_status.camera
+        camera = self.telescope.camera
+        status_camera = self.telescope_status.camera
         
         if status_camera.lower() == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
@@ -161,13 +170,13 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             
-            status = self.IDevice.status
+            status = self.telescope.status
             try:
                 img = mainImage(frame_number = int(frame_number),
-                                config_info = self.IDevice.config,
+                                config_info = self.telescope.config,
                                 image_info = imginfo,
                                 camera_info = status['camera'],
-                                telescope_info = status['telescope'],
+                                mount_info = status['mount'],
                                 filterwheel_info = status['filterwheel'],
                                 focuser_info = status['focuser'],
                                 observer_info = status['observer'],
@@ -182,18 +191,18 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         return True
 
     def abort(self):
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
+        status_filterwheel = self.telescope_status.filterwheel
+        status_camera = self.telescope_status.camera
         if status_filterwheel.lower() == 'busy':
-            self.IDevice.filterwheel.abort()
+            self.telescope.filterwheel.abort()
         if status_camera.lower() == 'busy':
-            self.IDevice.camera.abort()
+            self.telescope.camera.abort()
         
         
 # %%
 
 if __name__ == '__main__':
-    device = IntegratedDevice(unitnum = 21)
+    device = SingleTelescope(unitnum = 21)
     abort_action = Event()
     #device.filt.connect()
     #device.cam.connect()

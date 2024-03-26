@@ -23,7 +23,7 @@ class DB_RIS(mainConfig):
                  utcdate : Time = Time.now(),
                  tbl_name : str = 'RIS'):
         super().__init__()       
-        self.observer = mainObserver(unitnum= 1)
+        self.observer = mainObserver()
         self.tblname = tbl_name
         self.sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
         self.constraints = self._set_constrints()

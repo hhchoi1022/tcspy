@@ -1,4 +1,4 @@
 from .pwi4_client import PWI4
-from .integrateddevice import IntegratedDevice
-from .devicestatus import DeviceStatus
+from .singletelescope import SingleTelescope
+from .telescopestatus import TelescopeStatus
 from .multitelescopes import MultiTelescopes

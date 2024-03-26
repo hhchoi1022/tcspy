@@ -1,19 +1,20 @@
 #%%
 from tcspy.interfaces import *
-from tcspy.devices import IntegratedDevice
+from tcspy.devices import SingleTelescope
 
-class DeviceStatus(Interface):
+class TelescopeStatus(Interface):
     
     def __init__(self, 
-                 Integrated_device : IntegratedDevice):
-        self.IDevice = Integrated_device
-        self.tel_type = self.IDevice.tel_type
+                 singletelescope : SingleTelescope):
+        self.telescope = singletelescope
+        self.mount_type = self.telescope.mount_type
+        self.focus_type = self.telescope.focus_type
     
     @property
     def dict(self):
         status = dict()
         status['camera'] = self.camera
-        status['telescope'] = self.telescope
+        status['mount'] = self.mount
         status['filterwheel'] = self.filterwheel
         status['focuser'] = self.focuser
         status['dome'] = self.dome
@@ -30,9 +31,9 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IDevice.camera.device.Connected:
+            if self.telescope.camera.device.Connected:
                 status = 'idle'
-                if self.IDevice.camera.device.CamsState.name == 'cameraIdle':
+                if self.telescope.camera.device.CamsState.name == 'cameraIdle':
                     status = 'idle'
                 else:
                     status = 'busy'    
@@ -41,38 +42,38 @@ class DeviceStatus(Interface):
         return status
 
     @property
-    def telescope(self):
-        """return telescope status
+    def mount(self):
+        """return mount status
 
         Returns:
             status : str = telescope's status [disconnected, idle, Parked, busy, Tracking]
         """
         status = 'disconnected'
         try:
-            telescope = self.IDevice.telescope
+            mount = self.telescope.mount
             # Alpaca device
-            if self.IDevice.tel_type.lower() == 'alpaca':
-                if telescope.device.Connected:
+            if self.telescope.mount_type.lower() == 'alpaca':
+                if mount.device.Connected:
                     status = 'idle'
-                    if telescope.device.AtHome:
+                    if mount.device.AtHome:
                         status = 'idle'
-                    if telescope.device.AtPark:
-                        status = 'parked'
-                    if telescope.device.Slewing:
+                    if mount.device.AtPark:
+                        status = 'idle'
+                    if mount.device.Slewing:
                         status = 'busy'
-                    if telescope.device.Tracking:
-                        status = 'tracking'
+                    if mount.device.Tracking:
+                        status = 'idle'
             # PWI4 device
             else:
-                telescope_status = telescope.device.status()
-                if telescope_status.mount.is_connected:
+                mount_status = mount.device.status()
+                if mount_status.mount.is_connected:
                     status = 'idle'
-                if (telescope_status.mount.axis0.is_enabled == False) & (telescope_status.mount.axis2.is_enabled == False):
-                    status = 'parked'
-                if telescope_status.mount.is_slewing:
+                if (mount_status.mount.axis0.is_enabled == False) & (mount_status.mount.axis2.is_enabled == False):
+                    status = 'idle'
+                if mount_status.mount.is_slewing:
                     status = 'busy'
-                if telescope_status.mount.is_tracking:
-                    status = 'tracking'
+                if mount_status.mount.is_tracking:
+                    status = 'idle'
         except:
             pass
         return status
@@ -86,7 +87,7 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IDevice.filterwheel.device.Connected:
+            if self.telescope.filterwheel.device.Connected:
                 status = 'idle'
         except:
             pass
@@ -101,9 +102,9 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            focuser = self.IDevice.focuser
+            focuser = self.telescope.focuser
             # Alpaca device
-            if self.IDevice.tel_type.lower() == 'alpaca':
+            if self.telescope.focus_type.lower() == 'alpaca':
                 if focuser.device.Connected:
                     status = 'idle'
                 if focuser.device.IsMoving:
@@ -140,9 +141,9 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IDevice.safetymonitor.device.Connected:
+            if self.telescope.safetymonitor.device.Connected:
                 status = 'unsafe'
-                if self.IDevice.safetymonitor.device.IsSafe:
+                if self.telescope.safetymonitor.device.IsSafe:
                     status = 'safe'
         except:
             pass
@@ -157,9 +158,9 @@ class DeviceStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.IDevice.weather.device.Connected:
+            if self.telescope.weather.device.Connected:
                 status = 'unsafe'
-                if self.IDevice.weather.is_safe():
+                if self.telescope.weather.is_safe():
                     status = 'safe'
         except:
             pass

@@ -1,8 +1,8 @@
 #%%
 from threading import Event
 
-from tcspy.devices import IntegratedDevice
-from tcspy.devices import DeviceStatus
+from tcspy.devices import SingleTelescope
+from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
@@ -15,12 +15,12 @@ from tcspy.utils.exception import *
 #%%
 class AutoFlat(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
-                 Integrated_device : IntegratedDevice,
+                 singletelescope : SingleTelescope,
                  abort_action : Event):
-        self.IDevice = Integrated_device
-        self.IDevice_status = DeviceStatus(self.IDevice)
+        self.telescope = singletelescope
+        self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
-        self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self, 
             exptime : float,
@@ -38,9 +38,9 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             ):
         
         # Check condition of the instruments for this Action
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
-        status_telescope = self.IDevice_status.telescope
+        status_filterwheel = self.telescope_status.filterwheel
+        status_camera = self.telescope_status.camera
+        status_telescope = self.telescope_status.mount
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -62,12 +62,12 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
         if not target:
-            target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name)
+            target = mainTarget(unitnum = self.telescope.unitnum, observer = self.telescope.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name)
          
         # Slewing
         elif target.status['coordtype'] == 'radec':
             try:
-                slew = SlewRADec(Integrated_device = self.IDevice, abort_action= self.abort_action)
+                slew = SlewRADec(singletelescope = self.telescope, abort_action= self.abort_action)
                 result_slew = slew.run(ra = target.status['ra'], dec = target.status['dec'])
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -81,7 +81,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
 
         elif target.status['coordtype'] == 'altaz':
             try:
-                slew = SlewAltAz(Integrated_device = self.IDevice, abort_action= self.abort_action)
+                slew = SlewAltAz(singletelescope = self.telescope, abort_action= self.abort_action)
                 result_slew = slew.run(alt = target.status['alt'], az = target.status['az'])
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -99,7 +99,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         # Autofocus when activated
         if autofocus_before_start:
             try:
-                result_autofocus = Autofocus(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_).run()
+                result_autofocus = Autofocus(singletelescope= self.telescope, abort_action= self.abort_action).run(filter_ = filter_).run()
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
@@ -116,7 +116,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
-        exposure = Exposure(Integrated_device = self.IDevice, abort_action = self.abort_action)
+        exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
         result_all_exposure = []
         
         for frame_number in range(count):
@@ -142,13 +142,13 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         return all(result_all_exposure)
             
     def abort(self):
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
-        status_telescope = self.IDevice_status.telescope
+        status_filterwheel = self.telescope_status.filterwheel
+        status_camera = self.telescope_status.camera
+        status_telescope = self.telescope_status.mount
         if status_filterwheel.lower() == 'busy':
-            self.IDevice.filterwheel.abort()
+            self.telescope.filterwheel.abort()
         if status_camera.lower() == 'busy':
-            self.IDevice.camera.abort()
+            self.telescope.camera.abort()
         if status_telescope.lower() == 'busy':
-            self.IDevice.telescope.abort()
+            self.telescope.mount.abort()
     

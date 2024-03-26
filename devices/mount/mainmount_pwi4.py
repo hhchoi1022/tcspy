@@ -14,7 +14,7 @@ from tcspy.utils import Timeout
 from tcspy.utils.exception import *
 #%%
 
-class mainTelescope_pwi4(mainConfig):
+class mainMount_pwi4(mainConfig):
     """
     A class representing a telescope that uses the PWI4 protocol.
 
@@ -60,10 +60,10 @@ class mainTelescope_pwi4(mainConfig):
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         self._min_altitude = float(self.config['TARGET_MINALT'])
         self._max_altitude = float(self.config['TARGET_MAXALT'])
-        self._checktime = float(self.config['TELESCOPE_CHECKTIME'])
-        self._settle_time = float(self.config['TELESCOPE_SETTLETIME'])
-        self.observer = mainObserver(unitnum = unitnum)
-        self.device = PWI4(self.config['TELESCOPE_HOSTIP'], self.config['TELESCOPE_PORTNUM'])
+        self._checktime = float(self.config['MOUNT_CHECKTIME'])
+        self._settle_time = float(self.config['MOUNT_SETTLETIME'])
+        self.observer = mainObserver()
+        self.device = PWI4(self.config['MOUNT_HOSTIP'], self.config['MOUNT_PORTNUM'])
         self.status = self.get_status()
     
     def get_status(self):
@@ -122,7 +122,7 @@ class mainTelescope_pwi4(mainConfig):
                 status['is_connected'] = PWI_status.mount.is_connected
                 status['is_tracking'] = PWI_status.mount.is_tracking
                 status['is_slewing'] = PWI_status.mount.is_slewing 
-                status['is_stationary'] = (PWI_status.mount.axis0.rms_error_arcsec < self.config['TELESCOPE_RMSRA']) & (PWI_status.mount.axis1.rms_error_arcsec < self.config['TELESCOPE_RMSDEC']) & (not PWI_status.mount.is_slewing)
+                status['is_stationary'] = (PWI_status.mount.axis0.rms_error_arcsec < self.config['MOUNT_RMSRA']) & (PWI_status.mount.axis1.rms_error_arcsec < self.config['MOUNT_RMSDEC']) & (not PWI_status.mount.is_slewing)
                 status['axis1_rms'] = "{:.4f}".format(PWI_status.mount.axis0.rms_error_arcsec)
                 status['axis2_rms'] = "{:.4f}".format(PWI_status.mount.axis1.rms_error_arcsec)
                 status['axis1_maxvel'] = "{:.4f}".format(PWI_status.mount.axis0.max_velocity_degs_per_sec)
@@ -159,7 +159,7 @@ class mainTelescope_pwi4(mainConfig):
                 time.sleep(self._checktime)
                 status = self.get_status()
             if status['is_connected']:
-                self._log.info('Telescope connected')
+                self._log.info('Mount connected')
                 
         except:
             self._log.critical('Connection failed')
@@ -182,7 +182,7 @@ class mainTelescope_pwi4(mainConfig):
                 time.sleep(self._checktime)
                 status = self.get_status() 
             if not status['is_connected']:
-                self._log.info('Telescope disconnected')
+                self._log.info('Mount disconnected')
 
         except:
             self._log.critical('Disconnect failed')
@@ -221,7 +221,7 @@ class mainTelescope_pwi4(mainConfig):
         """
         Parks the telescope.
         """
-        coordinate = SkyCoord(self.config['TELESCOPE_PARKAZ'],self.config['TELESCOPE_PARKALT'], frame = 'altaz', unit ='deg')
+        coordinate = SkyCoord(self.config['MOUNT_PARKAZ'],self.config['MOUNT_PARKALT'], frame = 'altaz', unit ='deg')
         alt = coordinate.alt.deg
         az = coordinate.az.deg
 
@@ -232,14 +232,14 @@ class mainTelescope_pwi4(mainConfig):
             try:
                 self.enable()
             except MountEnableFailedException:
-                raise ParkingFailedException('Telescope parking is failed : Mount enable failed')
+                raise ParkingFailedException('Mount parking is failed : Mount enable failed')
         
         # Slew
         try:
             self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
         except:
-            self._log.critical('Telescope parking is failed')
-            raise ParkingFailedException('Telescope parking is failed : Slewing failed')
+            self._log.critical('Mount parking is failed')
+            raise ParkingFailedException('Mount parking is failed : Slewing failed')
         time.sleep(self._checktime)
         status = self.get_status()
         while status['is_slewing']:
@@ -247,8 +247,8 @@ class mainTelescope_pwi4(mainConfig):
             status = self.get_status()
             if abort_action.is_set():
                 self.abort()
-                self._log.warning('Telescope parking is aborted')
-                raise AbortionException('Telescope parking is aborted')
+                self._log.warning('Mount parking is aborted')
+                raise AbortionException('Mount parking is aborted')
         time.sleep(self._checktime)
         
         # Disable mount when disable == True
@@ -257,8 +257,8 @@ class mainTelescope_pwi4(mainConfig):
                 self.disable()
             except MountEnableFailedException:
                 self._log.critical('Parking failed')
-                raise ParkingFailedException('Telescope parking is failed : Mount disable failed')
-        self._log.info('Telescope parked')
+                raise ParkingFailedException('Mount parking is failed : Mount disable failed')
+        self._log.info('Mount parked')
         return True
 
     def unpark(self):
@@ -269,7 +269,7 @@ class mainTelescope_pwi4(mainConfig):
         self._log.info('Unparking telescope...')
         try:
             self.enable()
-            self._log.info('Telescope unparked')
+            self._log.info('Mount unparked')
         except MountEnableFailedException:
             self._log.critical('Unparking failed')
             raise ParkingFailedException('Unparking failed')
@@ -287,7 +287,7 @@ class mainTelescope_pwi4(mainConfig):
             try:
                 self.unpark()
             except ParkingFailedException:
-                raise FindingHomeFailedException('Telescope homing failed : Unparking failed')
+                raise FindingHomeFailedException('Mount homing failed : Unparking failed')
         
         # Find home
         self.device.mount_find_home()            
@@ -299,9 +299,9 @@ class mainTelescope_pwi4(mainConfig):
             status = self.get_status()
             if abort_action.is_set():
                 self.abort()
-                self._log.warning('Telescope homing is aborted')
-                raise AbortionException('Telescope homing is aborted')
-        self._log.info('Telescope homed')
+                self._log.warning('Mount homing is aborted')
+                raise AbortionException('Mount homing is aborted')
+        self._log.info('Mount homed')
         return True
 
     def slew_radec(self,
@@ -343,7 +343,7 @@ class mainTelescope_pwi4(mainConfig):
                 try:
                     result_unpark = self.unpark()
                 except ParkingFailedException:
-                    raise SlewingFailedException('Telescope slewing is failed : Unparking failed')
+                    raise SlewingFailedException('Mount slewing is failed : Unparking failed')
         
         # Slew
         self.device.mount_goto_ra_dec_j2000(target.ra_hour, target.dec_deg)
@@ -354,9 +354,9 @@ class mainTelescope_pwi4(mainConfig):
             status = self.get_status()
             if abort_action.is_set():
                 self.abort()
-                self._log.warning('Telescope parking is aborted')
-                raise AbortionException('Telescope slewing is aborted')
-        self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
+                self._log.warning('Mount parking is aborted')
+                raise AbortionException('Mount slewing is aborted')
+        self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
         time.sleep(self._settle_time)
         status = self.get_status()
         self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(float(status['ra']), float(status['dec']), float(status['alt']), float(status['az'])))
@@ -364,12 +364,12 @@ class mainTelescope_pwi4(mainConfig):
             try:
                 self.tracking_off()
             except TrackingFailedException:
-                raise SlewingFailedException('Telescope slewing is failed : Tracking failed')
+                raise SlewingFailedException('Mount slewing is failed : Tracking failed')
         else:
             try:
                 self.tracking_on()
             except TrackingFailedException:
-                raise SlewingFailedException('Telescope slewing is failed : Tracking failed')                    
+                raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
         return True
     
     def slew_altaz(self,
@@ -406,7 +406,7 @@ class mainTelescope_pwi4(mainConfig):
                 try:
                     result_unpark = self.unpark()
                 except ParkingFailedException:
-                    raise SlewingFailedException('Telescope slewing is failed : Unparking failed')
+                    raise SlewingFailedException('Mount slewing is failed : Unparking failed')
           
         # Slew
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
@@ -417,9 +417,9 @@ class mainTelescope_pwi4(mainConfig):
             status = self.get_status()
             if abort_action.is_set():
                 self.abort()
-                self._log.warning('Telescope parking is aborted')
-                raise AbortionException('Telescope slewing is aborted')
-        self._log.info(f'Telescope settling for {self.config["TELESCOPE_SETTLETIME"]}s...' )
+                self._log.warning('Mount parking is aborted')
+                raise AbortionException('Mount slewing is aborted')
+        self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
         time.sleep(self._settle_time)    
         status = self.get_status()
         self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(float(status['alt']), float(status['az'])))
@@ -427,12 +427,12 @@ class mainTelescope_pwi4(mainConfig):
             try:
                 self.tracking_off()
             except TrackingFailedException:
-                raise SlewingFailedException('Telescope slewing is failed : Tracking failed')
+                raise SlewingFailedException('Mount slewing is failed : Tracking failed')
         else:
             try:
                 self.tracking_on()
             except TrackingFailedException:
-                raise SlewingFailedException('Telescope slewing is failed : Tracking failed')                    
+                raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
         return True
 
     def tracking_on(self):
@@ -477,7 +477,7 @@ class mainTelescope_pwi4(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    tel  =mainTelescope_pwi4(unitnum = 1)
+    tel  =mainMount_pwi4(unitnum = 1)
     tel.slew_altaz(alt = 35, az = 270, abort_action = Event())
     
 #%%

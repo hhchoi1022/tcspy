@@ -12,17 +12,6 @@ class mainConfig:
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
-        
-        if self.unitnum:
-            # Specified units config params
-            self._configfilepath_unit = configpath + '7DT%.2d' % self.unitnum + '/'
-            self._configfilekey_unit = self._configfilepath_unit + '*.config'
-            self._configfiles_unit = glob.glob(self._configfilekey_unit)
-            if len(self._configfiles_unit) == 0:
-                print('No configuration file is found.\nTo make default configuration files, run tcspy.configuration.make_config')
-            else:
-                config_unit = self._load_configuration(self._configfiles_unit)
-                self.config.update(config_unit)
                 
         # global config params
         self._configfilepath_global = configpath
@@ -34,6 +23,17 @@ class mainConfig:
         else:
             config_global = self._load_configuration(self._configfiles_global)
             self.config.update(config_global)
+        
+        if self.unitnum:
+            # Specified units config params
+            self._configfilepath_unit = configpath + '7DT%.2d' % self.unitnum + '/'
+            self._configfilekey_unit = self._configfilepath_unit + '*.config'
+            self._configfiles_unit = glob.glob(self._configfilekey_unit)
+            if len(self._configfiles_unit) == 0:
+                print('No configuration file is found.\nTo make default configuration files, run tcspy.configuration.make_config')
+            else:
+                config_unit = self._load_configuration(self._configfiles_unit)
+                self.config.update(config_unit)
 
     def _load_configuration(self, 
                             configfiles):
@@ -59,20 +59,21 @@ class mainConfig:
             print('New configuration file made : %s' % (savepath+filename))
             
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
-        telescope_params = dict(TELESCOPE_DEVICETYPE='PWI4',  # Alpaca or PWI4
-                                TELESCOPE_HOSTIP= ip_address,
-                                TELESCOPE_PORTNUM='8220',
-                                TELESCOPE_DEVICENUM=0,
-                                TELESCOPE_PARKALT=40,
-                                TELESCOPE_PARKAZ=300,
-                                TELESCOPE_RMSRA=0.15,
-                                TELESCOPE_RMSDEC=0.15,
-                                TELESCOPE_CHECKTIME=0.5,
-                                TELESCOPE_DIAMETER=0.5,
-                                TELESCOPE_APAREA=0.196,
-                                TELESCOPE_FOCALLENGTH=1500,
-                                TELESCOPE_SETTLETIME=3, #seconds
-                                )
+        mount_params = dict(MOUNT_DEVICETYPE='Alpaca',  # Alpaca or PWI4
+                            MOUNT_HOSTIP= ip_address,
+                            MOUNT_PORTNUM='32323',
+                            MOUNT_DEVICENUM=0,
+                            MOUNT_PARKALT=40,
+                            MOUNT_PARKAZ=300,
+                            MOUNT_RMSRA=0.15,
+                            MOUNT_RMSDEC=0.15,
+                            MOUNT_CHECKTIME=0.5,
+                            MOUNT_DIAMETER=0.5,
+                            MOUNT_APAREA=0.196,
+                            MOUNT_FOCALLENGTH=1500,
+                            MOUNT_SETTLETIME=3, #seconds
+                            MOUNT_NAME='7DT%.2d' % self.unitnum
+                            )
         camera_params = dict(CAMERA_HOSTIP= ip_address,
                              CAMERA_PORTNUM=portnum,
                              CAMERA_DEVICENUM=0,
@@ -85,9 +86,9 @@ class mainConfig:
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{savepath_unit}filter.offset")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
+        focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='8220',
+                              FOCUSER_PORTNUM='32323',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -98,7 +99,7 @@ class mainConfig:
                                OBSERVER_ELEVATION= 1580,
                                OBSERVER_TIMEZONE= 'America/Santiago',
                                OBSERVER_NAME='Hyeonho Choi',
-                               OBSERVER_OBSERVATORY='7DT%.2d' % self.unitnum
+                               OBSERVER_OBSERVATORY='7DT'
                                )
         
         image_params = dict(FILENAME_FORMAT= "$$TELESCOP$$-$$UTCDATE$$-$$UTCTIME$$-$$OBJECT$$-$$FILTER$$-$$EXPTIME$$s-$$FRAMENUM$$.fits",
@@ -111,7 +112,6 @@ class mainConfig:
         
         # Share configuration
         
-
         weather_params = dict(WEATHER_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
                               WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
@@ -162,15 +162,15 @@ class mainConfig:
                                SHUTDOWN_CCDTEMP = 10,
                                SHUTDOWN_CCDTEMP_TOLERANCE = 1)
         
-        make_configfile(telescope_params, filename='Telescope.config')
+        make_configfile(mount_params, filename='Mount.config')
         make_configfile(camera_params, filename='Camera.config')
         make_configfile(filterwheel_params, filename='FilterWheel.config')
         make_configfile(focuser_params, filename='Focuser.config')
-        make_configfile(observer_params, filename='Observer.config')
         make_configfile(logger_params, filename='Logger.config')
         make_configfile(image_params, filename='Image.config')
         
         # Global params
+        make_configfile(observer_params, filename='Observer.config', savepath= self._configfilepath_global)
         make_configfile(version_params, filename='Version.config', savepath= self._configfilepath_global)
         make_configfile(target_params, filename='Target.config', savepath= self._configfilepath_global)
         make_configfile(weather_params, filename='Weather.config', savepath= self._configfilepath_global)
@@ -188,8 +188,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=11)
-    A._initialize_config(ip_address='10.0.106.9', portnum = 11111)
+    A = mainConfig(unitnum=21)
+    A._initialize_config(ip_address='127.0.0.1', portnum = 32323)
 
 # %%
 # %%

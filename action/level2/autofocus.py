@@ -2,8 +2,8 @@
 #%%
 from threading import Event
 
-from tcspy.devices import IntegratedDevice
-from tcspy.devices import DeviceStatus
+from tcspy.devices import SingleTelescope
+from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.exception import *
@@ -16,22 +16,22 @@ from tcspy.action.level1 import ChangeFilter
 
 class AutoFocus(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
-                 Integrated_device : IntegratedDevice,
+                 singletelescope : SingleTelescope,
                  abort_action : Event):
-        self.IDevice = Integrated_device
-        self.IDevice_status = DeviceStatus(self.IDevice)
+        self.telescope = singletelescope
+        self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
-        self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self,
             filter_ : str,
             use_offset : bool):
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device status
-        status_camera = self.IDevice_status.camera
-        status_focuser = self.IDevice_status.focuser
-        status_telescope = self.IDevice_status.telescope
-        status_filterwheel = self.IDevice_status.filterwheel
+        status_camera = self.telescope_status.camera
+        status_focuser = self.telescope_status.focuser
+        status_telescope = self.telescope_status.mount
+        status_filterwheel = self.telescope_status.filterwheel
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -55,13 +55,13 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
         if use_offset:
-            info_filterwheel = self.IDevice.filterwheel.get_status()
+            info_filterwheel = self.telescope.filterwheel.get_status()
             current_filter = info_filterwheel['filter']
             if not current_filter == filter_:
-                offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
+                offset = self.telescope.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
                 self._log.info(f'Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
                 try:
-                    result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
+                    result_focus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action).run(position = offset, is_relative= True)
                 except ConnectionException:
                     self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
@@ -73,11 +73,11 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
             
         # Change filter
-        info_filterwheel = self.IDevice.filterwheel.get_status()
+        info_filterwheel = self.telescope.filterwheel.get_status()
         current_filter = info_filterwheel['filter']
         if not current_filter == filter_:
             try:
-                result_filterchange = ChangeFilter(Integrated_device = self.IDevice, abort_action = self.abort_action).run(filter_ = filter_)
+                result_filterchange = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action).run(filter_ = filter_)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
@@ -89,10 +89,10 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
         
         # run Autofocus
-        info_focuser = self.IDevice.focuser.get_status()
+        info_focuser = self.telescope.focuser.get_status()
         self._log.info(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}')
         try:
-            result_autofocus = self.IDevice.focuser.autofocus_start(abort_action = self.abort_action)
+            result_autofocus = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
         except AbortionException:
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
@@ -105,11 +105,11 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
             return True
     
     def abort(self):
-        info_focuser = self.IDevice.focuser.get_status()
+        info_focuser = self.telescope.focuser.get_status()
         if info_focuser['is_autofousing']:
-            self.IDevice.focuser.autofocus_stop()
+            self.telescope.focuser.autofocus_stop()
         if info_focuser['is_moving']:
-            self.IDevice.focuser.abort()
+            self.telescope.focuser.abort()
         return 
 
         

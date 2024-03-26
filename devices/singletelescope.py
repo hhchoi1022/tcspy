@@ -8,19 +8,19 @@ from tcspy.devices.observer import mainObserver
 from tcspy.devices.weather import mainWeather
 from tcspy.devices.safetymonitor import mainSafetyMonitor
 from tcspy.utils.error import *
-from tcspy.devices.telescope import mainTelescope_Alpaca
-from tcspy.devices.telescope import mainTelescope_pwi4
+from tcspy.devices.mount import mainMount_Alpaca
+from tcspy.devices.mount import mainMount_pwi4
 #%%
-class IntegratedDevice(mainConfig):
+class SingleTelescope(mainConfig):
     
     def __init__(self,
                  unitnum : int):
         super().__init__(unitnum= unitnum)
-        self.tel_type = self.config['TELESCOPE_DEVICETYPE'].lower()
+        self.mount_type = self.config['MOUNT_DEVICETYPE'].lower()
         self.focus_type = self.config['FOCUSER_DEVICETYPE'].lower()
         self.name = '7DT%.2d' % self.unitnum
         self.camera = None
-        self.telescope = None
+        self.mount = None
         self.focuser = None
         self.filterwheel = None
         self.weather = None
@@ -30,7 +30,7 @@ class IntegratedDevice(mainConfig):
 
     def _set_devices(self):
         self.camera = self._get_camera()
-        self.telescope = self._get_telescope()
+        self.mount = self._get_mount()
         self.focuser = self._get_focuser()
         self.filterwheel = self._get_filterwheel()
         self.weather = self._get_weather()
@@ -38,7 +38,7 @@ class IntegratedDevice(mainConfig):
     
     def update_status(self):
         self.camera.status = self.camera.get_status()
-        self.telescope.status = self.telescope.get_status()
+        self.mount.status = self.mount.get_status()
         self.focuser.status = self.focuser.get_status()
         self.filterwheel.status = self.filterwheel.get_status()
         self.weather.status = self.weather.get_status()
@@ -49,7 +49,7 @@ class IntegratedDevice(mainConfig):
         self.update_status()
         status = dict()
         status['camera'] = self.camera.status
-        status['telescope'] = self.telescope.status
+        status['mount'] = self.mount.status
         status['focuser'] = self.focuser.status
         status['filterwheel'] = self.filterwheel.status
         status['weather'] = self.weather.status
@@ -61,7 +61,7 @@ class IntegratedDevice(mainConfig):
     def devices(self):
         devices = dict()
         devices['camera'] = self.camera
-        devices['telescope'] = self.telescope
+        devices['mount'] = self.mount
         devices['focuser'] = self.focuser
         devices['filterwheel'] = self.filterwheel
         devices['weather'] = self.weather
@@ -71,13 +71,13 @@ class IntegratedDevice(mainConfig):
     def _get_camera(self):
         return mainCamera(unitnum= self.unitnum)
 
-    def _get_telescope(self):
-        if self.tel_type.lower() == 'alpaca':
-            return mainTelescope_Alpaca(unitnum= self.unitnum)
-        elif self.tel_type.lower() == 'pwi4':
-            return mainTelescope_pwi4(unitnum= self.unitnum)
+    def _get_mount(self):
+        if self.mount_type.lower() == 'alpaca':
+            return mainMount_Alpaca(unitnum= self.unitnum)
+        elif self.mount_type.lower() == 'pwi4':
+            return mainMount_pwi4(unitnum= self.unitnum)
         else: 
-            return TelTypeError(f'Telescope Type "{self.focus_type}" is not defined')
+            return TelTypeError(f'Mount Type "{self.mount_type}" is not defined')
 
     def _get_focuser(self):
         if self.focus_type.lower() == 'alpaca':
@@ -91,7 +91,7 @@ class IntegratedDevice(mainConfig):
         return mainFilterwheel(unitnum= self.unitnum)
     
     def _get_observer(self):
-        return mainObserver(unitnum= self.unitnum)
+        return mainObserver()
     
     def _get_weather(self):
         return mainWeather(unitnum= self.unitnum)

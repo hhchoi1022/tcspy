@@ -19,7 +19,7 @@ class mainImage(mainConfig):
                  config_info : dict,
                  image_info : dict,
                  camera_info : dict = None,
-                 telescope_info : dict = None,
+                 mount_info : dict = None,
                  filterwheel_info : dict = None,
                  focuser_info : dict = None,
                  observer_info : dict = None,
@@ -28,10 +28,10 @@ class mainImage(mainConfig):
                  ):
         '''
         frame_number = int(frame_number)
-        config_info = self.IDevice.config
+        config_info = self.telescope.config
         image_info = imginfo
         camera_info = status['camera']
-        telescope_info = status['telescope']
+        mount_info = status['mount']
         filterwheel_info = status['filterwheel']
         focuser_info = status['focuser']
         observer_info = status['observer']
@@ -43,7 +43,7 @@ class mainImage(mainConfig):
         self._configinfo = config_info
         self._imginfo = image_info
         self._caminfo = camera_info
-        self._telinfo = telescope_info
+        self._mountinfo = mount_info
         self._filtinfo = filterwheel_info
         self._focusinfo = focuser_info
         self._obsinfo = observer_info
@@ -105,12 +105,14 @@ class mainImage(mainConfig):
         
         info = dict()
         # telescope
-        info['TEL_IP'] = self._format_header(self._configinfo['TELESCOPE_HOSTIP'],'Hosting IP for ALPACA telescope device')
-        info['TEL_PRT'] =self._format_header(self._configinfo['TELESCOPE_PORTNUM'],'Port number of ALPACA telescope device')
-        info['TEL_NUM'] = self._format_header(self._configinfo['TELESCOPE_DEVICENUM'],'Device number of ALPACA telescope device')
-        info['FOCALLEN'] = self._format_header(self._configinfo['TELESCOPE_FOCALLENGTH'],'Focal length of the telescope in mm')
-        info['APTDIA'] = self._format_header(self._configinfo['TELESCOPE_DIAMETER'], 'Diameter of the telescope in m')
-        info['APTAREA'] = self._format_header(1e4*np.pi*(float(self._configinfo['TELESCOPE_DIAMETER'])/2)**2, 'Aperture area of the telescope in mm^2')
+        info['MNT_IP'] = self._format_header(self._configinfo['MOUNT_HOSTIP'],'Hosting IP for TCSpy mount device')
+        info['MNT_PRT'] =self._format_header(self._configinfo['MOUNT_PORTNUM'],'Port number of TCSpy mount device')
+        info['MNT_NUM'] = self._format_header(self._configinfo['MOUNT_DEVICENUM'],'Device number of TCSpy mount device')
+        info['FOCALLEN'] = self._format_header(self._configinfo['MOUNT_FOCALLENGTH'],'Focal length of the telescope in mm')
+        info['APTDIA'] = self._format_header(self._configinfo['MOUNT_DIAMETER'], 'Diameter of the telescope in m')
+        info['APTAREA'] = self._format_header(1e4*np.pi*(float(self._configinfo['MOUNT_DIAMETER'])/2)**2, 'Aperture area of the telescope in mm^2')
+        info['TELESCOP'] = self._format_header(self._configinfo['MOUNT_NAME'], 'Name of the telescope')
+
         # camera
         info['CAM_IP'] = self._format_header(self._configinfo['CAMERA_HOSTIP'],'Hosting IP for ALPACA camera device')
         info['CAM_PRT'] = self._format_header(self._configinfo['CAMERA_PORTNUM'],'Port number of ALPACA camera device')
@@ -189,11 +191,11 @@ class mainImage(mainConfig):
         info['AZIMUTH'] = None
         info['RA'] = None
         info['DEC'] = None
-        if self._telinfo:
-            info['ALTITUDE'] = self._format_header(self._telinfo['alt'], 'Altitude of the telescope pointing')
-            info['AZIMUTH'] = self._format_header(self._telinfo['az'], 'Azimuth of the telescope pointing')
-            info['RA'] = self._format_header(self._telinfo['ra'], 'Right ascension of the telescope pointing')
-            info['DEC'] = self._format_header(self._telinfo['dec'], 'Declination of the telescope pointing')
+        if self._mountinfo:
+            info['ALTITUDE'] = self._format_header(self._mountinfo['alt'], 'Altitude of the telescope pointing')
+            info['AZIMUTH'] = self._format_header(self._mountinfo['az'], 'Azimuth of the telescope pointing')
+            info['RA'] = self._format_header(self._mountinfo['ra'], 'Right ascension of the telescope pointing')
+            info['DEC'] = self._format_header(self._mountinfo['dec'], 'Declination of the telescope pointing')
         return info
         
     def _add_filtwheelinfo_to_hdr(self):
@@ -212,13 +214,11 @@ class mainImage(mainConfig):
     
     def _add_obsinfo_to_hdr(self):
         info = dict()
-        info['TELESCOP'] = None
         info['OBSERVER'] = None
         info['SITELAT'] = None
         info['SITELONG'] = None
         info['SITEELEV'] = None
         if self._obsinfo:
-            info['TELESCOP'] = self._format_header(self._obsinfo['name_observatory'], 'Name of the telescope')
             info['OBSERVER'] = self._format_header(self._obsinfo['name_observer'], 'Name of the observer') 
             info['SITELAT'] = self._format_header(self._obsinfo['latitude'], 'Latitude of the observatory') 
             info['SITELONG'] = self._format_header(self._obsinfo['longitude'], 'Longitude of the observatory') 
@@ -277,7 +277,6 @@ class mainImage(mainConfig):
         hdu = fits.PrimaryHDU()
         hdu.data = self._imginfo['data']
         for key, value in all_info.items():
-            
             hdu.header[key] = (value['value'],str(value['note']))
         return hdu
     

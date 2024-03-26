@@ -1,7 +1,8 @@
 #%%
 from threading import Event
+import time
 
-from tcspy.devices import IntegratedDevice
+from tcspy.devices import SingleTelescope
 from tcspy.devices import MultiTelescopes
 from tcspy.interfaces import *
 from tcspy.utils.target import SingleTarget
@@ -46,7 +47,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             dec : float = None,
             alt : float = None,
             az : float = None,
-            target_name : str = None,
+            name : str = None,
             objtype : str = None,
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True
@@ -58,11 +59,11 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         specmode = 'specall'
         binning= '1,1'
         imgtype = 'Light'
-        ra= '150.11667'
+        ra= '250.11667'
         dec= '2.20556'
         alt = None
         az = None
-        target_name = "COSMOS"
+        name = "COSMOS"
         objtype = 'ToO'
         autofocus_before_start= True
         autofocus_when_filterchange= True
@@ -70,20 +71,20 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
 
         # Check condition of the instruments for this Action
         status_multitelescope = self.multitelescopes.status
-        for IDevice_name, IDevice_status in status_multitelescope.items():
-            self._log[IDevice_name].info(f'[{type(self).__name__}] is triggered.')
-            status_filterwheel = IDevice_status['filterwheel']
-            status_camera = IDevice_status['camera']
-            status_telescope = IDevice_status['telescope']
-            status_focuser = IDevice_status['focuser']
+        for telescope_name, telescope_status in status_multitelescope.items():
+            self._log[telescope_name].info(f'[{type(self).__name__}] is triggered.')
+            status_filterwheel = telescope_status['filterwheel']
+            status_camera = telescope_status['camera']
+            status_mount = telescope_status['mount']
+            status_focuser = telescope_status['focuser']
             if status_filterwheel.lower() == 'dicconnected':
-                self._log.critical(f'{IDevice_name} filterwheel is disconnected.')
+                self._log.critical(f'{telescope_name} filterwheel is disconnected.')
             if status_camera.lower() == 'dicconnected':
-                self._log.critical(f'{IDevice_name} camera is disconnected.')
-            if status_telescope.lower() == 'dicconnected':
-                self._log.critical(f'{IDevice_name} telescope is disconnected.')
+                self._log.critical(f'{telescope_name} camera is disconnected.')
+            if status_mount.lower() == 'dicconnected':
+                self._log.critical(f'{telescope_name} mount is disconnected.')
             if status_focuser.lower() == 'dicconnected':
-                self._log.critical(f'{IDevice_name} focuser is disconnected.')
+                self._log.critical(f'{telescope_name} focuser is disconnected.')
                 
         # Abort when triggered
         if self.abort_action.is_set():
@@ -97,7 +98,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                                     dec = dec, 
                                     alt = alt, 
                                     az = az,
-                                    name = target_name,
+                                    name = name,
                                     objtype = objtype,
                                     
                                     exptime = exptime,
@@ -114,45 +115,58 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
-        for IDevice_name, IDevice in self.multitelescopes.devices.items():
-            filter_ = specmode_dict[IDevice_name]
+        for telescope_name, telescope in self.multitelescopes.devices.items():
+            filter_ = specmode_dict[telescope_name]
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
-            all_params_obs[IDevice_name] = params_obs
+            all_params_obs[telescope_name] = params_obs
         
         # Run Multiple actions
         multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)
         multiaction.run()
         
-        for IDevice_name, IDevice_status in status_multitelescope.items():
-            self._log[IDevice_name].info(f'[{type(self).__name__}] is finished')
+        # Wait for finishing this action 
+        action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
+        while not action_done:
+            time.sleep(0.1)
+            action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
+        action_results = multiaction.results.copy()
+        
+        for telescope_name in self.multitelescopes.devices.keys():
+            if action_results[telescope_name]:
+                self._log[telescope_name].info(f'[{type(self).__name__}] is finished')
+            else:
+                self._log[telescope_name].info(f'[{type(self).__name__}] is failed')
+        return True
 
     def abort(self):
         self.abort_action.set()
         status_multitelescope = self.multitelescopes.status
 
-        for IDevice_name, IDevice in self.multitelescopes.devices.items():
-            status = status_multitelescope[IDevice_name]
-            self._log[IDevice_name].warning(f'[{type(self).__name__}] is aborted')
+        for telescope_name, telescope in self.multitelescopes.devices.items():
+            status = status_multitelescope[telescope_name]
+            self._log[telescope_name].warning(f'[{type(self).__name__}] is aborted')
 
             if status.filterwheel.lower() == 'busy':
-                IDevice.filterwheel.abort()
+                telescope.filterwheel.abort()
             if status.camera.lower() == 'busy':
-                IDevice.camera.abort()
-            if status.telescope.lower() == 'busy':
-                IDevice.telescope.abort()
+                telescope.camera.abort()
+            if status.mount.lower() == 'busy':
+                telescope.mount.abort()
 
     
 # %%
 if __name__ == '__main__':
-    IDevice_1 = IntegratedDevice(1)
-    IDevice_10 = IntegratedDevice(10)
-    IDevice_11 = IntegratedDevice(11)
-    M = MultiTelescopes([IDevice_1, IDevice_10, IDevice_11])
+    #telescope_1 = SingleTelescope(1)
+    #telescope_10 = SingleTelescope(10)
+    #telescope_11 = SingleTelescope(11)
+    telescope_21 = SingleTelescope(21)
+    #M = MultiTelescopes([telescope_1, telescope_10, telescope_11])
+    M = MultiTelescopes([telescope_21])
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
@@ -165,13 +179,13 @@ if __name__ == '__main__':
     dec= '2.20556'
     alt = None
     az = None
-    target_name = "COSMOS"
+    name = "COSMOS"
     objtype = 'Commissioning'
     autofocus_before_start= True
     autofocus_when_filterchange= True
     S.run(exptime = exptime, count = count, specmode = specmode,
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,
-        alt = alt, az = az, target_name = target_name, objtype = objtype,
+        alt = alt, az = az, name = name, objtype = objtype,
         autofocus_before_start= autofocus_before_start,
         autofocus_when_filterchange= autofocus_when_filterchange)
     # %%

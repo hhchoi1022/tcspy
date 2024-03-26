@@ -1,8 +1,8 @@
 #%%
 from threading import Event
 
-from tcspy.devices import IntegratedDevice
-from tcspy.devices import DeviceStatus
+from tcspy.devices import SingleTelescope
+from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
@@ -19,12 +19,12 @@ from tcspy.action.level2 import AutoFocus
 #%%
 class SingleObservation(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
-                 Integrated_device : IntegratedDevice,
+                 singletelescope : SingleTelescope,
                  abort_action : Event):
-        self.IDevice = Integrated_device
-        self.IDevice_status = DeviceStatus(self.IDevice)
+        self.telescope = singletelescope
+        self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
-        self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def _exposureinfo_to_list(self,
                               filter_ : str,
@@ -63,7 +63,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             dec : float = None,
             alt : float = None, # When altaz == None: do not move 
             az : float = None,
-            target_name : str = None,
+            name : str = None,
             obsmode : str = 'Single',
             specmode : str = None,
             ntelescope : int = 1,
@@ -87,7 +87,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         dec= '-20.5520'
         alt = None
         az = None
-        target_name = "NGC3147"
+        name = "NGC3147"
         obsmode= 'Spec'
         specmode = 'specall'
         objtype = 'ToO'
@@ -102,7 +102,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         imgtype = 'Light'
         ra= '200.4440'
         dec= '-20.5520'
-        target_name = "NGC3147"
+        name = "NGC3147"
         obsmode= 'Single'
         specmode = None
         objtype = None
@@ -112,9 +112,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         
         
         # Check condition of the instruments for this Action
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
-        status_telescope = self.IDevice_status.telescope
+        status_filterwheel = self.telescope_status.filterwheel
+        status_camera = self.telescope_status.camera
+        status_mount = self.telescope_status.mount
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -122,9 +122,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         if status_filterwheel.lower() == 'disconnected':
             trigger_abort_disconnected = True
             self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
-        if status_telescope.lower() == 'disconnected':
+        if status_mount.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered') 
+            self._log.critical(f'mount is disconnected. Action "{type(self).__name__}" is not triggered') 
         if trigger_abort_disconnected:
             raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
@@ -136,12 +136,12 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Set target
-        target = SingleTarget(observer = self.IDevice.observer, 
+        target = SingleTarget(observer = self.telescope.observer, 
                               ra = ra, 
                               dec = dec, 
                               alt = alt, 
                               az = az, 
-                              name = target_name, 
+                              name = name, 
                               objtype= objtype,
                               
                               exptime = exptime,
@@ -158,7 +158,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         # Slewing
         if target.status['coordtype'] == 'radec':
             try:
-                slew = SlewRADec(Integrated_device = self.IDevice, abort_action= self.abort_action)
+                slew = SlewRADec(singletelescope = self.telescope, abort_action= self.abort_action)
                 result_slew = slew.run(ra = float(target_info['ra']), dec = float(target_info['dec']))
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -172,7 +172,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 
         elif target.status['coordtype'] == 'altaz':
             try:
-                slew = SlewAltAz(Integrated_device = self.IDevice, abort_action= self.abort_action)
+                slew = SlewAltAz(singletelescope = self.telescope, abort_action= self.abort_action)
                 result_slew = slew.run(alt = float(target_info['alt']), az = float(target_info['az']))
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -197,7 +197,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         if autofocus_before_start:
             try:
                 filter_ = filter_info[0]
-                result_autofocus = AutoFocus(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_, use_offset = True)
+                result_autofocus = AutoFocus(singletelescope= self.telescope, abort_action= self.abort_action).run(filter_ = filter_, use_offset = True)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
@@ -210,17 +210,17 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             
         result_all_exposure = []
         for filter_, exptime, count, binning in zip(filter_info, exptime_info, count_info, binning_info):
-            info_filterwheel = self.IDevice.filterwheel.get_status()
+            info_filterwheel = self.telescope.filterwheel.get_status()
             current_filter = info_filterwheel['filter']
             is_filter_changed = (current_filter != filter_)
             
             if is_filter_changed:
                 
                 # Apply offset
-                offset = self.IDevice.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
+                offset = self.telescope.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
                 self._log.info(f'Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
                 try:
-                    result_focus = ChangeFocus(Integrated_device = self.IDevice, abort_action = self.abort_action).run(position = offset, is_relative= True)
+                    result_focus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action).run(position = offset, is_relative= True)
                 except ConnectionException:
                     self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
@@ -233,7 +233,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 
                 # Filterchange
                 try:    
-                    result_filterchange = ChangeFilter(Integrated_device= self.IDevice, abort_action= self.abort_action).run(filter_ = filter_)
+                    result_filterchange = ChangeFilter(singletelescope= self.telescope, abort_action= self.abort_action).run(filter_ = filter_)
                 except ConnectionException:
                     self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
@@ -247,7 +247,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 # Autofocus when filter changed
                 if autofocus_when_filterchange:
                     try:
-                        result_autofocus = AutoFocus(Integrated_device= self.IDevice, abort_action = self.abort_action).run(filter_ = filter_, use_offset = False)
+                        result_autofocus = AutoFocus(singletelescope= self.telescope, abort_action = self.abort_action).run(filter_ = filter_, use_offset = False)
                     except ConnectionException:
                         self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
                         raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
@@ -265,7 +265,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 raise  AbortionException(f'[{type(self).__name__}] is aborted.')
             
             # Exposure
-            exposure = Exposure(Integrated_device = self.IDevice, abort_action = self.abort_action)
+            exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
             for frame_number in range(int(count)):
                 try:
                     result_exposure = exposure.run(frame_number = int(frame_number),
@@ -279,7 +279,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                     dec = dec,
                                                     alt = alt,
                                                     az = az,
-                                                    target_name = target_name,
+                                                    name = name,
                                                     objtype = objtype)
                     result_all_exposure.append(result_exposure)
                 except ConnectionException:
@@ -297,24 +297,24 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         return all(result_all_exposure)
             
     def abort(self):
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
-        status_telescope = self.IDevice_status.telescope
+        status_filterwheel = self.telescope_status.filterwheel
+        status_camera = self.telescope_status.camera
+        status_mount = self.telescope_status.mount
         if status_filterwheel.lower() == 'busy':
-            self.IDevice.filterwheel.abort()
+            self.telescope.filterwheel.abort()
         if status_camera.lower() == 'busy':
-            self.IDevice.camera.abort()
-        if status_telescope.lower() == 'busy':
-            self.IDevice.telescope.abort()
+            self.telescope.camera.abort()
+        if status_mount.lower() == 'busy':
+            self.telescope.mount.abort()
     
 # %%
 if __name__ == '__main__':
     from tcspy.action.level1 import Connect
-    IDevice = IntegratedDevice(21)
+    telescope = SingleTelescope(21)
     abort_action = Event()
-    C = Connect(IDevice, abort_action)
+    C = Connect(telescope, abort_action)
     C.run()
-    S = SingleObservation(IDevice, abort_action)
+    S = SingleObservation(telescope, abort_action)
     S.run(exptime = '5,5', 
           count = '2,2', 
           filter_ = 'specall', 

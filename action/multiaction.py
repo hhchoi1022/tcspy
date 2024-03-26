@@ -1,11 +1,11 @@
 #%%
 from threading import Thread, Event
 from queue import Queue
-from tcspy.devices import IntegratedDevice
+from tcspy.devices import SingleTelescope
 from typing import List, Union
 class MultiAction:
     def __init__(self, 
-                 array_telescope : List[IntegratedDevice],
+                 array_telescope : List[SingleTelescope],
                  array_kwargs : Union[List[dict], dict],
                  function : object,
                  abort_action : Event

@@ -64,12 +64,9 @@ class mainObserver(mainConfig):
         Calculates the next set time of the Moon at the observer's location, starting from the
     """
     
-    def __init__(self,
-                 unitnum : int,
-                 **kwargs
-                 ):
+    def __init__(self):
         
-        super().__init__(unitnum = unitnum)
+        super().__init__()
         self._latitude = float(self.config['OBSERVER_LATITUDE'])*u.deg
         self._longitude = float(self.config['OBSERVER_LONGITUDE'])*u.deg
         self._elevation = float(self.config['OBSERVER_ELEVATION'])*u.m

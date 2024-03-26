@@ -1,8 +1,8 @@
 #%%
 from threading import Event
 
-from tcspy.devices import IntegratedDevice
-from tcspy.devices import DeviceStatus
+from tcspy.devices import SingleTelescope
+from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
 from tcspy.utils.logger import mainLogger
 from tcspy.utils.exception import *
@@ -10,17 +10,17 @@ from tcspy.utils.exception import *
 class FansOff(Interface_Runnable, Interface_Abortable):
     
     def __init__(self, 
-                 Integrated_device : IntegratedDevice,
+                 singletelescope : SingleTelescope,
                  abort_action : Event):
-        self.IDevice = Integrated_device
-        self.IDevice_status = DeviceStatus(self.IDevice)
+        self.telescope = singletelescope
+        self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
-        self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self):
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
-        if self.IDevice_status.focuser.lower() == 'disconnected':
+        if self.telescope_status.focuser.lower() == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: focuser is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: focuser is disconnected.')
         
@@ -32,7 +32,7 @@ class FansOff(Interface_Runnable, Interface_Abortable):
          
         # Start action
         try:
-            result_fansoff = self.IDevice.focuser.fans_off()
+            result_fansoff = self.telescope.focuser.fans_off()
         except FocusFansFailedException:
             self._log.critical(f'[{type(self).__name__}] is failed: fan operation failure.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: fan operation failure.')          

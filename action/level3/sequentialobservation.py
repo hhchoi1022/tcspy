@@ -2,8 +2,8 @@
 from threading import Event
 from astropy.table import Table
 
-from tcspy.devices import IntegratedDevice
-from tcspy.devices import DeviceStatus
+from tcspy.devices import SingleTelescope
+from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.logger import mainLogger
@@ -16,12 +16,12 @@ from tcspy.utils.exception import *
 #%%
 class SequentialObservation(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
-                 Integrated_device : IntegratedDevice,
+                 singletelescope : SingleTelescope,
                  abort_action : Event):
-        self.IDevice = Integrated_device
-        self.IDevice_status = DeviceStatus(self.IDevice)
+        self.telescope = singletelescope
+        self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
-        self._log = mainLogger(unitnum = self.IDevice.unitnum, logger_name = __name__+str(self.IDevice.unitnum)).log()
+        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def _get_exposure_info(self,
                            filter_str : str,
@@ -60,9 +60,9 @@ class SequentialObservation(Interface_Runnable, Interface_Abortable):
             autofocus_when_filterchange : bool = False
             ):
         # Check condition of the instruments for this Action
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
-        status_telescope = self.IDevice_status.telescope
+        status_filterwheel = self.telescope_status.filterwheel
+        status_camera = self.telescope_status.camera
+        status_mount = self.telescope_status.mount
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -70,9 +70,9 @@ class SequentialObservation(Interface_Runnable, Interface_Abortable):
         if status_filterwheel.lower() == 'disconnected':
             trigger_abort_disconnected = True
             self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
-        if status_telescope.lower() == 'disconnected':
+        if status_mount.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered') 
+            self._log.critical(f'Mount is disconnected. Action "{type(self).__name__}" is not triggered') 
         if trigger_abort_disconnected:
             return ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
@@ -86,19 +86,19 @@ class SequentialObservation(Interface_Runnable, Interface_Abortable):
         # SingleObservation
         exposure_info = self._get_exposure_info(filter_str= filter_str, exptime_str = exptime_str, count_str= count_str, binning_str= binning_str)
         
-        target = mainTarget(unitnum = self.IDevice.unitnum, observer = self.IDevice.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name, target_obsmode = 'Spec')                
+        target = mainTarget(unitnum = self.telescope.unitnum, observer = self.telescope.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name, target_obsmode = 'Spec')                
         
         
             
         
     def abort(self):
-        status_filterwheel = self.IDevice_status.filterwheel
-        status_camera = self.IDevice_status.camera
-        status_telescope = self.IDevice_status.telescope
+        status_filterwheel = self.telescope_status.filterwheel
+        status_camera = self.telescope_status.camera
+        status_mount = self.telescope_status.mount
         if status_filterwheel.lower() == 'busy':
-            self.IDevice.filterwheel.abort()
+            self.telescope.filterwheel.abort()
         if status_camera.lower() == 'busy':
-            self.IDevice.camera.abort()
-        if status_telescope.lower() == 'busy':
-            self.IDevice.telescope.abort()
+            self.telescope.camera.abort()
+        if status_mount.lower() == 'busy':
+            self.telescope.mount.abort()
     
