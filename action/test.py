@@ -19,7 +19,7 @@ telescope.camera.get_status()
 E = Exposure(telescope, abort_action)
 E.run(frame_number = 1, exptime = 1, filter_ = 'g', imgtype = 'BIAS')
 E.run(frame_number = 1, exptime = 1, filter_ = 'r', imgtype = 'DARK')
-E.run(frame_number = 1, exptime = 1, filter_ = 'i', imgtype ='Light', binning = 1, target_name = 'ABC', objtype = None, obsmode = 'Single')
+E.run(frame_number = 1, exptime = 1, filter_ = 'i', imgtype ='Light', binning = 1, name = 'ABC', objtype = None, obsmode = 'Single')
 # %%
 FansOn(telescope, abort_action).run()
 # %%
@@ -32,7 +32,7 @@ telescope.mount.get_status()
 SlewAltAz(telescope, abort_action).run(alt = 40, az = 180)
 telescope.mount.get_status()
 # %%
-SlewRADec(telescope, abort_action).run(ra = 220, dec = -22)
+SlewRADec(telescope, abort_action).run(ra = 300, dec = -22)
 # %%
 TrackingOff(telescope, abort_action).run()
 # %%
@@ -45,7 +45,7 @@ AutoFocus(telescope, abort_action).run(filter_ = 'g', use_offset = True)
 # %%
 telescope.filterwheel.get_status()
 # %%
-SingleObservation(telescope, abort_action).run(10, 1, 'i', ra =150, dec = -22, autofocus_before_start = True)
+SingleObservation(telescope, abort_action).run(10, 1, 'i', ra =300, dec = -22, autofocus_before_start = True)
 # %%
 telescope1 = SingleTelescope(1)
 telescope2 = SingleTelescope(2)

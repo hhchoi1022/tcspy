@@ -36,8 +36,7 @@ class NightObservation(mainConfig):
         self.tel_queue = dict()
         self.initialize()
 
-        self.action_lock = threading.Lock()
-        self.tel_lock = threading.Lock()
+        self.observation_abort = Event()
     
     def initialize(self):
         
@@ -53,7 +52,7 @@ class NightObservation(mainConfig):
                 self.tel_queue[tel_name] = self.multitelescopes.devices[tel_name]
 
     def _tel_is_ready(self, tel_status_dict):
-        ready_tel = tel_status_dict['telescope'] == 'idle'
+        ready_tel = tel_status_dict['mount'] == 'idle'
         ready_cam = tel_status_dict['camera'] == 'idle'
         ready_filt = tel_status_dict['filterwheel'] == 'idle'
         ready_focus = tel_status_dict['focuser'] == 'idle'
@@ -180,25 +179,24 @@ class NightObservation(mainConfig):
         print('DB Updated')
         return db
     
-    def observation(self):
+    def run(self):
         
-        obsnight = self.DB.Daily.obsnight
-        
-        observation_abort = Event()
-        
+        obsnight = self.DB.Daily.obsnight        
         obs_start_time = obsnight.sunset_astro
         obs_end_time = obsnight.sunrise_astro
         now = Time.now()
+        
         while now < obs_end_time:
             best_target, score = self.DB.Daily.best_target(utctime = now)
             print(f'Best target: {best_target["objname"]}')
             obsmode = best_target['obsmode'].upper()
+            objtype = best_target['objtype'].upper()
             is_obs_triggered = True
             if obsmode == 'SPEC':
                 ntelescope = best_target['ntelescope']
-                if len(self.tel_queue) == 1:
+                if len(self.tel_queue) >= ntelescope:
                     obs_tel = self.multitelescopes
-                    thread = Thread(target= self.specobs, kwargs = {'target' : best_target, 'multitelescopes' : obs_tel, 'abort_action' : observation_abort}, daemon = False)
+                    thread = Thread(target= self.specobs, kwargs = {'target' : best_target, 'multitelescopes' : obs_tel, 'abort_action' : self.observation_abort}, daemon = False)
                     thread.start()
                 else:
                     is_obs_triggered = False
@@ -208,7 +206,7 @@ class NightObservation(mainConfig):
                 if self.tel_queue.qsize() >= ntelescope:
                     obs_tel_list = [self.tel_queue.get() for _ in range(ntelescope)]
                     obs_tel = MultiTelescopes(obs_tel_list)
-                    action = self.deepobs(target = best_target, multitelescopes= obs_tel, abort_action = observation_abort)
+                    action = self.deepobs(target = best_target, multitelescopes= obs_tel, abort_action = self.observation_abort)
                 else:
                     is_obs_triggered = False
                     pass
@@ -216,7 +214,7 @@ class NightObservation(mainConfig):
                 ntelescope = best_target['ntelescope']
                 if self.tel_queue.qsize() >= ntelescope:
                     obs_tel = self.tel_queue.get()
-                    action = self.searchobs(target = best_target, multitelescopes= obs_tel, abort_action = observation_abort)
+                    action = self.searchobs(target = best_target, multitelescopes= obs_tel, abort_action = self.observation_abort)
                 else:
                     is_obs_triggered = False
                     pass
@@ -224,7 +222,7 @@ class NightObservation(mainConfig):
                 ntelescope = best_target['ntelescope']
                 if self.tel_queue.qsize() >= ntelescope:
                     obs_tel = self.tel_queue.get()
-                    action = self.singleobs(target = best_target, multitelescopes= obs_tel, abort_action = observation_abort)
+                    action = self.singleobs(target = best_target, multitelescopes= obs_tel, abort_action = self.observation_abort)
                 else:
                     is_obs_triggered = False
                     pass

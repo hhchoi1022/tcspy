@@ -30,7 +30,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
         # Check device status
         status_camera = self.telescope_status.camera
         status_focuser = self.telescope_status.focuser
-        status_telescope = self.telescope_status.mount
+        status_mount = self.telescope_status.mount
         status_filterwheel = self.telescope_status.filterwheel
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
@@ -39,9 +39,9 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
         if status_focuser.lower() == 'disconnected':
             trigger_abort_disconnected = True
             self._log.critical(f'Focuser is disconnected. Action "{type(self).__name__}" is not triggered')
-        if status_telescope.lower() == 'disconnected':
+        if status_mount.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'Telescope is disconnected. Action "{type(self).__name__}" is not triggered')
+            self._log.critical(f'Mount is disconnected. Action "{type(self).__name__}" is not triggered')
         if status_filterwheel.lower() == 'disconnected':
             trigger_abort_disconnected = True
             self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
