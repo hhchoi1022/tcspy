@@ -163,13 +163,24 @@ if __name__ == '__main__':
                          SingleTelescope(9),
                          SingleTelescope(10),
                          SingleTelescope(11),
-                         ]
+                        ]
+    
     print(time.time() - start)
 #%%
+if __name__ == '__main__':
+
+    start = time.time()
+
     M = MultiTelescopes(list_telescopes)
+    start = time.time()
+    M.status
+    print(time.time() - start)
+
     abort_action = Event()
     S = StartUp(M, abort_action = abort_action)
-    
-    
-    
+        
+        
+        
+
+    S.run()
 # %%

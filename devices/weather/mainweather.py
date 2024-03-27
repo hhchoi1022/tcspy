@@ -270,6 +270,9 @@ class mainWeather(mainConfig):
 if __name__ =='__main__':
     weather = mainWeather(unitnum = 1)
     weather.connect()
+    import time
+    start = time.time()
     print(weather.is_safe())
+    print(time.time() - start)
     #weather.disconnect()
 # %%

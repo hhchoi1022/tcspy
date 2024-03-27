@@ -151,32 +151,45 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             status = status_multitelescope[telescope_name]
             self._log[telescope_name].warning(f'[{type(self).__name__}] is aborted')
 
-            if status.filterwheel.lower() == 'busy':
+            if status['filterwheel'].lower() == 'busy':
                 telescope.filterwheel.abort()
-            if status.camera.lower() == 'busy':
+            if status['camera'].lower() == 'busy':
                 telescope.camera.abort()
-            if status.mount.lower() == 'busy':
+            if status['mount'].lower() == 'busy':
                 telescope.mount.abort()
 
     
 # %%
 if __name__ == '__main__':
-    #telescope_1 = SingleTelescope(1)
-    #telescope_10 = SingleTelescope(10)
-    #telescope_11 = SingleTelescope(11)
-    telescope_21 = SingleTelescope(21)
-    #M = MultiTelescopes([telescope_1, telescope_10, telescope_11])
-    M = MultiTelescopes([telescope_21])
+    import time
+    start = time.time()
+    list_telescopes = [SingleTelescope(1),
+                         SingleTelescope(2),
+                         SingleTelescope(3),
+                         SingleTelescope(5),
+                         SingleTelescope(6),
+                         SingleTelescope(7),
+                         SingleTelescope(8),
+                         SingleTelescope(9),
+                         SingleTelescope(10),
+                         SingleTelescope(11),
+                        ]
+    
+    print(time.time() - start)
+
+    start = time.time()
+
+    M = MultiTelescopes(list_telescopes)
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
     exptime= '60,60'
-    count= '5,5'
+    count= '1,1'
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
-    ra= '150.11667'
-    dec= '2.20556'
+    ra= '300.11667'
+    dec= '-20.20556'
     alt = None
     az = None
     name = "COSMOS"

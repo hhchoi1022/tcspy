@@ -188,8 +188,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=11)
-    A._initialize_config(ip_address='10.0.106.9', portnum = 11111)
+    A = mainConfig(unitnum=1)
+    A._initialize_config(ip_address='10.0.106.6', portnum = 11111)
 
 # %%
 # %%

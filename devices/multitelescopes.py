@@ -1,10 +1,12 @@
 #%%
+from threading import Thread
 from typing import List
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.logger import mainLogger
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 #%%
 
@@ -47,14 +49,17 @@ class MultiTelescopes:
                telescope_name):
         self.devices.pop(telescope_name)
         self.log.pop(telescope_name)
-    '''
+
     @property
-    def status(self):
-        telescopes_status_dict = dict()
-        for telescope in self._devices_list:
-            name_telescope = telescope.name
-            telescopes_status_dict[name_telescope] = TelescopeStatus(telescope).dict
-        return telescopes_status_dict'''
+    def status2(self):
+        self._status = dict()
+        for tel_name, telescope in self.devices.items():
+            Thread(target = self._get_telescope_status, kwargs = dict(telescope=telescope)).start()
+        while all(key in self._status for key in self.devices.keys()) == False:
+            print(self._status.keys())
+            time.sleep(0.005)
+        return self._status
+
 
     @property
     def status(self):
@@ -66,17 +71,35 @@ class MultiTelescopes:
         
         return status_dict
 
-    def _get_device_status(self, device):
-        return TelescopeStatus(device).dict
+    def _get_telescope_status(self, telescope):
+        self._status[telescope.name] = TelescopeStatus(telescope).dict
+    def _get_device_status(self, telescope):
+        return TelescopeStatus(telescope).dict
 # %%
 if __name__ == '__main__':
-    telescope_1 = SingleTelescope(21)
+    list_telescopes = [SingleTelescope(1),
+                         SingleTelescope(2),
+                         SingleTelescope(3),
+                         SingleTelescope(5),
+                         SingleTelescope(6),
+                         SingleTelescope(7),
+                         SingleTelescope(8),
+                         SingleTelescope(9),
+                         SingleTelescope(10),
+                         SingleTelescope(11),
+                         ]
     #telescope_2 = SingleTelescope(2)
-    M =  MultiTelescopes([telescope_1])
-    #M =  MultiTelescopes([telescope_1, telescope_2])
+    #M =  MultiTelescopes([telescope_1])
+    M =  MultiTelescopes(list_telescopes)
+#%%
+if __name__ == '__main__':
 
-    import time
     start = time.time()
     A = M.status
     print(time.time() -start)
+
+    start = time.time()
+    A = M.status2
+    print(time.time() -start)
+
 # %%
