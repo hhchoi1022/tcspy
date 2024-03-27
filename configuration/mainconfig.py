@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/hhchoi1022/tcspy/configuration/',
+                 configpath : str = '/home/kds/tcspy/configuration/',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -59,9 +59,9 @@ class mainConfig:
             print('New configuration file made : %s' % (savepath+filename))
             
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
-        mount_params = dict(MOUNT_DEVICETYPE='Alpaca',  # Alpaca or PWI4
+        mount_params = dict(MOUNT_DEVICETYPE='PWI4',  # Alpaca or PWI4
                             MOUNT_HOSTIP= ip_address,
-                            MOUNT_PORTNUM='32323',
+                            MOUNT_PORTNUM='8220',
                             MOUNT_DEVICENUM=0,
                             MOUNT_PARKALT=40,
                             MOUNT_PARKAZ=300,
@@ -86,9 +86,9 @@ class mainConfig:
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{savepath_unit}filter.offset")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
+        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='32323',
+                              FOCUSER_PORTNUM='8220',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -188,8 +188,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=21)
-    A._initialize_config(ip_address='127.0.0.1', portnum = 32323)
+    A = mainConfig(unitnum=11)
+    A._initialize_config(ip_address='10.0.106.9', portnum = 11111)
 
 # %%
 # %%
