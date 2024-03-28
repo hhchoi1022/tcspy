@@ -19,36 +19,45 @@ class mainMount_pwi4(mainConfig):
     A class representing a telescope that uses the PWI4 protocol.
 
     Parameters
-    ==========
-    1. Observer : mainObserver, optional
-        An instance of the mainObserver class used for observation. If None, a new instance is created using the mainConfig object.
+    ----------
+    unitnum : int
+        The unit number of the telescope.
+
+    Attributes
+    ----------
+    observer : mainObserver
+        An instance of the mainObserver class used for observation.
+    device : PWI4
+        An instance of the PWI4 class representing the telescope device.
+    status : dict
+        The current status of the telescope.
 
     Methods
-    =======
-    1. get_status() -> dict
+    -------
+    get_status() -> dict
         Get the current status of the telescope.
-    2. connect()
+    connect() -> bool
         Connect to the telescope.
-    3. disconnect()
+    disconnect() -> bool
         Disconnect from the telescope.
-    4. set_park(altitude : float = 40, azimuth : float = 180) -> None
-        Set the park position of the telescope
-    5. park()
+    set_park(altitude: float = 40, azimuth: float = 180) -> None
+        Set the park position of the telescope.
+    park(abort_action: Event, disable_mount=False) -> bool
         Park the telescope.
-    6. unpark()
+    unpark() -> bool
         Unpark the telescope.
-    7. find_home()
+    find_home(abort_action: Event) -> bool
         Find the home position of the telescope.
-    8. slew_radec(coordinate : SkyCoord = None, ra : float = None, dec : float = None, target_name : str = '', tracking = True)
+    slew_radec(ra: float, dec: float, abort_action: Event, tracking=True) -> bool
         Slew the telescope to a specified RA/Dec coordinate.
-    9. slew_altaz(coordinate : SkyCoord = None, alt : float = None, az : float = None, tracking = False)
+    slew_altaz(alt: float, az: float, abort_action: Event, tracking=False) -> bool
         Slews the telescope to the specified Alt-Azimuth coordinate.
-    10. tracking_on()
+    tracking_on() -> bool
         Activates the tracking mode of the mount.
-    11. tracking_off()
+    tracking_off() -> bool
         Deactivates the tracking mode of the mount.
-    12. abort()
-        Abort the movement of the mount
+    abort() -> None
+        Abort the movement of the mount.
     """
 
     def __init__(self,
@@ -71,27 +80,10 @@ class mainMount_pwi4(mainConfig):
         Get the current status of the telescope.
 
         Returns
-        =======
-        1. status : dict
-            A dictionary containing the following keys:
-            - 'update_time' : The timestamp of the last update.
-            - 'jd' : The Julian Date.
-            - 'ra' : The Right Ascension in J2000 epoch, in hours.
-            - 'dec' : The Declination in J2000 epoch, in degrees.
-            - 'alt' : The altitude of the telescope, in degrees.
-            - 'az' : The azimuth of the telescope, in degrees.
-            - 'at_parked' : True if the telescope is currently parked, False otherwise.
-            - 'at_home' : None.
-            - 'is_connected' : True if the telescope is connected, False otherwise.
-            - 'is_tracking' : True if the telescope is currently tracking, False otherwise.
-            - 'is_slewing' : True if the telescope is currently slewing, False otherwise.
-            - 'is_stationary' : True if the telescope is currently stationary, False otherwise.
-            - 'axis1_rms' : The RMS error of axis 1 in arcseconds.
-            - 'axis2_rms' : The RMS error of axis 2 in arcseconds.
-            - 'axis1_maxvel' : The maximum velocity of axis 1 in degrees per second.
-            - 'axis2_maxvel' : The maximum velocity of axis 2 in degrees per second.
+        -------
+        status : dict
+            A dictionary containing various status information.
         """
-        
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = "{:.6f}".format(Time.now().jd)
@@ -133,22 +125,16 @@ class mainMount_pwi4(mainConfig):
     
     @property
     def PWI_status(self):
+        """
+        Get the PWI status of the telescope.
+        """
         return self.device.status()
-    '''
-    def _update_PWI_status(self):
-        """
-        Update the status of the telescope.
-        """
-        
-        self.PWI_status = self.device.status()
-    '''
     
     @Timeout(5, 'Timeout')
     def connect(self):
         """
         Connect to the telescope.
         """
-        
         self._log.info('Connecting to the telescope...')
         status = self.get_status()
         try:
@@ -171,7 +157,6 @@ class mainMount_pwi4(mainConfig):
         """
         Disconnect from the telescope.
         """
-        
         self._log.info('Disconnecting to the telescope...')
         status = self.get_status()
         try:
@@ -190,6 +175,9 @@ class mainMount_pwi4(mainConfig):
         return True
     
     def enable(self):
+        """
+        Enable the mount axes.
+        """
         for axis_index in range(2):
             PWI_status = self.PWI_status
             try:
@@ -204,6 +192,9 @@ class mainMount_pwi4(mainConfig):
         return True
     
     def disable(self):
+        """
+        Disable the mount axes.
+        """
         for axis_index in range(2):
             PWI_status = self.PWI_status
             try:
@@ -219,7 +210,14 @@ class mainMount_pwi4(mainConfig):
     
     def park(self, abort_action : Event, disable_mount = False):
         """
-        Parks the telescope.
+        Park the telescope.
+
+        Parameters
+        ----------
+        abort_action : Event
+            An Event object to signal the abort action.
+        disable_mount : bool, optional
+            Whether to disable the mount after parking.
         """
         coordinate = SkyCoord(self.config['MOUNT_PARKAZ'],self.config['MOUNT_PARKALT'], frame = 'altaz', unit ='deg')
         alt = coordinate.alt.deg
@@ -265,7 +263,6 @@ class mainMount_pwi4(mainConfig):
         """
         Unpark the telescope.
         """
-        
         self._log.info('Unparking telescope...')
         try:
             self.enable()
@@ -278,8 +275,12 @@ class mainMount_pwi4(mainConfig):
     def find_home(self, abort_action : Event):
         """
         Find the home position of the telescope.
+
+        Parameters
+        ----------
+        abort_action : Event
+            An Event object to signal the abort action.
         """
-        
         self._log.info('Finding home position...')
         # Check whether mount is parked 
         status = self.get_status()
@@ -313,17 +314,15 @@ class mainMount_pwi4(mainConfig):
         Slew the telescope to a specified RA/Dec coordinate.
 
         Parameters
-        ==========
-        1. coordinate : SkyCoord, optional
-            The coordinate of the target, in SkyCoord format. If not specified, ra and dec must be specified.
-        2. ra : float, optional
-            The Right Ascension of the target, in decimal hours. Only used if coordinate is not specified.
-        3. dec : float, optional
-            The Declination of the target, in decimal degrees. Only used if coordinate is not specified.
-        4. target_name : str, optional
-            The name of the target.
-        5. tracking : bool, optional
-            Whether to turn tracking on after slewing
+        ----------
+        ra : float
+            The Right Ascension of the target in decimal hours.
+        dec : float
+            The Declination of the target in decimal degrees.
+        abort_action : Event
+            An Event object to signal the abort action.
+        tracking : bool, optional
+            Whether to turn tracking on after slewing.
         """
         from tcspy.utils.target.singletarget import SingleTarget
 
@@ -381,17 +380,16 @@ class mainMount_pwi4(mainConfig):
         Slews the telescope to the specified Alt-Azimuth coordinate.
 
         Parameters
-        ==========
-        1. coordinate : `~astropy.coordinates.SkyCoord`, optional
-            The target Alt-Azimuth coordinate to slew to.
-        2. alt : float, optional
+        ----------
+        alt : float
             The target altitude in degrees.
-        3. az : float, optional
+        az : float
             The target azimuth in degrees.
-        4. tracking : bool, optional
+        abort_action : Event
+            An Event object to signal the abort action.
+        tracking : bool, optional
             If True, tracking will be enabled after slewing.
         """
-     
         self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
 
         # Check coordinates
@@ -439,7 +437,6 @@ class mainMount_pwi4(mainConfig):
         """
         Activates the tracking mode of the mount.
         """
-        
         status = self.get_status()
         if not status['is_tracking']:
             try:
@@ -456,7 +453,6 @@ class mainMount_pwi4(mainConfig):
         """
         Deactivates the tracking mode of the mount.
         """
-        
         status = self.get_status()
         if status['is_tracking']:
             try:

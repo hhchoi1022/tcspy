@@ -23,33 +23,40 @@ class mainCamera(mainConfig):
     This class provides control over an Alpaca camera connected to the system.
     
     Parameters
-    ==========
-    1. device : alpaca.camera.Camera
-        The camera object to control.
+    ----------
+    unitnum : int
+        The unit number of the camera.
+
+    Attributes
+    ----------
+    device : alpaca.camera.Camera
+        The Alpaca camera device object.
+    status : dict
+        A dictionary containing the current status of the connected camera.
 
     Methods
-    =======
-    1. get_status() -> dict
+    -------
+    get_status() -> dict
         Get the current status of the connected camera.
-    2. get_imginfo() -> tuple
+    get_imginfo() -> tuple
         Get the image data and information from the connected camera.
-    3. connect() -> None
+    connect() -> None
         Connect to the camera and wait until the connection is established.
-    4. disconnect() -> None
+    disconnect() -> None
         Disconnect from the camera and wait until the disconnection is completed.
-    5. set_binning(binning:int=1) -> None
+    set_binning(binning:int=1) -> None
         Set the binning for the connected camera.
-    6. cooler_on(settemperature:float, tolerance:float=1) -> None
+    cooler_on(settemperature:float, tolerance:float=1) -> None
         Turn on the cooler for the connected camera and set the CCD temperature to the specified value.
-    7. cooler_off(warmuptime:float=30) -> None
+    cooler_off(warmuptime:float=30) -> None
         Turn off the cooler for the connected camera and warm up the CCD for the specified duration.
-    8. take_light(exptime:float, binning:int=1) -> tuple
+    take_light(exptime:float, binning:int=1) -> tuple
         Capture a light frame with the connected camera.
-    9. take_bias(binning:int=1) -> tuple
+    take_bias(binning:int=1) -> tuple
         Capture a bias frame with the connected camera.
-    10. take_dark(exptime:float, binning:int=1) -> tuple
+    take_dark(exptime:float, binning:int=1) -> tuple
         Capture a dark frame with the connected camera.
-    11. abort() -> None
+    abort() -> None
         Aborts the current exposure.
     """
     
@@ -69,29 +76,10 @@ class mainCamera(mainConfig):
         Get the current status of the connected camera.
 
         Returns
-        =======
-        1. status : dict
-            A dictionary containing the following information about the connected camera:
-            - 'update_time': Time stamp of the status update in ISO format.
-            - 'jd': Julian date of the status update, rounded to six decimal places.
-            - 'is_imgReady': Whether the camera is ready to capture an image.
-            - 'is_connected': Whether the camera is connected.
-            - 'state': The current state of the camera.
-            - 'name_cam': The name of the camera.
-            - 'numX': The width of the camera sensor in pixels.
-            - 'numY': The height of the camera sensor in pixels.
-            - 'maxADU': The maximum analog-to-digital unit of the camera.
-            - 'binX': The binning factor in the X direction.
-            - 'binY': The binning factor in the Y direction.
-            - 'fullwellcap': The full well capacity of the camera.
-            - 'readoutmode': The current readout mode of the camera.
-            - 'gain': The current gain of the camera.
-            - 'ccdtemp': The current temperature of the camera sensor.
-            - 'power_cooler': The current power level of the camera cooler.
-            - 'name_sensor': The name of the camera sensor.
-            - 'type_sensor': The type of the camera sensor.
+        -------
+        status : dict
+            A dictionary containing the current status of the connected camera.
         """
-
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = None
@@ -198,22 +186,12 @@ class mainCamera(mainConfig):
         Get the image data and information from the connected camera.
 
         Returns
-        =======
-        1. imginfo : dict
-            A dictionary containing the following information about the captured image:
-            - 'data': The numpy array containing the image data.
-            - 'imgtype' : The type of the image (object, bias, dark, flat)
-            - 'numX': The width of the image.
-            - 'numY': The height of the image.
-            - 'binning' : The binning of the image. 
-            - 'numDimension': The number of dimensions of the image.
-            - 'exptime': The exposure time of the last captured image.
-            - 'date_obs': The start time of the last captured image.
-        2. status : dict
-            A dictionary containing the current status of the connected camera, as returned by get_status().
-
+        -------
+        imginfo : dict
+            A dictionary containing the image data and information.
+        status : dict
+            A dictionary containing the current status of the connected camera.
         """
-        
         status = self.get_status()
         imginfo = dict()
         imginfo['data'] = None
@@ -288,7 +266,6 @@ class mainCamera(mainConfig):
         """
         Connect to the camera and wait until the connection is established.
         """
-        
         self._log.info('Connecting to the Camera...')
         try:
             if not self.device.Connected:
@@ -309,7 +286,6 @@ class mainCamera(mainConfig):
         """
         Disconnect from the camera and wait until the disconnection is completed.
         """
-        
         self._log.info('Disconnecting camera...')
         try:
             if self.device.Connected:
@@ -325,6 +301,9 @@ class mainCamera(mainConfig):
         return True
     
     def cooler_on(self):
+        """
+        Turn on the cooler for the connected camera.
+        """
         if self.device.CanSetCCDTemperature:
             self.device.CoolerOn = True
         else:
@@ -332,6 +311,9 @@ class mainCamera(mainConfig):
         return True
 
     def cooler_off(self):
+        """
+        Turn off the cooler for the connected camera.
+        """
         if self.device.CanSetCCDTemperature:
             self.device.CoolerOn = False
         else:
@@ -344,6 +326,20 @@ class mainCamera(mainConfig):
              tolerance: float = 1,
              max_consecutive_stable_iterations: int = 10,
              ):
+        """
+        Control the cooling process of the camera.
+
+        Parameters
+        ----------
+        abort_action : threading.Event
+            An event object used to abort the cooling process.
+        settemperature : float
+            The target temperature to cool the camera to.
+        tolerance : float, optional
+            The tolerance level for the temperature difference.
+        max_consecutive_stable_iterations : int, optional
+            The maximum number of consecutive stable iterations before considering the cooling process stalled.
+        """
         try:
             if self.device.CanSetCCDTemperature:
                 self.device.CoolerOn = True
@@ -402,12 +398,18 @@ class mainCamera(mainConfig):
              max_consecutive_stable_iterations : int = 10
              ):
         """
-        Turn off the cooler for the connected camera and warm up the CCD for the specified duration.
+        Control the warming process of the camera.
 
         Parameters
-        ==========
-        1. warmuptime : float, optional
-            The duration to warm up the CCD, in seconds.
+        ----------
+        abort_action : threading.Event
+            An event object used to abort the warming process.
+        settemperature : float, optional
+            The target temperature to warm the camera to.
+        tolerance : float, optional
+            The tolerance level for the temperature difference.
+        max_consecutive_stable_iterations : int, optional
+            The maximum number of consecutive stable iterations before considering the warming process stalled.
         """
         try:
             if self.device.CanSetCCDTemperature:
@@ -458,17 +460,6 @@ class mainCamera(mainConfig):
             self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
             raise WarmingFailedException('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
     
-    def _update_gain(self,
-                    gain : int = 0):
-        try:
-            if self.device.Gain != gain:
-                self.device.Gain = gain
-            else:
-                pass
-        except NotImplementedException as e:
-            self._log.critical(e)
-            pass
-    
     def exposure(self,
                  abort_action : Event,
                  exptime : float,
@@ -478,24 +469,28 @@ class mainCamera(mainConfig):
                  gain : int = 0
                  ):
         """
-        Capture a light frame with the connected camera.
+        Capture an image with the connected camera.
 
         Parameters
-        ==========
-        1. exptime : float (default = minimun exposure time of a CCD)
-            The exposure time for the light frame, in seconds.
-        2. imgtypename : str (default = 'object)
-            The type of an image
-        3. binning : int (default = 1)
-            The binning value to use for the light frame.
-        
+        ----------
+        abort_action : threading.Event
+            An event object used to abort the exposure process.
+        exptime : float
+            The exposure time for the image.
+        imgtype : str
+            The type of the image (e.g., 'light', 'bias', 'dark', 'flat').
+        binning : int
+            The binning value for the image.
+        is_light : bool
+            Whether the image is a light frame or not.
+        gain : int, optional
+            The gain value for the image.
 
         Returns
-        =======
-        1. imginfo : dict
-            A dictionary containing the following information about the captured image, as returned by get_imginfo()
+        -------
+        imginfo : dict
+            A dictionary containing information about the captured image.
         """
-        
         # Set Gain
         self._update_gain(gain = gain)
         
@@ -534,17 +529,19 @@ class mainCamera(mainConfig):
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
     
+    def _update_gain(self,
+                    gain : int = 0):
+        try:
+            if self.device.Gain != gain:
+                self.device.Gain = gain
+            else:
+                pass
+        except NotImplementedException as e:
+            self._log.critical(e)
+            pass
+        
     def _set_binning(self,
                      binning :int = 1):
-        """
-        Set the binning for the connected camera.
-
-        Parameters
-        ==========
-        1. binning : int, optional
-            The binning value to set. Must be less than or equal to the maximum supported binning values for both X and Y.
-        """
-        
         if (binning > self.device.MaxBinX) | (binning > self.device.MaxBinY):
             logtxt = 'binning value %d above the maximum supported %d'%(binning, self.device.MaxBinX)
             self._log.warning(logtxt) 

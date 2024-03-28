@@ -14,18 +14,24 @@ class mainSafetyMonitor(mainConfig):
     A class that provides a wrapper for the Alpaca SafetyMonitor device.
 
     Parameters
-    ==========
-    1. device : SafetyMonitor
+    ----------
+    unitnum : int
+        The unit number.
+
+    Attributes
+    ----------
+    device : SafetyMonitor
         The SafetyMonitor device object to be used.
-    
+    status : dict
+        A dictionary containing the current status of the SafetyMonitor device.
+
     Methods
-    =======
-    1. get_status() -> dict
+    -------
+    get_status() -> dict
         Get the status of the SafetyMonitor device.
-        Returns a dictionary containing the current status of the device.
-    2. connect()
+    connect()
         Connect to the SafetyMonitor device.
-    3. disconnect()
+    disconnect()
         Disconnect from the SafetyMonitor device.
     """
     
@@ -43,19 +49,11 @@ class mainSafetyMonitor(mainConfig):
         """
         Get the status of the SafetyMonitor device
 
-        Return
-        ======
-        1. status : dict
+        Returns
+        -------
+        status : dict
             A dictionary containing the current status of the SafetyMonitor device.
-            Keys:
-                - 'update_time': Time stamp of the status update in ISO format
-                - 'jd': Julian date of the status update, rounded to six decimal places
-                - 'name': Name of the device
-                - 'is_connected': Flag indicating if the device is connected
-                - 'is_safe': Flag indicating if the weather is safe
         """
-        
-        
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd, 6)
@@ -86,7 +84,6 @@ class mainSafetyMonitor(mainConfig):
         """
         Connect to the SafetyMonitor device
         """
-        
         self._log.info('Connecting to the SafetyMonitor device...')
         try:
             if not self.device.Connected:
@@ -106,7 +103,6 @@ class mainSafetyMonitor(mainConfig):
         """
         Disconnect from the SafetyMonitor device
         """
-        
         self._log.info('Disconnecting SafetyMonitor device...')
         try:
             if self.device.Connected:

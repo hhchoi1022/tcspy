@@ -18,21 +18,34 @@ class mainFocuser_Alpaca(mainConfig):
     A class for controlling a Focuser device.
 
     Parameters
-    ==========
-    1. device : alpaca.focuser.Focuser
+    ----------
+    unitnum : int
+        The unit number.
+
+    Attributes
+    ----------
+    device : alpaca.focuser.Focuser
         The Focuser device to control.
+    status : dict
+        A dictionary containing the current status of the Focuser device.
 
     Methods
-    =======
-    1. get_status() -> dict
+    -------
+    get_status() -> dict
         Get the status of the Focuser device.
-    2. connect() -> None
+    connect() -> None
         Connect to the Focuser device.
-    3. disconnect() -> None
+    disconnect() -> None
         Disconnect from the Focuser device.
-    4. move(position: int) -> None
+    move(position: int, abort_action: Event) -> None
         Move the Focuser device to the specified position.
-    5. abort() -> None
+    fans_on() -> bool
+        Turn on the fans (not implemented in Alpaca Telescope).
+    fans_off() -> bool
+        Turn off the fans (not implemented in Alpaca Telescope).
+    autofocus_start(abort_action: Event) -> bool
+        Start autofocus (not implemented in Alpaca Telescope).
+    abort() -> None
         Abort the movement of the Focuser device.
     """
     
@@ -49,24 +62,13 @@ class mainFocuser_Alpaca(mainConfig):
     
     def get_status(self) -> dict:
         """
-        Get the status of the Focuser device
+        Get the status of the Focuser device.
 
-        Return
-        ======
-        1. status : dict
+        Returns
+        -------
+        status : dict
             A dictionary containing the current status of the Focuser device.
-            Keys:
-                - 'name': Name of the device
-                - 'position': Current position of the device
-                - 'maxstep': Maximum position of the device
-                - 'stepsize': Step size of the device
-                - 'temp': Temperature of the device
-                - 'is_abs_positioning': Flag indicating if the device is using absolute positioning
-                - 'is_moving': Flag indicating if the device is currently moving
-                - 'is_tempcomp': Flag indicating if the device is using temperature compensation
-                - 'is_connected': Flag indicating if the device is connected
         """
-        
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
@@ -135,7 +137,6 @@ class mainFocuser_Alpaca(mainConfig):
         """
         Connect to the Focuser device
         """
-        
         self._log.info('Connecting to the Focuser...')
         try:
             if not self.device.Connected:
@@ -155,7 +156,6 @@ class mainFocuser_Alpaca(mainConfig):
         """
         Disconnect to the Focuser device
         """
-        
         self._log.info('Disconnecting focuser...')
         try:
             if self.device.Connected:
@@ -174,14 +174,15 @@ class mainFocuser_Alpaca(mainConfig):
              position : int,
              abort_action : Event):
         """
-        Move the Focuser device to the specified position
+        Move the Focuser device to the specified position.
 
         Parameters
-        ==========
-        1. position : int
-            The position to move the device to
+        ----------
+        position : int
+            The position to move the device to.
+        abort_action : threading.Event
+            An event object used to abort the movement process.
         """
-    
         maxstep = self.device.MaxStep
         if (position <= 1000) | (position > maxstep):
             self._log.critical('Set position is out of bound of this focuser (Min : %d Max : %d)'%(1000, maxstep))
@@ -202,18 +203,40 @@ class mainFocuser_Alpaca(mainConfig):
         return True
     
     def fans_on(self):
+        """
+        Turn on the fans (not implemented in Alpaca Telescope).
+        """
         print('Fans operation is not implemented in Alpaca Telescope')
         return True
     
     def fans_off(self):
+        """
+        Turn off the fans (not implemented in Alpaca Telescope).
+        """
         print('Fans operation is not implemented in Alpaca Telescope')
         return True
     
     def autofocus_start(self, abort_action : Event):
+        """
+        Start autofocus (not implemented in Alpaca Telescope).
+
+        Parameters
+        ----------
+        abort_action : threading.Event
+            An event object used to abort the autofocus process.
+        """
         print('Autofocus is not implemented in Alpaca Telescope')
         return True
     
-    def autofocus_start(self, abort_action : Event):
+    def autofocus_stop(self, abort_action : Event):
+        """
+        Stop autofocus (not implemented in Alpaca Telescope).
+
+        Parameters
+        ----------
+        abort_action : threading.Event
+            An event object used to abort the autofocus process.
+        """
         print('Autofocus is not implemented in Alpaca Telescope')
         return True
         

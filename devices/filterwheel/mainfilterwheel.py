@@ -17,22 +17,33 @@ class mainFilterwheel(mainConfig):
     This class provides an interface to interact with a filter wheel device.
 
     Parameters
-    ==========
-    1. device : alpaca.filterwheel.FilterWheel
+    ----------
+    unitnum : int
+        The unit number.
+
+    Attributes
+    ----------
+    device : alpaca.filterwheel.FilterWheel
         The filter wheel device to interact with.
+    filtnames : list
+        A list of all filter names configured for the filter wheel.
+    offsets : dict
+        A dictionary containing the filter offsets configured for the filter wheel.
+    status : dict
+        A dictionary containing the current status of the filter wheel.
 
     Methods
-    =======
-    1. get_status() -> dict
+    -------
+    get_status() -> dict
         Returns a dictionary containing the current status of the filter wheel.
-    2. connect()
+    connect()
         Connects to the filter wheel device.
-    3. disconnect()
+    disconnect()
         Disconnects from the filter wheel device.
-    4. move(filter_ : str or int)
+    move(filter_: Union[str, int]) -> bool
         Moves the filter wheel to the specified filter position or filter name.
-    5. abort()
-        Dummy abort action. No supported action exists
+    abort()
+        Dummy abort action. No supported action exists.
     """
     
     def __init__(self,
@@ -52,12 +63,11 @@ class mainFilterwheel(mainConfig):
         """
         Returns a dictionary containing the current status of the filter wheel.
 
-        Return
-        ======
-        1. status : dict
+        Returns
+        -------
+        status : dict
             A dictionary containing the current status of the filter wheel.
         """
-
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
@@ -103,7 +113,6 @@ class mainFilterwheel(mainConfig):
         """
         Connects to the filter wheel device.
         """
-        
         self._log.info('Connecting to the filterwheel...')
         try:
             if not self.device.Connected:
@@ -123,7 +132,6 @@ class mainFilterwheel(mainConfig):
         """
         Disconnects from the filter wheel device.
         """
-        
         self._log.info('Disconnecting filterwheel...')
         try:
             if self.device.Connected:
@@ -144,8 +152,8 @@ class mainFilterwheel(mainConfig):
         Moves the filter wheel to the specified filter position or filter name.
 
         Parameters
-        ==========
-        1. filter_ : str or int
+        ----------
+        filter_ : str or int
             The position or name of the filter to move to.
         """
         # Check whether the input filter is implemented
@@ -179,125 +187,46 @@ class mainFilterwheel(mainConfig):
 
     def get_offset_from_currentfilt(self,
                                     filter_ : str):
+        """
+        Calculates the offset between the current filter and the specified filter.
+
+        Parameters
+        ----------
+        filter_ : str
+            The filter name for which the offset is calculated.
+
+        Returns
+        -------
+        pffset : int
+            The offset between the current filter and the specified filter.
+        """
         current_filter = self._get_current_filtinfo()['name']
         offset = self.calc_offset(current_filt= current_filter, changed_filt = filter_)
         return offset 
-        
-    def abort(self):
-        return
-    
-    # Information giding
-    def _get_all_filt_names(self) -> list:
-        """
-        Returns a list of all filter names configured for the filter wheel.
-
-        Return
-        ======
-        1. filtnames : list
-            A list of all filter names configured for the filter wheel.
-        """
-        if self.device.Names is None:
-            raise FilterRegisterException("No filter information is registered")
-        filtnames = self.device.Names
-        return filtnames
-        
-    def _get_all_filt_offset(self) -> list:
-        """
-        Returns a list of all filter offsets configured for the filter wheel.
-
-        Return
-        ======
-        1. filtnames : list
-            A list of all filter offsets configured for the filter wheel.
-        """
-        '''
-        if self.device.Names is None:
-            raise FilterRegisterException("No filter information is registered")
-        filtoffsets = self.device.FocusOffsets
-        filtnames = self.device.Names
-        info_offset = dict(zip(filtnames, filtoffsets))'''
-        with open(self.config['FTWHEEL_OFFSETFILE'], 'r') as f:
-            info_offset = json.load(f)
-            del info_offset['updated_date']
-        filters_in_config = set(info_offset.keys())
-        filters_in_device = set(self._get_all_filt_names())
-        if not filters_in_config.issubset(filters_in_device):
-            raise FilterRegisterException(f'Registered filters are not matched with configured filters \n Configured = [{filters_in_config}] \n Registered = [{filters_in_device}]')
-        return info_offset
-    
-    def _position_to_filtname(self,
-                              position : int) -> str:
-        """
-        Converts a filter position to its corresponding filter name.
-
-        Parameters
-        ==========
-        1. position : int
-            The position of the filter to get the name of.
-
-        Return
-        ======
-        1. filtname : str
-            The name of the filter at the specified position.
-        """
-        
-        try:
-            return self.filtnames[position]  
-        except:
-            self._log.warning('Position "%s" is out of range of the filterwheel'%position)
-            raise FilterRegisterException('Position "%s" is out of range of the filterwheel'%position)
-        
-    def _filtname_to_position(self,
-                              filtname : str) -> int:
-        """
-        Converts a filter name to its corresponding filter position.
-
-        Parameters
-        ==========
-        1. filtname : str
-            The name of the filter to get the position of.
-
-        Return
-        ======
-        1. position : int
-            The position of the filter with the specified name.
-        """
-        
-        try:
-            return self.filtnames.index(filtname)
-        except:
-            self._log.warning('%s is not implemented in the filterwheel'%filtname)
-            raise FilterRegisterException('%s is not implemented in the filterwheel'%filtname)
-    
-    def _is_connected(self) -> bool:
-        """
-        Returns True if the filter wheel device is connected, False otherwise.
-
-        Return
-        ======
-        1. connected : bool
-            True if the filter wheel device is connected, False otherwise.
-        """
-        
-        return self.device.Connected
-    
-    def _get_current_filtinfo(self) -> str:
-        """
-        Returns a dictionary containing information about the current filter.
-
-        Return
-        ======
-        1. filtinfo : dict
-            A dictionary containing information about the current filter, including its position, name, and offset.
-        """
-        
-        position = self.device.Position
-        filtname = self._position_to_filtname(position = position)
-        return dict( position = position, name = self.filtnames[position], offset = self.offsets[filtname]['offset'])
     
     def calc_offset(self,
                     current_filt : str,
                     changed_filt : str) -> int:
+        """
+        Calculates the offset between two filters.
+
+        Parameters
+        ----------
+        current_filt : str
+            The name of the current filter.
+        changed_filt : str
+            The name of the filter that will be changed to.
+
+        Returns
+        -------
+        offset : int
+            The offset between the two filters.
+
+        Raises
+        ------
+        FilterRegisterException
+            If either the current filter or the changed filter is not registered.
+        """
         try:
             offset_current = self.offsets[current_filt]['offset']
             offset_changed = self.offsets[changed_filt]['offset']
@@ -309,6 +238,55 @@ class mainFilterwheel(mainConfig):
             raise FilterRegisterException(f'Filter: one of {current_filt}, {changed_filt} is not registered')
 
         
+    def abort(self):
+        """
+        Dummy method for aborting actions.
+        """
+        return
+    
+    # Information giding
+    def _get_all_filt_names(self) -> list:
+
+        if self.device.Names is None:
+            raise FilterRegisterException("No filter information is registered")
+        filtnames = self.device.Names
+        return filtnames
+        
+    def _get_all_filt_offset(self) -> list:
+        with open(self.config['FTWHEEL_OFFSETFILE'], 'r') as f:
+            info_offset = json.load(f)
+            del info_offset['updated_date']
+        filters_in_config = set(info_offset.keys())
+        filters_in_device = set(self._get_all_filt_names())
+        if not filters_in_config.issubset(filters_in_device):
+            raise FilterRegisterException(f'Registered filters are not matched with configured filters \n Configured = [{filters_in_config}] \n Registered = [{filters_in_device}]')
+        return info_offset
+    
+    def _position_to_filtname(self,
+                              position : int) -> str:
+        try:
+            return self.filtnames[position]  
+        except:
+            self._log.warning('Position "%s" is out of range of the filterwheel'%position)
+            raise FilterRegisterException('Position "%s" is out of range of the filterwheel'%position)
+        
+    def _filtname_to_position(self,
+                              filtname : str) -> int:
+        try:
+            return self.filtnames.index(filtname)
+        except:
+            self._log.warning('%s is not implemented in the filterwheel'%filtname)
+            raise FilterRegisterException('%s is not implemented in the filterwheel'%filtname)
+    
+    def _is_connected(self) -> bool:
+        return self.device.Connected
+    
+    def _get_current_filtinfo(self) -> str:
+        position = self.device.Position
+        filtname = self._position_to_filtname(position = position)
+        return dict( position = position, name = self.filtnames[position], offset = self.offsets[filtname]['offset'])
+    
+
         
 # %% Test
 if __name__ == '__main__':

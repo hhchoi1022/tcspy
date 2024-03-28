@@ -17,21 +17,40 @@ class mainFocuser_pwi4(mainConfig):
     A class for controlling a Focuser device.
 
     Parameters
-    ==========
-    1. device : alpaca.focuser.Focuser
+    ----------
+    unitnum : int
+        The unit number.
+
+    Attributes
+    ----------
+    device : PWI4
         The Focuser device to control.
+    status : dict
+        A dictionary containing the current status of the Focuser device.
 
     Methods
-    =======
-    1. get_status() -> dict
+    -------
+    get_status() -> dict
         Get the status of the Focuser device.
-    2. connect() -> None
-        Connect to the Focuser device.
-    3. disconnect() -> None
-        Disconnect from the Focuser device.
-    4. move(position: int) -> None
+    connect() -> bool
+        Connect to the telescope.
+    disconnect() -> bool
+        Disconnect from the telescope.
+    enable() -> bool
+        Enable focuser movement.
+    disable() -> bool
+        Disable focuser movement.
+    move(position: int, abort_action: Event) -> bool
         Move the Focuser device to the specified position.
-    5. abort() -> None
+    fans_on() -> bool
+        Turn on the fans.
+    fans_off() -> bool
+        Turn off the fans.
+    autofocus_start(abort_action: Event) -> bool
+        Start autofocus.
+    autofocus_stop() -> None
+        Stop autofocus.
+    abort() -> None
         Abort the movement of the Focuser device.
     """
     
@@ -46,6 +65,14 @@ class mainFocuser_pwi4(mainConfig):
         self.status = self.get_status()
         
     def get_status(self) -> dict:
+        """
+        Get the status of the Focuser device.
+
+        Returns
+        -------
+        status : dict
+            A dictionary containing the current status of the Focuser device.
+        """
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
@@ -77,14 +104,21 @@ class mainFocuser_pwi4(mainConfig):
 
     @property
     def PWI_status(self):
+        """
+        Property to get the PWI status.
+
+        Returns
+        -------
+        PWI status
+            The PWI status of the device.
+        """
         return self.device.status()
     
     @Timeout(5, 'Timeout')
     def connect(self):
         """
-        Connect to the telescope.
+        Connect to the focuser.
         """
-        
         self._log.info('Connecting to the focuser...')
         status = self.get_status()
         try:
@@ -106,7 +140,6 @@ class mainFocuser_pwi4(mainConfig):
         """
         Disconnect from the focuser.
         """
-        
         self._log.info('Disconnecting to the focuser...')
         status = self.get_status()
         try:
@@ -125,6 +158,9 @@ class mainFocuser_pwi4(mainConfig):
         return True
     
     def enable(self):
+        """
+        Enable focuser movement.
+        """
         status = self.get_status()
         try:
             if not status['is_enabled']:
@@ -138,6 +174,9 @@ class mainFocuser_pwi4(mainConfig):
         return True
     
     def disable(self):
+        """
+        Disable focuser movement.
+        """
         status = self.get_status()
         try:
             if status['is_enabled']:
@@ -154,12 +193,14 @@ class mainFocuser_pwi4(mainConfig):
              position : int,
              abort_action : Event):
         """
-        Move the Focuser device to the specified position
+        Move the Focuser device to the specified position.
 
         Parameters
-        ==========
-        1. position : int
-            The position to move the device to
+        ----------
+        position : int
+            The position to move the device to.
+        abort_action : Event
+            Event object for aborting the movement.
         """
         maxstep =  self.config['FOCUSER_MAXSTEP']
         minstep =  self.config['FOCUSER_MINSTEP']
@@ -191,6 +232,14 @@ class mainFocuser_pwi4(mainConfig):
         return True
     
     def fans_on(self):
+        """
+        Turn on the fans.
+        
+        Raises
+        ------
+        FocusFansFailedException
+            If fans cannot be turned on.
+        """
         try:
             self.device.fans_on()
         except:
@@ -198,6 +247,14 @@ class mainFocuser_pwi4(mainConfig):
         return True
 
     def fans_off(self):
+        """
+        Turn off the fans.
+        
+        Raises
+        ------
+        FocusFansFailedException
+            If fans cannot be turned off.
+        """
         try:
             self.device.fans_off()
         except:
@@ -206,6 +263,22 @@ class mainFocuser_pwi4(mainConfig):
 
     def autofocus_start(self, 
                         abort_action : Event):
+        """
+        Start autofocus.
+
+        Parameters
+        ----------
+        abort_action : Event
+            Event object for aborting the autofocus.
+        
+        Raises
+        ------
+        AbortionException
+            If autofocus is aborted.
+        AutofocusFailedException
+            If autofocus fails.
+
+        """
         status =  self.get_status()
         current_position = status['position']
         self._log.info('Start Autofocus (Center position : %s)'%(current_position))
@@ -236,6 +309,9 @@ class mainFocuser_pwi4(mainConfig):
         return True
 
     def autofocus_stop(self):
+        """
+        Stop autofocus.
+        """
         self.device.autofocus_stop()
         
     def abort(self):

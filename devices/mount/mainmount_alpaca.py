@@ -22,36 +22,45 @@ class mainMount_Alpaca(mainConfig):
     Class for controlling an Alpaca telescope.
 
     Parameters
-    ==========
-    1. device : alpaca.telescope.Telescope
-        The Alpaca telescope instance to control.
-    2. Observer : mainObserver, optional
-        The observer to use for calculations. If not provided, a new mainObserver instance will be created.
+    ----------
+    unitnum : int
+        The unit number of the telescope.
+    **kwargs
+        Additional keyword arguments.
+
+    Attributes
+    ----------
+    device : alpaca.telescope.Telescope
+        The Alpaca telescope instance being controlled.
+    observer : mainObserver
+        The observer used for calculations.
+    status : dict
+        The current status of the telescope.
 
     Methods
-    =======
-    1. get_status() -> dict
+    -------
+    get_status() -> dict
         Returns the current status of the telescope.
-    2. connect() -> None
+    connect() -> None
         Connects to the telescope.
-    3. disconnect() -> None
+    disconnect() -> None
         Disconnects from the telescope.
-    4. set_park(altitude : float = 40, azimuth : float = 180) -> None
+    set_park(altitude : float = 40, azimuth : float = 180) -> None
         Sets the park position of the telescope.
-    5. park() -> None
+    park(abort_action : Event) -> None
         Parks the telescope.
-    6. unpark() -> None
+    unpark() -> None
         Unparks the telescope.
-    7. slew_radec(coordinate : SkyCoord = None, ra : float = None, dec : float = None, target_name : str = '', tracking : bool = True) -> None
-        Slews the telescope to the given RA and Dec or SkyCoord.
-    8. slew_altaz(coordinate : SkyCoord = None, alt : float = None, az : float = None, tracking : bool = False) -> None
-        Slew the telescope to the given Altitude and Azimuth coordinates in the horizontal coordinate system.
-    9. tracking_on() -> None
-        Turn on the telescope tracking.
-    10. tracking_off() -> None
-        Turn off the telescope tracking.
-    11. abort() -> None
-        Abort the movement of the scope
+    slew_radec(ra : float, dec : float, abort_action : Event, tracking: bool = True) -> None
+        Slews the telescope to the given RA and Dec.
+    slew_altaz(alt : float, az : float, abort_action : Event, tracking: bool = False) -> None
+        Slews the telescope to the given Altitude and Azimuth coordinates.
+    tracking_on() -> None
+        Turns on the telescope tracking.
+    tracking_off() -> None
+        Turns off the telescope tracking.
+    abort() -> None
+        Aborts the movement of the telescope.
     """
 
     def __init__(self,
@@ -68,7 +77,9 @@ class mainMount_Alpaca(mainConfig):
         self.status = self.get_status()
         
     def get_status(self):
-
+        """
+        Returns the current status of the telescope.
+        """
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = "{:.6f}".format(Time.now().jd)
@@ -141,7 +152,6 @@ class mainMount_Alpaca(mainConfig):
         """
         Connects to the telescope.
         """
-        
         self._log.info('Connecting to the telescope...')
         try:
             if not self.device.Connected:
@@ -161,7 +171,6 @@ class mainMount_Alpaca(mainConfig):
         """
         Disconnects from the telescope.
         """
-        
         self._log.info('Disconnecting telescope...')
         try:
             if self.device.Connected:
@@ -180,6 +189,11 @@ class mainMount_Alpaca(mainConfig):
              abort_action : Event):
         """
         Parks the telescope.
+
+        Parameters
+        ----------
+        abort_action : threading.Event
+            An event to signal if the parking operation needs to be aborted.
         """
         coordinate = SkyCoord(self.config['MOUNT_PARKAZ'],self.config['MOUNT_PARKALT'], frame = 'altaz', unit ='deg')
         alt = coordinate.alt.deg
@@ -235,19 +249,17 @@ class mainMount_Alpaca(mainConfig):
                    abort_action : Event,
                    tracking = True):
         """
-        Slews the telescope to the given RA and Dec or SkyCoord.
+        Slews the telescope to the given RA and Dec.
 
         Parameters
-        ==========
-        1. coordinate : SkyCoord, optional
-            The SkyCoord of the target. If not provided, RA and Dec must be provided. Default is None.
-        2. ra : float, optional
-            The right ascension of the target, in hours. If not provided, coordinate must be provided. Default is None.
-        3. dec : float, optional
-            The declination of the target, in degrees. If not provided, coordinate must be provided. Default is None.
-        4. target_name : str, optional
-            The name of the target. Default is an empty string.
-        5. tracking : bool, optional
+        ----------
+        ra : float
+            The right ascension of the target, in hours.
+        dec : float
+            The declination of the target, in degrees.
+        abort_action : threading.Event
+            An event to signal if the slewing operation needs to be aborted.
+        tracking : bool, optional
             Whether to start tracking after slewing to the target. Default is True.
         """
         from tcspy.utils.target import SingleTarget
@@ -304,20 +316,19 @@ class mainMount_Alpaca(mainConfig):
                    abort_action : Event,
                    tracking = False):
         """
-        Slew the telescope to the given Altitude and Azimuth coordinates in the horizontal coordinate system.
+        Slews the telescope to the given Altitude and Azimuth coordinates.
 
         Parameters
-        ==========
-        1. coordinate : SkyCoord object, optional
-            SkyCoord object containing the Altitude and Azimuth coordinates.
-        2. alt : float, optional
+        ----------
+        alt : float
             Altitude coordinate in degrees.
-        3. az : float, optional
+        az : float
             Azimuth coordinate in degrees.
-        4. tracking : bool, optional
+        abort_action : threading.Event
+            An event to signal if the slewing operation needs to be aborted.
+        tracking : bool, optional
             If True, activate the telescope tracking feature after slewing. Default is False.
         """
-        
         self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
 
         # Check coordinates
@@ -360,9 +371,8 @@ class mainMount_Alpaca(mainConfig):
 
     def tracking_on(self):
         """
-        Turn on the telescope tracking.
+        Turnㄴ on the telescope tracking.
         """
-        
         if self.device.CanSetTracking:
             if not self.device.Tracking:
                 time.sleep(self._checktime)
@@ -378,9 +388,8 @@ class mainMount_Alpaca(mainConfig):
     
     def tracking_off(self):
         """
-        Turn off the telescope tracking.
+        Turnㄴ off the telescope tracking.
         """
-        
         if self.device.CanSetTracking:
             if self.device.Tracking:
                 self.device.Tracking = False
@@ -395,12 +404,15 @@ class mainMount_Alpaca(mainConfig):
             raise TrackingFailedException('Untracking failed')
     
     def find_home(self):
+        """
+        Finds the home position of the telescope.
+        """
         print('Find home is not implemented in Alpaca Mount')
         pass
     
     def abort(self):
         """
-        Abort the movement of the mount
+        Aborts the movement of the telescope.
         """
         self.device.AbortSlew()
         

@@ -19,18 +19,25 @@ class mainWeather(mainConfig):
 
     Parameters
     ----------
-    1. device : `ObservingConditions`
+    unitnum : int
+        The unit number.
+
+    Attributes
+    ----------
+    device : `ObservingConditions`
         The Alpaca weather device to interface with.
+    status : dict
+        A dictionary containing the current weather status.
 
     Methods
     -------
-    1. get_status() -> dict
+    get_status() -> dict
         Get the current weather status.
-    2. connect() -> None
+    connect() -> None
         Connect to the weather device.
-    3. disconnect() -> None
+    disconnect() -> None
         Disconnect from the weather device.
-    4. is_safe() -> bool
+    is_safe() -> bool
         Check if the current weather is safe.
     """
     
@@ -53,21 +60,7 @@ class mainWeather(mainConfig):
         -------
         status : dict
             A dictionary containing the current weather status.
-            Keys:
-                - 'update_time': Time stamp of the status update in ISO format.
-                - 'jd': Julian date of the status update, rounded to six decimal places.
-                - 'name': Name of the weather device.
-                - 'is_safe': Flag indicating if the weather is safe.
-                - 'temperature': Current temperature.
-                - 'humidity': Current humidity.
-                - 'pressure': Current atmospheric pressure.
-                - 'windspeed': Current wind speed.
-                - 'skybrightness': Current sky brightness.
-                - 'cloudfraction': Current cloud fraction.
-                - 'rainrate': Current rain rate.
-                - 'fwhm': Current full-width at half-maximum of stars.
         """
-
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
@@ -169,7 +162,6 @@ class mainWeather(mainConfig):
         """
         Connect to the weather device.
         """
-        
         self._log.info('Connecting to the weather station...')
         try:
             if not self.device.Connected:
@@ -189,7 +181,6 @@ class mainWeather(mainConfig):
         """
         Disconnect from the weather device.
         """
-
         self._log.info('Disconnecting weather station...')
         try:
             if self.device.Connected:
@@ -211,10 +202,9 @@ class mainWeather(mainConfig):
 
         Returns
         -------
-        1. is_safe : bool
+        is_safe : bool
             True if the current weather is safe; False otherwise.
         """
-        
         self._update()
         safe_humidity    = self.device.Humidity < self.constraints['HUMIDITY'] 
         safe_rainrate    = self.device.RainRate < self.constraints['RAINRATE'] 
@@ -225,22 +215,6 @@ class mainWeather(mainConfig):
         return is_safe
     
     def _get_constraints(self):
-        """
-        Get the weather constraints from a file.
-
-        Returns
-        -------
-        1. constraints : dict
-            A dictionary containing the weather constraints.
-            Keys:
-                - 'HUMIDITY': Maximum humidity.
-                - 'RAINRATE': Maximum rain rate.
-                - 'SKYMAG': Minimum sky brightness.
-                - 'TEMPERATURE_LOWER': Minimum temperature.
-                - 'TEMPERATURE_UPPER': Maximum temperature.
-                - 'WINDSPEED': Maximum wind speed.
-        """
-        
         constraints = dict()
         constraints['HUMIDITY'] = self.config['WEATHER_HUMIDITY']
         constraints['RAINRATE'] = self.config['WEATHER_RAINRATE']
@@ -251,9 +225,6 @@ class mainWeather(mainConfig):
         return constraints
     
     def _update(self):
-        """
-        Immediately update the weather device status.
-        """
         self.device.Refresh()
         
 
