@@ -8,7 +8,32 @@ from tcspy.utils.logger import mainLogger
 from tcspy.interfaces import *
 
 class Connect(Interface_Runnable):
-    
+    """
+    A class representing a connect action for a single telescope.
+
+    Parameters
+    ----------
+    singletelescope : SingleTelescope
+        An instance of SingleTelescope class representing an individual telescope to perform the action on.
+    abort_action : Event
+        An instance of the built-in Event class to handle the abort action.
+
+    Attributes
+    ----------
+    telescope : SingleTelescope
+        The SingleTelescope instance on which the action has to performed.
+    telescope_status : TelescopeStatus
+        A TelescopeStatus instance which is used to check the current status of the telescope.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Methods
+    -------
+    run()
+        Performs the action to connect to all devices on the telescope.
+    abort()
+        A function that needs to be defined to enable abort functionality. In this class, it does nothing and should be overridden in subclasses if needed.
+    """
     def __init__(self, 
                  singletelescope : SingleTelescope,
                  abort_action : Event):
@@ -17,9 +42,10 @@ class Connect(Interface_Runnable):
         self.abort_action = abort_action
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
-    def run(self,
-            **kwargs):
-        
+    def run(self):
+        """
+        Execute the action to connect to all devices on the telescope.
+        """
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # connect devices
         devices_status = self.telescope_status.dict
@@ -55,6 +81,9 @@ class Connect(Interface_Runnable):
         return True
     
     def abort(self):
+        """
+        A dummy abort function
+        """
         return
 # %%
 if __name__ == '__main__':

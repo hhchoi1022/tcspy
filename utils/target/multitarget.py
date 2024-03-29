@@ -12,41 +12,54 @@ from typing import List
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
 #%%
-class MultiTarget(mainConfig):
+class MultiTargets(mainConfig):
     """
+    A class representing multiple astronomical targets for observation.
+
     Parameters
     ----------
-    1. observer : mainObserver
+    observer : mainObserver
         An instance of mainObserver representing the observer.
-    2. target_ra : float, optional
-        The right ascension of the target, in hours.
-    3. target_dec : float, optional
-        The declination of the target, in degrees.
-    4. target_alt : float, optional
-        The altitude of the target, in degrees.
-    5. target_az : float, optional
-        The azimuth of the target, in degrees.
-    6. target_name : str, optional
-        The name of the target.
+    targets_ra : numpy.array
+        An array containing the right ascension values of the targets, in degrees.
+    targets_dec : numpy.array
+        An array containing the declination values of the targets, in degrees.
+    targets_name : numpy.array, optional
+        An array containing the names of the targets. Default is None.
+        
+    Attributes
+    ----------
+    ra : numpy.array
+        An array of right ascension coordinates of the targets in degrees.
+    dec : numpy.array
+        An array of declination coordinates of the targets in degrees.
+    coordinate : SkyCoord
+        The astropy SkyCoord object representing the coordinates of the targets.
+    target_astroplan : list
+        A list of astroplan FixedTarget objects representing the targets.
+    name : numpy.array
+        An array of names corresponding to the targets.
 
     Methods
     -------
-    1. get_status() -> dict
-        Returns a dictionary with information about the current status of the target.
-    2. is_event_observable(utctimes: datetime or Time = None) -> bool
-        Determines whether the target is observable at the specified time or at the current time.
-    3. altaz(utctimes: datetime or Time = None) -> SkyCoord
-        Calculate the alt-az coordinates of the target for a given time(s) in UTC.
-    4. risetime(utctime: datetime or Time = None, mode: str = 'next', horizon: float = 30) -> Time
-        Calculate the next rise time of the target as seen by the observer.
-    5. settime(utctime: datetime or Time = None, mode: str = 'nearest', horizon: float = 30) -> Time
-        Calculate the time when the target sets below the horizon.
-    6. meridiantime(utctime: datetime or Time = None, mode: str = 'nearest') -> Time
-        Calculate the time at which the target passes through the observer's meridian.
-    7. hourangle(utctimes: datetime or Time = None) -> Angle
-        Calculate the hour angle of the target(s) at the specified time(s).
-    8. staralt(utctime : datetime or Time or np.array = None)
-        Creates a plot of the altitude and azimuth of a celestial object.
+    rts_date(year=None, time_grid_resolution=3)
+        Calculate the rise, transit, and set times of the targets for each day of the specified year.
+    is_ever_observable(utctime=None, time_grid_resolution=1*u.hour)
+        Determines whether the targets are observable during the specified time.
+    is_always_observable(utctimes=None)
+        Determines whether the targets are always observable during the specified time.
+    is_event_observable(utctimes=None)
+        Determines whether the targets are observable at the specified time or at the current time.
+    altaz(utctimes=None)
+        Calculate the alt-az coordinates of the targets for the given time(s) in UTC.
+    risetime(utctime=None, mode='nearest', horizon=30, n_grid_points=50)
+        Calculate the next rise time of the targets as seen by the observer.
+    settime(utctime=None, mode='nearest', horizon=30, n_grid_points=50)
+        Calculate the time when the targets set below the horizon.
+    meridiantime(utctime=None, mode='nearest', n_grid_points=50)
+        Calculate the time at which the targets pass through the observer's meridian.
+    hourangle(utctimes=None)
+        Calculate the hour angle of the targets for the given time(s) in UTC.
     """
     
     def __init__(self,
@@ -74,7 +87,21 @@ class MultiTarget(mainConfig):
                  year : int = None,
                  time_grid_resolution : float = 3 # timegrid for checking the observability 
                  ):
-        
+        """
+        Calculate the rise, transit, and set times of the targets for each day of the specified year.
+
+        Parameters
+        ----------
+        year : int, optional
+            The year for which to calculate the rise, transit, and set times. Default is None.
+        time_grid_resolution : float, optional
+            The time grid resolution for checking the observability. Default is 3.
+
+        Returns
+        -------
+        numpy.array
+            An array containing the calculated rise, transit, and set times of the targets for each day of the year.
+        """
         # If start_date & end_date are not specified, defaults to current year
         if year == None:
             year = Time.now().datetime.year
@@ -126,17 +153,24 @@ class MultiTarget(mainConfig):
                            utctime : datetime or Time = None,
                            time_grid_resolution = 1 * u.hour) -> List[bool]:
         """
-        Determines whether the target is observable during the specified time
+        Determines whether the targets are observable during the specified time.
 
         Parameters
         ----------
-        1. utctimes : datetime or Time, optional
+        utctime : datetime or Time, optional
             The time at which to check observability. Defaults to the current time.
-            
+        time_grid_resolution : astropy.units.Quantity, optional
+            The time grid resolution for checking the observability. Default is 1 hour.
+
         Returns
         -------
-        bool
-            True if the target is observable, False otherwise.
+        List[bool]
+            A list of boolean values indicating whether each target is observable during the specified time.
+
+        Raises
+        ------
+        TypeError
+            If the provided time is not a valid datetime or Time object.
         """
         if utctime is None:
             utctime = Time.now()
@@ -152,17 +186,22 @@ class MultiTarget(mainConfig):
     def is_always_observable(self,
                              utctimes : datetime or Time or np.array = None) -> bool:
         """
-        Determines whether the target is always observable during the specified time
+        Determines whether the targets are always observable during the specified time.
 
         Parameters
         ----------
-        1. utctimes : datetime or Time, optional
+        utctimes : datetime or Time or numpy.array, optional
             The time at which to check observability. Defaults to the current time.
-            
+
         Returns
         -------
         bool
-            True if the target is observable, False otherwise.
+            True if all targets are always observable, False otherwise.
+
+        Raises
+        ------
+        TypeError
+            If the provided time is not a valid datetime, Time, or numpy.array object.
         """
         if utctimes is None:
             utctimes = Time.now()
@@ -173,17 +212,22 @@ class MultiTarget(mainConfig):
     def is_event_observable(self,
                             utctimes : datetime or Time or np.array = None) -> bool:
         """
-        Determines whether the target is observable at the specified time or at the current time.
+        Determines whether the targets are observable at the specified time or at the current time.
 
         Parameters
         ----------
-        1. utctimes : datetime or Time, optional
+        utctimes : datetime or Time or numpy.array, optional
             The time at which to check observability. Defaults to the current time.
-            
+
         Returns
         -------
         bool
-            True if the target is observable, False otherwise.
+            True if all targets are observable, False otherwise.
+
+        Raises
+        ------
+        TypeError
+            If the provided time is not a valid datetime, Time, or numpy.array object.
         """
         if utctimes is None:
             utctimes = Time.now()
@@ -194,17 +238,22 @@ class MultiTarget(mainConfig):
     def altaz(self,
               utctimes : datetime or Time or np.array = None) -> SkyCoord:
         """
-        Calculate the alt-az coordinates of the target for a given time(s) in UTC.
+        Calculate the alt-az coordinates of the targets for the given time(s) in UTC.
 
         Parameters
-        ==========
-        1. utctimes : datetime or Time, optional
-            The time(s) to calculate the alt-az coordinates for, in UTC. If not provided, the current time will be used. 
+        ----------
+        utctimes : datetime or Time or numpy.array, optional
+            The time(s) to calculate the alt-az coordinates for, in UTC. If not provided, the current time will be used.
 
         Returns
-        =======
-        1. SkyCoord
-            The alt-az coordinates of the target at the specified time(s).
+        -------
+        SkyCoord
+            The alt-az coordinates of the targets at the specified time(s).
+
+        Raises
+        ------
+        TypeError
+            If the provided time is not a valid datetime, Time, or numpy.array object.
         """
         if utctimes is None:
             utctimes = Time.now()
@@ -218,21 +267,23 @@ class MultiTarget(mainConfig):
                  horizon : float = 30,
                  n_grid_points : int = 50) -> Time:
         """
-        Calculate the next rise time of the target as seen by the observer.
+        Calculate the next rise time of the targets as seen by the observer.
 
         Parameters
-        ==========
-        1. utctime : datetime or Time, optional
+        ----------
+        utctime : datetime or Time, optional
             The time to start searching for the next rise time. If not provided, the current time will be used.
-        2. mode : str, optional
+        mode : str, optional
             The method used to determine the rise time. Possible values are 'next' (the next rise time), 'previous' (the previous rise time), or 'nearest' (the nearest rise time). Default is 'next'.
-        3. horizon : float, optional
+        horizon : float, optional
             The altitude of the horizon, in degrees. Default is 30.
+        n_grid_points : int, optional
+            The number of grid points to use in the interpolation. Default is 50.
 
         Returns
-        =======
-        1. Time
-            The rise time of the target as seen by the observer.
+        -------
+        Time
+            The rise time of the targets as seen by the observer.
 
         """
         if utctime == None:
@@ -247,21 +298,24 @@ class MultiTarget(mainConfig):
                 horizon : float = 30,
                 n_grid_points : int = 50) -> Time:
         """
-        Calculate the time when the target sets below the horizon.
+        Calculate the time when the targets set below the horizon.
 
         Parameters
-        ==========
-        1. utctime : datetime or Time, optional
+        ----------
+        utctime : datetime or Time or numpy.array, optional
             The time to use as the reference time for the calculation, by default the current time.
-        2. mode : str, optional
+        mode : str, optional
             Set to 'nearest', 'next' or 'previous', by default 'nearest'.
-        3. horizon : float, optional
+        horizon : float, optional
             The altitude of the horizon in degrees. Default is 30.
+        n_grid_points : int, optional
+            The number of grid points to use in the interpolation. Default is 50.
 
         Returns
-        =======
-        1. settime : Time
-            The time when the target sets below the horizon.
+        -------
+        Time
+            The time when the targets set below the horizon.
+
         """
         if utctime is None:
             utctime = Time.now()
@@ -274,21 +328,23 @@ class MultiTarget(mainConfig):
                      mode : str = 'nearest',
                      n_grid_points : int = 50) -> Time:
         """
-        Calculate the time at which the target passes through the observer's meridian.
+        Calculate the time at which the targets pass through the observer's meridian.
 
         Parameters
-        ==========
-        1. utctime : datetime or Time, optional
+        ----------
+        utctime : datetime or Time or numpy.array, optional
             The time at which to calculate the meridian transit time. If not provided, the current time will be used.
-        2. mode : str, optional
+        mode : str, optional
             Set to 'nearest', 'next' or 'previous', by default 'nearest'.
-            
-        Return
-        ======
-        1. meridiantime : Time
-            The time at which the target passes through the observer's meridian.
+        n_grid_points : int, optional
+            The number of grid points to use in the interpolation. Default is 50.
+
+        Returns
+        -------
+        Time
+            The time at which the targets pass through the observer's meridian.
+
         """
-        
         if utctime is None:
             utctime = Time.now()
         if not isinstance(utctime, Time):
@@ -298,19 +354,24 @@ class MultiTarget(mainConfig):
     def hourangle(self,
                   utctimes : datetime or Time or np.array = None):
         """
-        Calculate the hour angle of the target for a given time(s) in UTC.
+        Calculate the hour angle of the targets for the given time(s) in UTC.
 
         Parameters
-        ==========
-        1. utctimes : datetime or Time, optional
-            The time(s) to calculate the hour angle of the target for, in UTC. If not provided, the current time will be used. 
+        ----------
+        utctimes : datetime or Time or numpy.array, optional
+            The time(s) to calculate the hour angle of the targets for, in UTC. If not provided, the current time will be used.
 
         Returns
-        =======
-        1. hourangle : astropy.coordinates.Angle
-            The hour angle of the target(s) at the specified time(s).
+        -------
+        astropy.coordinates.Angle
+            The hour angle of the targets at the specified time(s).
+
+        Raises
+        ------
+        ValueError
+            If no target is specified for hourangle.
+
         """
-        
         if utctimes is None:
             utctimes = Time.now()
         if not isinstance(utctimes, Time):

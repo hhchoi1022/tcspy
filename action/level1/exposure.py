@@ -10,7 +10,7 @@ from tcspy.utils.exception import *
 from tcspy.action.level1.changefilter import ChangeFilter
 
 class Exposure(Interface_Runnable, Interface_Abortable):
-    
+
     def __init__(self, 
                  singletelescope : SingleTelescope,
                  abort_action : Event):
@@ -37,7 +37,45 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             name : str = '',
             objtype : str = None,
             ):
-        
+        """
+        Performs the action to expose the camera, saves the image, and returns True if successful.
+
+        Parameters
+        ----------
+        frame_number : int
+            The number of the frame that is to be exposed.
+        exptime : float
+            The exposure time in seconds.
+        filter_ : str, optional
+            The filter that should be used during exposure.
+        imgtype : str, optional
+            The type of image to be taken. Defaults to 'Light'.
+        binning : int, optional
+            Binning factor for camera sensor. Defaults to 1.
+        obsmode : str, optional
+            The mode of observation. Defaults to 'Single'.
+        gain : int, optional
+            The gain setting for the camera sensor. Defaults to 0.
+        ra, dec : float, optional
+            Right Ascension and Declination, respectively, of the target in degrees.
+        alt, az : float, optional
+            Altitude and Azimuth, respectively, of the target in degrees
+        name : str, optional
+            Name of the target. 
+        objtype : str, optional
+            Type of the object targeted.
+
+
+        Raises
+        ------
+        ConnectionException
+            If the camera or the filterwheel is disconnected.
+        ActionFailedException
+            If there is an error during the change of filter or exposure.
+        AbortionException
+            If the operation is aborted.
+        """
+                
         """
         frame_number = 1
         exptime = 1
@@ -54,10 +92,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         az : float = None
         name : str = ''
         objtype : str = None
-
-
         """
-        
         # Check condition of the instruments for this Action
         self._log.info(f'[{type(self).__name__}] is triggered.')
         status_filterwheel = self.telescope_status.filterwheel
@@ -191,6 +226,9 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         return True
 
     def abort(self):
+        """
+        Sends an abort command to the filterwheel and camera if they are busy.
+        """
         status_filterwheel = self.telescope_status.filterwheel
         status_camera = self.telescope_status.camera
         if status_filterwheel.lower() == 'busy':

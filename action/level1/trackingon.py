@@ -8,7 +8,32 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils.exception import *
 
 class TrackingOn(Interface_Runnable, Interface_Abortable):
-    
+    """
+    A class to perform the action of turning on the tracking of a telescope.
+
+    Parameters
+    ----------
+    singletelescope : SingleTelescope
+        A SingleTelescope instance to perform the action on.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Attributes
+    ----------
+    telescope : SingleTelescope
+        The SingleTelescope instance on which to perform the action.
+    telescope_status : TelescopeStatus
+        The TelescopeStatus instance used to check the current status of the telescope.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Methods
+    -------
+    run()
+        Turn on the tracking of the telescope.
+    abort()
+        This method does nothing but should be overridden in the subclasses if needed.
+    """
     def __init__(self, 
                  singletelescope : SingleTelescope,
                  abort_action : Event):
@@ -18,7 +43,21 @@ class TrackingOn(Interface_Runnable, Interface_Abortable):
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self):
+        """
+        Turn on the tracking of the telescope.
+
+        Raises
+        ------
+        ConnectionException
+            If the telescope is disconnected.
+        ActionFailedException
+            If the action of turning on tracking failed.
         
+        Returns
+        -------
+        bool
+            True if the action is finished, False otherwise.
+        """
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         if self.telescope_status.mount.lower() == 'disconnected':
@@ -45,4 +84,7 @@ class TrackingOn(Interface_Runnable, Interface_Abortable):
         return True
         
     def abort(self):
+        """
+        Dummy abort function
+        """
         return 

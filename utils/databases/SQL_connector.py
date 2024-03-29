@@ -8,7 +8,64 @@ import numpy as np
 #%%
 
 class SQL_Connector:
-    
+    """
+    A class to establish and operate a connection to a MySQL database.
+
+    Parameters
+    ----------
+    id_user : str
+        The user id to connect to the MySQL database.
+    pwd_user : str
+        The password for the given user id.
+    host_user : str
+        The host address for the MySQL database.
+    db_name : str
+        The name of the MySQL database to connect to.
+
+    Attributes
+    ----------
+    connector : mysql.connector.connect
+        The MySQL connector object to perform database operations.
+    cursor : mysql.connector.cursor
+        The MySQL cursor object to execute SQL commands.
+    connected : bool
+        The connection status flag.
+
+    Methods
+    -------
+    connect()
+        Establish a connection to the MySQL database and set the cursor.
+    disconnect()
+        Disconnect from the MySQL database and update the connection status flag to False.
+    databases
+        Lists all the databases in the MySQL connection.
+    change_db(db_name)
+        Change the current database to the given one and reestablish the connection.
+    create_db(db_name)
+        Create a new database in the MySQL connection.
+    remove_db(db_name)
+        Remove the specified database from the MySQL connection.
+    tables
+        Lists all the tables in the current database.
+    remove_tbl(tbl_name)
+        Remove the specified table from the current database.
+    initialize_tbl(tbl_name)
+        Reset the specified table in the current database.
+    execute(command)
+        Execute the given SQL command on the current database.
+    get_colnames(tbl_name)
+        Returns the column names from the specified table.
+    get_column_data_types(tbl_name)
+        Returns the data types for every column in the specified table.
+    insert_rows(tbl_name, data)
+        Insert the provided data into the specified table.
+    update_row(tbl_name, update_value, update_key, id_value, id_key)
+        Update a row in the specified table in the current database based on the provided criteria.
+    get_data(tbl_name, select_key, where_value, where_key, out_format)
+        Fetch the requested data from the specified table in the current database.
+    set_data_id(tbl_name, update_all)
+        Generate unique ids for all data entries in the specified table in the current database.
+    """
     def __init__(self,
                  id_user: str = 'hhchoi',
                  pwd_user : str = 'lksdf1020',
@@ -27,6 +84,9 @@ class SQL_Connector:
     
     
     def connect(self):
+        """
+        Establish a connection to the MySQL database and set the cursor.
+        """
         self.connector = mysql.connector.connect(
         host= self.host_user,
         user=self.id_user,
@@ -38,6 +98,9 @@ class SQL_Connector:
         self.connected = True
         
     def disconnect(self):
+        """
+        Disconnect from the MySQL database and update the connection status flag to False.
+        """
         self.connector.close()
         self.connected = False
     
@@ -45,56 +108,131 @@ class SQL_Connector:
     
     @property
     def databases(self):
+        """
+        Lists all the databases in the MySQL connection.
+
+        Returns
+        -------
+        list
+            A list containing the names of all databases.
+        """
         self.exec(f"SHOW DATABASES")
         return [db_name[0] for db_name in self.cursor]
     
     def change_db(self,
                   db_name : str):
+        """
+        Change the current database to the given one and reestablish the connection.
+
+        Parameters
+        ----------
+        db_name : str
+            The name of the database to switch to.
+        """
         self.db_name = db_name
         self.connect()
         
     def create_db(self,
                   db_name : str):
+        """
+        Create a new database in the MySQL connection.
+
+        Parameters
+        ----------
+        db_name : str
+            The name of the database to be created.
+        """
         self.exec(f"CREATE DATABASE {db_name}")
         #print(f"DATABASE {db_name} CREATED")
     
     def remove_db(self,
                   db_name : str):
+        """
+        Remove the specified database from the MySQL connection.
+
+        Parameters
+        ----------
+        db_name : str
+            The name of the database to be removed.
+        """
         self.exec(f"REMOVE DATABASE {db_name}")
         #print(f"DATABASE {db_name} REMOVED")
     
     # Table operator
-
     @property
     def tables(self):
+        """
+        Lists all the tables in the current database.
+
+        Returns
+        -------
+        list
+            A list containing the names of all tables in the current database.
+        """
         self.exec(f"SHOW TABLES")
         return [tbl_name[0] for tbl_name in self.cursor]
         
     def remove_tbl(self,
                    tbl_name : str):
+        """
+        Remove the specified table from the current database.
+
+        Parameters
+        ----------
+        tbl_name : str
+            The name of the table to be removed.
+        """
         self.exec(f"REMOVE TABLE {tbl_name} ")
         #print(f"TABLE {tbl_name} REMOVED")
-    
-    def initialize_tbl(self,
-                       tbl_name : str):
-        self.exec(f"TRUNCATE TABLE {tbl_name}")
-        #print(f"TABLE {tbl_name} INITIALIZED")
-    
+
     # functions
-    
     def execute(self,
                 command : str):
+        """
+        Execute the given SQL command on the current database.
+
+        Parameters
+        ----------
+        command : str
+            The SQL command to be executed.
+        """
         self.exec(command)
         print(f"{command} EXECUTED")
         
     def get_colnames(self,
                      tbl_name : str):
+        """
+        Returns the column names from the specified table.
+
+        Parameters
+        ----------
+        tbl_name : str
+            The name of the table to get the column names from.
+
+        Returns
+        -------
+        list
+            A list of column names in the specified table.
+        """
         self.exec(f"SHOW COLUMNS FROM {tbl_name};")
         column_names = [column[0] for column in self.cursor.fetchall()]
         return column_names
     
     def get_column_data_types(self, 
                               tbl_name: str):
+        """
+        Returns the data types for every column in the specified table.
+
+        Parameters
+        ----------
+        tbl_name : str
+            The name of the table to get the column data types from.
+
+        Returns
+        -------
+        dict
+            A dictionary of column names and their corresponding data types.
+        """
         sql_query = f"SHOW COLUMNS FROM {tbl_name}"
         self.cursor.execute(sql_query)
         column_info = self.cursor.fetchall()
@@ -104,6 +242,21 @@ class SQL_Connector:
     def insert_rows(self,
                     tbl_name : str,
                     data : Table):
+        """
+        Insert the provided data into the specified table.
+
+        Parameters
+        ----------
+        tbl_name : str
+            The name of the table to insert the data into.
+        data : astropy.table.Table
+            The Table object containing the data to be inserted into the table.
+
+        Raises
+        ------
+        mysql.connector.Error
+            If an error occurred during the insertion operation.
+        """
         data_str = data.copy()
         for colname in data_str.columns:
             data_str[colname] = data_str[colname].astype(str)
@@ -123,7 +276,27 @@ class SQL_Connector:
                    id_value : str,
                    id_key : str = 'id'
                    ):
-        
+        """
+        Update a row in the specified table in the current database based on the provided criteria.
+
+        Parameters
+        ----------
+        tbl_name : str
+            The name of the table with the row to be updated.
+        update_value : list or str
+            The value or values to be updated.
+        update_key : list or str
+            The column name or names to be updated.
+        id_value : str
+            The id value of the row to be updated.
+        id_key : str, optional
+            The name of the column that identifies the row to be updated.
+
+        Raises
+        ------
+        mysql.connector.Error
+            If an error occurred during the update operation.
+        """
         if isinstance(update_value,str):
             update_command = f"{update_key} = '{update_value}'"
         elif isinstance(update_value, (list, np.ndarray)):
@@ -147,6 +320,32 @@ class SQL_Connector:
                  where_key : str = 'id',
                  out_format : str = 'Table' # Table or dict
                  ):
+        """
+        Fetch the requested data from the specified table in the current database.
+
+        Parameters
+        ----------
+        tbl_name : str
+            The name of the table to fetch data from.
+        select_key : str
+            The column names to be included in the fetched data.
+        where_value : str, optional
+            The condition value for fetching the data.
+        where_key : str, optional
+            The condition column for fetching the data.
+        out_format : str, optional
+            The format of the fetched data.
+
+        Returns
+        -------
+        astropy.table.Table or dict
+            The fetched data in the requested format.
+
+        Raises
+        ------
+        mysql.connector.Error
+            If an error occurred during the fetch operation.
+        """
         keys = select_key.split(',')
         if select_key == '*':
             keys = self.get_colnames(tbl_name = tbl_name)
@@ -170,6 +369,21 @@ class SQL_Connector:
     def set_data_id(self,
                     tbl_name : str,
                     update_all : bool = False):
+        """
+        Generate unique ids for all data entries in the specified table in the current database.
+
+        Parameters
+        ----------
+        tbl_name : str
+            The name of the table to set data ids.
+        update_all : bool, optional
+            A flag indicating whether to update all data ids.
+
+        Raises
+        ------
+        mysql.connector.Error
+            If an error occurred during the id setting operation.
+        """
         values_all = self.get_data(tbl_name = tbl_name, select_key = 'id,idx')
         values_to_update = values_all
         if not update_all:

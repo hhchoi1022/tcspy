@@ -15,6 +15,33 @@ from tcspy.action.level1 import ChangeFilter
 #%%
 
 class AutoFocus(Interface_Runnable, Interface_Abortable):
+    """
+    A class representing the autofocus action for a single telescope.
+
+    Parameters
+    ----------
+    singletelescope : SingleTelescope
+        An instance of SingleTelescope class representing an individual telescope to perform the autofocus action on.
+    abort_action : Event
+        An instance of the built-in Event class to handle the abort action. 
+
+    Attributes
+    ----------
+    telescope : SingleTelescope
+        The SingleTelescope instance on which the autofocus action has to be performed.
+    telescope_status : TelescopeStatus
+        A TelescopeStatus instance which is used to check the current status of the telescope.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Methods
+    -------
+    run(filter_: str, use_offset: bool)
+        Performs the action of starting autofocus for the telescope.
+    abort()
+        Stops any autofocus action currently being carried out by the telescope.
+    """
+    
     def __init__(self, 
                  singletelescope : SingleTelescope,
                  abort_action : Event):
@@ -26,6 +53,25 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
     def run(self,
             filter_ : str,
             use_offset : bool):
+        """
+        Performs the action of starting autofocus for the telescope.
+
+        Parameters
+        ----------
+        filter_ : str
+            The name of the filter to use during autofocus.
+        use_offset : bool
+            Whether or not to use offset during autofocus.
+
+        Raises
+        ------
+        ConnectionException:
+            If the required devices are disconnected.
+        AbortionException:
+            If the action is aborted during execution.
+        ActionFailedException:
+            If the autofocus process fails.
+        """
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device status
         status_camera = self.telescope_status.camera
@@ -105,6 +151,14 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
             return True
     
     def abort(self):
+        """
+        Stops any autofocus action currently being carried out by the telescope.
+
+        Raises
+        ------
+        AbortionException:
+            When the autofocus action is aborted.
+        """
         info_focuser = self.telescope.focuser.get_status()
         if info_focuser['is_autofousing']:
             self.telescope.focuser.autofocus_stop()

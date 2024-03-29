@@ -18,38 +18,94 @@ from tcspy.utils.exception import *
 #%%
 class SingleTarget(mainConfig):
     """
+    Represents a single observational target for a telescope.
+    This class provides functionality to define and manage properties and observation parameters
+    of a single target. It includes methods to calculate observability, alt-az coordinates,
+    rise and set times, and other relevant information.
+    
     Parameters
     ----------
-    1. observer : mainObserver
+    observer : mainObserver
         An instance of mainObserver representing the observer.
-    2. target_ra : float, optional
+    ra : float, optional
         The right ascension of the target, in degrees.
-    3. target_dec : float, optional
+    dec : float, optional
         The declination of the target, in degrees.
-    4. target_alt : float, optional
+    alt : float, optional
         The altitude of the target, in degrees.
-    5. target_az : float, optional
+    az : float, optional
         The azimuth of the target, in degrees.
-    6. target_name : str, optional
+    name : str, optional
         The name of the target.
-
+    objtype : str, optional
+        The type of the target.
+    exptime : float or str, optional
+        The exposure time for the target.
+    count : int or str, optional
+        The number of counts for the target.
+    filter_ : str, optional
+        The filter used for observation.
+    binning : int or str, optional
+        The binning factor for observation.
+    specmode : str, optional
+        The spectral mode used for observation.
+    obsmode : str, optional
+        The observation mode.
+    ntelescope : int, optional
+        The number of telescopes.
+        
+    Attributes
+    ----------
+    ra : float or None
+        The right ascension of the target, in degrees.
+    dec : float or None
+        The declination of the target, in degrees.
+    alt : float or None
+        The altitude of the target, in degrees.
+    az : float or None
+        The azimuth of the target, in degrees.
+    name : str
+        The name of the target.
+    objtype : str or None
+        The type of the target.
+    exptime : float or str or None
+        The exposure time for the target.
+    count : int or str or None
+        The number of counts for the target.
+    filter_ : str or None
+        The filter used for observation.
+    binning : int or str or None
+        The binning factor for observation.
+    specmode : str or None
+        The spectral mode used for observation.
+    obsmode : str or None
+        The observation mode.
+    ntelescope : int
+        The number of telescopes.
+    exist_exposureinfo : bool
+        Indicates whether exposure information is provided.
+    ra_hour : float or None
+        The right ascension of the target, in hours.
+    dec_deg : float or None
+        The declination of the target, in degrees.
+    
     Methods
     -------
-    1. get_status() -> dict
+    get_status() -> dict
         Returns a dictionary with information about the current status of the target.
-    2. is_observable(utctime: datetime or Time = None) -> bool
+    is_observable(utctime: datetime or Time = None) -> bool
         Determines whether the target is observable at the specified time or at the current time.
-    3. altaz(utctime: datetime or Time = None) -> SkyCoord
+    altaz(utctime: datetime or Time = None) -> SkyCoord
         Calculate the alt-az coordinates of the target for a given time(s) in UTC.
-    4. risetime(utctime: datetime or Time = None, mode: str = 'next', horizon: float = 30) -> Time
+    risetime(utctime: datetime or Time = None, mode: str = 'next', horizon: float = 30) -> Time
         Calculate the next rise time of the target as seen by the observer.
-    5. settime(utctime: datetime or Time = None, mode: str = 'nearest', horizon: float = 30) -> Time
+    settime(utctime: datetime or Time = None, mode: str = 'nearest', horizon: float = 30) -> Time
         Calculate the time when the target sets below the horizon.
-    6. meridiantime(utctime: datetime or Time = None, mode: str = 'nearest') -> Time
+    meridiantime(utctime: datetime or Time = None, mode: str = 'nearest') -> Time
         Calculate the time at which the target passes through the observer's meridian.
-    7. hourangle(utctime: datetime or Time = None) -> Angle
+    hourangle(utctime: datetime or Time = None) -> Angle
         Calculate the hour angle of the target(s) at the specified time(s).
-    8. staralt(utctime : datetime or Time or np.array = None)
+    staralt(utctime : datetime or Time or np.array = None)
         Creates a plot of the altitude and azimuth of a celestial object.
     """
     
@@ -129,56 +185,34 @@ class SingleTarget(mainConfig):
         txt = f'SingleTarget(Name = {self.name}, TargetType = {self._coordtype}, ExposureInfo = {self.exist_exposureinfo})'
         return txt
 
-    def get_filters_from_specmode(self):
-        specmode_file = self.config['SPECMODE_FOLDER'] + f'{self.specmode}.specmode'
-        is_exist_specmodefile = os.path.isfile(specmode_file)
-        if is_exist_specmodefile: 
-            with open(specmode_file, 'r') as f:
-                specmode_dict = json.load(f)
-            all_filters_dict = dict()
-            for tel_name, filters in specmode_dict.items():
-                filters_str = ','.join(filters)
-                all_filters_dict[tel_name] = filters_str
-            return all_filters_dict
-        else:
-            raise SpecmodeRegisterException(f'Specmode : {self.specmode} is not registered in {self.config["SPECMODE_FOLDER"]}')
-       
-    def _format_expinfo(self,
-                        filter_str : str,
-                        exptime_str : str,
-                        count_str : str,
-                        binning_str : str = '1',
-                        ):
-        format_expinfo = dict()
-        format_expinfo['filter_'] = filter_str
-        format_expinfo['exptime'] = exptime_str
-        format_expinfo['count'] = count_str
-        format_expinfo['binning'] = binning_str
-        filter_list = format_expinfo['filter_'].split(',')
-        len_filt = len(filter_list)        
-        
-        # Exposure information
-        format_explistinfo = dict()
-        for kwarg, value in format_expinfo.items():
-            valuelist = value.split(',')
-            if len_filt != len(valuelist):
-                valuelist = [valuelist[0]] * len_filt
-            formatted_value = ','.join(valuelist)
-            format_expinfo[kwarg] = formatted_value
-            format_explistinfo[kwarg] = valuelist
-        totexp = 0
-        for exptime, count in zip(format_explistinfo['exptime'], format_explistinfo['count']):
-            totexp += float(exptime) * float(count)
-        format_expinfo['exptime_tot'] = totexp
-        return format_expinfo
-
     @property
     def status(self):
+        """Combines exposure information and target information into a single dictionary.
+
+        Returns
+        -------
+        dict
+            A dictionary containing both exposure information and target information.
+        """
         return{**self.exposure_info, **self.target_info}
     
     @property
     def exposure_info(self):
-        
+        """Collects and formats exposure information.
+
+        Returns
+        -------
+        exposureinfo: dict
+            A dictionary containing the following fields:
+                - exptime: the exposure time.
+                - count: the exposure count.
+                - filter_: the current filter.
+                - binning: the binning setting.
+                - obsmode: the observation mode.
+                - specmode: the spectroscopy mode.
+                - specmode_filter: the filter used in spectroscopy mode.
+                - ntelescope: the number of telescopes.
+        """
         exposureinfo = dict()
         exposureinfo['exptime'] = self.exptime
         exposureinfo['count'] = self.count
@@ -206,7 +240,7 @@ class SingleTarget(mainConfig):
             exposureinfo['exptime_tot'] = format_exposure['exptime_tot']
         
         elif self.specmode:
-            filter_info = self.get_filters_from_specmode()
+            filter_info = self._get_filters_from_specmode()
             filter_str = list(filter_info.values())[0]
             format_exposure = self._format_expinfo(filter_str = str(filter_str),
                                                    exptime_str = str(self.exptime),
@@ -229,8 +263,8 @@ class SingleTarget(mainConfig):
         """
         Returns a dictionary with information about the current status of the target.
         
-        Return
-        ======
+        Returns
+        -------
         targetinfo : dict
             A dictionary containing the following fields:
                 - update_time: the current time in ISO format.
@@ -290,7 +324,7 @@ class SingleTarget(mainConfig):
 
         Parameters
         ----------
-        1. utctime : datetime or Time, optional
+        utctime : datetime or Time, optional
             The time at which to check observability. Defaults to the current time.
             
         Returns
@@ -319,13 +353,13 @@ class SingleTarget(mainConfig):
         Calculate the alt-az coordinates of the target for a given time(s) in UTC.
 
         Parameters
-        ==========
-        1. utctime : datetime or Time, optional
+        ----------
+        utctime : datetime or Time, optional
             The time(s) to calculate the alt-az coordinates for, in UTC. If not provided, the current time will be used. 
 
         Returns
-        =======
-        1. SkyCoord
+        -------
+        SkyCoord
             The alt-az coordinates of the target at the specified time(s).
         """
         if self._coordtype == 'radec':
@@ -345,17 +379,17 @@ class SingleTarget(mainConfig):
         Calculate the next rise time of the target as seen by the observer.
 
         Parameters
-        ==========
-        1. utctime : datetime or Time, optional
+        ----------
+        utctime : datetime or Time, optional
             The time to start searching for the next rise time. If not provided, the current time will be used.
-        2. mode : str, optional
+        mode : str, optional
             The method used to determine the rise time. Possible values are 'next' (the next rise time), 'previous' (the previous rise time), or 'nearest' (the nearest rise time). Default is 'next'.
-        3. horizon : float, optional
+        horizon : float, optional
             The altitude of the horizon, in degrees. Default is 30.
 
         Returns
-        =======
-        1. Time
+        -------
+        Time
             The rise time of the target as seen by the observer.
 
         """
@@ -376,17 +410,17 @@ class SingleTarget(mainConfig):
         Calculate the time when the target sets below the horizon.
 
         Parameters
-        ==========
-        1. utctime : datetime or Time, optional
+        ----------
+        utctime : datetime or Time, optional
             The time to use as the reference time for the calculation, by default the current time.
-        2. mode : str, optional
+        mode : str, optional
             Set to 'nearest', 'next' or 'previous', by default 'nearest'.
-        3. horizon : float, optional
+        horizon : float, optional
             The altitude of the horizon in degrees. Default is 30.
 
         Returns
-        =======
-        1. settime : Time
+        -------
+        settime : Time
             The time when the target sets below the horizon.
         """
         if self._coordtype == 'radec':
@@ -405,15 +439,15 @@ class SingleTarget(mainConfig):
         Calculate the time at which the target passes through the observer's meridian.
 
         Parameters
-        ==========
-        1. utctime : datetime or Time, optional
+        ----------
+        utctime : datetime or Time, optional
             The time at which to calculate the meridian transit time. If not provided, the current time will be used.
-        2. mode : str, optional
+        mode : str, optional
             Set to 'nearest', 'next' or 'previous', by default 'nearest'.
             
         Return
-        ======
-        1. meridiantime : Time
+        -------
+        meridiantime : Time
             The time at which the target passes through the observer's meridian.
         """
         if self._coordtype == 'radec':
@@ -431,13 +465,13 @@ class SingleTarget(mainConfig):
         Calculate the hour angle of the target for a given time(s) in UTC.
 
         Parameters
-        ==========
-        1. utctime : datetime or Time, optional
+        ----------
+        utctime : datetime or Time, optional
             The time(s) to calculate the hour angle of the target for, in UTC. If not provided, the current time will be used. 
 
         Returns
-        =======
-        1. hourangle : astropy.coordinates.Angle
+        -------
+        hourangle : astropy.coordinates.Angle
             The hour angle of the target(s) at the specified time(s).
         """
         if self._coordtype == 'radec':
@@ -457,13 +491,10 @@ class SingleTarget(mainConfig):
         Creates a plot of the altitude and azimuth of a celestial object.
         
         Parameters
-        ==========
-        1. utctime : datetime or Time or np.array, optional
+        ----------
+        utctime : datetime or Time or np.array, optional
             The time(s) for which to calculate the altitude and azimuth of the celestial object. 
             If not provided, the current time is used.
-        Returns
-        =======
-        None
         """
         if self._coordtype == 'radec':
             now = Time.now()
@@ -505,7 +536,50 @@ class SingleTarget(mainConfig):
             plt.xticks(rotation = 45)
         else:
             return None
+
+    def _get_filters_from_specmode(self):
+        specmode_file = self.config['SPECMODE_FOLDER'] + f'{self.specmode}.specmode'
+        is_exist_specmodefile = os.path.isfile(specmode_file)
+        if is_exist_specmodefile: 
+            with open(specmode_file, 'r') as f:
+                specmode_dict = json.load(f)
+            all_filters_dict = dict()
+            for tel_name, filters in specmode_dict.items():
+                filters_str = ','.join(filters)
+                all_filters_dict[tel_name] = filters_str
+            return all_filters_dict
+        else:
+            raise SpecmodeRegisterException(f'Specmode : {self.specmode} is not registered in {self.config["SPECMODE_FOLDER"]}')
+       
+    def _format_expinfo(self,
+                        filter_str : str,
+                        exptime_str : str,
+                        count_str : str,
+                        binning_str : str = '1',
+                        ):
+        format_expinfo = dict()
+        format_expinfo['filter_'] = filter_str
+        format_expinfo['exptime'] = exptime_str
+        format_expinfo['count'] = count_str
+        format_expinfo['binning'] = binning_str
+        filter_list = format_expinfo['filter_'].split(',')
+        len_filt = len(filter_list)        
         
+        # Exposure information
+        format_explistinfo = dict()
+        for kwarg, value in format_expinfo.items():
+            valuelist = value.split(',')
+            if len_filt != len(valuelist):
+                valuelist = [valuelist[0]] * len_filt
+            formatted_value = ','.join(valuelist)
+            format_expinfo[kwarg] = formatted_value
+            format_explistinfo[kwarg] = valuelist
+        totexp = 0
+        for exptime, count in zip(format_explistinfo['exptime'], format_explistinfo['count']):
+            totexp += float(exptime) * float(count)
+        format_expinfo['exptime_tot'] = totexp
+        return format_expinfo
+    
     def _get_coordinate_radec(self,
                               ra : float,
                               dec : float,

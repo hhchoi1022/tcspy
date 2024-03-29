@@ -8,6 +8,32 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils.exception import * 
 
 class Warm(Interface_Runnable, Interface_Abortable):
+    """
+    A class to perform the action of warming a telescope.
+
+    Parameters
+    ----------
+    singletelescope : SingleTelescope
+        A SingleTelescope instance to perform the action on.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Attributes
+    ----------
+    telescope : SingleTelescope
+        The SingleTelescope instance on which to perform the action.
+    telescope_status : TelescopeStatus
+        The TelescopeStatus instance used to check the current status of the telescope.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Methods
+    -------
+    run(settemperature, tolerance=1)
+        Warm the telescope to a given temperature within a specified tolerance.
+    abort()
+        This method does nothing but should be overridden in the subclasses if needed.
+    """
     
     def __init__(self, 
                  singletelescope : SingleTelescope,
@@ -20,7 +46,30 @@ class Warm(Interface_Runnable, Interface_Abortable):
     def run(self,
             settemperature : float,
             tolerance : float = 1):
+        """
+        Warm the telescope to a given temperature within a specified tolerance.
+
+        Parameters
+        ----------
+        settemperature : float
+            The desired temperature to warm the telescope to.
+        tolerance : float, optional
+            The accepted deviation from the set temperature.
         
+        Raises
+        ------
+        ConnectionException
+            If the telescope is disconnected.
+        AbortionException
+            If the action was aborted.
+        ActionFailedException
+            If the warming process failed.
+        
+        Returns
+        -------
+        bool
+            True if the action is finished, False otherwise.
+        """
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         if self.telescope_status.camera.lower() == 'disconnected':
@@ -50,4 +99,7 @@ class Warm(Interface_Runnable, Interface_Abortable):
             
     
     def abort(self):
+        """
+        Dummy abort function
+        """
         pass

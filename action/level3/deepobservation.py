@@ -13,6 +13,35 @@ from tcspy.action.level2 import SingleObservation
 
 #%%
 class DeepObservation(Interface_Runnable, Interface_Abortable):
+    """
+    A class representing a deep observation of multiple telescopes.
+
+    Parameters
+    ----------
+    MultiTelescopes : MultiTelescopes
+        An instance of MultiTelescopes class representing a collection of telescopes to perform the deep observation.
+    abort_action : Event
+        An instance of the built-in Event class to handle the abort action.
+
+    Attributes
+    ----------
+    multitelescopes : MultiTelescopes
+        The MultiTelescopes instance on which the observation has to performed.
+    observer : observer
+        Details of the observer.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+    _log : _log
+        Logging the details of the operation.
+
+    Methods
+    -------
+    run()
+        Performs the action to start deep observation.
+    abort()
+        A function to abort the ongoing deep observation process.
+    """
+    
     def __init__(self, 
                  MultiTelescopes : MultiTelescopes,
                  abort_action : Event):        
@@ -51,6 +80,43 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True,
             ):
+        """
+        Performs the action to start deep observation.
+
+        Parameters
+        ----------
+        exptime : str:
+            The exposure time.
+        count : str:
+            The count of observations.
+        filter_ : str:
+            Filter to be used.
+        binning : str (optional):
+            Binning value. Default is '1'.
+        imgtype : str (optional):
+            Type of image. Default is 'Light'.
+        ra : float (optional):
+            Right Ascension value.
+        dec : float (optional):
+            Declination value.
+        alt : float (optional):
+            Altitude value.
+        az : float (optional):
+            Azimuth value.
+        name : str (optional):
+            Name of the object.
+        objtype : str (optional):
+            Type of the object.
+        autofocus_before_start : bool (optional):
+            If autofocus should be done before start. Default is True.
+        autofocus_when_filterchange : bool (optional):
+            If autofocus should be done when filter changes. Default is True.
+
+        Raises
+        ------
+        AbortionException
+            If the abortion event is triggered during the operation.
+        """
         
         """ Test
         exptime= '10,10'
@@ -143,6 +209,9 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         return True
 
     def abort(self):
+        """
+        A function to abort the ongoing deep observation process.
+        """
         self.abort_action.set()
         status_multitelescope = self.multitelescopes.status
 

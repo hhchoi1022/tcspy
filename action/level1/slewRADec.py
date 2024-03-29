@@ -8,6 +8,33 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils.exception import *
 
 class SlewRADec(Interface_Runnable, Interface_Abortable):
+    """
+    A class to perform the action of moving a telescope to a given right ascension and declination.
+
+    Parameters
+    ----------
+    singletelescope : SingleTelescope
+        A SingleTelescope instance to perform the action on.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Attributes
+    ----------
+    telescope : SingleTelescope
+        The SingleTelescope instance on which to perform the action.
+    telescope_status : TelescopeStatus
+        The TelescopeStatus instance used to check the current status of the telescope.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+    
+    Methods
+    -------
+    run(ra=None, dec=None, **kwargs)
+        Move the telescope to the given right ascension and declination.
+    abort()
+        Abort the running action.
+    """
+    
     def __init__(self, 
                  singletelescope : SingleTelescope,
                  abort_action : Event):
@@ -20,7 +47,32 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
             ra : float = None,
             dec : float = None,
             **kwargs):
+        """
+        Move the telescope to the given right ascension and declination.
         
+        The function returns True if the action is finished.
+
+        Parameters
+        ----------
+        ra : float, optional
+            The right ascension value to move the telescope to.
+        dec : float, optional
+            The declination value to move the telescope to.
+        
+        Raises
+        ------
+        ConnectionException
+            If the telescope is disconnected.
+        AbortionException
+            If the action is aborted.
+        ActionFailedException
+            If the slew operation failed for any reason.
+        
+        Returns
+        -------
+        bool
+            True if the action is finished, False otherwise.
+        """
         # Check device connection
         mount = self.telescope.mount
         status_mount = self.telescope_status.mount.lower()
@@ -64,6 +116,11 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
     
     # For faster trigger of abort action
     def abort(self):
+        """
+        Abort the running function.
+        
+        This method aborts the running action if the telescope is busy. In other cases, it does nothing.
+        """
         status_mount = self.telescope_status.mount.lower()
         if status_mount == 'busy':
             self.telescope.mount.abort()

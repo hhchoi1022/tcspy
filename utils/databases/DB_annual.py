@@ -17,7 +17,51 @@ import tqdm
 
 # %%
 
-class DB_RIS(mainConfig):
+class DB_Annual(mainConfig):
+    """
+    A class representing data from the RIS database.
+
+    Parameters
+    ----------
+    utcdate : Time
+    	Rename to the current time.
+    tbl_name : str
+    	Rename the table. 
+
+    Attributes
+    ----------
+    observer : mainObserver
+        The station observing the night sky.
+    tblname : str
+        The name of the table used to track the observing information.
+    sql : SQL_Connector
+        A connection to the SQL database.
+    constraints : constraint
+        The observer's constraints.
+    utcdate : astropy.time.Time
+        The current universal time.
+    obsinfo : object
+        The observer and celestial body information.
+    obsnight : object
+        The observing information at sunset and sunrise.
+    connected
+        Whether the connection to the database is alive.
+
+    Methods
+    -------
+    connect()
+        Establish a connection to the MySQL database and set the cursor and executor.
+    disconnect()
+        Disconnect from the MySQL database and update the connection status flag to False.
+    initialize()
+    	Initializes the target table to update.
+    select_best_targets()
+    	Select the best observable targets for observation.
+    to_Daily()
+    	Inserts rows to the 'Daily' table.
+    update_targets_count()
+    	Update observation counts for target.
+    """
     
     def __init__(self,
                  utcdate : Time = Time.now(),
@@ -30,60 +74,33 @@ class DB_RIS(mainConfig):
         self.utcdate = utcdate
         self.obsinfo = self._set_obs_info(utcdate = utcdate)
         self.obsnight = self._set_obsnight(utcdate = utcdate, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
-
-    def _set_obs_info(self,
-                      utcdate : Time = Time.now()):
-        class info: pass
-        info.moon_phase = self.observer.moon_phase(utcdate)
-        info.moon_radec = self.observer.moon_radec(utcdate)
-        info.sun_radec = self.observer.sun_radec(utcdate)
-        info.observer_info = self.observer.get_status()
-        info.observer_astroplan = self.observer._observer
-        info.is_night = self.observer.is_night(utcdate)
-        return info
-    
-    def _set_obsnight(self,
-                      utcdate : Time = Time.now(),
-                      horizon_prepare : float = -5,
-                      horizon_astro : float = -18):
-        class night: pass
-        night.sunrise_prepare = self.observer.tonight(time = utcdate, horizon = horizon_prepare)[1]
-        night.sunset_prepare = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_prepare)
-        night.sunrise_astro = self.observer.sun_risetime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
-        night.sunset_astro = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
-        night.observable_hour = (night.sunrise_astro - night.sunset_astro).jd * 24
-        night.midnight = Time((night.sunset_astro.jd + night.sunrise_astro.jd)/2, format = 'jd')
-        night.time_inputted = utcdate
-        night.current = Time.now()
-        return night
-
-    def _set_constrints(self):
-        class constraint: pass
-        constraint_astroplan = []
-        if (self.config['TARGET_MINALT'] != None) & (self.config['TARGET_MAXALT'] != None):
-            constraint_altitude = AltitudeConstraint(min = self.config['TARGET_MINALT'] * u.deg, max = self.config['TARGET_MAXALT'] * u.deg, boolean_constraint = False)
-            constraint_astroplan.append(constraint_altitude)
-            constraint.minalt = self.config['TARGET_MINALT']
-            constraint.maxalt = self.config['TARGET_MAXALT']
-        if self.config['TARGET_MOONSEP'] != None:
-            constraint_moonsep = MoonSeparationConstraint(min = self.config['TARGET_MOONSEP'] * u.deg, max = None)
-            constraint_astroplan.append(constraint_moonsep)
-            constraint.moonsep = self.config['TARGET_MOONSEP']
-        constraint.astroplan = constraint_astroplan
-        return constraint  
     
     @property    
     def connected(self):
         return self.sql.connected
     
     def connect(self):
+        """
+        Establish a connection to the MySQL database and set the cursor and executor.
+        """
         self.sql.connect()
     
     def disconnect(self):
+        """
+        Disconnect from the MySQL database and update the connection status flag to False.
+        """
         self.sql.disconnect()
     
     def initialize(self, 
-                   initialize_all : bool = False):        
+                   initialize_all : bool = False):
+        """
+        Initializes and updates the target table.
+
+        Parameters
+        ----------
+        initialize_all : bool
+        	Whether to re-calculate all rows of the table, or only the rows that need update.
+        """
         self.connect()
         target_tbl_all = self.data
         
@@ -143,6 +160,25 @@ class DB_RIS(mainConfig):
                             mode : str = 'best', # best or urgent
                             observable_minimum_hour : float = 2
                             ):
+        """
+        Select the best observable targets at certain night.
+
+        Parameters
+        ----------
+        utcdate : Time
+        	Representing the current time.
+        size : int
+        	The number of targets to select.
+        mode : str
+        	Target selection mode which is either 'best' or 'urgent'.
+        observable_minimum_hour : float
+        	The minimum number of hours a target needs to be observable.
+        
+        Returns
+        -------
+        Table
+        	A table containing the best targets for the night.
+        """   
         observable_fraction_criteria = observable_minimum_hour / self.obsnight.observable_hour 
         
         if not self.sql.connected:
@@ -185,12 +221,30 @@ class DB_RIS(mainConfig):
     
     def to_Daily(self,
                  target_tbl : Table):
+        """
+        Insert targets to daily.
+
+        Parameters
+        ----------
+        target_tbl : Table
+        	The table containing the targets.
+        """
         self.sql.insert_rows(tbl_name = 'Daily', data = target_tbl)
     
     def update_targets_count(self,
                              targets_id : list or np.array,
                              targets_count : int or list or np.array
                              ):
+        """
+        Update observation counts for target.
+
+        Parameters
+        -------
+        targets_id : list or np.array
+        	A list containing the id of each target.
+        targets_count : int or list or np.array
+        	A list containing the count of each target or int to set the all observations to.
+        """
         if isinstance(targets_count, int):
             targets_count = list(targets_count) * len(targets_id)
         else:
@@ -200,6 +254,55 @@ class DB_RIS(mainConfig):
     
     @property
     def data(self):
+        """
+        Retrieves the data from the database.
+
+        Returns
+        -------
+        Table
+        	The table containing the data from the database. 
+        """
         if not self.sql.connected:
             self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
+    
+    def _set_obs_info(self,
+                      utcdate : Time = Time.now()):
+        class info: pass
+        info.moon_phase = self.observer.moon_phase(utcdate)
+        info.moon_radec = self.observer.moon_radec(utcdate)
+        info.sun_radec = self.observer.sun_radec(utcdate)
+        info.observer_info = self.observer.get_status()
+        info.observer_astroplan = self.observer._observer
+        info.is_night = self.observer.is_night(utcdate)
+        return info
+    
+    def _set_obsnight(self,
+                      utcdate : Time = Time.now(),
+                      horizon_prepare : float = -5,
+                      horizon_astro : float = -18):
+        class night: pass
+        night.sunrise_prepare = self.observer.tonight(time = utcdate, horizon = horizon_prepare)[1]
+        night.sunset_prepare = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_prepare)
+        night.sunrise_astro = self.observer.sun_risetime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
+        night.sunset_astro = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
+        night.observable_hour = (night.sunrise_astro - night.sunset_astro).jd * 24
+        night.midnight = Time((night.sunset_astro.jd + night.sunrise_astro.jd)/2, format = 'jd')
+        night.time_inputted = utcdate
+        night.current = Time.now()
+        return night
+
+    def _set_constrints(self):
+        class constraint: pass
+        constraint_astroplan = []
+        if (self.config['TARGET_MINALT'] != None) & (self.config['TARGET_MAXALT'] != None):
+            constraint_altitude = AltitudeConstraint(min = self.config['TARGET_MINALT'] * u.deg, max = self.config['TARGET_MAXALT'] * u.deg, boolean_constraint = False)
+            constraint_astroplan.append(constraint_altitude)
+            constraint.minalt = self.config['TARGET_MINALT']
+            constraint.maxalt = self.config['TARGET_MAXALT']
+        if self.config['TARGET_MOONSEP'] != None:
+            constraint_moonsep = MoonSeparationConstraint(min = self.config['TARGET_MOONSEP'] * u.deg, max = None)
+            constraint_astroplan.append(constraint_moonsep)
+            constraint.moonsep = self.config['TARGET_MOONSEP']
+        constraint.astroplan = constraint_astroplan
+        return constraint  

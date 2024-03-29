@@ -12,30 +12,47 @@ from tcspy.action import MultiAction
 from tcspy.action.level2 import SingleObservation
 #%%
 class SpecObservation(Interface_Runnable, Interface_Abortable):
+    """
+    A class representing a spectroscopic observation of multiple telescopes.
+
+    Parameters
+    ----------
+    MultiTelescopes : MultiTelescopes
+        An instance of MultiTelescopes class representing a collection of telescopes to perform the specservation.
+    abort_action : Event
+        An instance of the built-in Event class to handle the abort action.
+    specmode_folder : str
+        Path to the folder containing the spectroscopic mode configurations.
+
+    Attributes
+    ----------
+    multitelescopes : MultiTelescopes
+        The MultiTelescopes instance on which the observation has to performed.
+    observer : observer
+        Details of the observer.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+    _specmode_folder : str
+        The Folder containing the config files for the spectroscopic modes.
+
+    Methods
+    -------
+    run()
+        Performs the action to start spectroscopic observation.
+    abort()
+        A function to abort the ongoing spectroscopic observation process.
+    """
+    
     def __init__(self, 
-                 MultiTelescopes : MultiTelescopes,
+                 multitelescopes : MultiTelescopes,
                  abort_action : Event,
                  specmode_folder : str = '../../configuration/specmode/u10/'):
-        self.multitelescopes = MultiTelescopes
+        self.multitelescopes = multitelescopes
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
         self._specmode_folder = specmode_folder
         self._log = MultiTelescopes.log
 
-    def _format_params(self,
-                       imgtype : str = 'Light',
-                       autofocus_before_start = True,
-                       autofocus_when_filterchange = True,
-                       **kwargs):
-        format_kwargs = dict()
-        format_kwargs['imgtype'] = imgtype
-        format_kwargs['autofocus_before_start'] = autofocus_before_start
-        format_kwargs['autofocus_when_filterchange'] = autofocus_when_filterchange
-
-        # Other information
-        for key, value in kwargs.items():
-            format_kwargs[key] = value
-        return format_kwargs
     
     def run(self, 
             exptime : str,
@@ -52,6 +69,43 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True
             ):
+        """
+        Performs the action to start spectroscopic observation.
+
+        Parameters
+        ----------
+        exptime : str:
+            The exposure time.
+        count : str:
+            The count of observations.
+        specmode : str:
+            Spectroscopic mode to be used.
+        binning : str (optional):
+            Binning value. Default is '1'.
+        imgtype : str (optional):
+            Type of image. Default is 'Light'.
+        ra : float (optional):
+            Right Ascension value.
+        dec : float (optional):
+            Declination value.
+        alt : float (optional):
+            Altitude value.
+        az : float (optional):
+            Azimuth value.
+        name : str (optional):
+            Name of the object.
+        objtype : str (optional):
+            Type of the object.
+        autofocus_before_start : bool (optional):
+            If autofocus should be done before start. Default is True.
+        autofocus_when_filterchange : bool (optional):
+            If autofocus should be done when filter changes. Default is True.
+
+        Raises
+        ------
+        AbortionException
+            If the abortion event is triggered during the operation.
+        """
         
         """ Test
         exptime= '10,10'
@@ -68,7 +122,6 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         autofocus_before_start= True
         autofocus_when_filterchange= True
         """
-
         # Check condition of the instruments for this Action
         status_multitelescope = self.multitelescopes.status
         for telescope_name, telescope_status in status_multitelescope.items():
@@ -144,6 +197,9 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         return True
 
     def abort(self):
+        """
+        A function to abort the ongoing spectroscopic observation process.
+        """
         self.abort_action.set()
         status_multitelescope = self.multitelescopes.status
 
@@ -157,6 +213,21 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                 telescope.camera.abort()
             if status['mount'].lower() == 'busy':
                 telescope.mount.abort()
+
+    def _format_params(self,
+                       imgtype : str = 'Light',
+                       autofocus_before_start = True,
+                       autofocus_when_filterchange = True,
+                       **kwargs):
+        format_kwargs = dict()
+        format_kwargs['imgtype'] = imgtype
+        format_kwargs['autofocus_before_start'] = autofocus_before_start
+        format_kwargs['autofocus_when_filterchange'] = autofocus_when_filterchange
+
+        # Other information
+        for key, value in kwargs.items():
+            format_kwargs[key] = value
+        return format_kwargs
 
     
 # %%

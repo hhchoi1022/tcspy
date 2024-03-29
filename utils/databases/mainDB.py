@@ -9,6 +9,28 @@ from tcspy.configuration import mainConfig
 #%%
 
 class DB(mainConfig):
+    """
+    A class used to handle actions with the database.
+
+    Parameters
+    ----------
+    utctime : Time
+        Representing the current time.
+
+    Attributes
+    ----------
+    Daily : DB_Daily
+        An instance of the DB_Daily class updated at utctime.
+    RIS : DB_Annual
+        An instance of the DB_AFIS class updated at utcdate.
+
+    Methods
+    -------
+    update_Daily(utctime)
+        Returns an instance of DB_Daily updated at utctime.
+    update_RIS(utcdate)
+        Returns an instance of DB_Annual updated at utcdate.
+    """
     
     def __init__(self,
                  utctime = Time.now()):
@@ -17,9 +39,35 @@ class DB(mainConfig):
         self.RIS = self.update_RIS(utcdate = utctime)
     
     def update_Daily(self, utctime):
+        """
+        Returns an instance of DB_Daily updated at utctime.
+
+        Parameters
+        ----------
+        utctime : Time
+            Representing the current time.
+
+        Returns
+        -------
+        DB_Daily
+            An instance of the DB_Daily class updated at utctime.
+        """
         Daily = DB_Daily(utctime = utctime, tbl_name = 'Daily')
         return Daily
 
     def update_RIS(self, utcdate):
-        return DB_RIS(utcdate = utcdate, tbl_name = 'RIS')
+        """
+        Returns an instance of DB_Annual updated at utcdate.
+
+        Parameters
+        ----------
+        utcdate : Time
+            Representing the current time.
+
+        Returns
+        -------
+        DB_Annual
+            An instance of the DB_Annual class updated at utcdate.
+        """
+        return DB_Annual(utcdate = utcdate, tbl_name = 'RIS')
 # %%

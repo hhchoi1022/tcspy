@@ -7,6 +7,32 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils.exception import *
 
 class SlewAltAz(Interface_Runnable, Interface_Abortable):
+    """
+    A class to perform the action of moving a telescope to a given altitude and azimuth.
+
+    Parameters
+    ----------
+    singletelescope : SingleTelescope
+        A SingleTelescope instance to perform the action on.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Attributes
+    ----------
+    telescope : SingleTelescope
+        The SingleTelescope instance on which to perform the action.
+    telescope_status : TelescopeStatus
+        The TelescopeStatus instance used to check the current status of the telescope.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+    
+    Methods
+    -------
+    run(alt=None, az=None, **kwargs)
+        Move the telescope to the given altitude and azimuth.
+    abort()
+        Abort the running action.
+    """
     def __init__(self, 
                  singletelescope : SingleTelescope,
                  abort_action : Event):
@@ -19,7 +45,32 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
             alt : float = None,
             az : float = None,
             **kwargs):
+        """
+        Move the telescope to the given altitude and azimuth.
         
+        The function returns True if the action is finished.
+
+        Parameters
+        ----------
+        alt : float, optional
+            The altitude to move the telescope to.
+        az : float, optional
+            The azimuth to move the telescope to.
+        
+        Raises
+        ------
+        ConnectionException
+            If the telescope is disconnected.
+        AbortionException
+            If the action is aborted.
+        ActionFailedException
+            If the slew operation failed for some reason.
+        
+        Returns
+        -------
+        bool
+            True if the action is finished, False otherwise.
+        """
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         mount = self.telescope.mount  
@@ -63,6 +114,11 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
         return True            
     
     def abort(self):
+        """
+        Abort the running function.
+        
+        This method aborts the running action if the telescope is busy. In other cases, it does nothing.
+        """
         status_mount = self.telescope_status.mount.lower()
         if status_mount == 'busy':
             self.telescope.mount.abort()

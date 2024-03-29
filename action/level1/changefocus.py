@@ -8,6 +8,34 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils.exception import *
 
 class ChangeFocus(Interface_Runnable, Interface_Abortable):
+    """
+    A class representing a change focus action for a single telescope.
+
+    Parameters
+    ----------
+    singletelescope : SingleTelescope
+        An instance of SingleTelescope class representing an individual telescope to perform the action on.
+    abort_action : Event
+        An instance of the built-in Event class to handle the abort action. 
+
+    Attributes
+    ----------
+    telescope : SingleTelescope
+        The SingleTelescope instance on which the action has to performed.
+    telescope_status : TelescopeStatus
+        A TelescopeStatus instance which is used to check the current status of the telescope.
+    abort_action : Event
+        An instance of Event to handle the abort action.
+
+    Methods
+    -------
+    run(position: int = None, is_relative : bool = False)
+        Performs the action to change the focus of the telescope. 
+        A position can be specified if an absolute change in focus is desired. 
+        Use is_relative flag for relative changes in focus.
+    abort()
+        A function that aborts the focus changing action if the focuser is busy.
+    """
     
     def __init__(self, 
                  singletelescope : SingleTelescope,
@@ -20,6 +48,32 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
     def run(self,
             position: int = None,
             is_relative : bool = False):
+        """
+        Excute the focus change.
+        
+        Parameters
+        ----------
+        position : int, optional
+            The new focus position.
+        is_relative : bool, optional
+            If set to True, considers the position as a relative change. 
+            If False, considers position as an absolute position. 
+            Default is False.
+            
+        Returns
+        -------
+        bool
+            True if the focus change action is successful, otherwise an exception is raised.
+
+        Raises
+        ------
+        ConnectionException
+            If the focuser of the telescope is disconnected.
+        AbortionException
+            If the action has been aborted.
+        ActionFailedException
+            If action fails due to any other reason.
+        """
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         if self.telescope_status.focuser.lower() == 'disconnected':
@@ -57,6 +111,9 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
         return True
     
     def abort(self):
+        """
+        Aborts the change focus action if the focuser is busy.
+        """
         status_focuser = self.telescope_status.focuser.lower()
         if status_focuser == 'busy':
             self.telescope.focuser.abort()

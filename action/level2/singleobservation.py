@@ -18,6 +18,27 @@ from tcspy.action.level2 import AutoFocus
 
 #%%
 class SingleObservation(Interface_Runnable, Interface_Abortable):
+    """
+    A class representing a single observation action for a single telescope.
+
+    Parameters
+    ----------
+    singletelescope : SingleTelescope
+        An instance of SingleTelescope class representing the individual telescope on which the single observation action is performed.
+    abort_action : Event
+        An instance of the built-in Event class to handle the abort action.
+
+    Methods
+    -------
+    run(exptime, count, filter_=None, binning='1', imgtype='Light', ra=None, dec=None, alt=None, az=None, name=None,
+        obsmode='Single', specmode=None, ntelescope=1, objtype=None, autofocus_before_start=False,
+        autofocus_when_filterchange=False, **kwargs)
+        Triggers the single observation process. This includes checking device status, setting target, slewing,
+        changing filter and focuser position according to the necessity and conducting exposure.
+    abort()
+        Aborts any running actions related to the filter wheel, camera, and mount.
+    """
+    
     def __init__(self, 
                  singletelescope : SingleTelescope,
                  abort_action : Event):
@@ -26,33 +47,6 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.abort_action = abort_action
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
-    def _exposureinfo_to_list(self,
-                              filter_ : str,
-                              exptime : str,
-                              count : str,
-                              binning : str):
-        exptime_list = exptime.split(',')
-        count_list = count.split(',')
-        binning_list = binning.split(',')
-        exposure_info = dict()
-        if filter_ == None:
-            exposure_info['filter_'] = filter_
-            exposure_info['exptime'] = exptime_list[0]
-            exposure_info['count'] = count_list[0]
-            exposure_info['binning'] = binning_list[0]
-        else:
-            filter_list = filter_.split(',')
-            exposure_info['filter_'] = filter_list
-            exposure_info['exptime'] = exptime_list
-            exposure_info['count'] = count_list
-            exposure_info['binning'] = binning_list
-            len_filt = len(filter_list)        
-            for name, value in exposure_info.items():
-                len_value = len(value)
-                if len_filt != len_value:
-                    exposure_info[name] = [value[0]] * len_filt
-        return exposure_info
-    
     def run(self, 
             exptime : str,
             count : str,
@@ -72,45 +66,47 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             autofocus_when_filterchange : bool = False,
             **kwargs
             ):
+        """
+        Triggers the single observation process. This includes checking device status, setting target, slewing,
+        changing filter and focuser position according to the necessity and conducting exposure.
+
+        Parameters
+        ----------
+        exptime : str
+            The exposure time.
+        count : str
+            The exposure count.
+        filter_ : str, optional
+            The type of filter to be used. If not provided, the current filter is used.
+        binning : str, optional
+            The binning value. If not provided, defaults to '1'.
+        imgtype : str, optional
+            The type of image. If not provided, defaults to 'Light'.
+        ra : float, optional
+            The right ascension of the target. If not provided, the telescope does not move.
+        dec : float, optional
+            The declination of the target. If not provided, the telescope does not move.
+        alt : float, optional
+            The altitude of the target. If neither `alt` nor `az` are provided, the telescope does not move.
+        az : float, optional
+            The azimuth of the target. If neither `alt` nor `az` are provided, the telescope does not move.
+        autofocus_before_start : bool, optional
+            Whether or not to autofocus before beginning the first observation set. If not provided, it will not autofocus before beginning the observation.
+        autofocus_when_filterchange : bool, optional
+            Whether or not to autofocus when filter changes. If not provided, it will not autofocus when the filter changes.
+        
+        Raises
+        ------
+        ConnectionException:
+            If the required devices are disconnected.
+        AbortionException:
+            If the action is aborted during execution.
+        ActionFailedException:
+            If the slewing process or the exposure fails.
+        """
         
         self._log.info(f'[{type(self).__name__}] is triggered.')
 
-        """
-        
-        # Target 1
-        exptime= '10,10'
-        count= '5,5'
-        filter_= 'm450,m475'
-        binning= '1,1'
-        imgtype = 'Light'
-        ra= '200.4440'
-        dec= '-20.5520'
-        alt = None
-        az = None
-        name = "NGC3147"
-        obsmode= 'Spec'
-        specmode = 'specall'
-        objtype = 'ToO'
-        ntelescope = 1
-        autofocus_before_start= True
-        autofocus_when_filterchange= True
-        
-        exptime= '10,10'
-        count= '5,5'
-        filter_= 'g,r'
-        binning= '1,1'
-        imgtype = 'Light'
-        ra= '200.4440'
-        dec= '-20.5520'
-        name = "NGC3147"
-        obsmode= 'Single'
-        specmode = None
-        objtype = None
-        autofocus_before_start= True
-        autofocus_when_filterchange= True
-        """
-        
-        
         # Check condition of the instruments for this Action
         status_filterwheel = self.telescope_status.filterwheel
         status_camera = self.telescope_status.camera
@@ -295,8 +291,19 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self._log.info(f'[{type(self).__name__}] is finished')
         
         return all(result_all_exposure)
-            
+
     def abort(self):
+        """
+        Aborts any running actions related to the filter wheel, camera, and mount.
+
+        This method checks the status of the filter wheel, camera, and mount. If any of them is busy, it will call 
+        its respective abort method to stop the ongoing operation.
+
+        Raises
+        ------
+        AbortionException:
+            If the device operation is explicitly aborted during the operation.
+        """
         status_filterwheel = self.telescope_status.filterwheel
         status_camera = self.telescope_status.camera
         status_mount = self.telescope_status.mount
@@ -307,6 +314,33 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         if status_mount.lower() == 'busy':
             self.telescope.mount.abort()
     
+    def _exposureinfo_to_list(self,
+                              filter_ : str,
+                              exptime : str,
+                              count : str,
+                              binning : str):
+        exptime_list = exptime.split(',')
+        count_list = count.split(',')
+        binning_list = binning.split(',')
+        exposure_info = dict()
+        if filter_ == None:
+            exposure_info['filter_'] = filter_
+            exposure_info['exptime'] = exptime_list[0]
+            exposure_info['count'] = count_list[0]
+            exposure_info['binning'] = binning_list[0]
+        else:
+            filter_list = filter_.split(',')
+            exposure_info['filter_'] = filter_list
+            exposure_info['exptime'] = exptime_list
+            exposure_info['count'] = count_list
+            exposure_info['binning'] = binning_list
+            len_filt = len(filter_list)        
+            for name, value in exposure_info.items():
+                len_value = len(value)
+                if len_filt != len_value:
+                    exposure_info[name] = [value[0]] * len_filt
+        return exposure_info
+
 # %%
 if __name__ == '__main__':
     from tcspy.action.level1 import Connect

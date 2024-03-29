@@ -12,14 +12,41 @@ class Disconnect(Interface_Runnable):
     def __init__(self, 
                  singletelescope : SingleTelescope,
                  abort_action : Event):
+        """
+        A class representing a disconnect action for a single telescope.
+
+        Parameters
+        ----------
+        singletelescope : SingleTelescope
+            An instance of SingleTelescope class representing an individual telescope to perform the action on.
+        abort_action : Event
+            An instance of the built-in Event class to handle the abort action. 
+
+        Attributes
+        ----------
+        telescope : SingleTelescope
+            The SingleTelescope instance on which the action has to performed.
+        telescope_status : TelescopeStatus
+            A TelescopeStatus instance which is used to check the current status of the telescope.
+        abort_action : Event
+            An instance of Event to handle the abort action.
+
+        Methods
+        -------
+        run()
+            Performs the action to disconnect all devices linked to the telescope.
+        abort()
+            A function that needs to be defined to enable abort functionality. In this class, it does nothing and should be overridden in subclasses if needed.
+        """
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
-    def run(self,
-            **kwargs):
-        
+    def run(self):
+        """
+        Execute the disconnection action.
+        """
         self._log.info(f'[{type(self).__name__}]" is triggered.')
         # disconnect devices
         devices_status = self.telescope_status.dict
@@ -56,6 +83,9 @@ class Disconnect(Interface_Runnable):
         return devices_status 
     
     def abort(self):
+        """
+        Dummy abort function. Disconnect cannot be aborted 
+        """
         return 
 # %%
 if __name__ == '__main__':

@@ -13,6 +13,39 @@ from tcspy.configuration import mainConfig
 from datetime import datetime
 #%%
 class mainImage(mainConfig):
+    """
+    A class representing main image information.
+
+    Parameters
+    ----------
+    frame_number : int
+        The frame number of the image.
+    config_info : dict
+        Configuration information.
+    image_info : dict
+        Information about the image.
+    camera_info : dict, optional
+        Information about the camera, by default None.
+    mount_info : dict, optional
+        Information about the mount, by default None.
+    filterwheel_info : dict, optional
+        Information about the filterwheel, by default None.
+    focuser_info : dict, optional
+        Information about the focuser, by default None.
+    observer_info : dict, optional
+        Information about the observer, by default None.
+    target_info : dict, optional
+        Information about the target, by default None.
+    weather_info : dict, optional
+        Information about the weather, by default None.
+        
+    Methods
+    -------
+    save()
+        Save the image.
+    show()
+        Display the image.
+    """
     
     def __init__(self,
                  frame_number : int,
@@ -26,19 +59,7 @@ class mainImage(mainConfig):
                  target_info : dict = None,
                  weather_info : dict = None
                  ):
-        '''
-        frame_number = int(frame_number)
-        config_info = self.telescope.config
-        image_info = imginfo
-        camera_info = status['camera']
-        mount_info = status['mount']
-        filterwheel_info = status['filterwheel']
-        focuser_info = status['focuser']
-        observer_info = status['observer']
-        target_info = target.status
-        weather_info = status['weather']
-        '''
-        
+
         self._framenum = frame_number
         self._configinfo = config_info
         self._imginfo = image_info
@@ -49,8 +70,81 @@ class mainImage(mainConfig):
         self._obsinfo = observer_info
         self._targetinfo = target_info
         self._weatherinfo = weather_info
+    
+    @property
+    def hdu(self):
+        """
+        Returns the Header Data Unit (HDU).
         
+        Returns
+        -------
+        fits.PrimaryHDU
+            Header Data Unit.
+        """
+        telinfo = self._add_telinfo_to_hdr()
+        caminfo = self._add_caminfo_to_hdr()
+        focusinfo = self._add_focusinfo_to_hdr()
+        filtinfo = self._add_filtwheelinfo_to_hdr()
+        imginfo = self._add_imginfo_to_hdr()
+        targetinfo = self._add_targetinfo_to_hdr()
+        configinfo = self._add_configinfo_to_hdr()
+        obsinfo = self._add_obsinfo_to_hdr()
+        weatherinfo = self._add_weatinfo_to_hdr()
+        all_info = {**telinfo,**caminfo,**focusinfo,**filtinfo,**imginfo,**targetinfo,**configinfo,**obsinfo,**weatherinfo}
+        hdu = fits.PrimaryHDU()
+        hdu.data = self._imginfo['data']
+        for key, value in all_info.items():
+            hdu.header[key] = (value['value'],str(value['note']))
+        return hdu
+    
+    @property
+    def header(self):
+        """
+        Returns the header of the HDU.
+        
+        Returns
+        -------
+        Header
+            Header of the image.
+        """
+        return self.hdu.header
+    
+    @property
+    def data(self):
+        """
+        Returns the data of the HDU.
+        
+        Returns
+        -------
+        ndarray
+            Data of the image.
+        """
+        return self.hdu.data
+    
+    def save(self):
+        """
+        Save the image.
+        
+        Returns
+        -------
+        str
+            Filepath where the image is saved.
+        """
+        if not os.path.isdir(self._configinfo['IMAGE_PATH']):
+            os.makedirs(self._configinfo['IMAGE_PATH'])
+        filename = self._format_filename()
+        filepath = self._configinfo['IMAGE_PATH']+filename
+        if os.path.exists(filepath):
+            filepath = self._configinfo['IMAGE_PATH']+"dup_"+filename
+            self.hdu.writeto(filepath, overwrite = False) 
+        else:
+            self.hdu.writeto(filepath, overwrite = False) 
+        return filepath
+    
     def show(self):
+        """
+        Display the image.
+        """
         figsize_x = 4 * self.header['NAXIS1']/4096
         figsize_y = 4 * self.header['NAXIS2']/4096
         norm = ImageNormalize(self.data, interval=ZScaleInterval(), stretch=LinearStretch())
@@ -261,43 +355,6 @@ class mainImage(mainConfig):
             info['OBJCTHA'] = self._format_header(self._targetinfo['hourangle'], 'Hourangle of the target')
             info['OBSMODE'] = self._format_header(self._targetinfo['obsmode'], 'Mode of the observation')
         return info
-    
-    @property
-    def hdu(self):
-        telinfo = self._add_telinfo_to_hdr()
-        caminfo = self._add_caminfo_to_hdr()
-        focusinfo = self._add_focusinfo_to_hdr()
-        filtinfo = self._add_filtwheelinfo_to_hdr()
-        imginfo = self._add_imginfo_to_hdr()
-        targetinfo = self._add_targetinfo_to_hdr()
-        configinfo = self._add_configinfo_to_hdr()
-        obsinfo = self._add_obsinfo_to_hdr()
-        weatherinfo = self._add_weatinfo_to_hdr()
-        all_info = {**telinfo,**caminfo,**focusinfo,**filtinfo,**imginfo,**targetinfo,**configinfo,**obsinfo,**weatherinfo}
-        hdu = fits.PrimaryHDU()
-        hdu.data = self._imginfo['data']
-        for key, value in all_info.items():
-            hdu.header[key] = (value['value'],str(value['note']))
-        return hdu
-    
-    @property
-    def header(self):
-        return self.hdu.header
-    
-    @property
-    def data(self):
-        return self.hdu.data
-    
-    def save(self):
-        if not os.path.isdir(self._configinfo['IMAGE_PATH']):
-            os.makedirs(self._configinfo['IMAGE_PATH'])
-        filename = self._format_filename()
-        filepath = self._configinfo['IMAGE_PATH']+filename
-        if os.path.exists(filepath):
-            filepath = self._configinfo['IMAGE_PATH']+"dup_"+filename
-            self.hdu.writeto(filepath, overwrite = False) 
-        else:
-            self.hdu.writeto(filepath, overwrite = False) 
-        return filepath
+
 
 # %%
