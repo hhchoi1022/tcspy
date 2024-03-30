@@ -17,35 +17,7 @@ from tcspy.action import MultiAction
 
 #%%
 
-class Shutdown(mainConfig):
-    """
-    A class representing the shutdown process for multiple telescopes.
-
-    Parameters
-    ----------
-    multitelescopes : MultiTelescopes
-        An instance of MultiTelescopes class representing a collection of telescopes.
-    abort_action : Event
-        An instance of the built-in Event class to handle the abort action.
-
-    Attributes
-    ----------
-    multitelescopes : MultiTelescopes
-        The MultiTelescopes instance on which the action has to be performed.
-    devices : devices
-        The devices associated with the multiple telescopes.
-    log : log
-        Logging details of the operation.
-    abort_action : Event
-        An instance of Event to handle the abort action.
-
-    Methods
-    -------
-    run()
-        Starts the shutdown process in a separate thread.
-    abort()
-        Aborts the shutdown process.
-    """
+class ShutDown(mainConfig):
     
     def __init__(self,
                  MultiTelescopes,
@@ -58,21 +30,10 @@ class Shutdown(mainConfig):
         self.abort_action = abort_action
     
     def run(self):
-        """
-        Starts the startup process in a separate thread.
-        """
-        startup_thread = threading.Thread(target=self._process)
+        startup_thread = threading.Thread(target=self.process)
         startup_thread.start()
     
-    def abort(self):
-        """
-        Aborts the startup process.
-        """
-        self.abort_action.set()
-        for telescope_name, telescope in self.devices.items():
-            self.log[telescope_name].warning(f'[{type(self).__name__}] is aborted.')
-            
-    def _process(self):
+    def process(self):
 
         # Telescope slewing
         params_slew = []
@@ -142,6 +103,12 @@ class Shutdown(mainConfig):
         
         for telescope_name, telescope in self.devices.items():
             self.log[telescope_name].info(f'[{type(self).__name__}] is finished.')
+    
+    def abort(self):
+        self.abort_action.set()
+        for telescope_name, telescope in self.devices.items():
+            self.log[telescope_name].warning(f'[{type(self).__name__}] is aborted.')
+    
     
 
 # %%

@@ -3,6 +3,7 @@
 from astropy.coordinates import SkyCoord
 import time
 from astropy.time import Time
+import astropy.units as u
 from threading import Event
 
 from tcspy.devices import PWI4 # PWI4 API 
@@ -89,6 +90,8 @@ class mainMount_pwi4(mainConfig):
         status['jd'] = "{:.6f}".format(Time.now().jd)
         status['ra'] = None
         status['dec'] = None
+        status['ra_hour'] = None
+        status['dec_deg'] = None
         status['alt'] = None
         status['az'] = None
         status['at_parked'] = None
@@ -106,8 +109,11 @@ class mainMount_pwi4(mainConfig):
                 PWI_status = self.PWI_status
                 status['update_time'] = PWI_status.response.timestamp_utc
                 status['jd'] = "{:.6f}".format(PWI_status.mount.julian_date)
-                status['ra'] = "{:.4f}".format(PWI_status.mount.ra_j2000_hours)
-                status['dec'] = "{:.4f}".format(PWI_status.mount.dec_j2000_degs)
+                coordinates = SkyCoord(PWI_status.mount.ra_j2000_hours, PWI_status.mount.dec_j2000_degs, unit = (u.hourangle, u.deg) )
+                status['ra'] =  float("{:.4f}".format(coordinates.ra.deg))
+                status['dec'] =  float("{:.4f}".format(coordinates.dec.deg))
+                status['ra_hour'] = "{:.4f}".format(PWI_status.mount.ra_j2000_hours)
+                status['dec_dec'] = "{:.4f}".format(PWI_status.mount.dec_j2000_degs)
                 status['alt'] = "{:.3f}".format(PWI_status.mount.altitude_degs)
                 status['az'] = "{:.3f}".format(PWI_status.mount.azimuth_degs)
                 status['at_parked'] = (PWI_status.mount.axis0.is_enabled == False) & (PWI_status.mount.axis1.is_enabled == False)

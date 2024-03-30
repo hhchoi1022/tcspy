@@ -218,10 +218,10 @@ if __name__ == '__main__':
     print(time.time() - start)
 
     abort_action = Event()
-    S = StartUp(M, abort_action = abort_action)
-        
+    S = Startup(M, abort_action = abort_action)
+#%%
         
         
 
-    S.run()
+S.run()
 # %%
