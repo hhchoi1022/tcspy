@@ -54,7 +54,7 @@ class SingleTelescope(mainConfig):
         super().__init__(unitnum= unitnum)
         self.mount_type = self.config['MOUNT_DEVICETYPE'].lower()
         self.focus_type = self.config['FOCUSER_DEVICETYPE'].lower()
-        self.name = '7DT%.2d' % self.unitnum
+        self.name = self.tel_name
         self.camera = None
         self.mount = None
         self.focuser = None
@@ -63,6 +63,10 @@ class SingleTelescope(mainConfig):
         self.safetymonitor = None
         self.observer = self._get_observer()
         self._set_devices()
+
+    def __repr__(self):
+        txt=  f'SingleTelescope[{self.name}]'
+        return txt
 
     @property
     def status(self):

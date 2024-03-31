@@ -19,14 +19,15 @@ class mainConfig:
         self._configfiles_global = glob.glob(self._configfilekey_global)
             
         if len(self._configfiles_global) == 0:
-            print('No configuration file is found.\nTo make default configuration files, run tcspy.configuration.make_config')
+            print('No configuration file is found.\n TCSpy.config must be located in the configuration folder.')
         else:
             config_global = self._load_configuration(self._configfiles_global)
             self.config.update(config_global)
         
         if self.unitnum:
             # Specified units config params
-            self._configfilepath_unit = configpath + '7DT%.2d' % self.unitnum + '/'
+            self.tel_name = self.config["TCSPY_TEL_NAME"] + '%.2d' % self.unitnum
+            self._configfilepath_unit = configpath + self.tel_name + '/'
             self._configfilekey_unit = self._configfilepath_unit + '*.config'
             self._configfiles_unit = glob.glob(self._configfilekey_unit)
             if len(self._configfiles_unit) == 0:
@@ -72,7 +73,7 @@ class mainConfig:
                             MOUNT_APAREA=0.196,
                             MOUNT_FOCALLENGTH=1500,
                             MOUNT_SETTLETIME=3, #seconds
-                            MOUNT_NAME='7DT%.2d' % self.unitnum
+                            MOUNT_NAME= self.tel_name
                             )
         camera_params = dict(CAMERA_HOSTIP= ip_address,
                              CAMERA_PORTNUM=portnum,
@@ -103,12 +104,12 @@ class mainConfig:
                                )
         
         image_params = dict(FILENAME_FORMAT= "$$TELESCOP$$-$$UTCDATE$$-$$UTCTIME$$-$$OBJECT$$-$$FILTER$$-$$EXPTIME$$s-$$FRAMENUM$$.fits",
-                            IMAGE_PATH=f'/data1/obsdata/7DT%.2d/images/'%(self.unitnum))
+                            IMAGE_PATH=f'/data1/obsdata/{self.tel_name}/images/')
         
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT='[%(levelname)s]%(asctime)-15s | %(message)s',
-                             LOGGER_PATH= f'/data1/obsdata/7DT%.2d/log/'%(self.unitnum))
+                             LOGGER_PATH= f'/data1/obsdata/{self.tel_name}/log/')
         
         # Share configuration
         

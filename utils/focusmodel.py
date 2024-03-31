@@ -65,7 +65,7 @@ class FocusModel:
                  filtinfo_file : str = 'filtinfo.specmode',
                  offset_file : str = 'filter.offset'):
         self.unitnum = unitnum
-        self.name_telescope = '7DT%.2d' % self.unitnum
+        self.name_telescope = self.tel_name
         self._filtinfo_file = config_path + filtinfo_file
         self._filterinfo = self._read_json(self._filtinfo_file)
         self.filters = self._filterinfo[self.name_telescope]
