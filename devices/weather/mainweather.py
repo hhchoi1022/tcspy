@@ -7,6 +7,7 @@ import json
 import glob
 from datetime import datetime
 import re
+import os
 
 # Alpaca modules
 from alpaca.observingconditions import ObservingConditions
@@ -15,7 +16,7 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
-from weatherupdater import WeatherUpdater
+from .weatherupdater import WeatherUpdater
 import numpy as np
 
 # %%
@@ -106,9 +107,3 @@ class mainWeather(mainConfig):
 if __name__ =='__main__':
     weather = mainWeather(unitnum = 21)
     import time
-#%%
-start = time.time()
-print(weather.get_status())
-print(time.time() - start)
-    #weather.disconnect()
-# %%

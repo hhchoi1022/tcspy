@@ -94,7 +94,7 @@ class mainConfig:
                                   FTWHEEL_PORTNUM=portnum,
                                   FTWHEEL_DEVICENUM=0,
                                   FTWHEEL_CHECKTIME=0.5,
-                                  FTWHEEL_OFFSETFILE =f"{savepath_unit}filter.offset")
+                                  FTWHEEL_OFFSETFILE =f"{os.path.join(savepath_unit,'filter.offset')}")
 
         focuser_params = dict(FOCUSER_DEVICETYPE='PWi4',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,

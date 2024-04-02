@@ -160,7 +160,7 @@ class TelescopeStatus(Interface):
         try:
             if self.telescope.weather.device.Connected:
                 status = 'unsafe'
-                if self.telescope.weather.is_safe():
+                if self.telescope.weather.get_status()['is_safe']:
                     status = 'safe'
         except:
             pass
