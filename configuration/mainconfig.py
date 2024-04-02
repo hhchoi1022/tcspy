@@ -8,18 +8,19 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration/',
+                 configpath : str = '/home/kds/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
                 
         # global config params
         self._configfilepath_global = configpath
-        self._configfilekey_global = self._configfilepath_global + '*.config'
+        self._configfilekey_global = os.path.join(self._configfilepath_global, '*.config')
         self._configfiles_global = glob.glob(self._configfilekey_global)
             
-        if len(self._configfiles_global) == 0:
-            print('No configuration file is found.\n TCSpy.config must be located in the configuration folder.')
+        if not os.path.isfile(os.path.join(self._configfilepath_global, 'TCSpy.config')):
+            self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self._configfilepath_global)
+            raise RuntimeError(f'TCSpy.config must be located in the configuration folder. \n New TCSpy.config file is created: {os.path.join(self._configfilepath_global, "TCSpy.config")} ')
         else:
             config_global = self._load_configuration(self._configfiles_global)
             self.config.update(config_global)
@@ -27,8 +28,8 @@ class mainConfig:
         if self.unitnum:
             # Specified units config params
             self.tel_name = self.config["TCSPY_TEL_NAME"] + '%.2d' % self.unitnum
-            self._configfilepath_unit = configpath + self.tel_name + '/'
-            self._configfilekey_unit = self._configfilepath_unit + '*.config'
+            self._configfilepath_unit = os.path.join(configpath, self.tel_name)
+            self._configfilekey_unit = os.path.join(self._configfilepath_unit, '*.config')
             self._configfiles_unit = glob.glob(self._configfilekey_unit)
             if len(self._configfiles_unit) == 0:
                 print('No configuration file is found.\nTo make default configuration files, run tcspy.configuration.make_config')
@@ -45,19 +46,27 @@ class mainConfig:
                 all_config.update(config)
         return all_config
 
+    def make_configfile(self, 
+                        dict_params : dict,
+                        filename: str,
+                        savepath : str):
+        filepath = os.path.join(savepath, filename)
+        with open(filepath, 'w') as f:
+            json.dump(dict_params, f, indent=4)
+        print('New configuration file made : %s' % (filepath))
+        
+    @property
+    def tcspy_params(self):
+        tcspy_params = dict(TCSPY_VERSION='Version 2.3',
+                            TCSPY_TEL_NAME='7DT')           
+        return tcspy_params
+
     def _initialize_config(self,
                            ip_address: str = '10.0.106.6',
                            portnum : int = '11111'):
         savepath_unit = self._configfilepath_unit
         if not os.path.exists(savepath_unit):
             os.makedirs(savepath_unit, exist_ok=True)
-
-        def make_configfile(dict_params,
-                            filename: str,
-                            savepath=savepath_unit):
-            with open(savepath + filename, 'w') as f:
-                json.dump(dict_params, f, indent=4)
-            print('New configuration file made : %s' % (savepath+filename))
             
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
         mount_params = dict(MOUNT_DEVICETYPE='PWI4',  # Alpaca or PWI4
@@ -87,7 +96,7 @@ class mainConfig:
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{savepath_unit}filter.offset")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
+        focuser_params = dict(FOCUSER_DEVICETYPE='PWi4',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
                               FOCUSER_PORTNUM='8220',
                               FOCUSER_DEVICENUM=0,
@@ -116,7 +125,8 @@ class mainConfig:
         weather_params = dict(WEATHER_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
                               WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
-                              WEATHER_CHECKTIME=0.5,
+                              WEATHER_UPDATETIME=5,
+                              WEATHER_SAVE_HISTORY=True,
                               WEATHER_HUMIDITY=85,
                               WEATHER_RAINRATE=80,
                               WEATHER_SKYMAG=10,
@@ -142,16 +152,12 @@ class mainConfig:
                              TARGET_WEIGHT_ALT = 0.5,
                              TARGET_WEIGHT_PRIORITY = 0.5)
 
-        version_params = dict(TCSPY_VERSION='Version 3.0',
-                              TCSPY_NAME='TCSpy')
-
-
         DB_params = dict(DB_HOSTIP='localhost',
                          DB_ID='hhchoi',
                          DB_PWD='lksdf1020',
                          DB_NAME='target')
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{self._configfilepath_global}specmode/u10/')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self._configfilepath_global,"specmode/u10/")}')
         
         startup_params = dict(STARTUP_ALT = 50,
                               STARTUP_AZ = 60,
@@ -163,25 +169,26 @@ class mainConfig:
                                SHUTDOWN_CCDTEMP = 10,
                                SHUTDOWN_CCDTEMP_TOLERANCE = 1)
         
-        make_configfile(mount_params, filename='Mount.config')
-        make_configfile(camera_params, filename='Camera.config')
-        make_configfile(filterwheel_params, filename='FilterWheel.config')
-        make_configfile(focuser_params, filename='Focuser.config')
-        make_configfile(logger_params, filename='Logger.config')
-        make_configfile(image_params, filename='Image.config')
-        
-        # Global params
-        make_configfile(observer_params, filename='Observer.config', savepath= self._configfilepath_global)
-        make_configfile(version_params, filename='Version.config', savepath= self._configfilepath_global)
-        make_configfile(target_params, filename='Target.config', savepath= self._configfilepath_global)
-        make_configfile(weather_params, filename='Weather.config', savepath= self._configfilepath_global)
-        make_configfile(dome_params, filename='Dome.config', savepath= self._configfilepath_global)
-        make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self._configfilepath_global)
-        make_configfile(DB_params, filename = 'DB.config', savepath= self._configfilepath_global)
-        make_configfile(specmode_params, filename = 'specmode.config', savepath= self._configfilepath_global)
-        make_configfile(startup_params, filename = 'startup.config', savepath= self._configfilepath_global)
-        make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self._configfilepath_global)
+        self.make_configfile(mount_params, filename='Mount.config', savepath = savepath_unit)
+        self.make_configfile(camera_params, filename='Camera.config', savepath = savepath_unit)
+        self.make_configfile(filterwheel_params, filename='FilterWheel.config', savepath = savepath_unit)
+        self.make_configfile(focuser_params, filename='Focuser.config', savepath = savepath_unit)
+        self.make_configfile(logger_params, filename='Logger.config', savepath = savepath_unit)
+        self.make_configfile(image_params, filename='Image.config', savepath = savepath_unit)
+        self.make_configfile(weather_params, filename='Weather.config', savepath = savepath_unit)
+        self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath = savepath_unit)
 
+        # Global params
+        self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self._configfilepath_global)
+        self.make_configfile(observer_params, filename='Observer.config', savepath= self._configfilepath_global)
+        self.make_configfile(target_params, filename='Target.config', savepath= self._configfilepath_global)
+        self.make_configfile(weather_params, filename='Weather.config', savepath= self._configfilepath_global)
+        self.make_configfile(dome_params, filename='Dome.config', savepath= self._configfilepath_global)
+        self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self._configfilepath_global)
+        self.make_configfile(DB_params, filename = 'DB.config', savepath= self._configfilepath_global)
+        self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self._configfilepath_global)
+        self.make_configfile(startup_params, filename = 'startup.config', savepath= self._configfilepath_global)
+        self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self._configfilepath_global)
 
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
@@ -189,8 +196,8 @@ class mainConfig:
 
 # %% Temporary running
 if __name__ == '__main__':
-    A = mainConfig(unitnum=1)
-    A._initialize_config(ip_address='10.0.106.6', portnum = 11111)
+    A = mainConfig(unitnum=11)
+    A._initialize_config(ip_address='10.0.106.9', portnum = 11111)
 
 # %%
 # %%
