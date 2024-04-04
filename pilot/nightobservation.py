@@ -3,8 +3,7 @@
 
 #%%
 from astropy.time import Time
-from threading import Event
-import threading
+from threading import Event, Lock
 from threading import Thread
 from queue import Queue
 import time
@@ -35,7 +34,9 @@ class NightObservation(mainConfig):
         self.DB = self._update_DB(utctime = Time.now())
         self.action_queue = list()
         self.tel_queue = dict()
-        #self.initialize()
+        self.initialize()
+        self.tel_lock = Lock()
+        self.action_lock = Lock()
 
         self._observation_abort = Event()
     
@@ -80,8 +81,8 @@ class NightObservation(mainConfig):
         action = SpecObservation(multitelescopes= multitelescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
-        for telescope in multitelescopes.devices:
-            self.pop_telescope(telescope)
+        for tel_name, tel in multitelescopes.devices.items():
+            self.pop_telescope(tel)
             #self.tel_queue.pop(tel_name, None)
         # Apped the action and telescope to the action_queue
         self.put_action(target = target, action = action, telescopes = multitelescopes, action_id = action_id)
@@ -99,8 +100,8 @@ class NightObservation(mainConfig):
         self.pop_action(action_id = action_id)
         #self.action_queue = [item for item in self.action_queue if item.get('id') != action_id]
         # Apped the telescope to the tel_queue
-        for telescope in multitelescopes.devices:
-            self.put_telescope(telescope = telescope)
+        for tel_name, tel in multitelescopes.devices.items():
+            self.put_telescope(telescope = tel)
             #self.tel_queue[tel_name] = multitelescopes.devices[tel_name]
         
     def _deepobs(self, target, multitelescopes, abort_action):
@@ -209,6 +210,7 @@ class NightObservation(mainConfig):
         self.action_queue = [item for item in self.action_queue if item.get('id') != action_id]
         # Apped the telescope to the tel_queue
         self.tel_queue[tel_name] = singletelescope
+    
         
     def _update_DB(self,
                   utctime : Time = Time.now()):
@@ -223,18 +225,23 @@ class NightObservation(mainConfig):
         obs_start_time = obsnight.sunset_astro
         obs_end_time = obsnight.sunrise_astro
         now = Time.now()
-        
+        is_ToO_triggered = False
         while now < obs_end_time:
+            self.DB.Daily.initialize(initialize_all = False)
+            time.sleep(0.5)
             best_target, score = self.DB.Daily.best_target(utctime = now)
             print(f'Best target: {best_target["objname"]}')
             obsmode = best_target['obsmode'].upper()
             objtype = best_target['objtype'].upper()
             is_obs_triggered = True
+            if not is_ToO_triggered:
+                abort_observation = Event()
+            
             if obsmode == 'SPEC':
                 ntelescope = best_target['ntelescope']
                 if len(self.tel_queue) == 1:
                     multi_tel = self.multitelescopes
-                    thread = Thread(target= self._specobs, kwargs = {'target' : best_target, 'multitelescopes' : multi_tel, 'abort_action' : self._observation_abort}, daemon = False)
+                    thread = Thread(target= self._specobs, kwargs = {'target' : best_target, 'multitelescopes' : multi_tel, 'abort_action' : abort_observation}, daemon = False)
                     thread.start()
                 else:
                     is_obs_triggered = False
@@ -243,7 +250,7 @@ class NightObservation(mainConfig):
                 ntelescope = best_target['ntelescope']
                 if len(self.tel_queue) >= ntelescope:
                     multi_tel = MultiTelescopes(SingleTelescope_list = [self.tel_queue.popitem()[1] for i in range(ntelescope)])
-                    thread = Thread(target= self._deepobs, kwargs = {'target' : best_target, 'multitelescopes' : multi_tel, 'abort_action' : self._observation_abort}, daemon = False)
+                    thread = Thread(target= self._deepobs, kwargs = {'target' : best_target, 'multitelescopes' : multi_tel, 'abort_action' : abort_observation}, daemon = False)
                     thread.start()
                 else:
                     is_obs_triggered = False
@@ -252,7 +259,7 @@ class NightObservation(mainConfig):
                 ntelescope = best_target['ntelescope']
                 if len(self.tel_queue) >= 1:
                     tel_name, single_tel = self.tel_queue.popitem()
-                    thread = Thread(target= self._searchobs, kwargs = {'target' : best_target, 'singletelescope' : single_tel, 'abort_action' : self._observation_abort}, daemon = False)
+                    thread = Thread(target= self._searchobs, kwargs = {'target' : best_target, 'singletelescope' : single_tel, 'abort_action' : abort_observation}, daemon = False)
                     thread.start()
                 else:
                     is_obs_triggered = False
@@ -260,15 +267,18 @@ class NightObservation(mainConfig):
             else:
                 if len(self.tel_queue) >= 1:
                     tel_name, single_tel = self.tel_queue.popitem()
-                    thread = Thread(target= self._singleobs, kwargs = {'target' : best_target, 'singletelescope' : single_tel, 'abort_action' : self._observation_abort}, daemon = False)
+                    thread = Thread(target= self._singleobs, kwargs = {'target' : best_target, 'singletelescope' : single_tel, 'abort_action' : abort_observation}, daemon = False)
                     thread.start()
                 else:
                     is_obs_triggered = False
                     pass
+            if (objtype == 'TOO') & (~abort_observation.is_set()):
+                is_ToO_triggered = True
+                abort_observation.set()
             if is_obs_triggered:
                 print(f'Observation on {best_target["objname"]} is triggered')
             print(f'tel_queue: {self.tel_queue}')
-            print(f'action_queue: {self.action_queue}')
+            #print(f'action_queue: {self.action_queue}')
             time.sleep(1)
                 
                 
