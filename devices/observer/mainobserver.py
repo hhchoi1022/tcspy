@@ -71,10 +71,9 @@ class mainObserver(mainConfig):
         self._longitude = float(self.config['OBSERVER_LONGITUDE'])*u.deg
         self._elevation = float(self.config['OBSERVER_ELEVATION'])*u.m
         self._name = self.config['OBSERVER_NAME']
-        self._observatory= self.config['OBSERVER_OBSERVATORY']
         self._timezone = pytz.timezone(self.config['OBSERVER_TIMEZONE'])
         self._earthlocation = EarthLocation.from_geodetic(lat=self._latitude, lon=self._longitude, height=self._elevation)
-        self._observer = Observer(location = self._earthlocation, name = self._observatory, timezone = self._timezone)
+        self._observer = Observer(location = self._earthlocation, name = self.config['TCSPY_TEL_NAME'], timezone = self._timezone)
         self.status = self.get_status()
         self.condition = 'idle'
     ############ Site info ############
@@ -99,7 +98,7 @@ class mainObserver(mainConfig):
         status = dict()
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
-        status['name_observatory'] = self._observatory
+        #status['name_observatory'] = self._observatory
         status['name_observer'] = self._name
         status['latitude'] = round(self._latitude.value,4)
         status['longitude'] = round(self._longitude.value,4)

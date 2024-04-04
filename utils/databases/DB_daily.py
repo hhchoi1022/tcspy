@@ -1,7 +1,7 @@
 
 
 #%%
-from tcspy.utils.target import MultiTarget
+from tcspy.utils.target import MultiTargets
 from tcspy.configuration import mainConfig
 from tcspy.utils.databases import SQL_Connector
 from tcspy.devices.observer import mainObserver
@@ -124,17 +124,17 @@ class DB_Daily(mainConfig):
             return 
         
         
-        multitarget = MultiTarget(observer = self.observer,
-                                  targets_ra = target_tbl_to_update['RA'],
-                                  targets_dec = target_tbl_to_update['De'],
-                                  targets_name = target_tbl_to_update['objname'])
-        print(f'Calculating celestial information of {len(multitarget.coordinate)} targets...')
+        multitargets = MultiTargets(observer = self.observer,
+                                   targets_ra = target_tbl_to_update['RA'],
+                                   targets_dec = target_tbl_to_update['De'],
+                                   targets_name = target_tbl_to_update['objname'])
+        print(f'Calculating celestial information of {len(multitargets.coordinate)} targets...')
         
         # Target information 
-        risetime = self._get_risetime(multitarget = multitarget, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
-        settime = self._get_settime(multitarget = multitarget, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
-        transittime, maxalt, besttime = self._get_transit_besttime(multitarget = multitarget)
-        moonsep = self._get_moonsep(multitarget = multitarget)
+        risetime = self._get_risetime(multitargets = multitargets, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
+        settime = self._get_settime(multitargets = multitargets, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
+        transittime, maxalt, besttime = self._get_transit_besttime(multitargets = multitargets)
+        moonsep = self._get_moonsep(multitargets = multitargets)
         targetinfo_listdict = [{'risetime' : rt, 'transittime' : tt, 'settime' : st, 'besttime' : bt, 'maxalt' : mt, 'moonsep': ms} for rt, tt, st, bt, mt, ms in zip(risetime.isot, transittime.isot, settime.isot, besttime.isot, maxalt, moonsep)]
         
         from tcspy.utils.target import SingleTarget
@@ -276,12 +276,12 @@ class DB_Daily(mainConfig):
         if len(target_tbl_for_scoring) == 0:
             return None, None
         
-        multitarget = MultiTarget(observer = self.observer,
-                                  targets_ra = target_tbl_for_scoring['RA'],
-                                  targets_dec = target_tbl_for_scoring['De'],
-                                  targets_name = target_tbl_for_scoring['objname'])
+        multitargets = MultiTargets(observer = self.observer,
+                                   targets_ra = target_tbl_for_scoring['RA'],
+                                   targets_dec = target_tbl_for_scoring['De'],
+                                   targets_name = target_tbl_for_scoring['objname'])
         
-        multitarget_altaz = multitarget.altaz(utctimes = utctime)
+        multitarget_altaz = multitargets.altaz(utctimes = utctime)
         multitarget_alt = multitarget_altaz.alt.value
         multitarget_priority = target_tbl_for_scoring['priority'].astype(float)
         
@@ -364,47 +364,47 @@ class DB_Daily(mainConfig):
         return constraint
     
     def _get_moonsep(self,
-                     multitarget : MultiTarget):
+                     multitargets : MultiTargets):
         '''
-        multitarget = MultiTarget(observer = self.observer, 
+        multitargets = MultiTargets(observer = self.observer, 
                             targets_ra = target_tbl['RA'], 
                             targets_dec = target_tbl['De'],    
                             targets_name = target_tbl['objname'])
         '''
-        all_coords = multitarget.coordinate
+        all_coords = multitargets.coordinate
         moon_coord = SkyCoord(ra =self.obsinfo.moon_radec.ra.value, dec = self.obsinfo.moon_radec.dec.value, unit = 'deg')
         moonsep = np.array(SkyCoord.separation(all_coords, moon_coord).value).round(2)
         return moonsep        
         
     def _get_risetime(self,
-                      multitarget : MultiTarget,
+                      multitargets : MultiTargets,
                       **kwargs):
-        if len(multitarget.coordinate) == 1:
-            risetime = [multitarget.risetime(**kwargs)]
+        if len(multitargets.coordinate) == 1:
+            risetime = [multitargets.risetime(**kwargs)]
         else:
-            risetime = multitarget.risetime(**kwargs)
+            risetime = multitargets.risetime(**kwargs)
         return Time(risetime)
     
     def _get_settime(self,
-                     multitarget : MultiTarget,
+                     multitargets : MultiTargets,
                      **kwargs):
-        if len(multitarget.coordinate) == 1:
-            settime = [multitarget.settime(**kwargs)]
+        if len(multitargets.coordinate) == 1:
+            settime = [multitargets.settime(**kwargs)]
         else:
-            settime = multitarget.settime(**kwargs)
+            settime = multitargets.settime(**kwargs)
         return Time(settime)
         
     def _get_transit_besttime(self,
-                              multitarget : MultiTarget):
+                              multitargets : MultiTargets):
         
-        all_time_hourangle = multitarget.hourangle(self.obsnight.midnight)
+        all_time_hourangle = multitargets.hourangle(self.obsnight.midnight)
         all_hourangle_converted = [hourangle if (hourangle -12 < 0) else hourangle-24 for hourangle in all_time_hourangle.value]
-        all_target_altaz_at_sunset = multitarget.altaz(utctimes=self.obsnight.sunset_astro)
-        all_target_altaz_at_sunrise = multitarget.altaz(utctimes=self.obsnight.sunrise_astro)
+        all_target_altaz_at_sunset = multitargets.altaz(utctimes=self.obsnight.sunset_astro)
+        all_target_altaz_at_sunrise = multitargets.altaz(utctimes=self.obsnight.sunrise_astro)
         all_transittime = self.obsnight.midnight - all_hourangle_converted * u.hour
         all_besttime = []
         all_maxalt = []
-        for i, target_info in enumerate(zip(all_transittime, multitarget.coordinate)):
+        for i, target_info in enumerate(zip(all_transittime, multitargets.coordinate)):
             target_time_transit, target_coord = target_info
             if (target_time_transit > self.obsnight.sunset_astro) & (target_time_transit < self.obsnight.sunrise_astro):
                 maxaltaz = self.obsinfo.observer_astroplan.altaz(target_time_transit, target = target_coord)
@@ -422,15 +422,15 @@ class DB_Daily(mainConfig):
         return all_transittime, all_maxalt, Time(all_besttime)
 
     def _get_target_observable(self,
-                               multitarget : MultiTarget,
+                               multitargets : MultiTargets,
                                fraction_observable : float = 0.1):
         '''
-        multitarget = MultiTarget(observer = self.observer, 
+        multitargets = MultiTargets(observer = self.observer, 
                                   targets_ra = target_tbl['RA'], 
                                   targets_dec = target_tbl['De'],    
                                   targets_name = target_tbl['objname'])
         '''
-        observability_tbl = observability_table(constraints = self.constraints, observer = multitarget._astroplan_observer, targets = multitarget.coordinate , time_range = [self.obsnight.sunset_astro, self.obsnight.sunrise_astro], time_grid_resolution = 20 * u.minute)
+        observability_tbl = observability_table(constraints = self.constraints, observer = multitargets._astroplan_observer, targets = multitargets.coordinate , time_range = [self.obsnight.sunset_astro, self.obsnight.sunrise_astro], time_grid_resolution = 20 * u.minute)
         obs_tbl['fraction_obs'] = ['%.2f'%fraction for fraction in observability_tbl['fraction of time observable']]
         key = observability_tbl['fraction of time observable'] > fraction_observable
         obs_tbl = obs_tbl[key]

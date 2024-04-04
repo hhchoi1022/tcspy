@@ -17,7 +17,7 @@ class MultiTargets(mainConfig):
     A class representing multiple astronomical targets for observation.
 
     Parameters
-    ----------
+    ----------s
     observer : mainObserver
         An instance of mainObserver representing the observer.
     targets_ra : numpy.array
@@ -80,7 +80,7 @@ class MultiTargets(mainConfig):
         self.name = targets_name
         
     def __repr__(self):
-        txt = f'MultiTarget[n_targets = {len(self.coordinate)}]'
+        txt = f'MultiTargets[n_targets = {len(self.coordinate)}]'
         return txt
     
     def rts_date(self,

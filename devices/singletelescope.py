@@ -151,9 +151,11 @@ class SingleTelescope(mainConfig):
         return mainObserver()
     
     def _get_weather(self):
-        return mainWeather(unitnum= None)
+        return mainWeather()
     
     def _get_safetymonitor(self):
         return mainSafetyMonitor(unitnum = self.unitnum)
     
+# %%
+tel = SingleTelescope(21)
 # %%

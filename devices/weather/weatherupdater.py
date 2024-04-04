@@ -6,15 +6,14 @@ import time
 import json
 import os
 import glob
+from threading import Event
 from datetime import datetime
 # Alpaca modules
 from alpaca.observingconditions import ObservingConditions
 # TCSpy modules
-from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
-
 # %%
 class WeatherUpdater(mainConfig):
     """
@@ -29,8 +28,6 @@ class WeatherUpdater(mainConfig):
     ----------
     device : `ObservingConditions`
         The Alpaca weather device to interface with.
-    status : dict
-        A dictionary containing the current weather status.
 
     Methods
     -------
@@ -44,23 +41,13 @@ class WeatherUpdater(mainConfig):
         Check if the current weather is safe.
     """
     
-    def __init__(self,
-                 unitnum : int = None,
-                 weatherinfo_path : 'str' = './weatherinfo'):
-        super().__init__(unitnum = unitnum)
-        self.unitnum = unitnum
-        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
-        self.weatherinfo_path = weatherinfo_path
-        if self.unitnum:
-            self.weatherinfo_path = os.path.join(self.weatherinfo_path, self.config['MOUNT_NAME'])
-        else:
-            self.weatherinfo_path = os.path.join(self.weatherinfo_path, self.config['TCSPY_TEL_NAME'])
+    def __init__(self):
+        super().__init__()
+        self.weatherinfo_path = self.config['WEATHER_PATH']
         self.constraints = self._get_constraints()
         self.device = ObservingConditions(f"{self.config['WEATHER_HOSTIP']}:{self.config['WEATHER_PORTNUM']}",self.config['WEATHER_DEVICENUM'])
-        self.connect()
         
-    @property
-    def status(self):
+    def _status(self):
         """
         Get the current weather status.
 
@@ -170,7 +157,7 @@ class WeatherUpdater(mainConfig):
         """
         Connect to the weather device.
         """
-        self._log.info('Connecting to the weather station...')
+        #self._log.info('Connecting to the weather station...')
         try:
             if not self.device.Connected:
                 self.device.Connected = True
@@ -178,9 +165,10 @@ class WeatherUpdater(mainConfig):
             while not self.device.Connected:
                 time.sleep(0.5)
             if  self.device.Connected:
-                self._log.info('Weather device connected')
+                pass
+                #self._log.info('Weather device connected')
         except:
-            self._log.warning('Connection failed')
+            #self._log.warning('Connection failed')
             raise ConnectionException('Connection failed')
         return True
     
@@ -189,7 +177,7 @@ class WeatherUpdater(mainConfig):
         """
         Disconnect from the weather device.
         """
-        self._log.info('Disconnecting weather station...')
+        #self._log.info('Disconnecting weather station...')
         try:
             if self.device.Connected:
                 self.device.Connected = False
@@ -197,21 +185,25 @@ class WeatherUpdater(mainConfig):
             while self.device.Connected:
                 time.sleep(0.5)
             if not self.device.Connected:
-                self._log.info('Weather device is disconnected')
+                pass
+                #self._log.info('Weather device is disconnected')
         except:
-            self._log.warning('Disconnect failed')
+            #self._log.warning('Disconnect failed')
             raise ConnectionException('Disconnect failed')
         return True
     
-    def run(self):
-        while True:
+    def run(self, abort_action : Event):
+        print(f'WeatherUpdater activated')
+        while not abort_action.is_set():
             self.update_info_file(overwrite = not self.config['WEATHER_SAVE_HISTORY'])
+            
+            print(f'Last weatherinfo update: {Time.now().isot}')
             time.sleep(self.config['WEATHER_UPDATETIME'])
             
     
     def update_info_file(self,
                          overwrite : bool = False):
-        abspath_file = self._save_info_file(weather_status= self.status)
+        abspath_file = self._save_info_file(weather_status= self._status)
         
         # Remove previous weather information file 
         if overwrite:
@@ -276,7 +268,8 @@ class WeatherUpdater(mainConfig):
 # %%
 
 if __name__ =='__main__':
-    weather = WeatherUpdater(unitnum = 21)
-    #weather.run(overwrite = False)
+    weather = WeatherUpdater()
+    
+    weather.run(Event())
     #weather.disconnect()
 # %%

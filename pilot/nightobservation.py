@@ -18,6 +18,7 @@ from tcspy.configuration import mainConfig
 from tcspy.devices import MultiTelescopes
 from tcspy.devices import SingleTelescope
 from tcspy.utils.databases import DB
+from tcspy.devices.weather import WeatherUpdater
 
 #%%
 
@@ -31,12 +32,12 @@ class NightObservation(mainConfig):
         super().__init__()
         self.multitelescopes = MultiTelescopes
         self.abort_action = abort_action
-        self.DB = self.update_DB(utctime = Time.now())
+        self.DB = self._update_DB(utctime = Time.now())
         self.action_queue = list()
         self.tel_queue = dict()
-        self.initialize()
+        #self.initialize()
 
-        self.observation_abort = Event()
+        self._observation_abort = Event()
     
     def initialize(self):
         
@@ -44,6 +45,10 @@ class NightObservation(mainConfig):
         self.DB.Daily.initialize(initialize_all= False)
         if all(Time(self.DB.Daily.data['settime']) < Time.now()):
             self.DB.Daily.initialize(initialize_all= True)
+            
+        # Connect Weather Updater
+        self.weather_updater = WeatherUpdater()
+        Thread(target = self.weather_updater.run, kwargs = dict(abort_action = self.abort_action), daemon = True).start()
         
         # Get status of all telescopes 
         status_devices = self.multitelescopes.status
@@ -57,8 +62,9 @@ class NightObservation(mainConfig):
         ready_filt = tel_status_dict['filterwheel'] == 'idle'
         ready_focus = tel_status_dict['focuser'] == 'idle'
         return all([ready_tel, ready_cam, ready_filt, ready_focus])
+    
 
-    def specobs(self, target, multitelescopes, abort_action):
+    def _specobs(self, target, multitelescopes, abort_action):
         kwargs = dict(exptime = target['exptime'], 
                       count = target['count'],
                       specmode = target['specmode'],
@@ -70,23 +76,34 @@ class NightObservation(mainConfig):
                       objtype = target['objtype'], 
                       autofocus_before_start = True,
                       autofocus_when_filterchange= True)        
-        action = SpecObservation(MultiTelescopes= multitelescopes, abort_action = abort_action)
+        self.DB.Daily.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
+        action = SpecObservation(multitelescopes= multitelescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
-        # pop the telescope from the tel_queue
-        for tel_name in multitelescopes.devices.keys():
-            self.tel_queue.pop(tel_name, None)
-        # append the action and telescope to the action_queue
-        self.action_queue.append({'action': action, 'tel' : multitelescopes, 'id' : action_id})
+        # Pop the telescope from the tel_queue
+        for telescope in multitelescopes.devices:
+            self.pop_telescope(telescope)
+            #self.tel_queue.pop(tel_name, None)
+        # Apped the action and telescope to the action_queue
+        self.put_action(target = target, action = action, telescopes = multitelescopes, action_id = action_id)
+        #self.action_queue.append({'target': target['objname'], 'action': action, 'tel' : multitelescopes, 'id' : action_id})
         
-        action.run(**kwargs)
+        # Run observation
+        result_action = action.run(**kwargs)
         
-        # append the telescope to the tel_queue
-        for tel_name in multitelescopes.devices.keys():
-            self.tel_queue[tel_name] = multitelescopes[tel_name]
-        # pop the action and telescope from  the action_queue
-        self.action_queue = [item for item in self.action_queue if item.get('id') != action_id]
+        # Update the target status
+        if result_action:
+            self.DB.Daily.update_target(update_value = 'observed', update_key = 'status', id_value = target['id'], id_key = 'id')
+        else:
+            self.DB.Daily.update_target(update_value = 'failed', update_key = 'status', id_value = target['id'], id_key = 'id')
+        # Pop the action and telescope from  the action_queue
+        self.pop_action(action_id = action_id)
+        #self.action_queue = [item for item in self.action_queue if item.get('id') != action_id]
+        # Apped the telescope to the tel_queue
+        for telescope in multitelescopes.devices:
+            self.put_telescope(telescope = telescope)
+            #self.tel_queue[tel_name] = multitelescopes.devices[tel_name]
         
-    def deepobs(self, target, multitelescopes, abort_action):
+    def _deepobs(self, target, multitelescopes, abort_action):
         kwargs = dict(exptime = target['exptime'], 
                       count = target['count'],
                       filter_ = target['filter_'],
@@ -98,23 +115,30 @@ class NightObservation(mainConfig):
                       objtype = target['objtype'], 
                       autofocus_before_start = True,
                       autofocus_when_filterchange= True)
-        action = DeepObservation(MultiTelescopes= multitelescopes, abort_action = abort_action)
+        self.DB.Daily.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
+        action = DeepObservation(multitelescopes= multitelescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
-        # pop the telescope from the tel_queue
+        # Pop the telescope from the tel_queue
         for tel_name in multitelescopes.devices.keys():
             self.tel_queue.pop(tel_name, None)
-        # append the action and telescope to the action_queue
-        self.action_queue.append({'action': action, 'tel' : multitelescopes, 'id' : action_id})
+        # Apped the action and telescope to the action_queue
+        self.action_queue.append({'target': target['objname'], 'action': action, 'tel' : multitelescopes, 'id' : action_id})
         
-        action.run(**kwargs)
+        # Run observation
+        result_action = action.run(**kwargs)
         
-        # append the telescope to the tel_queue
-        for tel_name in multitelescopes.devices.keys():
-            self.tel_queue[tel_name] = multitelescopes[tel_name]
-        # pop the action and telescope from  the action_queue
+        # Update the target status
+        if result_action:
+            self.DB.Daily.update_target(update_value = 'observed', update_key = 'status', id_value = target['id'], id_key = 'id')
+        else:
+            self.DB.Daily.update_target(update_value = 'failed', update_key = 'status', id_value = target['id'], id_key = 'id')
+        # Pop the action and telescope from the action_queue
         self.action_queue = [item for item in self.action_queue if item.get('id') != action_id]
-    
-    def searchobs(self, target, singletelescope, abort_action):
+        # Apped the telescope to the tel_queue
+        for tel_name in multitelescopes.devices.keys():
+            self.tel_queue[tel_name] = multitelescopes.devices[tel_name]
+        
+    def _searchobs(self, target, singletelescope, abort_action):
         kwargs = dict(exptime = target['exptime'], 
                       count = target['count'],
                       filter_ = target['filter_'],
@@ -128,22 +152,29 @@ class NightObservation(mainConfig):
                       ntelescope = 1,
                       autofocus_before_start = True,
                       autofocus_when_filterchange= True)
+        self.DB.Daily.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
         action = SingleObservation(singletelescope= singletelescope, abort_action = abort_action)
         action_id = uuid.uuid4().hex
-        # pop the telescope from the tel_queue
+        # Pop the telescope from the tel_queue
         tel_name = singletelescope.tel_name
         self.tel_queue.pop(tel_name, None)
-        # append the action and telescope to the action_queue
-        self.action_queue.append({'action': action, 'tel' : singletelescope, 'id' : action_id})
+        # Appedd the action and telescope to the action_queue
+        self.action_queue.append({'target': target['objname'], 'action': action, 'tel' : singletelescope, 'id' : action_id})
         
-        action.run(**kwargs)
+        # Run observation
+        result_action = action.run(**kwargs)
         
-        # append the telescope to the tel_queue
-        self.tel_queue[tel_name] = singletelescope
-        # pop the action and telescope from  the action_queue
+        # Update the target status
+        if result_action:
+            self.DB.Daily.update_target(update_value = 'observed', update_key = 'status', id_value = target['id'], id_key = 'id')
+        else:
+            self.DB.Daily.update_target(update_value = 'failed', update_key = 'status', id_value = target['id'], id_key = 'id')
+        # Pop the action and telescope from the action_queue
         self.action_queue = [item for item in self.action_queue if item.get('id') != action_id]
+        # Apped the telescope to the tel_queue
+        self.tel_queue[tel_name] = singletelescope
 
-    def singleobs(self, target, singletelescope, abort_action):
+    def _singleobs(self, target, singletelescope, abort_action):
         kwargs = dict(exptime=target['exptime'], 
                       count = target['count'],
                       filter_ = target['filter_'],
@@ -157,22 +188,29 @@ class NightObservation(mainConfig):
                       ntelescope = 1,
                       autofocus_before_start = True,
                       autofocus_when_filterchange= True)
+        self.DB.Daily.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
         action = SingleObservation(singletelescope= singletelescope, abort_action = abort_action)
         action_id = uuid.uuid4().hex
-        # pop the telescope from the tel_queue
+        # Pop the telescope from the tel_queue
         tel_name = singletelescope.tel_name
         self.tel_queue.pop(tel_name, None)
-        # append the action and telescope to the action_queue
-        self.action_queue.append({'action': action, 'tel' : singletelescope, 'id' : action_id})
+        # Appedd the action and telescope to the action_queue
+        self.action_queue.append({'target': target['objname'], 'action': action, 'tel' : singletelescope, 'id' : action_id})
         
-        action.run(**kwargs)
+        # Run observation
+        result_action = action.run(**kwargs)
         
-        # append the telescope to the tel_queue
-        self.tel_queue[tel_name] = singletelescope
-        # pop the action and telescope from  the action_queue
+        # Update the target status
+        if result_action:
+            self.DB.Daily.update_target(update_value = 'observed', update_key = 'status', id_value = target['id'], id_key = 'id')
+        else:
+            self.DB.Daily.update_target(update_value = 'failed', update_key = 'status', id_value = target['id'], id_key = 'id')
+        # Pop the action and telescope from the action_queue
         self.action_queue = [item for item in self.action_queue if item.get('id') != action_id]
-    
-    def update_DB(self,
+        # Apped the telescope to the tel_queue
+        self.tel_queue[tel_name] = singletelescope
+        
+    def _update_DB(self,
                   utctime : Time = Time.now()):
         print('Updating databases...')
         db = DB(utctime = utctime)
@@ -194,72 +232,87 @@ class NightObservation(mainConfig):
             is_obs_triggered = True
             if obsmode == 'SPEC':
                 ntelescope = best_target['ntelescope']
-                if len(self.tel_queue) >= ntelescope:
-                    obs_tel = self.multitelescopes
-                    thread = Thread(target= self.specobs, kwargs = {'target' : best_target, 'multitelescopes' : obs_tel, 'abort_action' : self.observation_abort}, daemon = False)
+                if len(self.tel_queue) == 1:
+                    multi_tel = self.multitelescopes
+                    thread = Thread(target= self._specobs, kwargs = {'target' : best_target, 'multitelescopes' : multi_tel, 'abort_action' : self._observation_abort}, daemon = False)
                     thread.start()
                 else:
                     is_obs_triggered = False
                     pass
-            elif obsmode == 'Deep':
+            elif obsmode == 'DEEP':
                 ntelescope = best_target['ntelescope']
-                if self.tel_queue.qsize() >= ntelescope:
-                    obs_tel_list = [self.tel_queue.get() for _ in range(ntelescope)]
-                    obs_tel = MultiTelescopes(obs_tel_list)
-                    action = self.deepobs(target = best_target, multitelescopes= obs_tel, abort_action = self.observation_abort)
+                if len(self.tel_queue) >= ntelescope:
+                    multi_tel = MultiTelescopes(SingleTelescope_list = [self.tel_queue.popitem()[1] for i in range(ntelescope)])
+                    thread = Thread(target= self._deepobs, kwargs = {'target' : best_target, 'multitelescopes' : multi_tel, 'abort_action' : self._observation_abort}, daemon = False)
+                    thread.start()
                 else:
                     is_obs_triggered = False
                     pass
-            elif obsmode == 'Search':
+            elif obsmode == 'SEARCH':
                 ntelescope = best_target['ntelescope']
-                if self.tel_queue.qsize() >= ntelescope:
-                    obs_tel = self.tel_queue.get()
-                    action = self.searchobs(target = best_target, multitelescopes= obs_tel, abort_action = self.observation_abort)
+                if len(self.tel_queue) >= 1:
+                    tel_name, single_tel = self.tel_queue.popitem()
+                    thread = Thread(target= self._searchobs, kwargs = {'target' : best_target, 'singletelescope' : single_tel, 'abort_action' : self._observation_abort}, daemon = False)
+                    thread.start()
                 else:
                     is_obs_triggered = False
                     pass
             else:
-                ntelescope = best_target['ntelescope']
-                if self.tel_queue.qsize() >= ntelescope:
-                    obs_tel = self.tel_queue.get()
-                    action = self.singleobs(target = best_target, multitelescopes= obs_tel, abort_action = self.observation_abort)
+                if len(self.tel_queue) >= 1:
+                    tel_name, single_tel = self.tel_queue.popitem()
+                    thread = Thread(target= self._singleobs, kwargs = {'target' : best_target, 'singletelescope' : single_tel, 'abort_action' : self._observation_abort}, daemon = False)
+                    thread.start()
                 else:
                     is_obs_triggered = False
                     pass
             if is_obs_triggered:
                 print(f'Observation on {best_target["objname"]} is triggered')
-
+            print(f'tel_queue: {self.tel_queue}')
+            print(f'action_queue: {self.action_queue}')
             time.sleep(1)
                 
                 
             # Define multitelescopes 
         
-    def put_action(self, action, telescopes):
+    def put_action(self, target, action, telescopes, action_id):
         # Acquire the lock before putting action into the action queue
         self.action_lock.acquire()
         try:
             # Put action and corresponding telescopes into the action queue
-            self.action_queue.put((action, telescopes))
+            self.action_queue.append({'target': target['objname'], 'action': action, 'tel' : telescopes, 'id' : action_id})
         finally:
             # Release the lock
             self.action_lock.release()
-
-    def requeue_telescopes(self, telescopes):
+            
+    def pop_action(self, action_id):
+        # Acquire the lock before putting action into the action queue
+        self.action_lock.acquire()
+        try:
+            # Put action and corresponding telescopes into the action queue
+            self.action_queue = [item for item in self.action_queue if item.get('id') != action_id]
+        finally:
+            # Release the lock
+            self.action_lock.release()
+            
+    def put_telescope(self, telescope):
         # Acquire the lock before modifying self.used_telescopes
         self.tel_lock.acquire()
         try:
             # Append telescopes used in the action to the list
-            self.used_telescopes.append(telescopes)
+            self.tel_queue[telescope.tel_name] = telescope
         finally:
             # Release the lock
             self.tel_lock.release()
-
-        # Put telescopes back to self.tel_queue
-        for telescope in telescopes:
-            self.tel_queue.put(telescope)
-        
-    
-    
+            
+    def pop_telescope(self, telescope):
+        # Acquire the lock before modifying self.used_telescopes
+        self.tel_lock.acquire()
+        try:
+            # Append telescopes used in the action to the list
+            self.tel_queue.pop(telescope.tel_name, None)
+        finally:
+            # Release the lock
+            self.tel_lock.release()
     
     
 # %%
@@ -276,5 +329,7 @@ R.DB.Daily.update_target(update_value = 'scheduled', update_key = 'status', id_v
 # %%
 target
 # %%
-R.observation()
+R.initialize()
+# %%
+R.run()
 # %%

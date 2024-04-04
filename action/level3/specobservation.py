@@ -51,7 +51,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
         self._specmode_folder = specmode_folder
-        self._log = MultiTelescopes.log
+        self._log = multitelescopes.log
 
     
     def run(self, 
@@ -131,20 +131,14 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             status_mount = telescope_status['mount']
             status_focuser = telescope_status['focuser']
             if status_filterwheel.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} filterwheel is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} filterwheel is disconnected.')
             if status_camera.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} camera is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} camera is disconnected.')
             if status_mount.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} mount is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} mount is disconnected.')
             if status_focuser.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} focuser is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} focuser is disconnected.')
                 
-        # Abort when triggered
-        if self.abort_action.is_set():
-            self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise  AbortionException(f'[{type(self).__name__}] is aborted.')
-        
         # Get target instance
         singletarget = SingleTarget(observer = self.observer,
                                     ra = ra, 

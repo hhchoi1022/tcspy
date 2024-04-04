@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -69,9 +69,9 @@ class mainConfig:
             os.makedirs(savepath_unit, exist_ok=True)
             
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
-        mount_params = dict(MOUNT_DEVICETYPE='PWI4',  # Alpaca or PWI4
+        mount_params = dict(MOUNT_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                             MOUNT_HOSTIP= ip_address,
-                            MOUNT_PORTNUM='8220',
+                            MOUNT_PORTNUM='32323',
                             MOUNT_DEVICENUM=0,
                             MOUNT_PARKALT=40,
                             MOUNT_PARKAZ=300,
@@ -96,9 +96,9 @@ class mainConfig:
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{os.path.join(savepath_unit,'filter.offset')}")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='PWi4',  # Alpaca or PWI4
+        focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='8220',
+                              FOCUSER_PORTNUM='32323',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -108,8 +108,7 @@ class mainConfig:
                                OBSERVER_LATITUDE= -30.4704,
                                OBSERVER_ELEVATION= 1580,
                                OBSERVER_TIMEZONE= 'America/Santiago',
-                               OBSERVER_NAME='Hyeonho Choi',
-                               OBSERVER_OBSERVATORY='7DT'
+                               OBSERVER_NAME='Hyeonho Choi'
                                )
         
         image_params = dict(FILENAME_FORMAT= "$$TELESCOP$$-$$UTCDATE$$-$$UTCTIME$$-$$OBJECT$$-$$FILTER$$-$$EXPTIME$$s-$$FRAMENUM$$.fits",
@@ -125,8 +124,9 @@ class mainConfig:
         weather_params = dict(WEATHER_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
                               WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
-                              WEATHER_UPDATETIME=5,
+                              WEATHER_UPDATETIME=60,
                               WEATHER_SAVE_HISTORY=True,
+                              WEATHER_PATH= f'{os.path.join(self._configfilepath_global,"../devices/weather/weatherinfo")}',
                               WEATHER_HUMIDITY=85,
                               WEATHER_RAINRATE=80,
                               WEATHER_SKYMAG=10,
@@ -175,8 +175,6 @@ class mainConfig:
         self.make_configfile(focuser_params, filename='Focuser.config', savepath = savepath_unit)
         self.make_configfile(logger_params, filename='Logger.config', savepath = savepath_unit)
         self.make_configfile(image_params, filename='Image.config', savepath = savepath_unit)
-        self.make_configfile(weather_params, filename='Weather.config', savepath = savepath_unit)
-        self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath = savepath_unit)
 
         # Global params
         self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self._configfilepath_global)
@@ -194,10 +192,11 @@ class mainConfig:
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
 
 
-# %% Temporary running
+
+#%%
 if __name__ == '__main__':
-    A = mainConfig(unitnum=11)
-    A._initialize_config(ip_address='10.0.106.9', portnum = 11111)
+    A = mainConfig(unitnum=21)
+    A._initialize_config(ip_address='127.0.0.1', portnum = 32323)
 
 # %%
 # %%
