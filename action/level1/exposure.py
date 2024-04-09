@@ -137,18 +137,22 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             if not filter_:
                 self._log.critical('Filter must be determined for LIGHT frame')
                 raise ActionFailedException('Filter must be determined for LIGHT frame')
-            changefilter = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action)    
-            try:
-                result_changefilter = changefilter.run(str(filter_))
-            except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
-                raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
-            except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: filterchange failure.')
-                raise ActionFailedException(f'[{type(self).__name__}] is failed: filterchange failure.')
+            info_filterwheel = self.telescope.filterwheel.get_status()
+            current_filter = info_filterwheel['filter']
+            is_filter_changed = (current_filter != filter_)
+            if is_filter_changed:
+                changefilter = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action)    
+                try:
+                    result_changefilter = changefilter.run(str(filter_))
+                except ConnectionException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
+                    raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
+                except AbortionException:
+                    self._log.warning(f'[{type(self).__name__}] is aborted.')
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                except ActionFailedException:
+                    self._log.critical(f'[{type(self).__name__}] is failed: filterchange failure.')
+                    raise ActionFailedException(f'[{type(self).__name__}] is failed: filterchange failure.')
 
         # Exposure 
         # Check whether the process is aborted

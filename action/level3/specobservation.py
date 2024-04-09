@@ -67,7 +67,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             name : str = None,
             objtype : str = None,
             autofocus_before_start : bool = True,
-            autofocus_when_filterchange : bool = True
+            autofocus_when_filterchange : bool = True,
+            observation_status_all : dict = None,
             ):
         """
         Performs the action to start spectroscopic observation.
@@ -121,6 +122,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         objtype = 'ToO'
         autofocus_before_start= True
         autofocus_when_filterchange= True
+        observation_status_all = None
         """
         # Check condition of the instruments for this Action
         status_multitelescope = self.multitelescopes.status
@@ -159,14 +161,24 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         exposure_params = singletarget.exposure_info
         target_params = singletarget.target_info
         specmode_dict = exposure_params['specmode_filter']
+        # Set Observation status
+        if observation_status_all:
+            self.observation_status_all = observation_status_all
+        else:
+            self.observation_status_all = self._set_observation_status_all()
         
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
         for telescope_name, telescope in self.multitelescopes.devices.items():
             filter_ = specmode_dict[telescope_name]
+            observation_status = None
+            if observation_status_all:
+                observation_status = observation_status_all[telescope_name]
+                
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
+                                             observation_status  = observation_status,
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
@@ -181,6 +193,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         while not action_done:
             time.sleep(0.1)
             action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
+            for telescope_name in self.multitelescopes.devices.keys():
+                self.observation_status_all[telescope_name] = multiaction.multithreads[telescope_name].observation_status
         action_results = multiaction.results.copy()
         
         for telescope_name in self.multitelescopes.devices.keys():
@@ -207,6 +221,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                 telescope.camera.abort()
             if status['mount'].lower() == 'busy':
                 telescope.mount.abort()
+        self.abort_action = Event()
 
     def _format_params(self,
                        imgtype : str = 'Light',
@@ -222,22 +237,29 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         for key, value in kwargs.items():
             format_kwargs[key] = value
         return format_kwargs
+    
+    def _set_observation_status_all(self):
+        observation_status_all = dict()
+        for telescope_name in self.multitelescopes.devices.keys():
+            observation_status_all[telescope_name] = None
+        return observation_status_all
+            
 
     
 # %%
 if __name__ == '__main__':
     import time
     start = time.time()
-    list_telescopes = [SingleTelescope(1),
-                         SingleTelescope(2),
-                         SingleTelescope(3),
-                         SingleTelescope(5),
-                         SingleTelescope(6),
-                         SingleTelescope(7),
-                         SingleTelescope(8),
-                         SingleTelescope(9),
-                         SingleTelescope(10),
-                         SingleTelescope(11),
+    list_telescopes = [SingleTelescope(21),
+                         #SingleTelescope(2),
+                         #SingleTelescope(3),
+                        #  SingleTelescope(5),
+                        #  SingleTelescope(6),
+                        #  SingleTelescope(7),
+                        #  SingleTelescope(8),
+                        #  SingleTelescope(9),
+                        #  SingleTelescope(10),
+                        #  SingleTelescope(11),
                         ]
     
     print(time.time() - start)
@@ -245,11 +267,13 @@ if __name__ == '__main__':
     start = time.time()
 
     M = MultiTelescopes(list_telescopes)
+#%%
+if __name__ == '__main__':
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
-    exptime= '60,60'
-    count= '1,1'
+    exptime= '3,3'
+    count= '10,10'
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
@@ -265,5 +289,14 @@ if __name__ == '__main__':
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,
         alt = alt, az = az, name = name, objtype = objtype,
         autofocus_before_start= autofocus_before_start,
-        autofocus_when_filterchange= autofocus_when_filterchange)
-    # %%
+        autofocus_when_filterchange= autofocus_when_filterchange,
+        )
+# %%
+if __name__ == '__main__':
+    S.run(exptime = exptime, count = count, specmode = specmode,
+        binning = binning, imgtype = imgtype, ra = ra, dec = dec,
+        alt = alt, az = az, name = name, objtype = objtype,
+        autofocus_before_start= autofocus_before_start,
+        autofocus_when_filterchange= autofocus_when_filterchange,
+        observation_status_all= S.observation_status_all)
+# %%
