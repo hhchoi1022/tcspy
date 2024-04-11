@@ -197,8 +197,8 @@ class mainConfig:
 
 #%%
 if __name__ == '__main__':
-    A = mainConfig(unitnum=12)
-    A._initialize_config(ip_address='10.0.106.19', portnum = 32323)
+    A = mainConfig(unitnum=11)
+    A._initialize_config(ip_address='10.0.106.9', portnum = 11111)
 
 # %%
 # %%

@@ -165,3 +165,5 @@ class TelescopeStatus(Interface):
         except:
             pass
         return status
+
+# %%
