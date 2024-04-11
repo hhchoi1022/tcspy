@@ -156,6 +156,3 @@ class SingleTelescope(mainConfig):
     def _get_safetymonitor(self):
         return mainSafetyMonitor()
     
-# %%
-tel = SingleTelescope(21)
-# %%
