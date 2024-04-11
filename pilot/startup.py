@@ -221,7 +221,3 @@ if __name__ == '__main__':
     S = Startup(M, abort_action = abort_action)
 #%%
         
-        
-
-S.run()
-# %%

@@ -121,8 +121,8 @@ class mainConfig:
         
         # Share configuration
         
-        weather_params = dict(WEATHER_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
-                              WEATHER_PORTNUM= 5575,#portnum, #5575
+        weather_params = dict(WEATHER_HOSTIP= '127.0.0.1',#ip_address, #'10.0.11.3'
+                              WEATHER_PORTNUM= 32323,#portnum, #5575
                               WEATHER_DEVICENUM=0,
                               WEATHER_UPDATETIME=60,
                               WEATHER_SAVE_HISTORY=True,
@@ -139,10 +139,12 @@ class mainConfig:
                            DOME_DEVICENUM=0,
                            DOME_CHECKTIME=0.5)
         
-        safetymonitor_params = dict(SAFEMONITOR_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
-                                    SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
+        safetymonitor_params = dict(SAFEMONITOR_HOSTIP= '127.0.0.1',#ip_address, #'10.0.11.3'
+                                    SAFEMONITOR_PORTNUM= 32323,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
-                                    SAFEMONITOR_CHECKTIME=0.5)
+                                    SAFEMONITOR_UPDATETIME=10,
+                                    SAFEMONITOR_SAVE_HISTORY=True,
+                                    SAFEMONITOR_PATH= f'{os.path.join(self._configfilepath_global,"../devices/safetymonitor/safeinfo")}')
         
         target_params = dict(TARGET_MINALT=30,
                              TARGET_MAXALT=90,

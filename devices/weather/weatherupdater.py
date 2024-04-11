@@ -8,14 +8,11 @@ import os
 import glob
 from threading import Event
 from datetime import datetime
-# Alpaca modules
-from alpaca.observingconditions import ObservingConditions
 # TCSpy modules
-from tcspy.utils import Timeout
-from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
+from tcspy.devices.weather import mainWeather
 # %%
-class WeatherUpdater(mainConfig):
+class WeatherUpdater(mainWeather):
     """
     A class for interfacing with an Alpaca weather device.
 
@@ -43,10 +40,10 @@ class WeatherUpdater(mainConfig):
     
     def __init__(self):
         super().__init__()
-        self.weatherinfo_path = self.config['WEATHER_PATH']
         self.constraints = self._get_constraints()
-        self.device = ObservingConditions(f"{self.config['WEATHER_HOSTIP']}:{self.config['WEATHER_PORTNUM']}",self.config['WEATHER_DEVICENUM'])
-        
+        self.is_running = False
+    
+    @property
     def _status(self):
         """
         Get the current weather status.
@@ -60,8 +57,8 @@ class WeatherUpdater(mainConfig):
         status['update_time'] = Time.now().isot
         status['jd'] = round(Time.now().jd,6)
         status['is_connected'] = False
-        status['name'] = None
         status['is_safe'] = None
+        status['name'] = None
         status['temperature'] = None
         status['dewpoint'] = None
         status['humidity'] = None
@@ -152,53 +149,17 @@ class WeatherUpdater(mainConfig):
 
         return status
     
-    @Timeout(5, 'Timeout')
-    def connect(self):
-        """
-        Connect to the weather device.
-        """
-        #self._log.info('Connecting to the weather station...')
-        try:
-            if not self.device.Connected:
-                self.device.Connected = True
-                time.sleep(0.5)
-            while not self.device.Connected:
-                time.sleep(0.5)
-            if  self.device.Connected:
-                pass
-                #self._log.info('Weather device connected')
-        except:
-            #self._log.warning('Connection failed')
-            raise ConnectionException('Connection failed')
-        return True
-    
-    @Timeout(5, 'Timeout')
-    def disconnect(self):
-        """
-        Disconnect from the weather device.
-        """
-        #self._log.info('Disconnecting weather station...')
-        try:
-            if self.device.Connected:
-                self.device.Connected = False
-                time.sleep(0.5)
-            while self.device.Connected:
-                time.sleep(0.5)
-            if not self.device.Connected:
-                pass
-                #self._log.info('Weather device is disconnected')
-        except:
-            #self._log.warning('Disconnect failed')
-            raise ConnectionException('Disconnect failed')
-        return True
-    
     def run(self, abort_action : Event):
+        if not self.device.Connected:
+            self.connect()  
         print(f'WeatherUpdater activated')
         while not abort_action.is_set():
             self.update_info_file(overwrite = not self.config['WEATHER_SAVE_HISTORY'])
             
             print(f'Last weatherinfo update: {Time.now().isot}')
             time.sleep(self.config['WEATHER_UPDATETIME'])
+            self.is_running = True
+        self.is_running = False
             
     
     def update_info_file(self,
@@ -270,6 +231,6 @@ class WeatherUpdater(mainConfig):
 if __name__ =='__main__':
     weather = WeatherUpdater()
     
-    weather.run(Event())
+    #weather.run(Event())
     #weather.disconnect()
 # %%

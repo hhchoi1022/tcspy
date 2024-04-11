@@ -8,13 +8,15 @@ import glob
 from datetime import datetime
 import re
 import os
+import numpy as np
 
 # Alpaca modules
 from alpaca.observingconditions import ObservingConditions
 # TCSpy modules
 from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
-import numpy as np
+from tcspy.utils import Timeout
+
 # %%
 class mainWeather(mainConfig):
     """
@@ -42,6 +44,7 @@ class mainWeather(mainConfig):
 
         super().__init__()
         self.weatherinfo_path = self.config['WEATHER_PATH']
+        self.device = ObservingConditions(f"{self.config['WEATHER_HOSTIP']}:{self.config['WEATHER_PORTNUM']}",self.config['WEATHER_DEVICENUM'])
     
     def get_status(self):
     
@@ -103,7 +106,47 @@ class mainWeather(mainConfig):
         if last_update_file:
             with open(last_update_file, 'r') as f:
                 status = json.load(f)
-        return status       
+        return status    
+
+    @Timeout(5, 'Timeout')
+    def connect(self):
+        """
+        Connect to the weather device.
+        """
+        #self._log.info('Connecting to the weather station...')
+        try:
+            if not self.device.Connected:
+                self.device.Connected = True
+                time.sleep(0.5)
+            while not self.device.Connected:
+                time.sleep(0.5)
+            if  self.device.Connected:
+                pass
+                #self._log.info('Weather device connected')
+        except:
+            #self._log.warning('Connection failed')
+            raise ConnectionException('Connection failed')
+        return True
+    
+    @Timeout(5, 'Timeout')
+    def disconnect(self):
+        """
+        Disconnect from the weather device.
+        """
+        #self._log.info('Disconnecting weather station...')
+        try:
+            if self.device.Connected:
+                self.device.Connected = False
+                time.sleep(0.5)
+            while self.device.Connected:
+                time.sleep(0.5)
+            if not self.device.Connected:
+                pass
+                #self._log.info('Weather device is disconnected')
+        except:
+            #self._log.warning('Disconnect failed')
+            raise ConnectionException('Disconnect failed')
+        return True   
 # %%
 
 if __name__ =='__main__':
