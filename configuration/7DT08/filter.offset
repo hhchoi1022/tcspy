@@ -1,0 +1,31 @@
+{
+    "updated_date": "2024-04-11T08:46:54.667",
+    "g": {
+        "offset": 23,
+        "error": 0
+    },
+    "r": {
+        "offset": 0,
+        "error": 0
+    },
+    "i": {
+        "offset": -33,
+        "error": 8
+    },
+    "m700": {
+        "offset": 117,
+        "error": 18
+    },
+    "m725": {
+        "offset": 107,
+        "error": 25
+    },
+    "m550": {
+        "offset": 287,
+        "error": 3
+    },
+    "m825": {
+        "offset": 89,
+        "error": 9
+    }
+}

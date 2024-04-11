@@ -19,53 +19,14 @@ from tqdm import tqdm
 #%%
 
 class FocusModel:
-    """
-    A class representing a focus model for a telescope.
-
-    Parameters
-    ----------
-    unitnum : int
-        The unit number of the telescope.
-    config_path : str, optional
-        The path to the configuration files. Default is '../configuration/'.
-    filtinfo_file : str, optional
-        The name of the filter information file. Default is 'filtinfo.specmode'.
-    offset_file : str, optional
-        The name of the file containing filter offsets. Default is 'filter.offset'.
-
-    Attributes
-    ----------
-    unitnum : int
-        The unit number of the telescope.
-    name_telescope : str
-        The name of the telescope.
-    filters : list
-        A list of filters available for the telescope.
-    is_exist_offset : bool
-        Indicates whether the filter offset file exists.
-    offsets : list or None
-        A list of filter offsets.
-    errors : list or None
-        A list of errors corresponding to filter offsets.
-
-    Methods
-    -------
-    calc_model_params(folder: str, file_key: str = '*.fits', filter_offset_zero: str = 'r',
-                      start_obsdate: Time = Time('2023-01-01'), end_obsdate: Time = Time.now(),
-                      focusval_key: str = 'FOCUSPOS', obsdate_key: str = 'DATE-LOC', filter_key: str = 'FILTER',
-                      temperature_key: str = None, visualize: bool = True)
-        Calculate model parameters based on observational data.
-
-    update_params(list_offsets: list = None, list_errors: list = None)
-        Update filter offset parameters.
-    """
+    
     def __init__(self, 
                  unitnum : int,
                  config_path : str = '../configuration/',
                  filtinfo_file : str = 'filtinfo.specmode',
                  offset_file : str = 'filter.offset'):
         self.unitnum = unitnum
-        self.name_telescope = self.tel_name
+        self.name_telescope = '7DT%.2d' % self.unitnum
         self._filtinfo_file = config_path + filtinfo_file
         self._filterinfo = self._read_json(self._filtinfo_file)
         self.filters = self._filterinfo[self.name_telescope]
@@ -79,6 +40,34 @@ class FocusModel:
             keys = list(data.keys())
             self.offsets = [data[key]['offset'] for key in keys]
             self.errors = [data[key]['error'] for key in keys]
+        
+    def _read_json(self, file):
+        with open(file, 'r') as f:
+            filtinfo_dict = json.load(f)
+        return filtinfo_dict
+
+    def _write_json(self, dict, file):
+        with open(file, 'w') as f:
+           json.dump(dict, f, indent = 4)
+    
+    def _format_offset(self,
+                       list_filters : list,
+                       list_offsets : list = None,
+                       list_errors : list = None):
+        if list_offsets == None:
+            list_offsets = [999] * len(list_filters)
+        if list_errors == None:
+            list_errors = [999] * len(list_filters)
+        elif len(list_filters) != len(list_offsets):
+            raise AttributeError(f'len(list_offsets)[{len(list_filters)}] is not identical to len(list_filters)[{len(list_offsets)}]')
+        format_ = dict()
+        format_['updated_date'] = Time.now().isot
+        for filter_, offset, error in zip(list_filters, list_offsets, list_errors):
+            data = dict()
+            data['offset'] = offset
+            data['error'] = error
+            format_[filter_] = data
+        return format_
 
     def calc_model_params(self,
                           folder : str,
@@ -91,38 +80,6 @@ class FocusModel:
                           filter_key : str = 'FILTER',
                           temperature_key : str = None,
                           visualize : bool = True):
-        """
-        Calculate model parameters based on observational data.
-
-        Parameters
-        ----------
-        folder : str
-            The path to the folder containing the observational data.
-        file_key : str, optional
-            The file key for selecting files. Default is '*.fits'.
-        filter_offset_zero : str, optional
-            The reference filter for calculating offsets. Default is 'r'.
-        start_obsdate : Time, optional
-            The start date for considering observations. Default is Time('2023-01-01').
-        end_obsdate : Time, optional
-            The end date for considering observations. Default is the current time.
-        focusval_key : str, optional
-            The keyword for focus value in the FITS header. Default is 'FOCUSPOS'.
-        obsdate_key : str, optional
-            The keyword for observation date in the FITS header. Default is 'DATE-LOC'.
-        filter_key : str, optional
-            The keyword for filter information in the FITS header. Default is 'FILTER'.
-        temperature_key : str, optional
-            The keyword for temperature information in the FITS header. Default is None.
-        visualize : bool, optional
-            Whether to visualize the results. Default is True.
-
-        Returns
-        -------
-        tuple
-            A tuple containing two lists: focusdiffmean_all and focusdiffstd_all.
-
-        """
         '''
         folder = '/large_data/obsdata/7DT09/'
         file_key = '*.fits'
@@ -137,6 +94,25 @@ class FocusModel:
         # submodule for matching two astropy tables based on specific key & tolerance
         def match_table(tbl1, tbl2, key, tolerance = 0.01):
             from astropy.table import hstack
+            
+            
+            '''
+            parameters
+            ----------
+            {two tables} to combine with the difference of the {key} smaller than the {tolerance}
+            
+            returns 
+            -------
+            1. combined table
+            2. phase
+
+            notes 
+            -----
+            Combined table have both columns of original tables. 
+            They are horizontally combined in the order of tbl1, tbl2
+            -----
+            '''
+             
             matched_tbl = Table()
             for obs in tbl1:
                 ol_idx = (np.abs(obs[key] - tbl2[key]) < tolerance)
@@ -145,6 +121,7 @@ class FocusModel:
                     compare_tbl = tbl2[closest_idx]
                     compare_tbl = hstack([obs, compare_tbl])#join(obs, compare_tbl, keys = 'observatory', join_type = 'outer')
                     matched_tbl = vstack([matched_tbl, compare_tbl])
+
             return matched_tbl
         
         def get_filelist_in_duration(folder : str,
@@ -273,54 +250,15 @@ class FocusModel:
     def update_params(self,
                       list_offsets : list = None,
                       list_errors : list = None):
-        """
-        Update the parameters in the offset file.
-
-        Parameters
-        ----------
-        list_offsets : list, optional
-            A list of offsets to update. Default is None.
-        list_errors : list, optional
-            A list of errors to update. Default is None.
-
-        """
         filter_info = self._filterinfo[self.name_telescope]
         format_offset_dict = self._format_offset(list_filters = filter_info, list_offsets = list_offsets, list_errors = list_errors)
         self._write_json(dict = format_offset_dict, file = self._offset_file)
         print(f'{self._offset_file} is updated')
-        
-    def _read_json(self, file):
-        with open(file, 'r') as f:
-            filtinfo_dict = json.load(f)
-        return filtinfo_dict
-
-    def _write_json(self, dict, file):
-        with open(file, 'w') as f:
-           json.dump(dict, f, indent = 4)
-    
-    def _format_offset(self,
-                       list_filters : list,
-                       list_offsets : list = None,
-                       list_errors : list = None):
-        if list_offsets == None:
-            list_offsets = [999] * len(list_filters)
-        if list_errors == None:
-            list_errors = [999] * len(list_filters)
-        elif len(list_filters) != len(list_offsets):
-            raise AttributeError(f'len(list_offsets)[{len(list_filters)}] is not identical to len(list_filters)[{len(list_offsets)}]')
-        format_ = dict()
-        format_['updated_date'] = Time.now().isot
-        for filter_, offset, error in zip(list_filters, list_offsets, list_errors):
-            data = dict()
-            data['offset'] = offset
-            data['error'] = error
-            format_[filter_] = data
-        return format_
 # %%
 if __name__ == '__main__':
-    unitnum = 10
+    unitnum = 11
     FModel = FocusModel(unitnum)
     folder = '/large_data/obsdata/7DT%.2d' %unitnum
-    offset_vallist, offset_stdlist = FModel.calc_model_params(folder, start_obsdate = Time('2024-02-01'))
+    offset_vallist, offset_stdlist = FModel.calc_model_params(folder, start_obsdate = Time('2024-02-20'))
     FModel.update_params(offset_vallist, offset_stdlist)
 #%%
