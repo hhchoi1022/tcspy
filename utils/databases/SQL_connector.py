@@ -68,7 +68,7 @@ class SQL_Connector:
     """
     def __init__(self,
                  id_user: str = 'hhchoi',
-                 pwd_user : str = 'lksdf1020',
+                 pwd_user : str = 'gusgh1020!',
                  host_user : str = 'localhost',
                  db_name : str = 'target'
                  ):
@@ -395,9 +395,4 @@ class SQL_Connector:
             self.update_row(tbl_name = tbl_name, update_value = id_, update_key = 'id', id_value = index, id_key='idx')
 
 
-# %%
-S = SQL_Connector()
-
-#%%
-S.databases
 # %%

@@ -252,7 +252,7 @@ class NightObservation(mainConfig):
         
         obsmode = target['obsmode'].upper()        
         if obsmode == 'SPEC':
-            if len(self.tel_queue) == 1: ####################################################
+            if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 multi_tel = MultiTelescopes(SingleTelescope_list = list(self.tel_queue.values()))
                 thread = Thread(target= self._specobs, kwargs = {'target' : target, 'multitelescopes' : multi_tel, 'abort_action' : abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
@@ -277,8 +277,7 @@ class NightObservation(mainConfig):
     
         obsmode = target['obsmode'].upper()        
         if obsmode == 'SPEC':
-            ntelescope = target['ntelescope']
-            if len(self.tel_queue) == 1: ####################################################
+            if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 thread = Thread(target= self._specobs, kwargs = {'target' : target, 'multitelescopes' : telescopes, 'abort_action' : abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
         elif obsmode == 'DEEP':
@@ -402,8 +401,8 @@ class NightObservation(mainConfig):
             if isinstance(telescope, SingleTelescope):
                 self.tel_queue[telescope.tel_name] = telescope
             if isinstance(telescope, MultiTelescopes):
-                for tel in telescope.devices:
-                    self.tel_queue[tel.tel_name] = tel
+                for tel_name, tel in telescope.devices.items():
+                    self.tel_queue[tel_name] = tel
         finally:
             # Release the lock
             self.tel_lock.release()
@@ -413,13 +412,11 @@ class NightObservation(mainConfig):
         self.tel_lock.acquire()
         try:
             # Append telescopes used in the action to the list
-            self.tel_queue.pop(telescope.tel_name, None)
-            # Append telescopes used in the action to the list
             if isinstance(telescope, SingleTelescope):
                 self.tel_queue.pop(telescope.tel_name, None)
             if isinstance(telescope, MultiTelescopes):
-                for tel in telescope.devices:
-                    self.tel_queue.pop(tel.tel_name, None)
+                for tel_name, tel in telescope.devices.items():
+                    self.tel_queue.pop(tel_name, None)
         finally:
             # Release the lock
             self.tel_lock.release()
@@ -458,11 +455,21 @@ class NightObservation(mainConfig):
     
 # %%
 if __name__ == '__main__':
-
-    M = MultiTelescopes([SingleTelescope(21)])
+    list_telescopes = [SingleTelescope(1),
+                         SingleTelescope(2),
+                         SingleTelescope(3),
+                         SingleTelescope(5),
+                         SingleTelescope(6),
+                         SingleTelescope(7),
+                         SingleTelescope(8),
+                         SingleTelescope(9),
+                         SingleTelescope(10),
+                         SingleTelescope(11),
+                         ]
+    M = MultiTelescopes(list_telescopes)
     abort_action = Event()
     #Startup(multitelescopes= M , abort_action= abort_action).run()
     R = NightObservation(M, abort_action= abort_action)
-    import astropy.units as u
+
 
 # %%

@@ -130,7 +130,7 @@ if __name__ == '__main__':
     print(time.time() - start)
     M = MultiTelescopes(list_telescopes)
     abort_action = Event()
-    S = ShutDown(M, abort_action = abort_action)
+    S = Shutdown(M, abort_action = abort_action)
     S.run()
     
     

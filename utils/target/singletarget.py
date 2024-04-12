@@ -296,20 +296,20 @@ class SingleTarget(mainConfig):
         targetinfo['objtype'] = self.objtype
         
         if self._coordtype == 'altaz':
-            targetinfo['alt'] = "{:.3f}".format(self.alt)
-            targetinfo['az'] = "{:.3f}".format(self.az)
+            targetinfo['alt'] = self.alt#"{:.3f}".format(self.alt)
+            targetinfo['az'] = self.az#"{:.3f}".format(self.az)
             targetinfo['coordtype'] = self._coordtype
             targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time'])
         
         elif self._coordtype == 'radec':
-            targetinfo['ra'] = "{:.4f}".format(self.ra)
-            targetinfo['dec'] = "{:.4f}".format(self.dec)
-            targetinfo['ra_hour'] = "{:.4f}".format(self.ra_hour)
-            targetinfo['dec_deg'] = "{:.4f}".format(self.dec_deg)
+            targetinfo['ra'] = self.ra#"{:.4f}".format(self.ra)
+            targetinfo['dec'] = self.dec#"{:.4f}".format(self.dec)
+            targetinfo['ra_hour'] = self.ra_hour#"{:.4f}".format(self.ra_hour)
+            targetinfo['dec_deg'] = self.dec_deg#"{:.4f}".format(self.dec_deg)
             targetinfo['ra_hour_hms'] = self.coordinate.ra.to_string(unit="hourangle", sep=":", precision=2, pad=True)
             targetinfo['dec_deg_dms'] = self.coordinate.dec.to_string(unit="deg", sep=":", precision=2, pad=True)
-            targetinfo['alt'] = "{:.3f}".format(self.alt)
-            targetinfo['az'] = "{:.3f}".format(self.az)
+            targetinfo['alt'] = self.alt#"{:.3f}".format(self.alt)
+            targetinfo['az'] = self.az#"{:.3f}".format(self.az)
             targetinfo['coordtype'] = self._coordtype
             targetinfo['hourangle'] = "{:.3f}".format(self.hourangle(utctime = targetinfo['update_time']).value,3)
             targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time']) 

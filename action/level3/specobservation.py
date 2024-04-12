@@ -251,16 +251,16 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
 if __name__ == '__main__':
     import time
     start = time.time()
-    list_telescopes = [SingleTelescope(21),
-                         #SingleTelescope(2),
-                         #SingleTelescope(3),
-                        #  SingleTelescope(5),
-                        #  SingleTelescope(6),
-                        #  SingleTelescope(7),
-                        #  SingleTelescope(8),
-                        #  SingleTelescope(9),
-                        #  SingleTelescope(10),
-                        #  SingleTelescope(11),
+    list_telescopes = [SingleTelescope(1),
+                         SingleTelescope(2),
+                         SingleTelescope(3),
+                          SingleTelescope(5),
+                          #SingleTelescope(6),
+                          #SingleTelescope(7),
+                          #SingleTelescope(8),
+                          #SingleTelescope(9),
+                          #SingleTelescope(10),
+                          #SingleTelescope(11),
                         ]
     
     print(time.time() - start)
@@ -274,18 +274,18 @@ if __name__ == '__main__':
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
     exptime= '3,3'
-    count= '10,10'
+    count= '1,1'
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
-    ra= '300.11667'
-    dec= '-20.20556'
-    alt = None
-    az = None
-    name = "COSMOS"
+    ra= None
+    dec= None
+    alt = 60
+    az = 50
+    name = "T_07377"
     objtype = 'Commissioning'
-    autofocus_before_start= True
-    autofocus_when_filterchange= True
+    autofocus_before_start= False
+    autofocus_when_filterchange= False
     S.run(exptime = exptime, count = count, specmode = specmode,
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,
         alt = alt, az = az, name = name, objtype = objtype,

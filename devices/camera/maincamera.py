@@ -192,6 +192,7 @@ class mainCamera(mainConfig):
         status : dict
             A dictionary containing the current status of the connected camera.
         """
+        print(self.unitnum, Time.now().isot)
         status = self.get_status()
         imginfo = dict()
         imginfo['data'] = None
@@ -259,6 +260,7 @@ class mainCamera(mainConfig):
                 imginfo['jd'] = ut.jd
             except:
                 pass
+        print(self.unitnum, Time.now().isot)
         return imginfo, status
 
     @Timeout(5, 'Timeout') 
