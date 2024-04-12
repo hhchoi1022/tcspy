@@ -1,0 +1,27 @@
+{
+    "update_time": "2024-04-11T15:31:49.086",
+    "jd": 2460412.147096,
+    "is_connected": true,
+    "is_safe": true,
+    "name": "Alpaca Observing Conditions Simulator",
+    "temperature": 7.0,
+    "dewpoint": -2.1,
+    "humidity": 52.4,
+    "pressure": 1026.3,
+    "windspeed": 1.3,
+    "windgust": 3.8,
+    "winddirection": 211.5,
+    "skybrightness": 18.97,
+    "skytemperature": -26.6,
+    "cloudfraction": 2.33,
+    "rainrate": 0,
+    "fwhm": 1.08,
+    "constraints": {
+        "HUMIDITY": 85,
+        "RAINRATE": 80,
+        "SKYMAG": 10,
+        "TEMPERATURE_LOWER": -25,
+        "TEMPERATURE_UPPER": 40,
+        "WINDSPEED": 20
+    }
+}
