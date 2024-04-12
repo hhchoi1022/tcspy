@@ -17,7 +17,7 @@ from tcspy.action import MultiAction
 
 #%%
 
-class ShutDown(mainConfig):
+class Shutdown(mainConfig):
     
     def __init__(self,
                  MultiTelescopes,

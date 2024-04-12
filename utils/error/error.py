@@ -4,3 +4,6 @@ class FocuserTypeError(Exception):
 
 class TelTypeError(Exception):
     pass
+
+class DBConnectionError(Exception):
+    pass

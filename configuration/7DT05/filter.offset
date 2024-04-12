@@ -1,31 +1,31 @@
 {
-    "updated_date": "2024-03-04T09:53:05.877",
+    "updated_date": "2024-04-11T08:45:15.858",
     "g": {
-        "offset": 17,
-        "error": 3
+        "offset": 22,
+        "error": 14
     },
     "r": {
         "offset": 0,
         "error": 0
     },
     "i": {
-        "offset": -33,
-        "error": 2
+        "offset": -37,
+        "error": 9
     },
     "m550": {
-        "offset": 134,
-        "error": 3
-    },
-    "m575": {
-        "offset": 109,
-        "error": 5
-    },
-    "m475": {
-        "offset": 286,
+        "offset": 126,
         "error": 10
     },
+    "m575": {
+        "offset": 103,
+        "error": 8
+    },
+    "m475": {
+        "offset": 310,
+        "error": 8
+    },
     "m750": {
-        "offset": 77,
-        "error": 7
+        "offset": 108,
+        "error": 4
     }
 }

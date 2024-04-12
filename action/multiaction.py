@@ -57,9 +57,9 @@ class MultiAction:
             self.array_kwargs = [self.array_kwargs.copy() for i in range(num_telescope)]
         self.function = function
         self.abort_action = abort_action
-        self.multithreads = None
         self.queue = None
         self.results = dict()
+        self.multithreads = dict()
         self._set_multithreads()
         
     
@@ -72,8 +72,11 @@ class MultiAction:
                 tel_name = telescope.name
                 kwargs = params['kwargs']
                 func = self.function(telescope, abort_action = abort_action)
+                self.multithreads[tel_name] = func
+                
                 result = func.run(**kwargs)
                 self.results[tel_name] = result
+                
                 
         self.dict_threads = dict()
         for telescope in self.array_telescope:
@@ -118,3 +121,15 @@ class MultiAction:
 
         """
         return self.results
+
+    def get_multithreads(self):
+        """
+        Retrieve the results for each telescope's executed action.
+
+        Returns
+        -----
+        results : dict
+            A dictionary with the results of each function call.
+
+        """
+        return self.multithreads

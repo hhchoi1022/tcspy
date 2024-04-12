@@ -51,7 +51,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
         self._specmode_folder = specmode_folder
-        self._log = MultiTelescopes.log
+        self._log = multitelescopes.log
 
     
     def run(self, 
@@ -67,7 +67,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             name : str = None,
             objtype : str = None,
             autofocus_before_start : bool = True,
-            autofocus_when_filterchange : bool = True
+            autofocus_when_filterchange : bool = True,
+            observation_status : dict = None
             ):
         """
         Performs the action to start spectroscopic observation.
@@ -100,6 +101,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             If autofocus should be done before start. Default is True.
         autofocus_when_filterchange : bool (optional):
             If autofocus should be done when filter changes. Default is True.
+        observation_status : dict (optional):
+            if observation_status is specified, resume the observation with this param
 
         Raises
         ------
@@ -121,6 +124,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         objtype = 'ToO'
         autofocus_before_start= True
         autofocus_when_filterchange= True
+        observation_status = None
         """
         # Check condition of the instruments for this Action
         status_multitelescope = self.multitelescopes.status
@@ -131,20 +135,14 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             status_mount = telescope_status['mount']
             status_focuser = telescope_status['focuser']
             if status_filterwheel.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} filterwheel is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} filterwheel is disconnected.')
             if status_camera.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} camera is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} camera is disconnected.')
             if status_mount.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} mount is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} mount is disconnected.')
             if status_focuser.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} focuser is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} focuser is disconnected.')
                 
-        # Abort when triggered
-        if self.abort_action.is_set():
-            self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise  AbortionException(f'[{type(self).__name__}] is aborted.')
-        
         # Get target instance
         singletarget = SingleTarget(observer = self.observer,
                                     ra = ra, 
@@ -165,14 +163,22 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         exposure_params = singletarget.exposure_info
         target_params = singletarget.target_info
         specmode_dict = exposure_params['specmode_filter']
+        # Set Observation status
+        if observation_status:
+            self.observation_status = observation_status
+        else:
+            self.observation_status = self._set_observation_status()
         
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
         for telescope_name, telescope in self.multitelescopes.devices.items():
             filter_ = specmode_dict[telescope_name]
+            observation_status_single = self.observation_status[telescope_name]
+                
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
+                                             observation_status = observation_status_single,
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
@@ -187,6 +193,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         while not action_done:
             time.sleep(0.1)
             action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
+            for telescope_name in self.multitelescopes.devices.keys():
+                self.observation_status[telescope_name] = multiaction.multithreads[telescope_name].observation_status
         action_results = multiaction.results.copy()
         
         for telescope_name in self.multitelescopes.devices.keys():
@@ -213,6 +221,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
                 telescope.camera.abort()
             if status['mount'].lower() == 'busy':
                 telescope.mount.abort()
+        # restore abort_action instance
+        self.abort_action = Event()
 
     def _format_params(self,
                        imgtype : str = 'Light',
@@ -228,22 +238,29 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         for key, value in kwargs.items():
             format_kwargs[key] = value
         return format_kwargs
+    
+    def _set_observation_status(self):
+        observation_status = dict()
+        for telescope_name in self.multitelescopes.devices.keys():
+            observation_status[telescope_name] = None
+        return observation_status
+            
 
     
 # %%
 if __name__ == '__main__':
     import time
     start = time.time()
-    list_telescopes = [SingleTelescope(1),
-                         SingleTelescope(2),
-                         SingleTelescope(3),
-                         SingleTelescope(5),
-                         SingleTelescope(6),
-                         SingleTelescope(7),
-                         SingleTelescope(8),
-                         SingleTelescope(9),
-                         SingleTelescope(10),
-                         SingleTelescope(11),
+    list_telescopes = [SingleTelescope(21),
+                         #SingleTelescope(2),
+                         #SingleTelescope(3),
+                        #  SingleTelescope(5),
+                        #  SingleTelescope(6),
+                        #  SingleTelescope(7),
+                        #  SingleTelescope(8),
+                        #  SingleTelescope(9),
+                        #  SingleTelescope(10),
+                        #  SingleTelescope(11),
                         ]
     
     print(time.time() - start)
@@ -251,11 +268,13 @@ if __name__ == '__main__':
     start = time.time()
 
     M = MultiTelescopes(list_telescopes)
+#%%
+if __name__ == '__main__':
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
-    exptime= '60,60'
-    count= '1,1'
+    exptime= '3,3'
+    count= '10,10'
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
@@ -271,5 +290,14 @@ if __name__ == '__main__':
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,
         alt = alt, az = az, name = name, objtype = objtype,
         autofocus_before_start= autofocus_before_start,
-        autofocus_when_filterchange= autofocus_when_filterchange)
-    # %%
+        autofocus_when_filterchange= autofocus_when_filterchange,
+        )
+# %%
+if __name__ == '__main__':
+    S.run(exptime = exptime, count = count, specmode = specmode,
+        binning = binning, imgtype = imgtype, ra = ra, dec = dec,
+        alt = alt, az = az, name = name, objtype = objtype,
+        autofocus_before_start= autofocus_before_start,
+        autofocus_when_filterchange= autofocus_when_filterchange,
+        observation_status= S.observation_status)
+# %%

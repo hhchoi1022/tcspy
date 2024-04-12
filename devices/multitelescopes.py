@@ -91,7 +91,15 @@ class MultiTelescopes:
         self._status[telescope.name] = TelescopeStatus(telescope).dict
 
     """
-
+    '''
+    @property
+    def status(self):
+        all_status = dict()
+        for tel_name, telescope in self.devices.items():
+            all_status[tel_name] = TelescopeStatus(telescope).dict
+        return all_status
+    
+    '''
     @property
     def status(self):
         """
@@ -109,7 +117,7 @@ class MultiTelescopes:
             status_dict = {futures[future].name: future.result() for future in futures}
         
         return status_dict
-
+    
     def _get_device_status(self, telescope):
         return TelescopeStatus(telescope).dict
     
@@ -145,13 +153,10 @@ if __name__ == '__main__':
     M =  MultiTelescopes(list_telescopes)
 #%%
 if __name__ == '__main__':
-
     start = time.time()
-    A = M.status
+    M.status
     print(time.time() -start)
+    
 
-    start = time.time()
-    A = M.status2
-    print(time.time() -start)
 
 # %%

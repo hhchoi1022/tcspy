@@ -1,7 +1,7 @@
 
 
 #%%
-from tcspy.utils.target import MultiTarget
+from tcspy.utils.target import MultiTargets
 from tcspy.configuration import mainConfig
 from tcspy.utils.databases import SQL_Connector
 from tcspy.devices.observer import mainObserver
@@ -121,13 +121,13 @@ class DB_Annual(mainConfig):
         if len(target_tbl_to_update) == 0:
             return 
         
-        multitarget = MultiTarget(observer = self.observer,
+        multitargetss = MultiTargets(observer = self.observer,
                                           targets_ra = target_tbl_to_update['RA'],
                                           targets_dec = target_tbl_to_update['De'],
                                           targets_name = target_tbl_to_update['objname'])
         
         # Target information 
-        rbs_date = multitarget.rts_date(year = self.utcdate.datetime.year, time_grid_resolution= 1)
+        rbs_date = multitargetss.rts_date(year = self.utcdate.datetime.year, time_grid_resolution= 1)
         targetinfo_listdict = [{'risedate' : rd, 'bestdate' : bd, 'setdate' : sd} for rd, bd, sd in rbs_date]
         
         from tcspy.utils.target import SingleTarget
@@ -194,13 +194,13 @@ class DB_Annual(mainConfig):
         
         target_tbl = self.data
         print('Checking Observability of the targets...')
-        multitarget = MultiTarget(observer = self.observer,
-                                          targets_ra = target_tbl['RA'],
-                                          targets_dec = target_tbl['De'],
-                                          targets_name = target_tbl['objname'])
+        multitargetss = MultiTargets(observer = self.observer,
+                                     targets_ra = target_tbl['RA'],
+                                     targets_dec = target_tbl['De'],
+                                     targets_name = target_tbl['objname'])
         obs_tbl = observability_table(constraints = self.constraints.astroplan, 
                                       observer = self.obsinfo.observer_astroplan, 
-                                      targets = multitarget.coordinate, 
+                                      targets = multitargetss.coordinate, 
                                       time_range = [self.obsnight.sunset_astro, self.obsnight.sunrise_astro],
                                       time_grid_resolution = 30 * u.minute)
         target_tbl_observable_idx = obs_tbl['fraction of time observable'] > observable_fraction_criteria

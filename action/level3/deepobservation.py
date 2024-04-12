@@ -43,12 +43,12 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
     """
     
     def __init__(self, 
-                 MultiTelescopes : MultiTelescopes,
+                 multitelescopes : MultiTelescopes,
                  abort_action : Event):        
-        self.multitelescopes = MultiTelescopes
+        self.multitelescopes = multitelescopes
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
-        self._log = MultiTelescopes.log
+        self._log = multitelescopes.log
     
     def _format_params(self,
                        imgtype : str = 'Light',
@@ -79,6 +79,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             objtype : str = None,
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True,
+            observation_status : dict = None
             ):
         """
         Performs the action to start deep observation.
@@ -111,6 +112,8 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             If autofocus should be done before start. Default is True.
         autofocus_when_filterchange : bool (optional):
             If autofocus should be done when filter changes. Default is True.
+        observation_status : dict (optional):
+            if observation_status is specified, resume the observation with this param
 
         Raises
         ------
@@ -132,7 +135,8 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         objtype = 'ToO'
         autofocus_before_start= True
         autofocus_when_filterchange= True
-        
+        observation_status = None
+
         """
         
         # Check condition of the instruments for this Action
@@ -144,20 +148,14 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             status_mount = telescope_status['mount']
             status_focuser = telescope_status['focuser']
             if status_filterwheel.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} filterwheel is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} filterwheel is disconnected.')
             if status_camera.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} camera is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} camera is disconnected.')
             if status_mount.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} mount is disconnected.')
+                self._log[telescope_name].critical(f'{telescope_name} mount is disconnected.')
             if status_focuser.lower() == 'dicconnected':
-                self._log.critical(f'{telescope_name} focuser is disconnected.')
-                
-        # Abort when triggered
-        if self.abort_action.is_set():
-            self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise  AbortionException(f'[{type(self).__name__}] is aborted.')
-        
+                self._log[telescope_name].critical(f'{telescope_name} focuser is disconnected.')
+
         ntelescope = len(self.multitelescopes.devices)
         # Get target instance
         singletarget = SingleTarget(observer = self.observer,
@@ -178,13 +176,21 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         # Get filter information
         exposure_params = singletarget.exposure_info
         target_params = singletarget.target_info
+        # Set Observation status
+        if observation_status:
+            self.observation_status = observation_status
+        else:
+            self.observation_status = self._set_observation_status()
         
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
         for telescope_name, telescope in self.multitelescopes.devices.items():
+            observation_status_single = self.observation_status[telescope_name]
+                
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
+                                             observation_status = observation_status_single,
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
@@ -199,6 +205,8 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         while not action_done:
             time.sleep(0.1)
             action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
+            for telescope_name in self.multitelescopes.devices.keys():
+                self.observation_status[telescope_name] = multiaction.multithreads[telescope_name].observation_status
         action_results = multiaction.results.copy()
         
         for telescope_name in self.multitelescopes.devices.keys():
@@ -225,6 +233,15 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
                 telescope.camera.abort()
             if status.mount.lower() == 'busy':
                 telescope.mount.abort()
+        # restore abort_action instance
+        self.abort_action = Event()
+        
+    def _set_observation_status(self):
+        observation_status = dict()
+        for telescope_name in self.multitelescopes.devices.keys():
+            observation_status[telescope_name] = None
+        return observation_status
+
      
 # %%
 if __name__ == '__main__':

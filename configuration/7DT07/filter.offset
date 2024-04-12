@@ -1,8 +1,8 @@
 {
-    "updated_date": "2024-03-04T10:01:04.372",
+    "updated_date": "2024-04-11T08:46:07.109",
     "g": {
-        "offset": 17,
-        "error": 6
+        "offset": 21,
+        "error": 2
     },
     "r": {
         "offset": 0,
@@ -10,22 +10,22 @@
     },
     "i": {
         "offset": -17,
-        "error": 5
+        "error": 15
     },
     "m650": {
-        "offset": 108,
-        "error": 8
+        "offset": 100,
+        "error": 16
     },
     "m675": {
-        "offset": 90,
-        "error": 5
+        "offset": 84,
+        "error": 20
     },
     "m525": {
-        "offset": 278,
-        "error": 8
+        "offset": 274,
+        "error": 14
     },
     "m800": {
-        "offset": 83,
-        "error": 6
+        "offset": 76,
+        "error": 12
     }
 }
