@@ -14,8 +14,6 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.utils.exception import *
 from tcspy.configuration import mainConfig
-
-
 #%%
 
 class mainCamera(mainConfig):

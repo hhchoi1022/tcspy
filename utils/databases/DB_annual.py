@@ -306,3 +306,4 @@ class DB_Annual(mainConfig):
             constraint.moonsep = self.config['TARGET_MOONSEP']
         constraint.astroplan = constraint_astroplan
         return constraint  
+# %%
