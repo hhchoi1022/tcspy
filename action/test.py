@@ -13,7 +13,7 @@ telescope = SingleTelescope(1)
 cam2 = mainCamera(2)
 cam3 = mainCamera(3)
 cam5 = mainCamera(5)
-def return_image(cam):S
+def return_image(cam):
     
     start = time.time()
     a = cam.device.ImageArray

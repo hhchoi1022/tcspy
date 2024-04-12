@@ -1,7 +1,15 @@
 {
+<<<<<<< HEAD
     "update_time": "2024-04-11T09:16:25.883",
     "jd": 2460411.886411,
     "is_connected": true,
     "is_safe": true,
     "name": "OBSTECH Safetymonitor"
+=======
+    "update_time": "2024-04-11T09:16:25.425",
+    "jd": 2460411.886405,
+    "is_connected": true,
+    "is_safe": true,
+    "name": "Alpaca Safety Monitor Simulator"
+>>>>>>> 5d8d27449f5237f7bdd97ce8326a58e5ca38235a
 }
