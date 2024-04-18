@@ -1,38 +1,35 @@
 #%%
 from tcspy.action.level1 import * 
 from threading import Event
-from tcspy.devices import SingleTelescope
+
 abort_action = Event()
 from tcspy.devices.camera import mainCamera
 from tcspy.action import MultiAction
+from threading import Thread
 
 #%%
 
 
 
 def return_image(cam):
-    a = cam.device.ImageArra
+    #cam.device.StartExposure(1, False)
+    a = cam.device.ImageArray
     return a
 #%%
-from threading import Thread
 
-unitnumlist = [1,2,3,5,6,7,8,9,10,11]
+unitnumlist = [1,2,3]
+camlist = dict()
 for unitnum in unitnumlist:
-    Thread(target = return_image, kwargs = dict(cam = mainCamera(unitnum))).start()
+    camlist[unitnum] = mainCamera(unitnum)
 #%%
-a1.start()
-a2.start()
-a3.start()
-a5.start()
-a6.start()
-a7.start()
-a8.start()
-a9.start()
-a10.start()
-a11.start()
+for unitnum in unitnumlist:
+    Thread(target = return_image, kwargs = dict(cam = camlist[unitnum])).start()
 
 #%%
 
+from concurrent.futures import ThreadPoolExecutor
+with ThreadPoolExecutor(max_workers=30) as executor:
+    executor.map(return_image, camlist)
 
 #%%
 telescope1 = SingleTelescope(1)
@@ -105,9 +102,9 @@ for unitnum in [1,2,3,5,6,7,8,9,10,11]:
     SingleObs_list.append(SingleObservation(tel, Event()))
 #%%
 
-kwargs = dict( exptime = 10, count = 1, filter_ = 'i', alt =60, az = 300, autofocus_before_start = False)
+kwargs = dict( exptime = 1, count = 1, filter_ = 'i', alt =60, az = 300, autofocus_before_start = False)
 from concurrent.futures import ThreadPoolExecutor
-with ThreadPoolExecutor(max_workers=100) as executor:
+with ThreadPoolExecutor(max_workers=11) as executor:
     # Submit the return_image function with arguments to the executor
     futures = [executor.submit(SingleObs.run, **kwargs) for SingleObs in SingleObs_list]
 
@@ -128,3 +125,55 @@ TelescopeStatus(telescope2).dict
 from tcspy.action.level3 import * 
 #%%
 SpecObservation()
+
+
+
+
+
+
+
+
+#%%
+import requests
+import time
+from astropy.time import Time
+from threading import Thread
+
+def request_imagearray(cam):
+    client_trans_id = 1
+    client_id = 1
+    attribute = 'imagearray'
+
+    url = f"{cam.device.base_url}/{attribute}"
+    hdrs = {'accept' : 'application/imagebytes'}
+    # Make Host: header safe for IPv6
+    if(cam.device.address.startswith('[') and cam.device.address.startswith('[::1]')):
+        hdrs['Host'] = f'{cam.device.address.split("%")[0]}]'
+    pdata = {
+            "ClientTransactionID": f"{client_trans_id}",
+            "ClientID": f"{client_id}" 
+            }         
+
+    print('START:',Time.now(), cam.device.address)
+    start = time.time()
+    print("%s/%s" % (cam.device.base_url, attribute))
+    response = requests.get("%s/%s" % (cam.device.base_url, attribute), params=pdata, headers=hdrs, verify = False)
+
+    print('consumed time:', time.time() - start, cam.device.address)
+# %%
+
+unitnumlist = [1,2,3,5,6,7,8,9,10,11]
+camlist = []
+for unitnum in unitnumlist:
+    #camlist.append(mainCamera(unitnum))
+    Thread(target = request_imagearray, kwargs = dict(cam = mainCamera(unitnum))).start()
+#%%
+
+cam1 = mainCamera(1)
+cam2 = mainCamera(2)
+cam3 = mainCamera(3)
+# %%
+Thread(target = request_imagearray, kwargs = dict(cam = cam1)).start()
+Thread(target = request_imagearray, kwargs = dict(cam = cam2)).start()
+Thread(target = request_imagearray, kwargs = dict(cam = cam3)).start()
+# %%
