@@ -1,5 +1,5 @@
 #%%
-from threading import Event
+from multiprocessing import Event
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
