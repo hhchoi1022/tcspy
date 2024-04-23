@@ -190,7 +190,6 @@ class mainCamera(mainConfig):
         status : dict
             A dictionary containing the current status of the connected camera.
         """
-        print(self.unitnum, Time.now().isot)
         status = self.get_status()
         imginfo = dict()
         imginfo['data'] = None
