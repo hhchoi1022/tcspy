@@ -1,5 +1,5 @@
 #%%
-from threading import Event
+from multiprocessing import Event
 import time
 
 from tcspy.devices import SingleTelescope
@@ -201,19 +201,19 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         multiaction.run()
         
         # Wait for finishing this action 
-        action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
-        while not action_done:
+        succeeded_telescopes = {telescope: data['succeeded'] for telescope, data in multiaction.shared_memory.items()}
+        observation_status = {telescope: data['status'] for telescope, data in multiaction.shared_memory.items()}
+        while not all(succeeded_telescopes.values()):
             time.sleep(0.1)
-            action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
-            for telescope_name in self.multitelescopes.devices.keys():
-                self.observation_status[telescope_name] = multiaction.multithreads[telescope_name].observation_status
-        action_results = multiaction.results.copy()
+            succeeded_telescopes = {telescope: data['succeeded'] for telescope, data in multiaction.shared_memory.items()}
+            observation_status = {telescope: data['status'] for telescope, data in multiaction.shared_memory.items()}
+            self.observation_status = observation_status
         
-        for telescope_name in self.multitelescopes.devices.keys():
-            if action_results[telescope_name]:
-                self._log[telescope_name].info(f'[{type(self).__name__}] is finished')
+        for tel_name in succeeded_telescopes.keys():
+            if succeeded_telescopes[tel_name]:
+                self._log[tel_name].info(f'[{type(self).__name__}] is finished')
             else:
-                self._log[telescope_name].info(f'[{type(self).__name__}] is failed')
+                self._log[tel_name].info(f'[{type(self).__name__}] is failed')
         return True
 
     def abort(self):

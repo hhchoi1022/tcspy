@@ -475,7 +475,6 @@ class mainMount_pwi4(mainConfig):
         Abort the movement of the mount
         """        
         self.device.mount_stop()
-    
 
 # %%
 if __name__ == '__main__':

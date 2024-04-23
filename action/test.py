@@ -1,6 +1,7 @@
 #%%
 from tcspy.action.level1 import * 
-from threading import Event
+from multiprocessing import Event
+from tcspy.devices import SingleTelescope
 
 abort_action = Event()
 from tcspy.devices.camera import mainCamera
@@ -8,30 +9,7 @@ from tcspy.action import MultiAction
 from threading import Thread
 
 #%%
-
-
-
-def return_image(cam):
-    #cam.device.StartExposure(1, False)
-    a = cam.device.ImageArray
-    return a
-#%%
-
-unitnumlist = [1,2,3]
-camlist = dict()
-for unitnum in unitnumlist:
-    camlist[unitnum] = mainCamera(unitnum)
-#%%
-for unitnum in unitnumlist:
-    Thread(target = return_image, kwargs = dict(cam = camlist[unitnum])).start()
-
-#%%
-
-from concurrent.futures import ThreadPoolExecutor
-with ThreadPoolExecutor(max_workers=30) as executor:
-    executor.map(return_image, camlist)
-
-#%%
+"""
 telescope1 = SingleTelescope(1)
 telescope2 = SingleTelescope(2)
 telescope3 = SingleTelescope(3)
@@ -40,59 +18,104 @@ telescope6 = SingleTelescope(6)
 telescope7 = SingleTelescope(7)
 telescope8 = SingleTelescope(8)
 telescope9 = SingleTelescope(9)
-array_telescope= [ telescope1, telescope2, telescope3]#, telescope5, telescope6, telescope7, telescope8, telescope9]
-kwargs = dict(frame_number = 1, exptime = 1, filter_ = 'r', imgtype = 'DARK')
-array_kwargs = []
-for i in range(1):
-    array_kwargs.append(kwargs)
+"""
 #%%
+telescope21 = SingleTelescope(21)
+array_telescope= [ telescope21]#telescope1, telescope2, telescope3]#, telescope5, telescope6, telescope7, telescope8, telescope9]
+#%%
+#%%
+kwargs = dict(filter_ = 'g')
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = ChangeFilter, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+#%%
+kwargs = dict(position = 30000)
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = ChangeFocus, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+# %%
+kwargs = dict()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = Connect, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+#%%
+kwargs = dict(settemperature = -20)
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = Cool, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+# %%
+kwargs = dict(frame_number = 1, exptime = 1, filter_ = 'i', imgtype ='Light', binning = 1, name = 'ABC', objtype = None, obsmode = 'Single')
+abort_action = Event()
 m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = Exposure, abort_action = abort_action)
 m.run()
-#%%
-from tcspy.devices import MultiTelescopes
-mtel = MultiTelescopes(SingleTelescope_list= array_telescope)
-#%%
-#%%
-ChangeFilter(telescope, abort_action= abort_action).run('m425')
-telescope.filterwheel.get_status()
-# %%
-ChangeFocus(telescope, abort_action).run(300, True)
-telescope.focuser.get_status()
-# %%
-Cool(telescope, abort_action).run(10, 1)
-telescope.camera.get_status()
-# %%
-E = Exposure(telescope, abort_action)
-E.run(frame_number = 1, exptime = 1, filter_ = 'g', imgtype = 'BIAS')
-E.run(frame_number = 1, exptime = 1, filter_ = 'r', imgtype = 'DARK')
-E.run(frame_number = 1, exptime = 1, filter_ = 'i', imgtype ='Light', binning = 1, name = 'ABC', objtype = None, obsmode = 'Single')
-# %%
-FansOn(telescope, abort_action).run()
-# %%
-FansOff(telescope, abort_action).run()
-# %%
-Park(telescope, abort_action).run()
-telescope.mount.get_status()
+dict(m.shared_memory['7DT21'])
 
 # %%
-SlewAltAz(telescope, abort_action).run(alt = 40, az = 180)
-telescope.mount.get_status()
+kwargs = dict()
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = FansOn, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])# %%
 # %%
-SlewRADec(telescope, abort_action).run(ra = 300, dec = -22)
+kwargs = dict()
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = FansOff, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
 # %%
-TrackingOff(telescope, abort_action).run()
+
+kwargs = dict(alt = 40, az = 180)
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewAltAz, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
 # %%
-TrackingOn(telescope, abort_action).run()
+kwargs = dict(ra = 150, dec = -40)
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewRADec, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
 # %%
+kwargs = dict()
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = TrackingOff, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+#%%
+kwargs = dict()
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = TrackingOn, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+#%%
+kwargs = dict()
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = Unpark, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+#%%
+kwargs = dict(settemperature = 10)
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = Warm, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+
+#%%
 from tcspy.action.level2 import * 
 # %%
-AutoFocus(telescope, abort_action).run(filter_ = 'g', use_offset = True)
-
-# %%
-telescope.filterwheel.get_status()
-# %%
-SingleObservation(telescope, abort_action).run(10, 1, 'i', ra =300, dec = -22, autofocus_before_start = True)
-# %%
+kwargs = dict(filter_ = 'r', use_offset = False)
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = AutoFocus, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+#%%
+kwargs = dict(exptime = 10, count = 1, filter_ = 'i', ra =180, dec = -22, autofocus_before_start = True)
+abort_action = Event()
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SingleObservation, abort_action = abort_action)
+m.run()
+dict(m.shared_memory['7DT21'])
+#%%
 from tcspy.action.level2 import * 
 telescope_array = []
 SingleObs_list = []

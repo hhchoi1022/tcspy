@@ -1,8 +1,11 @@
 #%%
-from threading import Thread, Event
-from queue import Queue
+from multiprocessing import Process, Event
 from tcspy.devices import SingleTelescope
 from typing import List, Union
+import time
+
+from tcspy.utils.exception import *
+
 class MultiAction:
     def __init__(self, 
                  array_telescope : List[SingleTelescope],
@@ -34,17 +37,13 @@ class MultiAction:
             The function to be executed in each telescope.
         abort_action : Event
             The Event instance to handle the abort actions.
-        multithreads : None (> to be defined)
-            A placeholder for threads for each telescope.
-        queue : None (Queue)
-            A queue instance to handle the thread consumer's arguments.
-        results : dict
-            A dictionary to hold the results of each function call.
+        shared_memory : Manager().dict()
+            A managed dictionary to hold the results of each function call.
 
         Methods
         -------
         run()
-            Add the parameters for each thread in the queue.
+            Execute the action on each telescope.
         abort()
             Abort the ongoing action.
         get_results()
@@ -57,79 +56,54 @@ class MultiAction:
             self.array_kwargs = [self.array_kwargs.copy() for i in range(num_telescope)]
         self.function = function
         self.abort_action = abort_action
-        self.queue = None
-        self.results = dict()
-        self.multithreads = dict()
-        self._set_multithreads()
+        self.shared_memory = dict()
+        self._set_multiprocess()
         
-    
-    def _set_multithreads(self):
-        self.queue = Queue()
-        def consumer(abort_action):
-            while not self.abort_action.is_set():                
-                params = self.queue.get()
-                telescope = params['telescope']
-                tel_name = telescope.name
-                kwargs = params['kwargs']
-                func = self.function(telescope, abort_action = abort_action)
-                self.multithreads[tel_name] = func
-                
-                result = func.run(**kwargs)
-                self.results[tel_name] = result
-                
-                
-        self.dict_threads = dict()
-        for telescope in self.array_telescope:
-            self.dict_threads[telescope.unitnum] = Thread(target= consumer, kwargs = {'abort_action' : self.abort_action}, daemon = False)
-            self.dict_threads[telescope.unitnum].start()
+    def _set_multiprocess(self):
+        self.multifunction = dict()
+        self.multiprocess = dict()
+        for telescope, kwargs in zip(self.array_telescope, self.array_kwargs):
+            func = self.function(telescope, abort_action = self.abort_action)
+            process = Process(name = f'{self.function.__name__}[{telescope.tel_name}]', target = func.run, kwargs= kwargs)
+            self.multifunction[telescope.tel_name] = func
+            self.multiprocess[telescope.tel_name] = process
+            self.shared_memory[telescope.tel_name] = func.shared_memory
 
     def run(self):
         """
         Add the parameters for each thread in the queue.
         """
-        for telescope, kwargs in zip(self.array_telescope, self.array_kwargs):
-            self.queue.put({"telescope": telescope, "kwargs": kwargs })
-    
+        self.abort_action.clear()
+        for process in self.multiprocess.values():
+            process.start()
+        is_running = self.status.values()
+        #is_finished = {telescope.tel_name: self.shared_memory[telescope.tel_name]['succeeded'] for telescope, kwargs in zip(self.array_telescope, self.array_kwargs)}
+        while all(is_running):
+            is_running = self.status.values()
+            #is_finished = {telescope.tel_name: self.shared_memory[telescope.tel_name]['succeeded'] for telescope, kwargs in zip(self.array_telescope, self.array_kwargs)}
+            time.sleep(0.1) ########################
+            if self.abort_action.is_set():
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+
     def abort(self):
         """
         Abort the ongoing action.
         """
         self.abort_action.set()
-        self.queue = Queue()
-        def consumer(abort_action):
-            while True:
-                params = self.queue.get()
-                telescope = params['telescope']
-                kwargs = params['kwargs']
-                func = self.function(telescope, abort_action = abort_action)
-                func.abort()
-        for telescope in self.array_telescope:
-            thread = Thread(target= consumer, kwargs = {'abort_action' : self.abort_action}, daemon = False)
-            thread.start()
-            
-        for telescope, kwargs in zip(self.array_telescope, self.array_kwargs):
-            self.queue.put({"telescope": telescope, "kwargs": kwargs })
     
-    def get_results(self):
-        """
-        Retrieve the results for each telescope's executed action.
-
-        Returns
-        -----
-        results : dict
-            A dictionary with the results of each function call.
-
-        """
-        return self.results
-
-    def get_multithreads(self):
-        """
-        Retrieve the results for each telescope's executed action.
-
-        Returns
-        -----
-        results : dict
-            A dictionary with the results of each function call.
-
-        """
-        return self.multithreads
+    @property
+    def status(self):
+        status = dict()
+        for process in self.multiprocess.values():
+            status[process.name] = process.is_alive()
+        return status
+# %%
+if __name__ == '__main__':
+    from threading import Thread
+    from tcspy.action.level1 import *
+    abort_action = Event()
+    m = MultiAction([SingleTelescope(21)], dict(alt = 40, az = 0), SlewAltAz, abort_action)
+    p = Thread(target = m.run, kwargs = dict())
+    p.start()
+    #m.abort()
+# %%

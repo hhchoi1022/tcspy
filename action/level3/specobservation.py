@@ -1,5 +1,6 @@
 #%%
-from threading import Event
+from multiprocessing import Event, Lock
+from multiprocessing import Manager
 import time
 
 from tcspy.devices import SingleTelescope
@@ -7,11 +8,12 @@ from tcspy.devices import MultiTelescopes
 from tcspy.interfaces import *
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.exception import *
+from tcspy.configuration import mainConfig
 
 from tcspy.action import MultiAction
 from tcspy.action.level2 import SingleObservation
-#%%
-class SpecObservation(Interface_Runnable, Interface_Abortable):
+
+class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
     """
     A class representing a spectroscopic observation of multiple telescopes.
 
@@ -45,14 +47,19 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
     
     def __init__(self, 
                  multitelescopes : MultiTelescopes,
-                 abort_action : Event,
-                 specmode_folder : str = '../../configuration/specmode/u10/'):
+                 abort_action : Event):
+        super().__init__()
         self.multitelescopes = multitelescopes
+        self.multiaction = None
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
-        self._specmode_folder = specmode_folder
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
+        self._specmode_folder = self.config['SPECMODE_FOLDER']
+        self._lock = Lock()
+        
         self._log = multitelescopes.log
-
     
     def run(self, 
             exptime : str,
@@ -127,6 +134,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
         observation_status = None
         """
         # Check condition of the instruments for this Action
+        self.abort_action.clear()
         status_multitelescope = self.multitelescopes.status
         for telescope_name, telescope_status in status_multitelescope.items():
             self._log[telescope_name].info(f'[{type(self).__name__}] is triggered.')
@@ -185,44 +193,44 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
             all_params_obs[telescope_name] = params_obs
         
         # Run Multiple actions
-        multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)
-        multiaction.run()
-        
+        self.multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)
+        self.shared_memory = self.multiaction.shared_memory
+        try:
+            self.multiaction.run()
+        except AbortionException:
+            for tel_name in  self.multitelescopes.devices.keys():
+                self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
+        '''
         # Wait for finishing this action 
-        action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
-        while not action_done:
+        succeeded_telescopes = {telescope: data['succeeded'] for telescope, data in self.multiaction.shared_memory.items()}
+        observation_status = {telescope: data['status'] for telescope, data in self.multiaction.shared_memory.items()}
+        while not all(succeeded_telescopes.values()):
             time.sleep(0.1)
-            action_done = all(key in multiaction.results for key in self.multitelescopes.devices.keys())
-            for telescope_name in self.multitelescopes.devices.keys():
-                self.observation_status[telescope_name] = multiaction.multithreads[telescope_name].observation_status
-        action_results = multiaction.results.copy()
+            succeeded_telescopes = {telescope: data['succeeded'] for telescope, data in self.multiaction.shared_memory.items()}
+            observation_status = {telescope: data['status'] for telescope, data in self.multiaction.shared_memory.items()}
+            self.observation_status = observation_status
+            # When aborted
+            if self.abort_action.is_set():
+                    for tel_name in succeeded_telescopes.keys():
+                        self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
-        for telescope_name in self.multitelescopes.devices.keys():
-            if action_results[telescope_name]:
-                self._log[telescope_name].info(f'[{type(self).__name__}] is finished')
+        for tel_name in succeeded_telescopes.keys():
+            if succeeded_telescopes[tel_name]:
+                self._log[tel_name].info(f'[{type(self).__name__}] is finished')
             else:
-                self._log[telescope_name].info(f'[{type(self).__name__}] is failed')
+                self._log[tel_name].info(f'[{type(self).__name__}] is failed')
+        self.shared_memory['succeeded'] = True
+        '''
+        self.shared_memory['succeeded'] = True
         return True
 
     def abort(self):
         """
         A function to abort the ongoing spectroscopic observation process.
         """
+        #self.multiaction.abort()
         self.abort_action.set()
-        status_multitelescope = self.multitelescopes.status
-
-        for telescope_name, telescope in self.multitelescopes.devices.items():
-            status = status_multitelescope[telescope_name]
-            self._log[telescope_name].warning(f'[{type(self).__name__}] is aborted')
-
-            if status['filterwheel'].lower() == 'busy':
-                telescope.filterwheel.abort()
-            if status['camera'].lower() == 'busy':
-                telescope.camera.abort()
-            if status['mount'].lower() == 'busy':
-                telescope.mount.abort()
-        # restore abort_action instance
-        self.abort_action = Event()
 
     def _format_params(self,
                        imgtype : str = 'Light',
@@ -250,11 +258,12 @@ class SpecObservation(Interface_Runnable, Interface_Abortable):
 # %%
 if __name__ == '__main__':
     import time
+    from tcspy.devices import SingleTelescope
     start = time.time()
-    list_telescopes = [SingleTelescope(1),
-                         SingleTelescope(2),
-                         SingleTelescope(3),
-                          SingleTelescope(5),
+    list_telescopes = [SingleTelescope(21)
+                         #SingleTelescope(2),
+                         #SingleTelescope(3),
+                         # SingleTelescope(5),
                           #SingleTelescope(6),
                           #SingleTelescope(7),
                           #SingleTelescope(8),
@@ -274,7 +283,7 @@ if __name__ == '__main__':
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
     exptime= '3,3'
-    count= '1,1'
+    count= '3,3'
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
@@ -286,12 +295,17 @@ if __name__ == '__main__':
     objtype = 'Commissioning'
     autofocus_before_start= False
     autofocus_when_filterchange= False
-    S.run(exptime = exptime, count = count, specmode = specmode,
+    kwargs = dict(exptime = exptime, count = count, specmode = specmode,
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,
         alt = alt, az = az, name = name, objtype = objtype,
         autofocus_before_start= autofocus_before_start,
         autofocus_when_filterchange= autofocus_when_filterchange,
         )
+    from multiprocessing import Process
+    from threading import Thread
+    t = Thread(target = S.run, kwargs= kwargs)
+    t.start()
+    #t.abort()
 # %%
 if __name__ == '__main__':
     S.run(exptime = exptime, count = count, specmode = specmode,

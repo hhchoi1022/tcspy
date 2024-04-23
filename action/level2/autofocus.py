@@ -1,6 +1,7 @@
 #%%
 #%%
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -48,6 +49,9 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self,
@@ -107,7 +111,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
                 offset = self.telescope.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
                 self._log.info(f'Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
                 try:
-                    result_focus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action).run(position = offset, is_relative= True)
+                    action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action)
+                    result_focus = action_changefocus.run(position = offset, is_relative= True)
                 except ConnectionException:
                     self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
@@ -136,18 +141,20 @@ class AutoFocus(Interface_Runnable, Interface_Abortable):
         
         # run Autofocus
         info_focuser = self.telescope.focuser.get_status()
-        self._log.info(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}')
+        self._log.info(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}]')
         try:
             result_autofocus = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
         except AbortionException:
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         except AutofocusFailedException:
-            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed')
+            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed. Focuser move back to the previous position')
+            action_changefocus.run(position = info_focuser['position'], is_relative= False)
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Autofocus process is failed')
         
         if result_autofocus:
             self._log.info(f'[{type(self).__name__}] is finished')
+            self.shared_memory['succeeded'] = result_autofocus
             return True
     
     def abort(self):

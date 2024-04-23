@@ -1,5 +1,6 @@
 #%%
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -45,7 +46,10 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
-        self.observation_status = dict()
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
+        self.shared_memory['status'] = dict()
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self, 
@@ -124,11 +128,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
           objtype = None
           specmode = None
           ntelescope = 1
-        """
-        
-        
+        """        
         self._log.info(f'[{type(self).__name__}] is triggered.')
-
         # Check condition of the instruments for this Action
         status_filterwheel = self.telescope_status.filterwheel
         status_camera = self.telescope_status.camera
@@ -201,19 +202,22 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         # Get exposure information
         observation_requested = self._exposureinfo_to_list(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
         # Set observation status. If observation_status is inputted, run() will resume according to the observation_status
-        self.observation_status = self._set_observation_status(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
-        if observation_status:
-            self.observation_status = observation_status
-            if not (set(self.observation_status.keys())) == (set(observation_requested['filter_'])):
-                self.observation_status = self._set_observation_status(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
-        # Derive a set of exposure information required to complete observation
+        if not observation_status:
+            observation_status = self._set_observation_status(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
+        
+        # When inputted observation_status.keys() are not matched with observation_requested, set default value
+        if not (set(observation_status.keys())) == (set(observation_requested['filter_'])):
+            observation_status = self._set_observation_status(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
+
+        self.shared_memory['status'] = observation_status
+
         observation_trigger = {'filter_': [],
                                'exptime': [],
                                'count': [],
                                'binning': []}
         for filter_, exptime, count, binning in zip(observation_requested['filter_'], observation_requested['exptime'], observation_requested['count'], observation_requested['binning']):
-             observing_status = self.observation_status[filter_]
-             net_count = observing_status['triggered'] - observing_status['observed']
+             observation_status_filter = observation_status[filter_]
+             net_count = observation_status_filter['triggered'] - observation_status_filter['observed']
              if net_count > 0:
                 observation_trigger['filter_'].append(filter_)
                 observation_trigger['exptime'].append(exptime)
@@ -285,17 +289,11 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                         self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
                         pass
         
-            # Abort action when triggered
-            if self.abort_action.is_set():
-                self.abort()
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise  AbortionException(f'[{type(self).__name__}] is aborted.')
-            
             # Exposure
             exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
             for frame_number in range(int(count)):
                 try:
-                    result_exposure = exposure.run(frame_number = int(self.observation_status[filter_]['observed']),
+                    result_exposure = exposure.run(frame_number = int(observation_status[filter_]['observed']),
                                                     exptime = float(exptime),
                                                     filter_ = filter_,
                                                     imgtype = imgtype,
@@ -309,7 +307,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                     name = name,
                                                     objtype = objtype)
                     # Update self.observation_status
-                    self.observation_status[filter_]['observed'] +=1
+                    observation_status[filter_]['observed'] += 1
+                    self.shared_memory['status'] = observation_status
                     result_all_exposure.append(result_exposure)
                 except ConnectionException:
                     self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
@@ -322,7 +321,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
             
         self._log.info(f'[{type(self).__name__}] is finished')
-        
+        self.shared_memory['succeeded'] = all(result_all_exposure)
         return all(result_all_exposure)
 
     def abort(self):
@@ -338,17 +337,18 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             If the device operation is explicitly aborted during the operation.
         """
         self.abort_action.set()
-        status_filterwheel = self.telescope_status.filterwheel
-        status_camera = self.telescope_status.camera
-        status_mount = self.telescope_status.mount
-        if status_filterwheel.lower() == 'busy':
-            self.telescope.filterwheel.abort()
-        if status_camera.lower() == 'busy':
-            self.telescope.camera.abort()
-        if status_mount.lower() == 'busy':
-            self.telescope.mount.abort()
-            
-        self.abort_action = Event()
+        #self.telescope.camera.abort()
+        #self.telescope.mount.abort()        
+        #status_filterwheel = self.telescope_status.filterwheel
+        #status_camera = self.telescope_status.camera
+        #status_mount = self.telescope_status.mount
+        #if status_filterwheel.lower() == 'busy':
+        #    self.telescope.filterwheel.abort()
+        #if status_camera.lower() == 'busy':
+        #    self.telescope.camera.abort()
+        #if status_mount.lower() == 'busy':
+        #    self.telescope.mount.abort()   
+        #self.abort_action = Event()
     
     def _exposureinfo_to_list(self,
                               filter_ : str,
@@ -405,30 +405,35 @@ if __name__ == '__main__':
                 filter_ = 'g,r', 
                 binning = '1', 
                 imgtype = 'Light',
-                ra = 256.5, 
+                ra = 300.5, 
                 dec = -58.0666 , 
                 obsmode = 'Spec',
                 autofocus_before_start = False, 
                 autofocus_when_filterchange= False)              
-    from threading import Thread
-
-    t = Thread(target = S.run, kwargs  = kwargs).start()
+    from multiprocessing import Process
+    abort_action = Event()
+    s = SingleObservation(SingleTelescope(21),abort_action)
+    p = Process(target = s.run, kwargs = kwargs)
+    p.start()
 # %%
 if __name__ == '__main__':
-    S.abort()
+    s.abort()
 # %%
 if __name__ == '__main__':
-
+    observation_status = dict(s.shared_memory)['status']
     kwargs = dict(exptime = '5,5', 
                 count = '2,2', 
                 filter_ = 'g,r', 
                 binning = '1', 
                 imgtype = 'Light',
-                ra = 256.5, 
+                ra = 200.5, 
                 dec = -58.0666 , 
                 obsmode = 'Spec',
                 autofocus_before_start = False, 
                 autofocus_when_filterchange= False,
-                observation_status = S.observation_status)
-    t = Thread(target = S.run, kwargs  = kwargs).start()
+                observation_status = observation_status)
+    from multiprocessing import Process
+    s = SingleObservation(SingleTelescope(21),Event())
+    p = Process(target = s.run, kwargs = kwargs)
+    p.start()
 #%%

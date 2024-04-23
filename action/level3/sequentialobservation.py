@@ -1,5 +1,5 @@
 #%%
-from threading import Event
+from multiprocessing import Event
 from astropy.table import Table
 
 from tcspy.devices import SingleTelescope

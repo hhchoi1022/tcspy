@@ -1,5 +1,6 @@
 #%%
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -41,6 +42,9 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self,
@@ -73,6 +77,8 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
         bool
             True if the action is finished, False otherwise.
         """
+        self.abort_action.clear()
+        self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         mount = self.telescope.mount
         status_mount = self.telescope_status.mount.lower()
@@ -87,7 +93,6 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Start action
-        self._log.info(f'[{type(self).__name__}] is triggered.')
         if status_mount == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: mount is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: mount is disconnected.')
@@ -112,6 +117,7 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
         
         if result_slew:
             self._log.info(f'[{type(self).__name__}] is finished.')
+            self.shared_memory['succeeded'] = True
         return True
     
     # For faster trigger of abort action
@@ -121,9 +127,11 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
         
         This method aborts the running action if the telescope is busy. In other cases, it does nothing.
         """
-        status_mount = self.telescope_status.mount.lower()
-        if status_mount == 'busy':
-            self.telescope.mount.abort()
-        else:
-            pass   
+        self.abort_action.set()
+        self.telescope.mount.abort()
+        #status_mount = self.telescope_status.mount.lower()
+        #if status_mount == 'busy':
+        #    self.telescope.mount.abort()
+        #else:
+        #    pass   
 # %%

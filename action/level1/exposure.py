@@ -1,5 +1,7 @@
 #%%
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
+
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
@@ -17,6 +19,9 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self,
@@ -130,7 +135,6 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                               obsmode = obsmode,
                               )
         exposure_info = target.exposure_info
-        
         # Move filter
         result_changefilter = True
         if imgtype.upper() == 'LIGHT':
@@ -154,17 +158,10 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                     self._log.critical(f'[{type(self).__name__}] is failed: filterchange failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: filterchange failure.')
 
-        # Exposure 
-        # Check whether the process is aborted
-        if self.abort_action.is_set():
-            self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
-        
         # Check device connection
         camera = self.telescope.camera
         status_camera = self.telescope_status.camera
-        
+
         if status_camera.lower() == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
@@ -203,12 +200,6 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             if imginfo:
                 self._log.info(f'[%s] Exposure finished (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
             
-            # Save image
-            if self.abort_action.is_set():
-                self.abort()
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            
             status = self.telescope.status
             try:
                 img = mainImage(frame_number = int(frame_number),
@@ -223,7 +214,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                                 weather_info = status['weather'])
                 filepath = img.save()
                 self._log.info(f'Saved!: %s)'%(filepath))
-                
+                self.shared_memory['succeeded'] = True
             except:
                 self._log.critical(f'[{type(self).__name__}] is failed: mainImage save failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: mainImage save failure.')
@@ -233,12 +224,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         """
         Sends an abort command to the filterwheel and camera if they are busy.
         """
-        status_filterwheel = self.telescope_status.filterwheel
-        status_camera = self.telescope_status.camera
-        if status_filterwheel.lower() == 'busy':
-            self.telescope.filterwheel.abort()
-        if status_camera.lower() == 'busy':
-            self.telescope.camera.abort()
+        self.abort_action.set()
+        self.telescope.camera.abort()
         
         
 # %%

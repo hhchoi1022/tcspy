@@ -1,5 +1,6 @@
 #%%
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -41,6 +42,9 @@ class Cool(Interface_Runnable, Interface_Abortable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self,
@@ -84,23 +88,24 @@ class Cool(Interface_Runnable, Interface_Abortable):
         # Start action
         try:
             result_cool = self.telescope.camera.cool(settemperature = settemperature, 
-                                                   tolerance = tolerance,
-                                                   abort_action = self.abort_action)
+                                                     tolerance = tolerance,
+                                                     abort_action = self.abort_action)
         except CoolingFailedException:
             self._log.critical(f'[{type(self).__name__}] is failed: camera cool failure.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: camera cool failure.')
         except AbortionException:
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            
         if result_cool:
             self._log.info(f'[{type(self).__name__}] is finished.')
+            self.shared_memory['succeeded'] = True
         return True
     
     def abort(self):
         """
         Aborts the cooling action if the camera is already cooling.
         """
+        self.abort_action.set()
         if self.telescope.camera.device.CoolerOn:
             if self.telescope.camera.device.CCDTemperature < self.telescope.camera.device.CCDTemperature -20:
                 self._log.critical(f'Turning off when the CCD Temperature below ambient may lead to damage to the sensor.')

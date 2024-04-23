@@ -1,5 +1,6 @@
 #%%
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -40,6 +41,9 @@ class Park(Interface_Runnable, Interface_Abortable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self):
@@ -85,17 +89,20 @@ class Park(Interface_Runnable, Interface_Abortable):
 
         if result_park:
             self._log.info(f'[{type(self).__name__}] is finished.')
+            self.shared_memory['succeeded'] = True
         return True
             
     def abort(self):
         """
         Performs the action to park the telescope.
         """
-        status_mount = self.telescope_status.mount.lower()
-        if status_mount == 'busy':
-            self.telescope.mount.abort()
-        else:
-            pass
+        self.abort_action.set()
+        self.telescope.mount.abort()
+        #status_mount = self.telescope_status.mount.lower()
+        #if status_mount == 'busy':
+        #    self.telescope.mount.abort()
+        #else:
+        #    pass
 #%%
 if __name__ == '__main__':
     device = SingleTelescope(unitnum = 8)

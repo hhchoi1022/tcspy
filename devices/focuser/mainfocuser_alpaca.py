@@ -196,6 +196,7 @@ class mainFocuser_Alpaca(mainConfig):
                 current_position = self.device.Position
                 time.sleep(self._checktime)
                 if abort_action.is_set():
+                    self.abort()
                     self._log.warning('Focuser moving is aborted')
                     raise AbortionException('Focuser moving is aborted')
             current_position = self.device.Position

@@ -1,6 +1,7 @@
 #%%
 import time
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -40,6 +41,9 @@ class Connect(Interface_Runnable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self):
@@ -49,6 +53,7 @@ class Connect(Interface_Runnable):
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # connect devices
         devices_status = self.telescope_status.dict
+        result_connect_all = []
         for device_name in self.telescope.devices.keys():
             if self.abort_action.is_set():
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
@@ -74,10 +79,10 @@ class Connect(Interface_Runnable):
                     self._log.info(f'{device_name} : Connected')
             else:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-            
         self._log.info('='*30)
         self._log.info(f'[{type(self).__name__}] is finished.')
-        time.sleep(1)
+        self.shared_memory['status'] = devices_status
+        self.shared_memory['succeeded'] = True
         return True
     
     def abort(self):
@@ -88,7 +93,6 @@ class Connect(Interface_Runnable):
 # %%
 if __name__ == '__main__':
     tel1 = SingleTelescope(unitnum = 21)
-    tel2 = SingleTelescope(unitnum = 22)
     c1 = Connect(tel1, abort_action = Event())
     A = c1.run()
     #c2.run()

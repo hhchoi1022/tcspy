@@ -1,6 +1,7 @@
 #%%
 import time
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -41,6 +42,9 @@ class Disconnect(Interface_Runnable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self):
@@ -75,12 +79,11 @@ class Disconnect(Interface_Runnable):
                     self._log.info(f'{device_name} : Disconnected')
             else:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
-        
         self._log.info('='*30)
         self._log.info(f'[{type(self).__name__}] is finished.')
-        time.sleep(1)
-        devices_status = self.telescope_status.dict
-        return devices_status 
+        self.shared_memory['status'] = devices_status
+        self.shared_memory['succeeded'] = True
+        return True 
     
     def abort(self):
         """

@@ -492,12 +492,13 @@ class mainCamera(mainConfig):
             A dictionary containing information about the captured image.
         """
         # Set Gain
+
         self._update_gain(gain = gain)
         
         # Set binning 
         self._set_binning(binning = binning)
         self.imgtype = imgtype.upper()
-        
+
         # Set minimum exposure time
         if exptime < self.device.ExposureMin:
             exptime = self.device.ExposureMin
@@ -506,9 +507,9 @@ class mainCamera(mainConfig):
         if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'LIGHT']:
             self._log.critical(f'Type "{imgtype}" is not set as imagetype')
             raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
-
         # Exposure
         self.device.StartExposure(Duration = exptime, Light = is_light)
+
         time.sleep(self._checktime)
         while not self.device.ImageReady:
             if abort_action.is_set():
@@ -516,10 +517,11 @@ class mainCamera(mainConfig):
                 self.abort()
                 raise AbortionException('Camera exposure is aborted')
             time.sleep(self._checktime)
+
         imginfo, status = self.get_imginfo()
+
         # Modify image information if camera returns too detailed exposure time
         imginfo['exptime'] = round(float(imginfo['exptime']),1)
-        #imginfo['exptime'] = exptime
         return imginfo 
 
     def abort(self):
@@ -559,4 +561,3 @@ if __name__ == '__main__':
     A = mainCamera(unitnum = 21)
     #C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= Event(), binning = 1, is_light = False)
     A.device.Gain
-# %%

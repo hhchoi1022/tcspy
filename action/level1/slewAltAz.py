@@ -1,5 +1,7 @@
 #%%
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Manager
+
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
@@ -39,6 +41,9 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
         self.abort_action = abort_action
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self,
@@ -71,6 +76,7 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
         bool
             True if the action is finished, False otherwise.
         """
+        self.abort_action.clear()
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check device connection
         mount = self.telescope.mount  
@@ -86,7 +92,6 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Start action
-        
         if status_mount == 'disconnected':
             self._log.critical(f'[{type(self).__name__}] is failed: mount is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: mount is disconnected.')
@@ -111,6 +116,8 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
         
         if result_slew:
             self._log.info(f'[{type(self).__name__}] is finished.')    
+            self.shared_memory['succeeded'] = True
+
         return True            
     
     def abort(self):
@@ -119,17 +126,18 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
         
         This method aborts the running action if the telescope is busy. In other cases, it does nothing.
         """
-        status_mount = self.telescope_status.mount.lower()
-        if status_mount == 'busy':
-            self.telescope.mount.abort()
-        else:
-            pass 
+        self.abort_action.set()
+        #self.telescope.mount.abort()
+        #status_mount = self.telescope_status.mount.lower()
+        #if status_mount == 'busy':
+        #    self.telescope.mount.abort()
+        #else:
+        #    pass 
 #%%
 if __name__ == '__main__':
-    device = SingleTelescope(unitnum = 1)
+    device = SingleTelescope(unitnum = 21)
     abort_action = Event()
     s =SlewAltAz(device, abort_action)
-    s.run(alt=20, az= 270, tracking = True)  
-    
-
-# %%
+    #s.run(alt=40, az= 270, tracking = True)  
+    from threading import Thread
+    p = Thread(target = s.run, kwargs = dict(alt = 40, az = 270))
