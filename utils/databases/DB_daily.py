@@ -13,6 +13,7 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from astroplan import observability_table
 from astroplan import AltitudeConstraint, MoonSeparationConstraint
+from tqdm import tqdm
 
 # %%
 
@@ -159,7 +160,7 @@ class DB_Daily(mainConfig):
 
         values_update = [{**targetinfo_dict, **exposureinfo_dict} for targetinfo_dict, exposureinfo_dict in zip(targetinfo_listdict, exposureinfo_listdict)]
                 
-        for i, value in enumerate(values_update):
+        for i, value in enumerate(tqdm(values_update)):
             target_to_update = target_tbl_to_update[i]  
             self.sql.update_row(tbl_name = self.tblname, update_value = list(value.values()), update_key = list(value.keys()), id_value= target_to_update['id'], id_key = 'id')
         print(f'{len(target_tbl_to_update)} targets are updated')

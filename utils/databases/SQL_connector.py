@@ -221,7 +221,6 @@ class SQL_Connector:
         dict
             A dictionary of column names and their corresponding data types.
         """
-        self.connect()
         sql_query = f"SHOW COLUMNS FROM {tbl_name}"
         self.cursor.execute(sql_query)
         column_info = self.cursor.fetchall()
@@ -246,7 +245,6 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the insertion operation.
         """
-        self.connect()
         data_str = data.copy()
         for colname in data_str.columns:
             data_str[colname] = data_str[colname].astype(str)
@@ -287,7 +285,6 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the update operation.
         """
-        self.connect()
         if isinstance(update_value,str):
             update_command = f"{update_key} = '{update_value}'"
         elif isinstance(update_value, (list, np.ndarray)):
@@ -377,7 +374,6 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the id setting operation.
         """
-        self.connect()
         values_all = self.get_data(tbl_name = tbl_name, select_key = 'id,idx')
         values_to_update = values_all
         if not update_all:

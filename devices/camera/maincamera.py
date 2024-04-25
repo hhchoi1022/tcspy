@@ -5,7 +5,8 @@ import pytz
 import numpy as np
 from astropy.time import Time
 from datetime import datetime
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Lock
 
 from alpaca.camera import Camera
 from alpaca.camera import ImageArrayElementTypes
@@ -68,6 +69,7 @@ class mainCamera(mainConfig):
         self._checktime = float(self.config['CAMERA_CHECKTIME'])
         self.device = Camera(f"{self.config['CAMERA_HOSTIP']}:{self.config['CAMERA_PORTNUM']}",self.config['CAMERA_DEVICENUM'])
         self.status = self.get_status()
+        self.cam_lock = Lock()
 
     def get_status(self) -> dict:
         """
@@ -491,7 +493,7 @@ class mainCamera(mainConfig):
             A dictionary containing information about the captured image.
         """
         # Set Gain
-
+        self.cam_lock.acquire()
         self._update_gain(gain = gain)
         
         # Set binning 
@@ -521,6 +523,7 @@ class mainCamera(mainConfig):
 
         # Modify image information if camera returns too detailed exposure time
         imginfo['exptime'] = round(float(imginfo['exptime']),1)
+        self.cam_lock.release()
         return imginfo 
 
     def abort(self):

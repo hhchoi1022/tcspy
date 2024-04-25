@@ -196,7 +196,6 @@ if __name__ == '__main__':
 
 #%%
 if __name__ == '__main__':
-    list_telescopes = [SingleTelescope(21)]
     start = time.time()
 
     M = MultiTelescopes(list_telescopes)

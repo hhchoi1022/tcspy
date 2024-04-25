@@ -92,7 +92,7 @@ class Connect(Interface_Runnable):
         return
 # %%
 if __name__ == '__main__':
-    tel1 = SingleTelescope(unitnum = 21)
+    tel1 = SingleTelescope(unitnum = 1)
     c1 = Connect(tel1, abort_action = Event())
     A = c1.run()
     #c2.run()

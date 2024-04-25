@@ -63,7 +63,7 @@ class mainConfig:
 
     def _initialize_config(self,
                            ip_address: str = '10.0.106.6',
-                           portnum : int = '32323'):
+                           portnum : int = '11111'):
         savepath_unit = self._configfilepath_unit
         if not os.path.exists(savepath_unit):
             os.makedirs(savepath_unit, exist_ok=True)
@@ -71,7 +71,7 @@ class mainConfig:
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
         mount_params = dict(MOUNT_DEVICETYPE='PWI4',  # Alpaca or PWI4
                             MOUNT_HOSTIP= ip_address,
-                            MOUNT_PORTNUM='11111',
+                            MOUNT_PORTNUM='8220',
                             MOUNT_DEVICENUM=0,
                             MOUNT_PARKALT=40,
                             MOUNT_PARKAZ=300,
@@ -98,7 +98,7 @@ class mainConfig:
 
         focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='11111',
+                              FOCUSER_PORTNUM='8220',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -156,7 +156,7 @@ class mainConfig:
 
         DB_params = dict(DB_HOSTIP='localhost',
                          DB_ID='hhchoi',
-                         DB_PWD='lksdf1020',
+                         DB_PWD='gusgh1020!',
                          DB_NAME='target')
         
         specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self._configfilepath_global,"specmode/u10/")}')
@@ -197,8 +197,20 @@ class mainConfig:
 
 #%%
 if __name__ == '__main__':
-    A = mainConfig(unitnum=1)
-    A._initialize_config(ip_address='10.0.106.6', portnum = 11111)
+    unitnumlist = [1,2,3,5,6,7,8,9,10,11]
+    addresslist = ['10.0.106.6',
+                   '10.0.106.7',
+                   '10.0.106.8',
+                   '10.0.106.10',
+                   '10.0.106.11',
+                   '10.0.106.12',
+                   '10.0.106.13',
+                   '10.0.106.14',
+                   '10.0.106.16',
+                   '10.0.106.9']
+    for unitnum, address in zip(unitnumlist, addresslist):
+        A = mainConfig(unitnum=unitnum)
+        A._initialize_config(ip_address=address, portnum = 11111)
 
 # %%
 # %%

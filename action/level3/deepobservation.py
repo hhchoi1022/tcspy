@@ -192,7 +192,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
-            all_params_obs[telescope_name] = params_obs
+            all_params_obs[tel_name] = params_obs
         
         # Run Multiple actions
         self.multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)

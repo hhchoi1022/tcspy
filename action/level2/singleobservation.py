@@ -388,7 +388,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 # %%
 if __name__ == '__main__':
     from tcspy.action.level1 import Connect
-    telescope = SingleTelescope(21)
+    telescope = SingleTelescope(8)
     abort_action = Event()
     C = Connect(telescope, abort_action)
     C.run()
@@ -400,7 +400,7 @@ if __name__ == '__main__':
 #%%    
 if __name__ == '__main__':
 
-    kwargs = dict(exptime = '5,5', 
+    kwargs = dict(exptime = '0.1', 
                 count = '2,2', 
                 filter_ = 'g,r', 
                 binning = '1', 
@@ -412,7 +412,7 @@ if __name__ == '__main__':
                 autofocus_when_filterchange= False)              
     from multiprocessing import Process
     abort_action = Event()
-    s = SingleObservation(SingleTelescope(21),abort_action)
+    s = SingleObservation(SingleTelescope(8),abort_action)
     p = Process(target = s.run, kwargs = kwargs)
     p.start()
 # %%

@@ -113,13 +113,13 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         """
         
         """ Test
-        exptime= '10,10'
+        exptime= '5,5'
         count= '5,5'
         specmode = 'specall'
         binning= '1,1'
         imgtype = 'Light'
-        ra= '180.11667'
-        dec= '2.20556'
+        ra= '300.11667'
+        dec= '-20.20556'
         alt = None
         az = None
         name = "COSMOS"
@@ -170,7 +170,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
         for tel_name, telescope in self.multitelescopes.devices.items():
-            filter_ = specmode_dict[telescope_name]
+            filter_ = specmode_dict[tel_name]
             observation_status_single = None
             if observation_status:
                 observation_status_single = observation_status[tel_name]
@@ -182,7 +182,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
-            all_params_obs[telescope_name] = params_obs
+            all_params_obs[tel_name] = params_obs
         
         # Run Multiple actions
         self.multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)
@@ -231,16 +231,16 @@ if __name__ == '__main__':
     import time
     from tcspy.devices import SingleTelescope
     start = time.time()
-    list_telescopes = [SingleTelescope(21)
-                         #SingleTelescope(2),
-                         #SingleTelescope(3),
-                         # SingleTelescope(5),
-                          #SingleTelescope(6),
-                          #SingleTelescope(7),
-                          #SingleTelescope(8),
-                          #SingleTelescope(9),
-                          #SingleTelescope(10),
-                          #SingleTelescope(11),
+    list_telescopes = [SingleTelescope(1),
+                        SingleTelescope(2),
+                         SingleTelescope(3),
+                          SingleTelescope(5),
+                          SingleTelescope(6),
+                          SingleTelescope(7),
+                          SingleTelescope(8),
+                          SingleTelescope(9),
+                          SingleTelescope(10),
+                          SingleTelescope(11),
                         ]
     
     print(time.time() - start)
@@ -253,16 +253,16 @@ if __name__ == '__main__':
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
-    exptime= '3,3'
-    count= '3,3'
+    exptime= '0.1'
+    count= '2,2'
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
-    ra= None
-    dec= None
-    alt = 60
-    az = 50
-    name = "T_07377"
+    ra= 300
+    dec= -20
+    alt =None
+    az = None
+    name = "T07377"
     objtype = 'Commissioning'
     autofocus_before_start= False
     autofocus_when_filterchange= False
@@ -272,7 +272,6 @@ if __name__ == '__main__':
         autofocus_before_start= autofocus_before_start,
         autofocus_when_filterchange= autofocus_when_filterchange,
         )
-    from multiprocessing import Process
     from threading import Thread
     t = Thread(target = S.run, kwargs= kwargs)
     t.start()

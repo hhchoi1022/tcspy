@@ -78,7 +78,7 @@ class MultiAction:
             process.start()
         is_running = self.status.values()
         #is_finished = {telescope.tel_name: self.shared_memory[telescope.tel_name]['succeeded'] for telescope, kwargs in zip(self.array_telescope, self.array_kwargs)}
-        while all(is_running):
+        while any(is_running):
             is_running = self.status.values()
             #is_finished = {telescope.tel_name: self.shared_memory[telescope.tel_name]['succeeded'] for telescope, kwargs in zip(self.array_telescope, self.array_kwargs)}
             time.sleep(0.1) ########################
