@@ -97,6 +97,8 @@ class SafetyMonitorUpdater(mainSafetyMonitor):
             print(f'Last safemonitorinfo update: {Time.now().isot}')
             time.sleep(self.config['SAFEMONITOR_UPDATETIME'])
             self.is_running = True
+        print(f'SafetyMonitorUpdater disconnected: {Time.now().isot}')
+
         self.is_running = False
             
     

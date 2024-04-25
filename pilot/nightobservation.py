@@ -3,9 +3,8 @@
 
 #%%
 from astropy.time import Time
-from threading import Event, Lock
+from multiprocessing import Event, Lock
 from threading import Thread
-from queue import Queue
 import time
 import uuid
 
@@ -339,8 +338,12 @@ class NightObservation(mainConfig):
             singletarget = SingleTarget(observer = self.multitelescopes.observer, ra = target['RA'], dec = target['De'], exptime = target['exptime'], count = target['count'], filter_ = target['filter_'], binning = target['binning'], specmode = target['specmode'])
             is_observable = singletarget.is_observable(utctime= Time.now() + singletarget.exposure_info['exptime_tot'] * u.s)
             if is_observable:
-                if set(action['telescope'].keys()).issubset(self.tel_queue.keys()):
-                    self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = action['action'].observation_status)
+                if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
+                    if isinstance(action['action'], (SpecObservation, DeepObservation)):
+                        observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory.items()}
+                    else:
+                        observation_status =  action['action'].shared_memory['status']
+                    self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
         return True
     
     def observation(self):
@@ -466,6 +469,9 @@ if __name__ == '__main__':
                          SingleTelescope(10),
                          SingleTelescope(11),
                          ]
+#%%
+if __name__ == '__main__':
+    list_telescopes = [SingleTelescope(21)]
     M = MultiTelescopes(list_telescopes)
     abort_action = Event()
     #Startup(multitelescopes= M , abort_action= abort_action).run()

@@ -52,7 +52,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         self.multiaction = None
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
-        self.shared_memory_multi = dict()
+        self.shared_memory = dict()
         self._specmode_folder = self.config['SPECMODE_FOLDER']        
         self._log = multitelescopes.log
     
@@ -70,7 +70,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             objtype : str = None,
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True,
-            observation_status_multi : dict = None
+            observation_status : dict = None
             ):
         """
         Performs the action to start spectroscopic observation.
@@ -103,8 +103,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             If autofocus should be done before start. Default is True.
         autofocus_when_filterchange : bool (optional):
             If autofocus should be done when filter changes. Default is True.
-        observation_status_multi : dict (optional):
-            if observation_status_multi is specified, resume the observation with this param
+        observation_status : dict (optional):
+            if observation_status is specified, resume the observation with this param
 
         Raises
         ------
@@ -126,7 +126,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         objtype = 'ToO'
         autofocus_before_start= True
         autofocus_when_filterchange= True
-        observation_status_multi = None
+        observation_status = None
         """
         # Check condition of the instruments for this Action
         self.abort_action.clear()
@@ -171,14 +171,14 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         all_params_obs = dict()
         for tel_name, telescope in self.multitelescopes.devices.items():
             filter_ = specmode_dict[telescope_name]
-            observation_status = None
-            if observation_status_multi:
-                observation_status = observation_status_multi[tel_name]
+            observation_status_single = None
+            if observation_status:
+                observation_status_single = observation_status[tel_name]
                 
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
-                                             observation_status = observation_status,
+                                             observation_status = observation_status_single,
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
@@ -186,15 +186,15 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         
         # Run Multiple actions
         self.multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)
-        self.shared_memory_multi = self.multiaction.shared_memory
+        self.shared_memory = self.multiaction.shared_memory
         try:
             self.multiaction.run()
         except AbortionException:
             for tel_name in  self.multitelescopes.devices.keys():
                 self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
         
-        for tel_name, result in self.shared_memory_multi.items():
-            is_succeeded = self.shared_memory_multi[tel_name]
+        for tel_name, result in self.shared_memory.items():
+            is_succeeded = self.shared_memory[tel_name]
             if is_succeeded:
                 self._log[tel_name].info(f'[{type(self).__name__}] is finished')
             else:

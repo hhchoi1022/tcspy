@@ -5,6 +5,7 @@ from astropy.table import Table
 import uuid
 import mysql
 import numpy as np
+import time
 #%%
 
 class SQL_Connector:
@@ -68,7 +69,7 @@ class SQL_Connector:
     """
     def __init__(self,
                  id_user: str = 'hhchoi',
-                 pwd_user : str = 'gusgh1020!',
+                 pwd_user : str = 'lksdf1020',
                  host_user : str = 'localhost',
                  db_name : str = 'target'
                  ):
@@ -116,6 +117,7 @@ class SQL_Connector:
         list
             A list containing the names of all databases.
         """
+        self.connect()
         self.exec(f"SHOW DATABASES")
         return [db_name[0] for db_name in self.cursor]
     
@@ -184,20 +186,6 @@ class SQL_Connector:
         """
         self.exec(f"REMOVE TABLE {tbl_name} ")
         #print(f"TABLE {tbl_name} REMOVED")
-
-    # functions
-    def execute(self,
-                command : str):
-        """
-        Execute the given SQL command on the current database.
-
-        Parameters
-        ----------
-        command : str
-            The SQL command to be executed.
-        """
-        self.exec(command)
-        print(f"{command} EXECUTED")
         
     def get_colnames(self,
                      tbl_name : str):
@@ -233,6 +221,7 @@ class SQL_Connector:
         dict
             A dictionary of column names and their corresponding data types.
         """
+        self.connect()
         sql_query = f"SHOW COLUMNS FROM {tbl_name}"
         self.cursor.execute(sql_query)
         column_info = self.cursor.fetchall()
@@ -257,6 +246,7 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the insertion operation.
         """
+        self.connect()
         data_str = data.copy()
         for colname in data_str.columns:
             data_str[colname] = data_str[colname].astype(str)
@@ -297,6 +287,7 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the update operation.
         """
+        self.connect()
         if isinstance(update_value,str):
             update_command = f"{update_key} = '{update_value}'"
         elif isinstance(update_value, (list, np.ndarray)):
@@ -316,7 +307,7 @@ class SQL_Connector:
     
     def get_data(self,
                  tbl_name : str,
-                 select_key : str,
+                 select_key : str = '*',
                  where_value : str = None,
                  where_key : str = 'id',
                  out_format : str = 'Table' # Table or dict
@@ -347,6 +338,7 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the fetch operation.
         """
+        self.connect()
         keys = select_key.split(',')
         if select_key == '*':
             keys = self.get_colnames(tbl_name = tbl_name)
@@ -385,6 +377,7 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the id setting operation.
         """
+        self.connect()
         values_all = self.get_data(tbl_name = tbl_name, select_key = 'id,idx')
         values_to_update = values_all
         if not update_all:

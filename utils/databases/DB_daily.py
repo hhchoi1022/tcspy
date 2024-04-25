@@ -177,8 +177,6 @@ class DB_Daily(mainConfig):
         duplicate : bool
             Whether to allow duplicate targets. Defaults to False.
         """
-        if not self.sql.connected:
-            self.connect()
         all_targets = self.data
         column_names_for_scoring = ['exptime','count','exptime_tot', 'ntelescope', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
         
@@ -292,7 +290,7 @@ class DB_Daily(mainConfig):
             
             constraint_night = self.observer.is_night(utctimes = utctime)
             score *= constraint_night
-            return score.astype(bool)
+            return score, multitarget_alt
         
         # Start
         target_tbl_for_scoring = target_tbl
@@ -311,18 +309,19 @@ class DB_Daily(mainConfig):
         if len(obstime_fixed_targets) > 0:
             obstime = Time([Time(time) for time in obstime_fixed_targets['obstime']])
             time_left_sec = (obstime - utctime).sec
-            urgent_targets = obstime_fixed_targets[(time_left_sec < 0) & (obstime< self.obsnight.sunrise_astro)]
+            urgent_targets = obstime_fixed_targets[(time_left_sec < 0) & (obstime < self.obsnight.sunrise_astro) & (obstime > self.obsnight.sunset_astro)]
             if len(urgent_targets) > 0:
-                score = calc_constraints(urgent_targets)
-                urgent_targets_scored = urgent_targets[score]
+                score, alt = calc_constraints(urgent_targets)
+                urgent_targets_scored = urgent_targets[score.astype(bool)]
                 # If urgent target observable exists, return the target and score 1
                 if len(urgent_targets_scored) > 0:
                     urgent_obstime = Time([Time(time) for time in urgent_targets_scored['obstime']])
                     urgent_targets_scored['obstime'] = urgent_obstime
-                    return urgent_targets_scored.sort('obstime')[0], 1
+                    urgent_targets_scored.sort('obstime')
+                    return urgent_targets_scored[0], 1
         
         # Scoring
-        score = calc_constraints(target_tbl_for_scoring)
+        score, multitarget_alt = calc_constraints(target_tbl_for_scoring)
                 
         # Exit when no observable target
         if np.sum(score) == 0:

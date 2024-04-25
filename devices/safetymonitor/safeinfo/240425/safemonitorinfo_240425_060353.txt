@@ -1,0 +1,7 @@
+{
+    "update_time": "2024-04-25T06:03:53.101",
+    "jd": 2460425.752698,
+    "is_connected": true,
+    "is_safe": true,
+    "name": "Alpaca Safety Monitor Simulator"
+}
