@@ -126,7 +126,9 @@ class NightObservation(mainConfig):
         self._put_action(target = target, action = action, telescopes = multitelescopes, action_id = action_id)
         
         # Run observation
-        result_action = action.run(**kwargs)
+        #result_action = action.run(**kwargs)
+        time.sleep(30)
+        result_action = True
         
         # Update the target status
         if result_action:
@@ -161,7 +163,9 @@ class NightObservation(mainConfig):
         self._put_action(target = target, action = action, telescopes = multitelescopes, action_id = action_id)
         
         # Run observation
-        result_action = action.run(**kwargs)
+        #result_action = action.run(**kwargs)
+        time.sleep(30)
+        result_action = True
         
         # Update the target status
         if result_action:
@@ -198,7 +202,9 @@ class NightObservation(mainConfig):
         self._put_action(target = target, action = action, telescopes = singletelescope, action_id = action_id)
         
         # Run observation
-        result_action = action.run(**kwargs)
+        #result_action = action.run(**kwargs)
+        time.sleep(30)
+        result_action = True
         
         # Update the target status
         if result_action:
@@ -235,7 +241,9 @@ class NightObservation(mainConfig):
         self._put_action(target = target, action = action, telescopes = singletelescope, action_id = action_id)
         
         # Run observation
-        result_action = action.run(**kwargs)
+        #result_action = action.run(**kwargs)
+        time.sleep(30)
+        result_action = True
         
         # Update the target status
         if result_action:
@@ -249,7 +257,7 @@ class NightObservation(mainConfig):
     
     def _obstrigger(self, target, abort_action, observation_status = None):
         
-        obsmode = target['obsmode'].upper()        
+        obsmode = target['obsmode'].upper()       
         if obsmode == 'SPEC':
             if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 multi_tel = MultiTelescopes(SingleTelescope_list = list(self.tel_queue.values()))
@@ -361,20 +369,27 @@ class NightObservation(mainConfig):
 
         # Trigger observation until sunrise
         while now < obs_end_time:
-            now = Time.now()
+            import astropy.units as u
+            now = Time.now() - 3* u.hour
             is_weather_safe = self._is_safe()
             
             if is_weather_safe:      
                 self._DB.initialize(initialize_all = False)
                 time.sleep(0.5)  
                 best_target, score = self._DB.best_target(utctime = now)
-                print(f'Best target: {best_target["objname"]}')
-                objtype = best_target['objtype'].upper()
-                if objtype == 'TOO':
-                    self._ToOobservation(abort_action = self._ToO_abort)
-                else:
-                    self._obstrigger(target = best_target, abort_action = self._observation_abort)
+                if best_target:
+                    print(f'Best target: {best_target["objname"]}')
+                    objtype = best_target['objtype'].upper()
+                    if objtype == 'TOO':
+                        self._ToOobservation(abort_action = self._ToO_abort)
+                    else:
+                        self._obstrigger(target = best_target, abort_action = self._observation_abort)
+                    print('Tel_queue: ',self.tel_queue.keys())
+                    print(self.action_queue)
+            else:
+                break
             time.sleep(0.5)
+        print('observation finished', Time.now())
         
     def _put_action(self, target, action, telescopes, action_id):
         # Acquire the lock before putting action into the action queue
