@@ -48,6 +48,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         self.multitelescopes = multitelescopes
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
+        self.shared_memory_multi = dict()
         self._log = multitelescopes.log
     
     def _format_params(self,
@@ -79,7 +80,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             objtype : str = None,
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True,
-            observation_status : dict = None
+            observation_status_multi : dict = None
             ):
         """
         Performs the action to start deep observation.
@@ -112,8 +113,8 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             If autofocus should be done before start. Default is True.
         autofocus_when_filterchange : bool (optional):
             If autofocus should be done when filter changes. Default is True.
-        observation_status : dict (optional):
-            if observation_status is specified, resume the observation with this param
+        observation_status_multi : dict (optional):
+            if observation_status_multi is specified, resume the observation with this param
 
         Raises
         ------
@@ -135,7 +136,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         objtype = 'ToO'
         autofocus_before_start= True
         autofocus_when_filterchange= True
-        observation_status = None
+        observation_status_multi = None
 
         """
         
@@ -176,79 +177,53 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         # Get filter information
         exposure_params = singletarget.exposure_info
         target_params = singletarget.target_info
-        # Set Observation status
-        if observation_status:
-            self.observation_status = observation_status
-        else:
-            self.observation_status = self._set_observation_status()
         
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
-        for telescope_name, telescope in self.multitelescopes.devices.items():
-            observation_status_single = self.observation_status[telescope_name]
+        for tel_name, telescope in self.multitelescopes.devices.items():
+            observation_status = None
+            if observation_status_multi:
+                observation_status = observation_status_multi[tel_name]
                 
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
-                                             observation_status = observation_status_single,
+                                             observation_status = observation_status,
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
             all_params_obs[telescope_name] = params_obs
         
         # Run Multiple actions
-        multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action = self.abort_action)
-        multiaction.run()
+        self.multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)
+        self.shared_memory_multi = self.multiaction.shared_memory
+        try:
+            self.multiaction.run()
+        except AbortionException:
+            for tel_name in  self.multitelescopes.devices.keys():
+                self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
         
-        # Wait for finishing this action 
-        succeeded_telescopes = {telescope: data['succeeded'] for telescope, data in multiaction.shared_memory.items()}
-        observation_status = {telescope: data['status'] for telescope, data in multiaction.shared_memory.items()}
-        while not all(succeeded_telescopes.values()):
-            time.sleep(0.1)
-            succeeded_telescopes = {telescope: data['succeeded'] for telescope, data in multiaction.shared_memory.items()}
-            observation_status = {telescope: data['status'] for telescope, data in multiaction.shared_memory.items()}
-            self.observation_status = observation_status
-        
-        for tel_name in succeeded_telescopes.keys():
-            if succeeded_telescopes[tel_name]:
+        for tel_name, result in self.shared_memory_multi.items():
+            is_succeeded = self.shared_memory_multi[tel_name]
+            if is_succeeded:
                 self._log[tel_name].info(f'[{type(self).__name__}] is finished')
             else:
                 self._log[tel_name].info(f'[{type(self).__name__}] is failed')
-        return True
-
+                
     def abort(self):
         """
-        A function to abort the ongoing deep observation process.
+        A function to abort the ongoing spectroscopic observation process.
         """
+        #self.multiaction.abort()
         self.abort_action.set()
-        status_multitelescope = self.multitelescopes.status
-
-        for telescope_name, telescope in self.multitelescopes.devices.items():
-            status = status_multitelescope[telescope_name]
-            self._log[telescope_name].warning(f'[{type(self).__name__}] is aborted')
-
-            if status.filterwheel.lower() == 'busy':
-                telescope.filterwheel.abort()
-            if status.camera.lower() == 'busy':
-                telescope.camera.abort()
-            if status.mount.lower() == 'busy':
-                telescope.mount.abort()
-        # restore abort_action instance
-        self.abort_action = Event()
-        
-    def _set_observation_status(self):
-        observation_status = dict()
-        for telescope_name in self.multitelescopes.devices.keys():
-            observation_status[telescope_name] = None
-        return observation_status
 
      
 # %%
 if __name__ == '__main__':
-    telescope_1 = SingleTelescope(1)
+    telescope_1 = SingleTelescope(21)
     telescope_10 = SingleTelescope(10)
     telescope_11 = SingleTelescope(11)
-    M = MultiTelescopes([telescope_1, telescope_10, telescope_11])
+    M = MultiTelescopes([telescope_1])#, telescope_10, telescope_11])
     abort_action = Event()
     S  = DeepObservation(M, abort_action)
     exptime= '60,60'

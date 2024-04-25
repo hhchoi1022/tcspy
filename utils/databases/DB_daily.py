@@ -267,7 +267,36 @@ class DB_Daily(mainConfig):
                 duplicate : bool = False 
                 ):
         
+        def calc_constraints(target_tbl_for_scoring):
+            multitargets = MultiTargets(observer = self.observer,
+                                    targets_ra = target_tbl_for_scoring['RA'],
+                                    targets_dec = target_tbl_for_scoring['De'],
+                                    targets_name = target_tbl_for_scoring['objname'])
+            
+            multitarget_altaz = multitargets.altaz(utctimes = utctime)
+            multitarget_alt = multitarget_altaz.alt.value
+            
+            score = np.ones(len(target_tbl_for_scoring))
+            # Applying constraints
+            constraint_moonsep = target_tbl_for_scoring['moonsep'].astype(float) > self.constraints.moon_separation
+            score *= constraint_moonsep
+            
+            constraint_altitude_min = multitarget_alt > self.constraints.minalt
+            score *= constraint_altitude_min
+            
+            constraint_altitude_max = multitarget_alt < self.constraints.maxalt
+            score *= constraint_altitude_max
+            
+            constraint_set = (utctime + target_tbl_for_scoring['exptime_tot'].astype(float) * u.s < Time(target_tbl_for_scoring['settime'])) & (utctime + target_tbl_for_scoring['exptime_tot'].astype(float) * u.s < self.obsnight.sunrise_astro)
+            score *= constraint_set
+            
+            constraint_night = self.observer.is_night(utctimes = utctime)
+            score *= constraint_night
+            return score.astype(bool)
+        
+        # Start
         target_tbl_for_scoring = target_tbl
+        # Exclude scheduled targets
         if not duplicate:
             unscheduled_idx = (target_tbl['status'] == 'unscheduled')
             target_tbl_for_scoring = target_tbl[unscheduled_idx]
@@ -276,37 +305,30 @@ class DB_Daily(mainConfig):
         if len(target_tbl_for_scoring) == 0:
             return None, None
         
-        multitargets = MultiTargets(observer = self.observer,
-                                   targets_ra = target_tbl_for_scoring['RA'],
-                                   targets_dec = target_tbl_for_scoring['De'],
-                                   targets_name = target_tbl_for_scoring['objname'])
+        # When target observation time is specified
+        obstime_fixed_targets = target_tbl_for_scoring[target_tbl_for_scoring['obstime'] != None]
+        urgent_targets = Table()
+        if len(obstime_fixed_targets) > 0:
+            obstime = Time([Time(time) for time in obstime_fixed_targets['obstime']])
+            time_left_sec = (obstime - utctime).sec
+            urgent_targets = obstime_fixed_targets[(time_left_sec < 0) & (obstime< self.obsnight.sunrise_astro)]
+            if len(urgent_targets) > 0:
+                score = calc_constraints(urgent_targets)
+                urgent_targets_scored = urgent_targets[score]
+                # If urgent target observable exists, return the target and score 1
+                if len(urgent_targets_scored) > 0:
+                    urgent_obstime = Time([Time(time) for time in urgent_targets_scored['obstime']])
+                    urgent_targets_scored['obstime'] = urgent_obstime
+                    return urgent_targets_scored.sort('obstime')[0], 1
         
-        multitarget_altaz = multitargets.altaz(utctimes = utctime)
-        multitarget_alt = multitarget_altaz.alt.value
-        multitarget_priority = target_tbl_for_scoring['priority'].astype(float)
-        
-        score = np.ones(len(target_tbl_for_scoring))
-        # Applying constraints
-        constraint_moonsep = target_tbl_for_scoring['moonsep'].astype(float) > self.constraints.moon_separation
-        score *= constraint_moonsep
-        
-        constraint_altitude_min = multitarget_alt > self.constraints.minalt
-        score *= constraint_altitude_min
-        
-        constraint_altitude_max = multitarget_alt < self.constraints.maxalt
-        score *= constraint_altitude_max
-        
-        constraint_set = (utctime + target_tbl_for_scoring['exptime_tot'].astype(float) * u.s < Time(target_tbl_for_scoring['settime'])) & (utctime + target_tbl_for_scoring['exptime_tot'].astype(float) * u.s < self.obsnight.sunrise_astro)
-        score *= constraint_set
-        
-        constraint_night = self.observer.is_night(utctimes = utctime)
-        score *= constraint_night
-        
+        # Scoring
+        score = calc_constraints(target_tbl_for_scoring)
+                
         # Exit when no observable target
         if np.sum(score) == 0:
             return None, None
         
-        # Scoring
+        multitarget_priority = target_tbl_for_scoring['priority'].astype(float)
         weight_sum = self.config['TARGET_WEIGHT_ALT'] + self.config['TARGET_WEIGHT_PRIORITY']
         weight_alt = self.config['TARGET_WEIGHT_ALT'] / weight_sum
         weight_priority = self.config['TARGET_WEIGHT_PRIORITY'] / weight_sum

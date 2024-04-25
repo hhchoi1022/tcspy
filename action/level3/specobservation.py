@@ -1,6 +1,5 @@
 #%%
-from multiprocessing import Event, Lock
-from multiprocessing import Manager
+from multiprocessing import Event
 import time
 
 from tcspy.devices import SingleTelescope
@@ -53,12 +52,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         self.multiaction = None
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
-        self.shared_memory_manager = Manager()
-        self.shared_memory = self.shared_memory_manager.dict()
-        self.shared_memory['succeeded'] = False
-        self._specmode_folder = self.config['SPECMODE_FOLDER']
-        self._lock = Lock()
-        
+        self.shared_memory_multi = dict()
+        self._specmode_folder = self.config['SPECMODE_FOLDER']        
         self._log = multitelescopes.log
     
     def run(self, 
@@ -75,7 +70,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             objtype : str = None,
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True,
-            observation_status : dict = None
+            observation_status_multi : dict = None
             ):
         """
         Performs the action to start spectroscopic observation.
@@ -108,8 +103,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             If autofocus should be done before start. Default is True.
         autofocus_when_filterchange : bool (optional):
             If autofocus should be done when filter changes. Default is True.
-        observation_status : dict (optional):
-            if observation_status is specified, resume the observation with this param
+        observation_status_multi : dict (optional):
+            if observation_status_multi is specified, resume the observation with this param
 
         Raises
         ------
@@ -123,7 +118,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         specmode = 'specall'
         binning= '1,1'
         imgtype = 'Light'
-        ra= '250.11667'
+        ra= '180.11667'
         dec= '2.20556'
         alt = None
         az = None
@@ -131,7 +126,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         objtype = 'ToO'
         autofocus_before_start= True
         autofocus_when_filterchange= True
-        observation_status = None
+        observation_status_multi = None
         """
         # Check condition of the instruments for this Action
         self.abort_action.clear()
@@ -171,22 +166,19 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         exposure_params = singletarget.exposure_info
         target_params = singletarget.target_info
         specmode_dict = exposure_params['specmode_filter']
-        # Set Observation status
-        if observation_status:
-            self.observation_status = observation_status
-        else:
-            self.observation_status = self._set_observation_status()
         
         # Define parameters for SingleObservation module for all telescopes
         all_params_obs = dict()
-        for telescope_name, telescope in self.multitelescopes.devices.items():
+        for tel_name, telescope in self.multitelescopes.devices.items():
             filter_ = specmode_dict[telescope_name]
-            observation_status_single = self.observation_status[telescope_name]
+            observation_status = None
+            if observation_status_multi:
+                observation_status = observation_status_multi[tel_name]
                 
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
-                                             observation_status = observation_status_single,
+                                             observation_status = observation_status,
                                              **exposure_params,
                                              **target_params)
             params_obs.update(filter_ = filter_)
@@ -194,35 +186,19 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         
         # Run Multiple actions
         self.multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)
-        self.shared_memory = self.multiaction.shared_memory
+        self.shared_memory_multi = self.multiaction.shared_memory
         try:
             self.multiaction.run()
         except AbortionException:
             for tel_name in  self.multitelescopes.devices.keys():
                 self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
-        '''
-        # Wait for finishing this action 
-        succeeded_telescopes = {telescope: data['succeeded'] for telescope, data in self.multiaction.shared_memory.items()}
-        observation_status = {telescope: data['status'] for telescope, data in self.multiaction.shared_memory.items()}
-        while not all(succeeded_telescopes.values()):
-            time.sleep(0.1)
-            succeeded_telescopes = {telescope: data['succeeded'] for telescope, data in self.multiaction.shared_memory.items()}
-            observation_status = {telescope: data['status'] for telescope, data in self.multiaction.shared_memory.items()}
-            self.observation_status = observation_status
-            # When aborted
-            if self.abort_action.is_set():
-                    for tel_name in succeeded_telescopes.keys():
-                        self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
-                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
-        for tel_name in succeeded_telescopes.keys():
-            if succeeded_telescopes[tel_name]:
+        for tel_name, result in self.shared_memory_multi.items():
+            is_succeeded = self.shared_memory_multi[tel_name]
+            if is_succeeded:
                 self._log[tel_name].info(f'[{type(self).__name__}] is finished')
             else:
                 self._log[tel_name].info(f'[{type(self).__name__}] is failed')
-        self.shared_memory['succeeded'] = True
-        '''
-        self.shared_memory['succeeded'] = True
         return True
 
     def abort(self):
@@ -246,12 +222,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         for key, value in kwargs.items():
             format_kwargs[key] = value
         return format_kwargs
-    
-    def _set_observation_status(self):
-        observation_status = dict()
-        for telescope_name in self.multitelescopes.devices.keys():
-            observation_status[telescope_name] = None
-        return observation_status
+
             
 
     

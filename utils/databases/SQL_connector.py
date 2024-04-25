@@ -308,7 +308,8 @@ class SQL_Connector:
                 update_command_list.append(command_single)
             update_command = ','.join(update_command_list)
         else:
-            print(f'Input type ({type(update_value)}) is not supported')
+            update_value = str(update_value)
+            update_command = f"{update_key} = '{update_value}'"
         sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
         self.exec(sql_command)
         self.connector.commit()
