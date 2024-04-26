@@ -387,7 +387,7 @@ class NightObservation(mainConfig):
                     print('Tel_queue: ',self.tel_queue.keys())
                     print(self.action_queue)
             else:
-                break
+                break:
             time.sleep(0.5)
         print('observation finished', Time.now())
         
