@@ -80,6 +80,8 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             objtype : str = None,
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True,
+            autofocus_when_elapsed : bool = False,
+            autofocus_elapsed_time : float = 60,
             observation_status : dict = None
             ):
         """
@@ -188,6 +190,8 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
+                                             autofocus_when_elapsed  = autofocus_when_elapsed,
+                                             autofocus_elapsed_time = autofocus_elapsed_time,
                                              observation_status = observation_status_single,
                                              **exposure_params,
                                              **target_params)
@@ -214,7 +218,6 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         """
         A function to abort the ongoing spectroscopic observation process.
         """
-        #self.multiaction.abort()
         self.abort_action.set()
 
      

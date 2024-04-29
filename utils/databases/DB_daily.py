@@ -2,6 +2,7 @@
 
 #%%
 from tcspy.utils.target import MultiTargets
+from tcspy.utils.target import SingleTarget
 from tcspy.configuration import mainConfig
 from tcspy.utils.databases import SQL_Connector
 from tcspy.devices.observer import mainObserver
@@ -108,13 +109,13 @@ class DB_Daily(mainConfig):
         target_tbl_all = self.data
         
         # If there is targets with no "id", set ID for each target
-        rows_to_update_id = [any(row[name] is None for name in ['id']) for row in target_tbl_all]
+        rows_to_update_id = [any(row[name] in (None, '') for name in ['id']) for row in target_tbl_all]
         if np.sum(rows_to_update_id) > 0:
             self.sql.set_data_id(tbl_name = self.tblname, update_all = False)
             target_tbl_all = self.data
         
         target_tbl_to_update = target_tbl_all
-        column_names_to_update = ['exptime','count', 'exptime_tot', 'ntelescope', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
+        column_names_to_update = ['exptime', 'count', 'exptime_tot', 'ntelescope', 'id', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
         
         # If initialize_all == False, filter the target table that requires update 
         if not initialize_all:
@@ -124,7 +125,6 @@ class DB_Daily(mainConfig):
         if len(target_tbl_to_update) == 0:
             return 
         
-        
         multitargets = MultiTargets(observer = self.observer,
                                    targets_ra = target_tbl_to_update['RA'],
                                    targets_dec = target_tbl_to_update['De'],
@@ -132,14 +132,19 @@ class DB_Daily(mainConfig):
         print(f'Calculating celestial information of {len(multitargets.coordinate)} targets...')
         
         # Target information 
-        risetime = self._get_risetime(multitargets = multitargets, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
-        settime = self._get_settime(multitargets = multitargets, utctime = self.utctime, mode = 'nearest', horizon = self.config['TARGET_MINALT'], n_grid_points= 50)
+        risetime_tmp = self._get_risetime(multitargets = multitargets, utctime = self.obsnight.sunrise_civil, mode = 'previous', horizon = self.config['TARGET_MINALT'], n_grid_points= 100)
+        settime_tmp = self._get_settime(multitargets = multitargets, utctime = self.obsnight.sunset_civil, mode = 'next', horizon = self.config['TARGET_MINALT'], n_grid_points= 100)
+        # If targets are always up
+        risetime = Time([self.obsnight.sunset_astro if np.isnan(rt.value.data) else rt for rt in risetime_tmp])
+        settime_tmp2 = Time([self.obsnight.sunset_astro + 1 * u.day if np.isnan(st.value.data) else st for st in settime_tmp])
+        # If targets are never up
+        settime = Time([st - 1*u.day if (st - rt).value > 1 else st for rt, st in zip(risetime, settime_tmp2)])
         transittime, maxalt, besttime = self._get_transit_besttime(multitargets = multitargets)
         moonsep = self._get_moonsep(multitargets = multitargets)
         targetinfo_listdict = [{'risetime' : rt, 'transittime' : tt, 'settime' : st, 'besttime' : bt, 'maxalt' : mt, 'moonsep': ms} for rt, tt, st, bt, mt, ms in zip(risetime.isot, transittime.isot, settime.isot, besttime.isot, maxalt, moonsep)]
-        
-        from tcspy.utils.target import SingleTarget
-        
+        #i = -2
+        #SingleTarget(ra = target_tbl_to_update['RA'][i], dec = target_tbl_to_update['De'][i], observer = self.observer).staralt()
+
         # Exposure information
         exposureinfo_listdict = []
         for target in target_tbl_to_update:
@@ -166,8 +171,7 @@ class DB_Daily(mainConfig):
         print(f'{len(target_tbl_to_update)} targets are updated')
     
     def best_target(self,
-                    utctime : Time = Time.now(),
-                    duplicate : bool = False):
+                    utctime : Time = Time.now()):
         """
         Returns the best target to observe.
 
@@ -179,7 +183,7 @@ class DB_Daily(mainConfig):
             Whether to allow duplicate targets. Defaults to False.
         """
         all_targets = self.data
-        column_names_for_scoring = ['exptime','count','exptime_tot', 'ntelescope', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
+        column_names_for_scoring = ['exptime','count','exptime_tot', 'ntelescope', 'binning', 'id', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
         
         # If one of the targets do not have the required information, calculate
         rows_to_update = [any(row[name] is None or row[name] == '' for name in column_names_for_scoring) for row in all_targets]
@@ -194,13 +198,13 @@ class DB_Daily(mainConfig):
         
         exist_ToO = (len(target_ToO) > 0)
         if exist_ToO:
-            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ToO, duplicate = duplicate)        
+            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ToO)        
             if target_score:
                 return target_best, target_score
         
         exist_ordinary = (len(target_ordinary) > 0)
         if exist_ordinary:
-            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary, duplicate = duplicate)        
+            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary)        
             if target_score:
                 return target_best, target_score
         return None, None
@@ -221,7 +225,7 @@ class DB_Daily(mainConfig):
                       update_value,
                       update_key,
                       id_value,
-                      id_key):
+                      id_key = 'id'):
         """
         Updates an existing target's attribute.
 
@@ -262,8 +266,7 @@ class DB_Daily(mainConfig):
     
     def _scorer(self,
                 utctime : Time,
-                target_tbl : Table,
-                duplicate : bool = False 
+                target_tbl : Table
                 ):
         
         def calc_constraints(target_tbl_for_scoring):
@@ -296,9 +299,8 @@ class DB_Daily(mainConfig):
         # Start
         target_tbl_for_scoring = target_tbl
         # Exclude scheduled targets
-        if not duplicate:
-            unscheduled_idx = (target_tbl['status'] == 'unscheduled')
-            target_tbl_for_scoring = target_tbl[unscheduled_idx]
+        unscheduled_idx = (target_tbl['status'] == 'unscheduled')
+        target_tbl_for_scoring = target_tbl[unscheduled_idx]
         
         # Exit when no observable target
         if len(target_tbl_for_scoring) == 0:
@@ -361,10 +363,14 @@ class DB_Daily(mainConfig):
                       horizon_prepare : float = -5,
                       horizon_astro : float = -18):
         class night: pass
-        night.sunrise_prepare = self.observer.tonight(time = utctime, horizon = horizon_prepare)[1]
-        night.sunset_prepare = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_prepare)
-        night.sunrise_astro = self.observer.sun_risetime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
-        night.sunset_astro = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
+        night.sunrise_civil = self.observer.tonight(time = utctime, horizon = 0)[1]
+        night.sunset_civil = self.observer.sun_settime(night.sunrise_civil, mode = 'previous', horizon= 0)        
+        night.sunrise_prepare = self.observer.sun_risetime(night.sunrise_civil, mode = 'previous', horizon= horizon_prepare)
+        night.sunset_prepare = self.observer.sun_settime(night.sunrise_civil, mode = 'previous', horizon= horizon_prepare)
+        night.sunrise_astro = self.observer.sun_risetime(night.sunrise_civil, mode = 'previous', horizon= horizon_astro)
+        night.sunset_astro = self.observer.sun_settime(night.sunrise_civil, mode = 'previous', horizon= horizon_astro)
+        #night.sunrise_civil = self.observer.sun_risetime(night.sunrise_prepare, mode = 'previous', horizon= 0)
+        #night.sunset_civil = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= 0)        
         night.midnight = Time((night.sunset_astro.jd + night.sunrise_astro.jd)/2, format = 'jd')
         night.time_inputted = utctime
         night.current = Time.now()
@@ -460,4 +466,5 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     D = DB_Daily()
+    D.initialize()
 # %%

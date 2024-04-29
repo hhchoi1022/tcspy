@@ -227,7 +227,7 @@ class mainFocuser_Alpaca(mainConfig):
             An event object used to abort the autofocus process.
         """
         print('Autofocus is not implemented in Alpaca Telescope')
-        return True
+        return True, 10000
     
     def autofocus_stop(self, abort_action : Event):
         """

@@ -25,7 +25,6 @@ class Shutdown(mainConfig):
                  ):
         super().__init__()
         self.multitelescopes = MultiTelescopes
-        self.devices = MultiTelescopes.devices
         self.log = MultiTelescopes.log
         self.abort_action = abort_action
     
@@ -40,12 +39,12 @@ class Shutdown(mainConfig):
 
         # Telescope slewing
         params_slew = []
-        for telescope_name, telescope in self.devices.items():
+        for telescope_name, telescope in self.multitelescopes.devices.items():
             self.log[telescope_name].info(f'[{type(self).__name__}] is triggered.')
             params_slew.append(dict(alt = self.config['SHUTDOWN_ALT'],
                                     az = self.config['SHUTDOWN_AZ']))
         
-        multi_slew = MultiAction(array_telescope= self.devices.values(), array_kwargs= params_slew, function = SlewAltAz, abort_action = self.abort_action)
+        multi_slew = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_slew, function = SlewAltAz, abort_action = self.abort_action)
         result_multi_slew = multi_slew.shared_memory
         
         ## Run
@@ -74,11 +73,11 @@ class Shutdown(mainConfig):
 
         # Warm camera
         params_warm = []
-        for telescope_name, telescope in self.devices.items():
+        for telescope_name, telescope in self.multitelescopes.devices.items():
             params_warm.append(dict(settemperature = self.config['SHUTDOWN_CCDTEMP'],
                                     tolerance = self.config['SHUTDOWN_CCDTEMP_TOLERANCE']))
         
-        multi_warm = MultiAction(array_telescope= self.devices.values(), array_kwargs= params_warm, function = Warm, abort_action = self.abort_action)
+        multi_warm = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_warm, function = Warm, abort_action = self.abort_action)
         result_multi_warm = multi_warm.shared_memory
         
         ## Run

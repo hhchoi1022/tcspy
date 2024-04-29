@@ -70,6 +70,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             objtype : str = None,
             autofocus_before_start : bool = True,
             autofocus_when_filterchange : bool = True,
+            autofocus_when_elapsed : bool = False,
+            autofocus_elapsed_time : float = 60,
             observation_status : dict = None
             ):
         """
@@ -178,6 +180,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             params_obs = self._format_params(imgtype= imgtype, 
                                              autofocus_before_start= autofocus_before_start, 
                                              autofocus_when_filterchange= autofocus_when_filterchange, 
+                                             autofocus_when_elapsed = autofocus_when_elapsed,
+                                             autofocus_elapsed_time = autofocus_elapsed_time, 
                                              observation_status = observation_status_single,
                                              **exposure_params,
                                              **target_params)

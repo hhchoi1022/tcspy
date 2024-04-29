@@ -374,15 +374,14 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the id setting operation.
         """
+        self.connect()
         values_all = self.get_data(tbl_name = tbl_name, select_key = 'id,idx')
         values_to_update = values_all
         if not update_all:
-            rows_to_update = [any(row[name] is None for name in ['id']) for row in values_all]
+            rows_to_update = [any(row[name] in (None, '') for name in ['id']) for row in values_all]
             values_to_update =  values_all[rows_to_update]
         uuidlist = [uuid.uuid4().hex for i in range(len(values_to_update))]
         
         for id_, index in zip(uuidlist, values_to_update['idx']):
             self.update_row(tbl_name = tbl_name, update_value = id_, update_key = 'id', id_value = index, id_key='idx')
 
-
-# %%
