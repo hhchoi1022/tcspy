@@ -266,7 +266,7 @@ if __name__ == '__main__':
         )
     from threading import Thread
     t = Thread(target = S.run, kwargs= kwargs)
-    #t.start()
+    t.start()
     #t.abort()
 # %%
 if __name__ == '__main__':

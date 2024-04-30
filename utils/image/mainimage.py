@@ -2,7 +2,8 @@
 from astropy.time import Time
 from astropy.io import fits
 import numpy as np
-from typing import Optional
+
+import astropy.units as u
 from astropy.visualization import ImageNormalize
 from astropy.visualization import ZScaleInterval
 from astropy.visualization import LinearStretch
@@ -70,9 +71,11 @@ class mainImage(mainConfig):
         self._obsinfo = observer_info
         self._targetinfo = target_info
         self._weatherinfo = weather_info
+        self.hdu = fits.PrimaryHDU()
+        self._construct_hdu()
+        self._construct_header()
     
-    @property
-    def hdu(self):
+    def _construct_hdu(self):
         """
         Returns the Header Data Unit (HDU).
         
@@ -80,6 +83,17 @@ class mainImage(mainConfig):
         -------
         fits.PrimaryHDU
             Header Data Unit.
+        """
+        self.hdu.data = self._imginfo['data']
+    
+    def _construct_header(self):
+        """
+        Returns the header of the HDU.
+        
+        Returns
+        -------
+        Header
+            Header of the image.
         """
         telinfo = self._add_telinfo_to_hdr()
         caminfo = self._add_caminfo_to_hdr()
@@ -91,23 +105,8 @@ class mainImage(mainConfig):
         obsinfo = self._add_obsinfo_to_hdr()
         weatherinfo = self._add_weatinfo_to_hdr()
         all_info = {**telinfo,**caminfo,**focusinfo,**filtinfo,**imginfo,**targetinfo,**configinfo,**obsinfo,**weatherinfo}
-        hdu = fits.PrimaryHDU()
-        hdu.data = self._imginfo['data']
         for key, value in all_info.items():
-            hdu.header[key] = (value['value'],str(value['note']))
-        return hdu
-    
-    @property
-    def header(self):
-        """
-        Returns the header of the HDU.
-        
-        Returns
-        -------
-        Header
-            Header of the image.
-        """
-        return self.hdu.header
+            self.hdu.header[key] = (value['value'],str(value['note']))
     
     @property
     def data(self):
@@ -130,10 +129,12 @@ class mainImage(mainConfig):
         str
             Filepath where the image is saved.
         """
-        if not os.path.isdir(self._configinfo['IMAGE_PATH']):
-            os.makedirs(self._configinfo['IMAGE_PATH'])
         filename = self._format_filename()
-        filepath = self._configinfo['IMAGE_PATH']+filename
+        foldername = self._format_foldername()
+        if not os.path.isdir(os.path.join(self._configinfo['IMAGE_PATH'], foldername)):
+            os.makedirs(os.path.join(self._configinfo['IMAGE_PATH'], foldername))
+
+        filepath = os.path.join(self._configinfo['IMAGE_PATH'], foldername, filename)
         if os.path.exists(filepath):
             filepath = self._configinfo['IMAGE_PATH']+"dup_"+filename
             self.hdu.writeto(filepath, overwrite = False) 
@@ -145,22 +146,61 @@ class mainImage(mainConfig):
         """
         Display the image.
         """
-        figsize_x = 4 * self.header['NAXIS1']/4096
-        figsize_y = 4 * self.header['NAXIS2']/4096
+        figsize_x = 4 * self.hdu.header['NAXIS1']/4096
+        figsize_y = 4 * self.hdu.header['NAXIS2']/4096
         norm = ImageNormalize(self.data, interval=ZScaleInterval(), stretch=LinearStretch())
         plt.figure(dpi = 300, figsize = (figsize_x, figsize_y))
         plt.imshow(self.data, cmap=plt.cm.gray, norm=norm, interpolation='none')
         plt.colorbar()
+    
+    def _format_foldername(self):
+        format_filename = self._configinfo['FOLDERNAME_FORMAT']
+        key_data = dict(self.hdu.header)
         
+        dt_ut = Time(key_data['DATE-OBS']).datetime
+        dt_ut_12 = (Time(key_data['DATE-OBS']) - 12 * u.hour).datetime
+        dt_lt = Time(key_data['DATE-LOC']).datetime
+        dt_lt_12 = (Time(key_data['DATE-LOC']) - 12 * u.hour).datetime
+
+        key_data['UTCDATE'] = '%.4d%.2d%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
+        key_data['LTCDATE'] = '%.4d%.2d%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
+        
+        key_data['UTCDATE_'] = '%.4d_%.2d_%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
+        key_data['LTCDATE_'] = '%.4d_%.2d_%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
+
+        key_data['UTCDATE-'] = '%.4d-%.2d-%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
+        key_data['LTCDATE-'] = '%.4d-%.2d-%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
+        
+        key_data['UTCDATE12'] = '%.4d%.2d%.2d' % (dt_ut_12.year, dt_ut_12.month, dt_ut_12.day)
+        key_data['LTCDATE12'] = '%.4d%.2d%.2d' % (dt_lt_12.year, dt_lt_12.month, dt_lt_12.day)
+        
+        key_data['UTCDATE12_'] = '%.4d_%.2d_%.2d' % (dt_ut_12.year, dt_ut_12.month, dt_ut_12.day)
+        key_data['LTCDATE12_'] = '%.4d_%.2d_%.2d' % (dt_lt_12.year, dt_lt_12.month, dt_lt_12.day)
+
+        key_data['UTCDATE12-'] = '%.4d-%.2d-%.2d' % (dt_ut_12.year, dt_ut_12.month, dt_ut_12.day)
+        key_data['LTCDATE12-'] = '%.4d-%.2d-%.2d' % (dt_lt_12.year, dt_lt_12.month, dt_lt_12.day)
+
+        key_dict = dict()
+        for key in key_data.keys():
+            key_dict[key] = str(key_data[key])
+        
+        def replace_placeholder(match):
+            key = match.group(1)
+            return key_dict.get(key, match.group(0))
+        
+        # Use regular expressions to find and replace the placeholders
+        pattern = r'\$\$(.*?)\$\$'
+        output_string = re.sub(pattern, replace_placeholder, format_filename)
+        return output_string
     
     def _format_filename(self):
         format_filename = self._configinfo['FILENAME_FORMAT']
-        key_data = self.header
+        key_data = dict(self.hdu.header)
         
         key_data['FRAMENUM'] = '%.4d' %(self._framenum)
         
-        dt_ut = datetime.strptime(key_data['DATE-OBS'], '%Y-%m-%dT%H:%M:%S.%f')
-        dt_lt = datetime.strptime(key_data['DATE-LOC'], '%Y-%m-%d %H:%M:%S.%f')
+        dt_ut = Time(key_data['DATE-OBS']).datetime
+        dt_lt = Time(key_data['DATE-LOC']).datetime
         key_data['UTCDATE'] = '%.4d%.2d%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
         key_data['LTCDATE'] = '%.4d%.2d%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
         key_data['UTCTIME'] = '%.2d%.2d%.2d' % (dt_ut.hour, dt_ut.minute, dt_ut.second)

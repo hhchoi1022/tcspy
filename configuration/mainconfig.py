@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/hhchoi1022/tcspy/configuration',
+                 configpath : str = '/home/kds/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -69,9 +69,9 @@ class mainConfig:
             os.makedirs(savepath_unit, exist_ok=True)
             
         ###### ALL CONFIGURATION PARAMETERS(EDIT HERE!!!) #####
-        mount_params = dict(MOUNT_DEVICETYPE='Alpaca',  # Alpaca or PWI4
+        mount_params = dict(MOUNT_DEVICETYPE='PWI4',  # Alpaca or PWI4
                             MOUNT_HOSTIP= ip_address,
-                            MOUNT_PORTNUM='32323',
+                            MOUNT_PORTNUM='8220',
                             MOUNT_DEVICENUM=0,
                             MOUNT_PARKALT=40,
                             MOUNT_PARKAZ=300,
@@ -96,9 +96,9 @@ class mainConfig:
                                   FTWHEEL_CHECKTIME=0.5,
                                   FTWHEEL_OFFSETFILE =f"{os.path.join(savepath_unit,'filter.offset')}")
 
-        focuser_params = dict(FOCUSER_DEVICETYPE='Alpaca',  # Alpaca or PWI4
+        focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
-                              FOCUSER_PORTNUM='32323',
+                              FOCUSER_PORTNUM='8220',
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
@@ -111,7 +111,8 @@ class mainConfig:
                                OBSERVER_NAME='Hyeonho Choi'
                                )
         
-        image_params = dict(FILENAME_FORMAT= "$$TELESCOP$$-$$UTCDATE$$-$$UTCTIME$$-$$OBJECT$$-$$FILTER$$-$$EXPTIME$$s-$$FRAMENUM$$.fits",
+        image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12$$",
+                            FILENAME_FORMAT= "$$TELESCOP$$-$$UTCDATE$$-$$UTCTIME$$-$$OBJECT$$-$$FILTER$$-$$EXPTIME$$s-$$FRAMENUM$$.fits",
                             IMAGE_PATH=f'/data1/obsdata/{self.tel_name}/images/')
         
         logger_params = dict(LOGGER_SAVE=True,
@@ -121,8 +122,8 @@ class mainConfig:
         
         # Share configuration
         
-        weather_params = dict(WEATHER_HOSTIP= '127.0.0.1',#ip_address, #'10.0.11.3'
-                              WEATHER_PORTNUM= 32323,#portnum, #5575
+        weather_params = dict(WEATHER_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
+                              WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
                               WEATHER_UPDATETIME=60,
                               WEATHER_SAVE_HISTORY=True,
@@ -139,8 +140,8 @@ class mainConfig:
                            DOME_DEVICENUM=0,
                            DOME_CHECKTIME=0.5)
         
-        safetymonitor_params = dict(SAFEMONITOR_HOSTIP= '127.0.0.1', #ip_address, #'10.0.11.3'
-                                    SAFEMONITOR_PORTNUM= 32323,#portnum, #5565
+        safetymonitor_params = dict(SAFEMONITOR_HOSTIP= '10.0.11.3', #ip_address, #'10.0.11.3'
+                                    SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_UPDATETIME=10,
                                     SAFEMONITOR_SAVE_HISTORY=True,
