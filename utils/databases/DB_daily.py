@@ -293,7 +293,7 @@ class DB_Daily(mainConfig):
             score *= constraint_set
             
             constraint_night = self.observer.is_night(utctimes = utctime)
-            score *= constraint_night
+            #score *= constraint_night
             return score, multitarget_alt
         
         # Start

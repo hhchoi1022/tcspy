@@ -410,19 +410,19 @@ class NightObservation(mainConfig):
     def observation(self):
         
         obs_start_time = self._obsnight.sunset_astro
-        obs_end_time = self._obsnight.sunrise_astro 
-        now = Time.now() - 3 *u.hour
-        
+        obs_end_time = self._obsnight.sunrise_astro + 1 *u.day
+        now = Time.now() 
+        '''
         # Wait until sunset
         if now < obs_start_time:
             print('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
         while now < obs_start_time:
             time.sleep(5)
             now = Time.now()
-
+        '''
         # Trigger observation until sunrise
         while now < obs_end_time:
-            now = Time.now() - 3 *u.hour
+            now = Time.now() 
             is_weather_safe = True#self._is_safe()
             
             if is_weather_safe:      
