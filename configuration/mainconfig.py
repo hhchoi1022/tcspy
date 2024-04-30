@@ -157,7 +157,7 @@ class mainConfig:
 
         DB_params = dict(DB_HOSTIP='localhost',
                          DB_ID='hhchoi',
-                         DB_PWD='lksdf1020',
+                         DB_PWD='gusgh1020!',
                          DB_NAME='target')
         
         autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self._configfilepath_global,"filtinfo.data")}',

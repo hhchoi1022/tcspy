@@ -1,0 +1,7 @@
+{
+    "update_time": "2024-04-27T22:09:33.326",
+    "jd": 2460428.423302,
+    "is_connected": true,
+    "is_safe": true,
+    "name": "OBSTECH Safetymonitor"
+}
