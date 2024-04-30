@@ -25,7 +25,7 @@ class Shutdown(mainConfig):
                  ):
         super().__init__()
         self.multitelescopes = MultiTelescopes
-        self.log = MultiTelescopes.log
+        self._log = MultiTelescopes.log
         self.abort_action = abort_action
     
     def run(self):
@@ -40,7 +40,7 @@ class Shutdown(mainConfig):
         # Telescope slewing
         params_slew = []
         for telescope_name, telescope in self.multitelescopes.devices.items():
-            self.log[telescope_name].info(f'[{type(self).__name__}] is triggered.')
+            self._log[telescope_name].info(f'[{type(self).__name__}] is triggered.')
             params_slew.append(dict(alt = self.config['SHUTDOWN_ALT'],
                                     az = self.config['SHUTDOWN_AZ']))
         

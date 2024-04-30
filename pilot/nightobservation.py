@@ -3,6 +3,7 @@
 
 #%%
 from astropy.time import Time
+import astropy.units as u
 from multiprocessing import Event, Lock
 from threading import Thread
 import time
@@ -409,8 +410,8 @@ class NightObservation(mainConfig):
     def observation(self):
         
         obs_start_time = self._obsnight.sunset_astro
-        obs_end_time = self._obsnight.sunrise_astro
-        now = Time.now()
+        obs_end_time = self._obsnight.sunrise_astro 
+        now = Time.now() - 3 *u.hour
         
         # Wait until sunset
         if now < obs_start_time:
@@ -421,8 +422,8 @@ class NightObservation(mainConfig):
 
         # Trigger observation until sunrise
         while now < obs_end_time:
-            now = Time.now()
-            is_weather_safe = self._is_safe()
+            now = Time.now() - 3 *u.hour
+            is_weather_safe = True#self._is_safe()
             
             if is_weather_safe:      
                 self._DB.initialize(initialize_all = False)
@@ -434,9 +435,9 @@ class NightObservation(mainConfig):
                     if objtype == 'TOO':
                         self._ToOobservation(abort_action = self._ToO_abort)
                     else:
-                        self._obstrigger(target = best_target, abort_action = self._observation_abort)
+                        self._obstrigger(target = best_target, abort_action = self._observation_abort, autofocus_use_history = True, autofocus_history_duration= 60, autofocus_before_start= False, autofocus_when_filterchange= False, autofocus_when_elapsed= False, autofocus_elapsed_duration= 60)
                     print('Tel_queue: ',self.tel_queue.keys())
-                    print(self.action_queue)
+                    #print(self.action_queue)
             else:
                 break
             time.sleep(0.5)
@@ -538,7 +539,7 @@ if __name__ == '__main__':
                          SingleTelescope(7),
                          SingleTelescope(8),
                          SingleTelescope(9),
-                         SingleTelescope(10),
+                         #SingleTelescope(10),
                          SingleTelescope(11),
                          ]
 #%%
@@ -547,6 +548,7 @@ if __name__ == '__main__':
     abort_action = Event()
     #Startup(multitelescopes= M , abort_action= abort_action).run()
     R = NightObservation(M, abort_action= abort_action)
+    #Thread(target= R.observation).start()
 
 
 # %%
