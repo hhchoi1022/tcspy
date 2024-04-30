@@ -68,11 +68,13 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             az : float = None,
             name : str = None,
             objtype : str = None,
-            autofocus_before_start : bool = True,
-            autofocus_when_filterchange : bool = True,
+            autofocus_use_history : bool = True,
+            autofocus_history_duration : float = 60,
+            autofocus_before_start : bool = False,
+            autofocus_when_filterchange : bool = False,
             autofocus_when_elapsed : bool = False,
-            autofocus_elapsed_time : float = 60,
-            observation_status : dict = None
+            autofocus_elapsed_duration : float = 60,
+            observation_status : dict = None,
             ):
         """
         Performs the action to start spectroscopic observation.
@@ -176,15 +178,18 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             observation_status_single = None
             if observation_status:
                 observation_status_single = observation_status[tel_name]
-                
-            params_obs = self._format_params(imgtype= imgtype, 
-                                             autofocus_before_start= autofocus_before_start, 
-                                             autofocus_when_filterchange= autofocus_when_filterchange, 
-                                             autofocus_when_elapsed = autofocus_when_elapsed,
-                                             autofocus_elapsed_time = autofocus_elapsed_time, 
-                                             observation_status = observation_status_single,
-                                             **exposure_params,
-                                             **target_params)
+
+            params_obs = dict(imgtype= imgtype, 
+                              autofocus_use_history = autofocus_use_history,
+                              autofocus_history_duration = autofocus_history_duration,
+                              autofocus_before_start= autofocus_before_start, 
+                              autofocus_when_filterchange= autofocus_when_filterchange, 
+                              autofocus_when_elapsed = autofocus_when_elapsed,
+                              autofocus_elapsed_time = autofocus_elapsed_duration, 
+                              observation_status = observation_status_single,
+                              **exposure_params,
+                              **target_params)
+
             params_obs.update(filter_ = filter_)
             all_params_obs[tel_name] = params_obs
         
@@ -211,24 +216,6 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         """
         #self.multiaction.abort()
         self.abort_action.set()
-
-    def _format_params(self,
-                       imgtype : str = 'Light',
-                       autofocus_before_start = True,
-                       autofocus_when_filterchange = True,
-                       **kwargs):
-        format_kwargs = dict()
-        format_kwargs['imgtype'] = imgtype
-        format_kwargs['autofocus_before_start'] = autofocus_before_start
-        format_kwargs['autofocus_when_filterchange'] = autofocus_when_filterchange
-
-        # Other information
-        for key, value in kwargs.items():
-            format_kwargs[key] = value
-        return format_kwargs
-
-            
-
     
 # %%
 if __name__ == '__main__':
@@ -254,6 +241,7 @@ if __name__ == '__main__':
     M = MultiTelescopes(list_telescopes)
 #%%
 if __name__ == '__main__':
+    M = MultiTelescopes([SingleTelescope(21)])
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
@@ -262,14 +250,14 @@ if __name__ == '__main__':
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
-    ra= 300
+    ra= 180
     dec= -20
     alt =None
     az = None
     name = "T07377"
     objtype = 'Commissioning'
-    autofocus_before_start= False
-    autofocus_when_filterchange= False
+    autofocus_before_start= True
+    autofocus_when_filterchange= True
     kwargs = dict(exptime = exptime, count = count, specmode = specmode,
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,
         alt = alt, az = az, name = name, objtype = objtype,
@@ -278,7 +266,7 @@ if __name__ == '__main__':
         )
     from threading import Thread
     t = Thread(target = S.run, kwargs= kwargs)
-    t.start()
+    #t.start()
     #t.abort()
 # %%
 if __name__ == '__main__':

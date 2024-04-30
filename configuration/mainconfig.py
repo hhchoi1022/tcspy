@@ -159,6 +159,9 @@ class mainConfig:
                          DB_PWD='lksdf1020',
                          DB_NAME='target')
         
+        autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self._configfilepath_global,"filtinfo.data")}',
+                                AUTOFOCUS_FOCUSHISTORY_FILE = f'{os.path.join(self._configfilepath_global,"../action/level2/focus_history.data")}')
+        
         specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self._configfilepath_global,"specmode/u10/")}')
         
         startup_params = dict(STARTUP_ALT = 50,
@@ -186,6 +189,7 @@ class mainConfig:
         self.make_configfile(dome_params, filename='Dome.config', savepath= self._configfilepath_global)
         self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self._configfilepath_global)
         self.make_configfile(DB_params, filename = 'DB.config', savepath= self._configfilepath_global)
+        self.make_configfile(autofocus_params, filename = 'Autofocus.config', savepath= self._configfilepath_global)
         self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self._configfilepath_global)
         self.make_configfile(startup_params, filename = 'startup.config', savepath= self._configfilepath_global)
         self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self._configfilepath_global)

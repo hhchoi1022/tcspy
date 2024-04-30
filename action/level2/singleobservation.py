@@ -1,6 +1,7 @@
 #%%
 from multiprocessing import Event
 from multiprocessing import Manager
+from astropy.time import Time
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -50,7 +51,6 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self.shared_memory['status'] = dict()
-        self.shared_memory['autofocus'] = dict()
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self, 
@@ -68,10 +68,12 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             specmode : str = None,
             ntelescope : int = 1,
             objtype : str = None,
+            autofocus_use_history : bool = True,
+            autofocus_history_duration : float = 60,
             autofocus_before_start : bool = False,
             autofocus_when_filterchange : bool = False,
             autofocus_when_elapsed : bool = False,
-            autofocus_elapsed_time : float = 60,
+            autofocus_elapsed_duration : float = 60,
             observation_status : dict = None,
             **kwargs
             ):
@@ -120,11 +122,16 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
           filter_ = 'g,r'
           binning = '1'
           imgtype = 'Light'
-          ra = 256.5
+          ra = 200
           dec = -58.0666 
           obsmode = 'Spec'
-          autofocus_before_start = False
+          autofocus_use_history = True
+          autofocus_history_duration = 60
+          autofocus_before_start = True
           autofocus_when_filterchange= False
+          autofocus_when_elapsed = False
+          autofocus_elapsed_duration = 60
+          observation_status = None
           az = None
           alt = None
           name = None
@@ -214,7 +221,6 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         
         action_autofocus = AutoFocus(singletelescope= self.telescope, abort_action= self.abort_action)
         self.shared_memory['status'] = observation_status
-        self.shared_memory['autofocus'] = dict(action_autofocus.shared_memory)
 
         observation_trigger = {'filter_': [],
                                'exptime': [],
@@ -233,8 +239,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         if autofocus_before_start:
             try:
                 filter_ = observation_trigger['filter_'][0]
-                result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = True)
-                self.shared_memory['autofocus'] = dict(action_autofocus.shared_memory)
+                result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = True, use_history= autofocus_use_history, history_duration = autofocus_history_duration)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
@@ -284,8 +289,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 # Autofocus when filter changed
                 if autofocus_when_filterchange:
                     try:
-                        result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False)
-                        self.shared_memory['autofocus'] = dict(action_autofocus.shared_memory)
+                        result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history= autofocus_use_history, history_duration= autofocus_history_duration)
                     except ConnectionException:
                         self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
                         raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
@@ -297,22 +301,22 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                         pass
         
             # Exposure
-            exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
+            action_exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
             for frame_number in range(int(count)):
                 try:
-                    result_exposure = exposure.run(frame_number = int(observation_status[filter_]['observed']),
-                                                    exptime = float(exptime),
-                                                    filter_ = filter_,
-                                                    imgtype = imgtype,
-                                                    binning = int(binning),
-                                                    obsmode = obsmode,
-                                                    
-                                                    ra = ra,
-                                                    dec = dec,
-                                                    alt = alt,
-                                                    az = az,
-                                                    name = name,
-                                                    objtype = objtype)
+                    result_exposure = action_exposure.run(frame_number = int(observation_status[filter_]['observed']),
+                                                          exptime = float(exptime),
+                                                          filter_ = filter_,
+                                                          imgtype = imgtype,
+                                                          binning = int(binning),
+                                                          obsmode = obsmode,
+                                                        
+                                                          ra = ra,
+                                                          dec = dec,
+                                                          alt = alt,
+                                                          az = az,
+                                                          name = name,
+                                                          objtype = objtype)
                     # Update self.observation_status
                     observation_status[filter_]['observed'] += 1
                     self.shared_memory['status'] = observation_status
@@ -327,9 +331,10 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     self._log.critical(f'[{type(self).__name__}] is failed: exposure failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
                 if autofocus_when_elapsed:
-                    if (Time.now() - self.shared_memory['autofocus']['last_succeeded_time'] + autofocus_elapsed_time * u.minute):
-                        result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False)
-                        self.shared_memory['autofocus'] = dict(action_autofocus.shared_memory)
+                    history = action_autofocus.history[filter_]
+                    now = Time.now()
+                    if (Time(history[filter_]['update_time']) + autofocus_elapsed_duration * u.minute) < now:
+                        result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
                         
         self._log.info(f'[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(result_all_exposure)

@@ -78,11 +78,13 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             az : float = None,
             name : str = None,
             objtype : str = None,
-            autofocus_before_start : bool = True,
-            autofocus_when_filterchange : bool = True,
+            autofocus_use_history : bool = True,
+            autofocus_history_duration : float = 60,
+            autofocus_before_start : bool = False,
+            autofocus_when_filterchange : bool = False,
             autofocus_when_elapsed : bool = False,
-            autofocus_elapsed_time : float = 60,
-            observation_status : dict = None
+            autofocus_elapsed_duration : float = 60,
+            observation_status : dict = None,
             ):
         """
         Performs the action to start deep observation.
@@ -187,14 +189,17 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             if observation_status:
                 observation_status_single = observation_status[tel_name]
                 
-            params_obs = self._format_params(imgtype= imgtype, 
-                                             autofocus_before_start= autofocus_before_start, 
-                                             autofocus_when_filterchange= autofocus_when_filterchange, 
-                                             autofocus_when_elapsed  = autofocus_when_elapsed,
-                                             autofocus_elapsed_time = autofocus_elapsed_time,
-                                             observation_status = observation_status_single,
-                                             **exposure_params,
-                                             **target_params)
+            params_obs = dict(imgtype= imgtype, 
+                              autofocus_use_history = autofocus_use_history,
+                              autofocus_history_duration = autofocus_history_duration,
+                              autofocus_before_start= autofocus_before_start, 
+                              autofocus_when_filterchange= autofocus_when_filterchange, 
+                              autofocus_when_elapsed = autofocus_when_elapsed,
+                              autofocus_elapsed_time = autofocus_elapsed_duration, 
+                              observation_status = observation_status_single,
+                              **exposure_params,
+                              **target_params)
+            
             params_obs.update(filter_ = filter_)
             all_params_obs[tel_name] = params_obs
         
