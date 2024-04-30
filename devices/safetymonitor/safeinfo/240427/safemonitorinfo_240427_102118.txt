@@ -1,7 +1,0 @@
-{
-    "update_time": "2024-04-27T10:21:18.819",
-    "jd": 2460427.931468,
-    "is_connected": false,
-    "is_safe": null,
-    "name": null
-}
