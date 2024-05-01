@@ -63,7 +63,7 @@ class MultiTelescopes:
         telescope_name = singletelescope.name
         log = mainLogger(unitnum = singletelescope.unitnum, logger_name = __name__+str(singletelescope.unitnum)).log()
         self.devices[telescope_name] = singletelescope
-        self.log[telescope_name] = log
+        self.log_dict[telescope_name] = log
     
     def remove(self,
                telescope_name):
@@ -76,31 +76,9 @@ class MultiTelescopes:
             The name of the telescope to remove.
         """
         self.devices.pop(telescope_name)
-        self.log.pop(telescope_name)
-    """
-    @property
-    def status2(self):
-        self._status = dict()
-        for tel_name, telescope in self.devices.items():
-            Thread(target = self._get_telescope_status, kwargs = dict(telescope=telescope)).start()
-        while all(key in self._status for key in self.devices.keys()) == False:
-            print(self._status.keys())
-            time.sleep(0.005)
-        return self._status
-    
-    def _get_telescope_status(self, telescope):
-        self._status[telescope.name] = TelescopeStatus(telescope).dict
+        self.log_dict.pop(telescope_name)
+        self.log = self._all_logs()
 
-    """
-    '''
-    @property
-    def status(self):
-        all_status = dict()
-        for tel_name, telescope in self.devices.items():
-            all_status[tel_name] = TelescopeStatus(telescope).dict
-        return all_status
-    
-    '''
     @property
     def status(self):
         """

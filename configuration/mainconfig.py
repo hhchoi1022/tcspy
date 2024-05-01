@@ -117,7 +117,7 @@ class mainConfig:
         
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
-                             LOGGER_FORMAT='[%(levelname)s]%(asctime)-15s | %(message)s',
+                             LOGGER_FORMAT=f'[%(levelname)s,{self.tel_name}]%(asctime)-15s |%(message)s',
                              LOGGER_PATH= f'/data1/obsdata/{self.tel_name}/log/')
         
         # Share configuration
@@ -165,13 +165,13 @@ class mainConfig:
         
         specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self._configfilepath_global,"specmode/u10/")}')
         
-        startup_params = dict(STARTUP_ALT = 50,
-                              STARTUP_AZ = 60,
+        startup_params = dict(STARTUP_ALT = 30,
+                              STARTUP_AZ = 90,
                               STARTUP_CCDTEMP = -10,
                               STARTUP_CCDTEMP_TOLERANCE = 1)
 
-        shutdown_params = dict(SHUTDOWN_ALT = 50,
-                               SHUTDOWN_AZ = 60,
+        shutdown_params = dict(SHUTDOWN_ALT = 30,
+                               SHUTDOWN_AZ = 90,
                                SHUTDOWN_CCDTEMP = 10,
                                SHUTDOWN_CCDTEMP_TOLERANCE = 1)
         

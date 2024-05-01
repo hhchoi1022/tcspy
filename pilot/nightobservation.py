@@ -389,11 +389,11 @@ class NightObservation(mainConfig):
     
     def run(self):
         if not self.is_running:
-            Thread(target = self._observation).start()
+            Thread(target = self._process).start()
         else:
             self.multitelescopes.log.critical(f'[{type(self).__name__}] cannot be run twice.')
             
-    def _observation(self):
+    def _process(self):
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         self.is_running = True
         obs_start_time = self._obsnight.sunset_astro

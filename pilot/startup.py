@@ -54,7 +54,6 @@ class Startup(mainConfig):
                  ):
         super().__init__()
         self.multitelescopes = multitelescopes
-        self._log = multitelescopes.log
         self.abort_action = abort_action
     
     def run(self):
@@ -81,8 +80,8 @@ class Startup(mainConfig):
         """
         # Connect
         params_connect = []
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         for telescope_name, telescope in self.multitelescopes.devices.items():
-            self._log[telescope_name].info(f'[{type(self).__name__}] is triggered.')
             params_connect.append(dict())
         
         multi_connect =MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_connect, function = Connect, abort_action = self.abort_action)    
@@ -92,14 +91,13 @@ class Startup(mainConfig):
         try:
             multi_connect.run()
         except AbortionException:
-            for tel_name in  self.multitelescopes.devices.keys():
-                self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
         
         ## Check result
         for tel_name, result in result_multi_connect.items():
             is_succeeded = result_multi_connect[tel_name]['succeeded']
             if not is_succeeded:
-                self._log[tel_name].critical(f'[{type(self).__name__}] is failed: Connection failure.')
+                self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Connection failure.')
                 self.multitelescopes.remove(tel_name)        
         
         ## Check len(devices) > 0
@@ -108,8 +106,7 @@ class Startup(mainConfig):
         
         ## Check abort_action
         if self.abort_action.is_set():
-            for telescope_name, telescope in self.multitelescopes.devices.items():
-                self._log[telescope_name].warning(f'[{type(self).__name__}] is aborted.')
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Telescope slewing
@@ -125,14 +122,13 @@ class Startup(mainConfig):
         try:
             multi_slew.run()
         except AbortionException:
-            for tel_name in  self.multitelescopes.devices.keys():
-                self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
 
         ## Check result
         for tel_name, result in result_multi_slew.items():
             is_succeeded = result_multi_slew[tel_name]['succeeded']
             if not is_succeeded:
-                self._log[tel_name].critical(f'[{type(self).__name__}] is failed: Slewing failure.')
+                self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Slewing failure.')
                 self.multitelescopes.remove(tel_name)        
 
         ## Check len(devices) > 0
@@ -141,8 +137,7 @@ class Startup(mainConfig):
         
         ## Check abort_action
         if self.abort_action.is_set():
-            for telescope_name, telescope in self.multitelescopes.devices.items():
-                self._log[telescope_name].warning(f'[{type(self).__name__}] is aborted.')
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
         # Camera cooling 
@@ -158,21 +153,20 @@ class Startup(mainConfig):
         try:
             multi_cool.run()
         except AbortionException:
-            for tel_name in  self.multitelescopes.devices.keys():
-                self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
 
         ## Check result
         for tel_name, result in result_multi_slew.items():
             is_succeeded = result_multi_slew[tel_name]['succeeded']
             if not is_succeeded:
-                self._log[tel_name].critical(f'[{type(self).__name__}] is failed: Cooling failure.')
+                self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Cooling failure.')
                 self.multitelescopes.remove(tel_name)        
         ## Check len(devices) > 0
         if len(self.multitelescopes.devices) == 0:
             raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
         
-        for telescope_name, telescope in self.multitelescopes.devices.items():
-            self._log[telescope_name].info(f'[{type(self).__name__}] is finished.')
+        for tel_name, telescope in self.multitelescopes.devices.items():
+            self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished.')
     
 
 # %%

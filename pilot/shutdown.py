@@ -25,7 +25,6 @@ class Shutdown(mainConfig):
                  ):
         super().__init__()
         self.multitelescopes = MultiTelescopes
-        self._log = MultiTelescopes.log
         self.abort_action = abort_action
     
     def run(self):
@@ -39,8 +38,8 @@ class Shutdown(mainConfig):
 
         # Telescope slewing
         params_slew = []
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         for telescope_name, telescope in self.multitelescopes.devices.items():
-            self._log[telescope_name].info(f'[{type(self).__name__}] is triggered.')
             params_slew.append(dict(alt = self.config['SHUTDOWN_ALT'],
                                     az = self.config['SHUTDOWN_AZ']))
         
@@ -51,14 +50,13 @@ class Shutdown(mainConfig):
         try:
             multi_slew.run()
         except AbortionException:
-            for tel_name in  self.multitelescopes.devices.keys():
-                self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
         
         ## Check result
         for tel_name, result in result_multi_slew.items():
             is_succeeded = result_multi_slew[tel_name]['succeeded']
             if not is_succeeded:
-                self._log[tel_name].critical(f'[{type(self).__name__}] is failed: Slewing failure.')
+                self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Slewing failure.')
                 self.multitelescopes.remove(tel_name)        
         
         ## Check len(devices) > 0
@@ -67,8 +65,7 @@ class Shutdown(mainConfig):
         
         ## Check abort_action
         if self.abort_action.is_set():
-            for telescope_name, telescope in self.multitelescopes.devices.items():
-                self._log[telescope_name].warning(f'[{type(self).__name__}] is aborted.')
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
         # Warm camera
@@ -84,22 +81,21 @@ class Shutdown(mainConfig):
         try:
             multi_warm.run()
         except AbortionException:
-            for tel_name in  self.multitelescopes.devices.keys():
-                self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
         
         ## Check result
         for tel_name, result in result_multi_warm.items():
             is_succeeded = result_multi_warm[tel_name]['succeeded']
             if not is_succeeded:
-                self._log[tel_name].critical(f'[{type(self).__name__}] is failed: Warming failure.')
+                self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Warming failure.')
                 self.multitelescopes.remove(tel_name)        
         
         ## Check len(devices) > 0
         if len(self.multitelescopes.devices) == 0:
             raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
         
-        for telescope_name, telescope in self.multitelescopes.devices.items():
-            self._log[telescope_name].info(f'[{type(self).__name__}] is finished.')
+        for tel_name, telescope in self.multitelescopes.devices.items():
+            self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished.')
 
 
 # %%
