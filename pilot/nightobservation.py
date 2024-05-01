@@ -434,7 +434,7 @@ class NightObservation(mainConfig):
                     self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
         return True
     
-    def observation(self):
+    def run(self):
         
         obs_start_time = self._obsnight.sunset_astro
         obs_end_time = self._obsnight.sunrise_astro
@@ -470,6 +470,7 @@ class NightObservation(mainConfig):
                                          autofocus_when_elapsed= self.autofocus.when_elapsed,
                                          autofocus_elapsed_duration= self.autofocus.elapsed_duration)
                     print('Tel_queue: ',self.tel_queue.keys())
+                    print('History_duration: ',self.autofocus.history_duration)
                     #print(self.action_queue)
             else:
                 break
