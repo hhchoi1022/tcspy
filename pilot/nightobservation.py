@@ -121,8 +121,7 @@ class NightObservation(mainConfig):
         else:
             return False
     
-    def _specobs(self, target, telescopes, abort_action, 
-                 **kwrags):  
+    def _specobs(self, target, telescopes, abort_action, observation_status):
         kwargs = dict(exptime = target['exptime'], 
                     count = target['count'],
                     specmode = target['specmode'],
@@ -132,8 +131,14 @@ class NightObservation(mainConfig):
                     dec = target['De'], 
                     name = target['objname'],
                     objtype = target['objtype'], 
-                    **kwrags)  
-             
+                    autofocus_use_history = self.autofocus.use_history,
+                    autofocus_history_duration = self.autofocus.history_duration,
+                    autofocus_before_start = self.autofocus.before_start,
+                    autofocus_when_filterchange = self.autofocus.when_filterchange,
+                    autofocus_when_elapsed = self.autofocus.when_elapsed,
+                    autofocus_elapsed_duration = self.autofocus.elapsed_duration,
+                    observation_status = observation_status)  
+        
         self._DB.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
         action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
@@ -155,8 +160,7 @@ class NightObservation(mainConfig):
         # Apped the telescope to the tel_queue
         self._put_telescope(telescope = telescopes)
         
-    def _deepobs(self, target, telescopes, abort_action, 
-                 **kwargs):
+    def _deepobs(self, target, telescopes, abort_action, observation_status):
         kwargs = dict(exptime = target['exptime'], 
                     count = target['count'],
                     filter_ = target['filter_'],
@@ -166,7 +170,13 @@ class NightObservation(mainConfig):
                     dec = target['De'], 
                     name = target['objname'],
                     objtype = target['objtype'], 
-                    **kwargs)    
+                    autofocus_use_history = self.autofocus.use_history,
+                    autofocus_history_duration = self.autofocus.history_duration,
+                    autofocus_before_start = self.autofocus.before_start,
+                    autofocus_when_filterchange = self.autofocus.when_filterchange,
+                    autofocus_when_elapsed = self.autofocus.when_elapsed,
+                    autofocus_elapsed_duration = self.autofocus.elapsed_duration,
+                    observation_status = observation_status)  
 
         self._DB.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
         action = DeepObservation(multitelescopes= telescopes, abort_action = abort_action)
@@ -189,8 +199,7 @@ class NightObservation(mainConfig):
         # Apped the telescope to the tel_queue
         self._put_telescope(telescope = telescopes)
         
-    def _searchobs(self, target, telescopes, abort_action, 
-                   **kwargs):     
+    def _searchobs(self, target, telescopes, abort_action, observation_status):
         kwargs = dict(exptime = target['exptime'], 
                     count = target['count'],
                     filter_ = target['filter_'],
@@ -202,7 +211,13 @@ class NightObservation(mainConfig):
                     obsmode = 'Search',
                     objtype = target['objtype'],
                     ntelescope = 1,
-                    **kwargs)      
+                    autofocus_use_history = self.autofocus.use_history,
+                    autofocus_history_duration = self.autofocus.history_duration,
+                    autofocus_before_start = self.autofocus.before_start,
+                    autofocus_when_filterchange = self.autofocus.when_filterchange,
+                    autofocus_when_elapsed = self.autofocus.when_elapsed,
+                    autofocus_elapsed_duration = self.autofocus.elapsed_duration,
+                    observation_status = observation_status)    
 
         self._DB.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
@@ -225,8 +240,7 @@ class NightObservation(mainConfig):
         # Apped the telescope to the tel_queue
         self._put_telescope(telescope = telescopes)
 
-    def _singleobs(self, target, telescopes, abort_action, 
-                   **kwargs):     
+    def _singleobs(self, target, telescopes, abort_action, observation_status):
         kwargs = dict(exptime=target['exptime'], 
                     count = target['count'],
                     filter_ = target['filter_'],
@@ -238,7 +252,13 @@ class NightObservation(mainConfig):
                     obsmode = 'Single',
                     objtype = target['objtype'],
                     ntelescope = 1,
-                    **kwargs)      
+                    autofocus_use_history = self.autofocus.use_history,
+                    autofocus_history_duration = self.autofocus.history_duration,
+                    autofocus_before_start = self.autofocus.before_start,
+                    autofocus_when_filterchange = self.autofocus.when_filterchange,
+                    autofocus_when_elapsed = self.autofocus.when_elapsed,
+                    autofocus_elapsed_duration = self.autofocus.elapsed_duration,
+                    observation_status = observation_status)          
         
         self._DB.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
@@ -261,78 +281,66 @@ class NightObservation(mainConfig):
         # Apped the telescope to the tel_queue
         self._put_telescope(telescope = telescopes)
     
-    def _obstrigger(self, target, abort_action, 
-                    autofocus_use_history, 
-                    autofocus_history_duration,
-                    autofocus_before_start, 
-                    autofocus_when_filterchange,
-                    autofocus_when_elapsed,
-                    autofocus_elapsed_duration = 60,
-                    observation_status = None):        
+    def _obstrigger(self, target, abort_action, observation_status = None):     
         obsmode = target['obsmode'].upper()
-        obs_kwargs = {'target' : target, 'abort_action' : abort_action, 
-                      'autofocus_use_history': autofocus_use_history, 'autofocus_history_duration': autofocus_history_duration, 
-                      'autofocus_before_start' : autofocus_before_start, 'autofocus_when_filterchange': autofocus_when_filterchange, 
-                      'autofocus_when_elapsed': autofocus_when_elapsed, 'autofocus_elapsed_duration': autofocus_elapsed_duration, 
-                      'observation_status': observation_status}
         if obsmode == 'SPEC':
             if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 telescopes = MultiTelescopes(SingleTelescope_list = list(self.tel_queue.values()))
-                thread = Thread(target= self._specobs, kwargs = {'telescopes':telescopes, **obs_kwargs}, daemon = False)
+                thread = Thread(target= self._specobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
         elif obsmode == 'DEEP':
             ntelescope = target['ntelescope']
             if len(self.tel_queue) >= ntelescope:
                 telescopes = MultiTelescopes(SingleTelescope_list = [self.tel_queue.popitem()[1] for i in range(ntelescope)])
-                thread = Thread(target= self._deepobs, kwargs = {'telescopes':telescopes, **obs_kwargs}, daemon = False)
+                thread = Thread(target= self._deepobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
         elif obsmode == 'SEARCH':
             if len(self.tel_queue) >= 1:
                 tel_name, telescopes = self.tel_queue.popitem()
-                thread = Thread(target= self._searchobs, kwargs = {'telescopes':telescopes, **obs_kwargs}, daemon = False)
+                thread = Thread(target= self._searchobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
         else:
             if len(self.tel_queue) >= 1:
                 tel_name, telescopes = self.tel_queue.popitem()
-                thread = Thread(target= self._singleobs, kwargs = {'telescopes':telescopes, **obs_kwargs}, daemon = False)
-                thread.start()    
+                thread = Thread(target= self._singleobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                thread.start()   
+        return True 
     
-    def _obsresume(self, target, telescopes, abort_action, 
-                    autofocus_use_history, 
-                    autofocus_history_duration,
-                    autofocus_before_start, 
-                    autofocus_when_filterchange,
-                    autofocus_when_elapsed,
-                    autofocus_elapsed_duration = 60,
-                    observation_status = None):
+    def _obsresume(self, target, telescopes, abort_action, observation_status = None):
+        # Check observability
+        singletarget = SingleTarget(observer = self.multitelescopes.observer, 
+                                    ra = target['RA'], dec = target['De'], 
+                                    exptime = target['exptime'], count = target['count'], filter_ = target['filter_'], binning = target['binning'], specmode = target['specmode'])
+        is_observable = singletarget.is_observable(utctime= Time.now() + singletarget.exposure_info['exptime_tot'] * u.s)
         obsmode = target['obsmode'].upper()        
-        obs_kwargs = {'target' : target, 'telescopes': telescopes, 'abort_action' : abort_action, 
-                      'autofocus_use_history': autofocus_use_history, 'autofocus_history_duration': autofocus_history_duration, 
-                      'autofocus_before_start' : autofocus_before_start, 'autofocus_when_filterchange': autofocus_when_filterchange, 
-                      'autofocus_when_elapsed': autofocus_when_elapsed, 'autofocus_elapsed_duration': autofocus_elapsed_duration, 
-                      'observation_status': observation_status}
-        if obsmode == 'SPEC':
-            if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
-                thread = Thread(target= self._specobs, kwargs = obs_kwargs, daemon = False)
-                thread.start()
-        elif obsmode == 'DEEP':
-            ntelescope = target['ntelescope']
-            if len(self.tel_queue) >= ntelescope:
-                thread = Thread(target= self._deepobs, kwargs = obs_kwargs, daemon = False)
-                thread.start()
-        elif obsmode == 'SEARCH':
-            ntelescope = target['ntelescope']
-            if len(self.tel_queue) >= 1:
-                thread = Thread(target= self._searchobs, kwargs = obs_kwargs, daemon = False)
-                thread.start()
+        
+        if is_observable:
+            self._log.info('Observation is resumed')
+            if obsmode == 'SPEC':
+                if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
+                    thread = Thread(target= self._specobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread.start()
+            elif obsmode == 'DEEP':
+                ntelescope = target['ntelescope']
+                if len(self.tel_queue) >= ntelescope:
+                    thread = Thread(target= self._deepobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread.start()
+            elif obsmode == 'SEARCH':
+                ntelescope = target['ntelescope']
+                if len(self.tel_queue) >= 1:
+                    thread = Thread(target= self._searchobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread.start()
+            else:
+                if len(self.tel_queue) >= 1:
+                    thread = Thread(target= self._singleobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread.start()
         else:
-            if len(self.tel_queue) >= 1:
-                thread = Thread(target= self._singleobs, kwargs = obs_kwargs, daemon = False)
-                thread.start()        
+            self._log.info('Observation cannot be resumed: Target is unobservable')
+        return True
     
     def _ToOobservation(self):
         self.is_ToO_triggered = True
-        action_history = self.abort_observation()
+        aborted_action = self.abort_observation()
         
         obs_start_time = self._obsnight.sunset_astro
         obs_end_time = self._obsnight.sunrise_astro
@@ -361,13 +369,7 @@ class NightObservation(mainConfig):
                     if not objtype == 'TOO':
                         self.is_ToO_triggered = False
                     else:
-                        self._obstrigger(target = best_target, abort_action = self.ToO_abort, 
-                                         autofocus_use_history = self.autofocus.use_history, 
-                                         autofocus_history_duration= self.autofocus.history_duration,
-                                         autofocus_before_start= self.autofocus.before_start,
-                                         autofocus_when_filterchange= self.autofocus.when_filterchange,
-                                         autofocus_when_elapsed= self.autofocus.when_elapsed,
-                                         autofocus_elapsed_duration= self.autofocus.elapsed_duration)
+                        self._obstrigger(target = best_target, abort_action = self.ToO_abort)
             else:
                 self.abort_ToO()
             time.sleep(0.5)
@@ -375,20 +377,14 @@ class NightObservation(mainConfig):
             time.sleep(1)
         self.is_ToO_triggered = False
         
-        for action in action_history:
+        for action in aborted_action:
             time.sleep(0.5)
-            target = action['target']
-            singletarget = SingleTarget(observer = self.multitelescopes.observer, 
-                                        ra = target['RA'], dec = target['De'], 
-                                        exptime = target['exptime'], count = target['count'], filter_ = target['filter_'], binning = target['binning'], specmode = target['specmode'])
-            is_observable = singletarget.is_observable(utctime= Time.now() + singletarget.exposure_info['exptime_tot'] * u.s)
-            if is_observable:
-                if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
-                    if isinstance(action['action'], (SpecObservation, DeepObservation)):
-                        observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory.items()}
-                    else:
-                        observation_status =  action['action'].shared_memory['status']
-                    self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
+            if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
+                if isinstance(action['action'], (SpecObservation, DeepObservation)):
+                    observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory.items()}
+                else:
+                    observation_status =  action['action'].shared_memory['status']
+                self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
         return True
     
     def run(self):
@@ -415,30 +411,44 @@ class NightObservation(mainConfig):
         # Trigger observation until sunrise
         while now < obs_end_time:
             now = Time.now() 
+            
+            # Initialize the Daily target tbl
             self._DB.initialize(initialize_all = False)
             time.sleep(0.5)  
+            
+            # Retrieve best target
             best_target, score = self._DB.best_target(utctime = now)
             print(f'Best target: {best_target}')
             
+            # Check weather status
             is_weather_safe = True#self._is_safe()
-            if is_weather_safe:      
-                if best_target:
-                    objtype = best_target['objtype'].upper()
-                    if objtype == 'TOO':
-                        self._ToOobservation()
+            aborted_action = None
+            
+            # If weather is safe
+            if is_weather_safe:
+                # If there is any aborted_action due to unsafe weather, resume the observation
+                if aborted_action:
+                    for action in aborted_action:
+                        time.sleep(0.5)
+                        if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
+                            if isinstance(action['action'], (SpecObservation, DeepObservation)):
+                                observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory.items()}
+                            else:
+                                observation_status =  action['action'].shared_memory['status']
+                            action_tried = self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
+                    aborted_action = None
+                else:
+                    if best_target:
+                        objtype = best_target['objtype'].upper()
+                        if objtype == 'TOO':
+                            self._ToOobservation()
+                        else:
+                            self._obstrigger(target = best_target, abort_action = self._observation_abort)
                     else:
-                        self._obstrigger(target = best_target, abort_action = self._observation_abort, 
-                                         autofocus_use_history = self.autofocus.use_history, 
-                                         autofocus_history_duration= self.autofocus.history_duration,
-                                         autofocus_before_start= self.autofocus.before_start,
-                                         autofocus_when_filterchange= self.autofocus.when_filterchange,
-                                         autofocus_when_elapsed= self.autofocus.when_elapsed,
-                                         autofocus_elapsed_duration= self.autofocus.elapsed_duration)
-                    print('Tel_queue: ',self.tel_queue.keys())
-                    print('History_duration: ',self.autofocus.history_duration)
-                    #print(self.action_queue)
+                        print('No observable target exists')
+            # If weather is unsafe
             else:
-                self.abort_observation()
+                aborted_action = self.abort_observation()
             time.sleep(0.5)
         print('observation finished', Time.now())
         
@@ -503,7 +513,9 @@ class NightObservation(mainConfig):
         self._observation_abort.set()
         for action in action_history:
             self._pop_action(action_id =action['id'])
-            self._put_telescope(telescope = action['telescope'])        
+            self._put_telescope(telescope = action['telescope'])
+            self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')
+
         self.is_obs_triggered = False
         self._observation_abort = Event()
         return action_history
@@ -520,7 +532,8 @@ class NightObservation(mainConfig):
                     self._DB.update_target(update_value = 'retracted', update_key = 'status', id_value =  ToO_target['id'], id_key = 'id')
         for action in action_history:
             self._pop_action(action_id =action['id'])
-            self._put_telescope(telescope = action['telescope'])       
+            self._put_telescope(telescope = action['telescope'])   
+            self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')    
         self.is_ToO_triggered = False
         self._ToO_abort = Event()
         return action_history
