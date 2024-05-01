@@ -19,6 +19,6 @@ M = MultiTelescopes(list_telescopes)
 abort_action = Event()
 #Startup(multitelescopes= M , abort_action= abort_action).run()
 R = NightObservation(M, abort_action= abort_action)
-R.observation()
+R.run()
 # %%
 

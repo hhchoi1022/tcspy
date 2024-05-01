@@ -49,7 +49,6 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
         self.shared_memory = dict()
-        self._log = multitelescopes.log
     
     def _format_params(self,
                        imgtype : str = 'Light',
@@ -147,20 +146,20 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         
         # Check condition of the instruments for this Action
         status_multitelescope = self.multitelescopes.status
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         for telescope_name, telescope_status in status_multitelescope.items():
-            self._log[telescope_name].info(f'[{type(self).__name__}] is triggered.')
             status_filterwheel = telescope_status['filterwheel']
             status_camera = telescope_status['camera']
             status_mount = telescope_status['mount']
             status_focuser = telescope_status['focuser']
             if status_filterwheel.lower() == 'dicconnected':
-                self._log[telescope_name].critical(f'{telescope_name} filterwheel is disconnected.')
+                self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} filterwheel is disconnected.')
             if status_camera.lower() == 'dicconnected':
-                self._log[telescope_name].critical(f'{telescope_name} camera is disconnected.')
+                self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} camera is disconnected.')
             if status_mount.lower() == 'dicconnected':
-                self._log[telescope_name].critical(f'{telescope_name} mount is disconnected.')
+                self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} mount is disconnected.')
             if status_focuser.lower() == 'dicconnected':
-                self._log[telescope_name].critical(f'{telescope_name} focuser is disconnected.')
+                self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} focuser is disconnected.')
 
         ntelescope = len(self.multitelescopes.devices)
         # Get target instance
@@ -211,15 +210,14 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         try:
             self.multiaction.run()
         except AbortionException:
-            for tel_name in  self.multitelescopes.devices.keys():
-                self._log[tel_name].warning(f'[{type(self).__name__}] is aborted.')
-        
+            self.multitelescopes.log.wraning(f'[{type(self).__name__}] is aborted.')
+
         for tel_name, result in self.shared_memory.items():
             is_succeeded = self.shared_memory[tel_name]
             if is_succeeded:
-                self._log[tel_name].info(f'[{type(self).__name__}] is finished')
+                self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
             else:
-                self._log[tel_name].info(f'[{type(self).__name__}] is failed')
+                self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
                 
     def abort(self):
         """

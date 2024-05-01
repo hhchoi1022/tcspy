@@ -42,7 +42,8 @@ class MultiTelescopes:
                  SingleTelescope_list : List[SingleTelescope]):
         self._devices_list = SingleTelescope_list
         self.devices = self._get_telescopes()
-        self.log = self._get_all_logs()
+        self.log_dict = self._dict_logs()
+        self.log = self._all_logs()
         self.observer = mainObserver()
         
     def __repr__(self):
@@ -128,13 +129,26 @@ class MultiTelescopes:
             telescopes_dict[telescope_name] = telescope
         return telescopes_dict
 
-    def _get_all_logs(self):
+    def _dict_logs(self):
         all_logs_dict = dict()
         for telescope in self._devices_list:
             telescope_name = telescope.name
             log = mainLogger(unitnum = telescope.unitnum, logger_name = __name__+str(telescope.unitnum)).log()
             all_logs_dict[telescope_name] = log
         return all_logs_dict
+
+    def _all_logs(self):
+        class log: 
+            def info(message):
+                for log_unit in self.log_dict.values():
+                    log_unit.info(message)
+            def warning(message):
+                for log_unit in self.log_dict.values():
+                    log_unit.warning(message)
+            def critical(message):
+                for log_unit in self.log_dict.values():
+                    log_unit.critical(message)
+        return log
 # %%
 if __name__ == '__main__':
     list_telescopes = [SingleTelescope(1),

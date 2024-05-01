@@ -49,7 +49,7 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
     def run(self,
             alt : float = None,
             az : float = None,
-            force_action : bool = False
+            force_action : bool = False,
             **kwargs):
         """
         Move the telescope to the given altitude and azimuth.

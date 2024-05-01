@@ -2,6 +2,7 @@
 from multiprocessing import Event
 from multiprocessing import Manager
 from astropy.time import Time
+import astropy.units as u
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -128,9 +129,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
           obsmode = 'Spec'
           autofocus_use_history = True
           autofocus_history_duration = 60
-          autofocus_before_start = True
+          autofocus_before_start = False
           autofocus_when_filterchange= False
-          autofocus_when_elapsed = False
+          autofocus_when_elapsed = True
           autofocus_elapsed_duration = 60
           observation_status = None
           az = None
@@ -333,10 +334,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
                 if autofocus_when_elapsed:
                     history = action_autofocus.history[filter_]
-                    now = Time.now()
-                    if (Time(history[filter_]['update_time']) + autofocus_elapsed_duration * u.minute) < now:
+                    if history['succeeded']:
+                        now = Time.now()
+                        if (Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now:
+                            result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
+                    else:
                         result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
-                        
+
         self._log.info(f'[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(result_all_exposure)
         return all(result_all_exposure)
@@ -405,7 +409,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 # %%
 if __name__ == '__main__':
     from tcspy.action.level1 import Connect
-    telescope = SingleTelescope(21)
+    telescope = SingleTelescope(1)
     abort_action = Event()
     C = Connect(telescope, abort_action)
     C.run()
