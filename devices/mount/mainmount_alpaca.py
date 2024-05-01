@@ -247,6 +247,7 @@ class mainMount_Alpaca(mainConfig):
                    ra : float,
                    dec : float,
                    abort_action : Event,
+                   force_action : bool = False,
                    tracking = True):
         """
         Slews the telescope to the given RA and Dec.
@@ -268,52 +269,56 @@ class mainMount_Alpaca(mainConfig):
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
 
         # Check coordinates
-        if altaz.alt.deg < self._min_altitude:
-            self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
-            raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+        if force_action:
+            self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+
+        else:
+            if altaz.alt.deg < self._min_altitude:
+                self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+                raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
         
         # Slewing 
-        else:
-            if self.device.CanSlewAsync:
-                if self.device.AtPark:
-                    try:
-                        self.unpark()
-                    except ParkingFailedException:
-                        raise SlewingFailedException('Mount slewing is failed : Unpark failed')
-                self.device.Tracking = True 
-                while not self.device.Tracking:
-                    time.sleep(self._checktime)
-                self.device.SlewToCoordinatesAsync(target.ra_hour, target.dec_deg)
+        if self.device.CanSlewAsync:
+            if self.device.AtPark:
+                try:
+                    self.unpark()
+                except ParkingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Unpark failed')
+            self.device.Tracking = True 
+            while not self.device.Tracking:
                 time.sleep(self._checktime)
-                while self.device.Slewing:
-                    time.sleep(self._checktime)
-                    if abort_action.is_set():
-                        self.abort()
-                        self._log.warning('Mount slewing is aborted')
-                        raise AbortionException('Mount slewing is aborted')
-                self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
-                time.sleep(self._settle_time)
-                self.status = self.get_status()
-                self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(self.status['ra'], self.status['dec'], self.status['alt'], self.status['az']))
-                if not tracking:
-                    try:
-                        self.tracking_off()
-                    except TrackingFailedException:
-                        raise SlewingFailedException('Mount slewing is failed : Tracking failed')
-                else:
-                    try:
-                        self.tracking_on()
-                    except TrackingFailedException:
-                        raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
-                return True
+            self.device.SlewToCoordinatesAsync(target.ra_hour, target.dec_deg)
+            time.sleep(self._checktime)
+            while self.device.Slewing:
+                time.sleep(self._checktime)
+                if abort_action.is_set():
+                    self.abort()
+                    self._log.warning('Mount slewing is aborted')
+                    raise AbortionException('Mount slewing is aborted')
+            self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
+            time.sleep(self._settle_time)
+            self.status = self.get_status()
+            self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(self.status['ra'], self.status['dec'], self.status['alt'], self.status['az']))
+            if not tracking:
+                try:
+                    self.tracking_off()
+                except TrackingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Tracking failed')
             else:
-                self._log.critical('Slewing failed')
-                raise SlewingFailedException('Slewing failed')
+                try:
+                    self.tracking_on()
+                except TrackingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
+            return True
+        else:
+            self._log.critical('Slewing failed')
+            raise SlewingFailedException('Slewing failed')
             
     def slew_altaz(self,
                    alt : float,
                    az : float,
                    abort_action : Event,
+                   force_action : bool = False,
                    tracking = False):
         """
         Slews the telescope to the given Altitude and Azimuth coordinates.
@@ -332,42 +337,45 @@ class mainMount_Alpaca(mainConfig):
         self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
 
         # Check coordinates
-        if alt < self._min_altitude:
-            self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
-            raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %alt)
+        if force_action:
+            self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %alt)
+        
+        else:
+            if alt < self._min_altitude:
+                self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
+                raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %alt)
         
         # Slewing 
-        else:
-            if self.device.CanSlewAsync:
-                if self.device.AtPark:
-                    try:
-                        self.unpark()
-                    except ParkingFailedException:
-                        raise SlewingFailedException('Mount slewing is failed : Unpark failed')
-                self.device.Tracking = False 
-                while self.device.Tracking:
-                    time.sleep(self._checktime)
-                self.device.SlewToAltAzAsync(az, alt)
+        if self.device.CanSlewAsync:
+            if self.device.AtPark:
+                try:
+                    self.unpark()
+                except ParkingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Unpark failed')
+            self.device.Tracking = False 
+            while self.device.Tracking:
                 time.sleep(self._checktime)
-                while self.device.Slewing:
-                    time.sleep(self._checktime)
-                    if abort_action.is_set():
-                        self.abort()
-                        self._log.warning('Mount slewing is aborted')
-                        raise AbortionException('Mount slewing is aborted')
-                self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
-                time.sleep(self._settle_time)
-                self.status = self.get_status()
-                self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(self.status['alt'], self.status['az']))
-                if tracking:
-                    try:
-                        self.tracking_on()
-                    except TrackingFailedException:
-                        raise SlewingFailedException('Tracking failed')
-                return True
-            else:
-                self._log.critical('Slewing failed')
-                raise SlewingFailedException('Slewing failed')
+            self.device.SlewToAltAzAsync(az, alt)
+            time.sleep(self._checktime)
+            while self.device.Slewing:
+                time.sleep(self._checktime)
+                if abort_action.is_set():
+                    self.abort()
+                    self._log.warning('Mount slewing is aborted')
+                    raise AbortionException('Mount slewing is aborted')
+            self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
+            time.sleep(self._settle_time)
+            self.status = self.get_status()
+            self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(self.status['alt'], self.status['az']))
+            if tracking:
+                try:
+                    self.tracking_on()
+                except TrackingFailedException:
+                    raise SlewingFailedException('Tracking failed')
+            return True
+        else:
+            self._log.critical('Slewing failed')
+            raise SlewingFailedException('Slewing failed')
 
     def tracking_on(self):
         """

@@ -68,6 +68,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             specmode : str = None,
             ntelescope : int = 1,
             objtype : str = None,
+            force_slewing : bool = False,
             autofocus_use_history : bool = True,
             autofocus_history_duration : float = 60,
             autofocus_before_start : bool = False,
@@ -182,7 +183,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         if target.status['coordtype'] == 'radec':
             try:
                 slew = SlewRADec(singletelescope = self.telescope, abort_action= self.abort_action)
-                result_slew = slew.run(ra = float(target_info['ra']), dec = float(target_info['dec']))
+                result_slew = slew.run(ra = float(target_info['ra']), dec = float(target_info['dec']), force_action = force_slewing)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
@@ -196,7 +197,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         elif target.status['coordtype'] == 'altaz':
             try:
                 slew = SlewAltAz(singletelescope = self.telescope, abort_action= self.abort_action)
-                result_slew = slew.run(alt = float(target_info['alt']), az = float(target_info['az']))
+                result_slew = slew.run(alt = float(target_info['alt']), az = float(target_info['az']), force_action = force_slewing)
             except ConnectionException:
                 self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')

@@ -50,6 +50,7 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
     def run(self,
             ra : float = None,
             dec : float = None,
+            force_action: bool = False,
             **kwargs):
         """
         Move the telescope to the given right ascension and declination.
@@ -105,9 +106,10 @@ class SlewRADec(Interface_Runnable, Interface_Abortable):
         else:
             try:
                 result_slew = mount.slew_radec(ra = float(ra),
-                                                   dec = float(dec),
-                                                   abort_action = self.abort_action,
-                                                   tracking = True)
+                                               dec = float(dec),
+                                               abort_action = self.abort_action,
+                                               force_action = force_action,
+                                               tracking = True)
             except SlewingFailedException:
                 self._log.critical(f'[{type(self).__name__}] is failed: mount slew_altaz failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: mount slew_altaz failure.')

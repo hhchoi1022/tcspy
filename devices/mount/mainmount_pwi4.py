@@ -315,6 +315,7 @@ class mainMount_pwi4(mainConfig):
                    ra : float,
                    dec : float,
                    abort_action : Event,
+                   force_action : bool = False,
                    tracking = True):
         """
         Slew the telescope to a specified RA/Dec coordinate.
@@ -337,18 +338,20 @@ class mainMount_pwi4(mainConfig):
         self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(ra, dec, altaz.alt.deg, altaz.az.deg))
 
         # Check coordinates
-        if altaz.alt.deg < self._min_altitude:
-            self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
-            raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+        if force_action:
+            self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+        else:
+            if altaz.alt.deg < self._min_altitude:
+                self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+                raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
         
         # Check whether the mount is parked
-        else:
-            status = self.get_status()
-            if status['at_parked']:
-                try:
-                    result_unpark = self.unpark()
-                except ParkingFailedException:
-                    raise SlewingFailedException('Mount slewing is failed : Unparking failed')
+        status = self.get_status()
+        if status['at_parked']:
+            try:
+                result_unpark = self.unpark()
+            except ParkingFailedException:
+                raise SlewingFailedException('Mount slewing is failed : Unparking failed')
         
         # Slew
         self.device.mount_goto_ra_dec_j2000(target.ra_hour, target.dec_deg)
@@ -381,6 +384,7 @@ class mainMount_pwi4(mainConfig):
                    alt : float,
                    az : float,
                    abort_action : Event,
+                   force_action : bool = False,
                    tracking = False):
         """
         Slews the telescope to the specified Alt-Azimuth coordinate.
@@ -399,18 +403,21 @@ class mainMount_pwi4(mainConfig):
         self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
 
         # Check coordinates
-        if alt < self._min_altitude:
-            self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
-            raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %alt)
+        if force_action:
+            self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %alt)
+        else:
+            if alt < self._min_altitude:
+                self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
+                raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %alt)
         
         # Check whether the mount is parked
-        else:
-            status = self.get_status()
-            if status['at_parked']:
-                try:
-                    result_unpark = self.unpark()
-                except ParkingFailedException:
-                    raise SlewingFailedException('Mount slewing is failed : Unparking failed')
+
+        status = self.get_status()
+        if status['at_parked']:
+            try:
+                result_unpark = self.unpark()
+            except ParkingFailedException:
+                raise SlewingFailedException('Mount slewing is failed : Unparking failed')
           
         # Slew
         self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)

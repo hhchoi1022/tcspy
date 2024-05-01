@@ -49,6 +49,7 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
     def run(self,
             alt : float = None,
             az : float = None,
+            force_action : bool = False
             **kwargs):
         """
         Move the telescope to the given altitude and azimuth.
@@ -106,6 +107,7 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
                 result_slew = mount.slew_altaz(alt = float(alt),
                                                    az = float(az),
                                                    abort_action = self.abort_action,
+                                                   force_action = force_action,
                                                    tracking = False)
             except SlewingFailedException:
                 self._log.critical(f'[{type(self).__name__}] is failed: mount slew_altaz failure.')

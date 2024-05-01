@@ -78,6 +78,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             az : float = None,
             name : str = None,
             objtype : str = None,
+            force_slewing : bool = False,
             autofocus_use_history : bool = True,
             autofocus_history_duration : float = 60,
             autofocus_before_start : bool = False,
@@ -190,6 +191,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
                 observation_status_single = observation_status[tel_name]
                 
             params_obs = dict(imgtype= imgtype, 
+                              force_slewing = force_slewing,
                               autofocus_use_history = autofocus_use_history,
                               autofocus_history_duration = autofocus_history_duration,
                               autofocus_before_start= autofocus_before_start, 

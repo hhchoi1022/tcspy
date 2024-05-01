@@ -49,10 +49,22 @@ class NightObservation(mainConfig):
         self.action_lock = Lock()
         self.is_ToO_triggered = False
         self.is_obs_triggered = False
+        self.autofocus = self.default_autofocus_config
         self._ToO_abort = Event()
         self._observation_abort = Event()
         self.initialize()
     
+    @property
+    def default_autofocus_config(self):
+        class default_autofocus: pass
+        default_autofocus.use_history = True
+        default_autofocus.history_duration = 60 
+        default_autofocus.before_start = False
+        default_autofocus.when_filterchange = True
+        default_autofocus.when_elapsed = True
+        default_autofocus.elapsed_duration = 60
+        return default_autofocus
+        
     def initialize(self):
         
         # Initialize Daily target table 
