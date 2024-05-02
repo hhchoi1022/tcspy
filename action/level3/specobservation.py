@@ -207,15 +207,17 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             self.multiaction.run()
         except AbortionException:
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
+        is_all_succeeded = []
         for tel_name, result in self.shared_memory.items():
-            is_succeeded = self.shared_memory[tel_name]
+            is_succeeded = self.shared_memory[tel_name]['succeeded']
+            is_all_succeeded.append(is_succeeded)
             if is_succeeded:
                 self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
-                return True
             else:
                 self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
-                return False
+        return all(is_all_succeeded)
 
     def abort(self):
         """
@@ -248,7 +250,7 @@ if __name__ == '__main__':
     M = MultiTelescopes(list_telescopes)
 #%%
 if __name__ == '__main__':
-    M = MultiTelescopes([SingleTelescope(21)])
+    #M = MultiTelescopes([SingleTelescope(21)])
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)

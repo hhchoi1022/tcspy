@@ -293,8 +293,8 @@ class mainFocuser_pwi4(mainConfig):
                 self.abort()
                 self._log.warning('Autofocus is aborted')
                 status =  self.get_status()
-                current_position = status['position']
-                raise AbortionException('Autofocus is aborted (Current position : %s)'%(current_position))
+                self.move(position = current_position, abort_action= Event())
+                raise AbortionException('Autofocus is aborted. Move back to the previous position')
         status =  self.get_status()
         while status['is_moving']:
             status =  self.get_status()

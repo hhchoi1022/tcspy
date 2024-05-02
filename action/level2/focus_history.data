@@ -26,14 +26,14 @@
             "focusval": 10000
         },
         "m400": {
-            "update_time": "2024-05-02T05:15:38.904",
+            "update_time": "2024-05-02T07:36:54.545",
             "succeeded": true,
-            "focusval": 7664.6
+            "focusval": 7673.7
         },
         "m425": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:40:30.162",
+            "succeeded": true,
+            "focusval": 7849.9
         },
         "m650": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -63,14 +63,14 @@
             "focusval": 10000
         },
         "m450": {
-            "update_time": "2024-05-02T05:15:40.892",
+            "update_time": "2024-05-02T07:36:56.723",
             "succeeded": true,
-            "focusval": 7568.8
+            "focusval": 7554.4
         },
         "m475": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:40:36.615",
+            "succeeded": true,
+            "focusval": 7736.8
         },
         "m425": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -100,14 +100,14 @@
             "focusval": 10000
         },
         "m500": {
-            "update_time": "2024-05-02T05:15:41.617",
+            "update_time": "2024-05-02T07:36:57.536",
             "succeeded": true,
-            "focusval": 6373.6
+            "focusval": 6397.3
         },
         "m525": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:40:34.010",
+            "succeeded": true,
+            "focusval": 6581.6
         },
         "m450": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -142,9 +142,9 @@
             "focusval": 5888.7
         },
         "m575": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T05:59:18.553",
+            "succeeded": true,
+            "focusval": 4905.5
         },
         "m475": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -174,14 +174,14 @@
             "focusval": 10000
         },
         "m600": {
-            "update_time": "2024-05-02T05:15:41.519",
+            "update_time": "2024-05-02T07:36:59.584",
             "succeeded": true,
-            "focusval": 6835.4
+            "focusval": 6852.2
         },
         "m625": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:40:42.186",
+            "succeeded": true,
+            "focusval": 7000.1
         },
         "m500": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -211,14 +211,14 @@
             "focusval": 10000
         },
         "m650": {
-            "update_time": "2024-05-02T05:15:40.380",
+            "update_time": "2024-05-02T07:36:57.212",
             "succeeded": true,
-            "focusval": 7272.9
+            "focusval": 7323.3
         },
         "m675": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:39:24.832",
+            "succeeded": true,
+            "focusval": 7491.1
         },
         "m525": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -248,14 +248,14 @@
             "focusval": 10000
         },
         "m700": {
-            "update_time": "2024-05-02T05:15:40.675",
+            "update_time": "2024-05-02T07:36:57.712",
             "succeeded": true,
-            "focusval": 8231.1
+            "focusval": 8239.3
         },
         "m725": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:39:26.393",
+            "succeeded": true,
+            "focusval": 8409.2
         },
         "m550": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -285,14 +285,14 @@
             "focusval": 10000
         },
         "m750": {
-            "update_time": "2024-05-02T05:15:38.755",
+            "update_time": "2024-05-02T07:36:56.215",
             "succeeded": true,
-            "focusval": 7456.1
+            "focusval": 7484.0
         },
         "m775": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:39:25.123",
+            "succeeded": true,
+            "focusval": 7806.5
         },
         "m575": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -322,14 +322,14 @@
             "focusval": 10000
         },
         "m800": {
-            "update_time": "2024-05-02T05:15:39.763",
+            "update_time": "2024-05-02T07:36:56.317",
             "succeeded": true,
-            "focusval": 5909.3
+            "focusval": 5914.0
         },
         "m825": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:40:37.224",
+            "succeeded": true,
+            "focusval": 5913.3
         },
         "m600": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -364,14 +364,14 @@
             "focusval": 10000
         },
         "m850": {
-            "update_time": "2024-05-02T05:15:40.175",
+            "update_time": "2024-05-02T07:36:56.735",
             "succeeded": true,
-            "focusval": 8626.2
+            "focusval": 8645.2
         },
         "m875": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-02T07:40:29.842",
+            "succeeded": true,
+            "focusval": 8488.2
         },
         "m625": {
             "update_time": "2000-01-01T00:00:00.000",

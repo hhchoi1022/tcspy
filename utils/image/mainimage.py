@@ -271,7 +271,7 @@ class mainImage(mainConfig):
         info['FOC_PRT'] = self._format_header(self._configinfo['SAFEMONITOR_PORTNUM'],'Port number of ALPACA weather device')
         info['FOC_NUM'] = self._format_header(self._configinfo['SAFEMONITOR_DEVICENUM'],'Device number of ALPACA weather device')
         # logger
-        info['LOGFILE'] = self._format_header(self._configinfo['LOGGER_PATH'], 'Log file path')######################3
+        info['LOGPATH'] = self._format_header(self._configinfo['LOGGER_PATH'], 'Log file path')######################3
         return info
     
     def _add_weatinfo_to_hdr(self):
@@ -319,7 +319,7 @@ class mainImage(mainConfig):
             info['EGAIN'] = self._format_header(self._caminfo['egain'], '[e-/ADU] Eletrconic gain')
             info['CCD-TEMP'] = self._format_header(self._caminfo['ccdtemp'], '[deg C] CCD temperature')
             info['SET-TEMP'] = self._format_header(self._caminfo['set_ccdtemp'], '[deg C] CCD temperature setpoint')
-            info['COL-POWE'] = self._format_header(self._caminfo['power_cooler'], '[%] CCD cooler power')
+            info['COLPOWER'] = self._format_header(self._caminfo['power_cooler'], '[%] CCD cooler power')
         return info
     
     def _add_telinfo_to_hdr(self):
@@ -331,7 +331,7 @@ class mainImage(mainConfig):
         info['AIRMASS'] = None
         if self._mountinfo:
             altitude = float(self._mountinfo['alt'])
-            airmass = 1/np.sin(np.deg2rad((90 - altitude) + 244/(165+47*(90-altitude)**1.1))) # Pickering 2002
+            airmass = 1/np.sin(np.deg2rad((altitude) + 244/(165+47*(altitude)**1.1))) # Pickering 2002
             info['AIRMASS'] = self._format_header(airmass, 'Airmass at frame center (Pickering 2002) ')
             info['ALTITUDE'] = self._format_header(altitude, '[deg] Altitude of the telescope pointing')
             info['AZIMUTH'] = self._format_header(float(self._mountinfo['az']), '[deg] Azimuth of the telescope pointing')

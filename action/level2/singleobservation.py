@@ -321,7 +321,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                           alt = alt,
                                                           az = az,
                                                           name = name,
-                                                          objtype = objtype)
+                                                          objtype = objtype,
+                                                          id_ = id_)
                     # Update self.observation_status
                     observation_status[filter_]['observed'] += 1
                     self.shared_memory['status'] = observation_status
@@ -337,13 +338,19 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
                 if autofocus_when_elapsed:
                     history = action_autofocus.history[filter_]
-                    if history['succeeded']:
+                    if ((Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now) | history['succeeded']:
                         now = Time.now()
-                        if (Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now:
+                        try:
                             result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
-                    else:
-                        result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
-
+                        except ConnectionException:
+                            self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                            raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                        except AbortionException:
+                            self._log.warning(f'[{type(self).__name__}] is aborted.')
+                            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                        except ActionFailedException:
+                            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
+                            pass
         self._log.info(f'[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(result_all_exposure)
         return all(result_all_exposure)

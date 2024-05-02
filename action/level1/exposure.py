@@ -41,6 +41,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             az : float = None,
             name : str = '',
             objtype : str = None,
+            id_ : str = None
             ):
         """
         Performs the action to expose the camera, saves the image, and returns True if successful.
@@ -127,6 +128,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                               az = az, 
                               name = name, 
                               objtype= objtype,
+                              id_ = id_,
                               
                               exptime = exptime,
                               count = 1,

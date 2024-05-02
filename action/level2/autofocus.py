@@ -173,8 +173,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         except AutofocusFailedException:
-            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed. Focuser move back to the previous position')
-            action_changefocus.run(position = info_focuser['position'], is_relative= False)
+            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Autofocus process is failed')
         
         if result_autofocus:

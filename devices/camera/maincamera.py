@@ -567,6 +567,7 @@ class mainCamera(mainConfig):
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
-    A = mainCamera(unitnum = 21)
+    A = mainCamera(unitnum = 1)
     #C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= Event(), binning = 1, is_light = False)
     A.device.Gain
+# %%

@@ -213,16 +213,19 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             self.multiaction.run()
         except AbortionException:
             self.multitelescopes.log.wraning(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
+        is_all_succeeded = []
         for tel_name, result in self.shared_memory.items():
-            is_succeeded = self.shared_memory[tel_name]
+            is_succeeded = self.shared_memory[tel_name]['succeeded']
+            is_all_succeeded.append(is_succeeded)
             if is_succeeded:
                 self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
-                return True
             else:
                 self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
-                return False
-                
+        return all(is_all_succeeded)
+
+        
     def abort(self):
         """
         A function to abort the ongoing spectroscopic observation process.

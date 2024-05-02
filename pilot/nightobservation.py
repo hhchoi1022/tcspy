@@ -17,6 +17,7 @@ from tcspy.devices.weather import WeatherUpdater
 from tcspy.devices.safetymonitor import SafetyMonitorUpdater
 from tcspy.utils.error import *
 from tcspy.utils.target import SingleTarget
+from tcspy.utils.exception import *
 #%%
 
 
@@ -355,6 +356,9 @@ class NightObservation(mainConfig):
             time.sleep(5)
             print(f'Wait until sunset... [sunset = {obs_start_time.isot}]')
             now = Time.now()
+            if self.abort_action.is_set():
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                
         
         # Trigger observation until sunrise
         while now < obs_end_time:
@@ -411,9 +415,13 @@ class NightObservation(mainConfig):
         while now < obs_start_time:
             time.sleep(5)
             now = Time.now()
+            if self.abort_action.is_set():
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Trigger observation until sunrise
         while now < obs_end_time:
+            if self.abort_action.is_set():
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
             now = Time.now() 
             
             # Initialize the Daily target tbl
@@ -541,6 +549,13 @@ class NightObservation(mainConfig):
         self.is_ToO_triggered = False
         self._ToO_abort = Event()
         return action_history
+
+    def observation_status(self):
+        for action in self.action_queue:
+            tellist = action['telescope']
+            for tel in tellist:
+                print(dict(action['action'].shared_memory[tel.tel_name]))
+    
 
         
         
