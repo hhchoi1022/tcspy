@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -80,7 +80,8 @@ class mainConfig:
                             MOUNT_CHECKTIME=0.5,
                             MOUNT_DIAMETER=0.5,
                             MOUNT_APAREA=0.196,
-                            MOUNT_FOCALLENGTH=1500,
+                            MOUNT_FOCALLENGTH=1537.0,
+                            MOUNT_FOCALRATIO=3,
                             MOUNT_SETTLETIME=3, #seconds
                             MOUNT_NAME= self.tel_name
                             )

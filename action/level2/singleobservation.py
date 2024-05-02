@@ -65,6 +65,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             alt : float = None, # When altaz == None: do not move 
             az : float = None,
             name : str = None,
+            id_: str = None,
             obsmode : str = 'Single',
             specmode : str = None,
             ntelescope : int = 1,
@@ -168,6 +169,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               az = az, 
                               name = name, 
                               objtype= objtype,
+                              id_ = id_,
                               
                               exptime = exptime,
                               count = count,

@@ -119,6 +119,7 @@ class SingleTarget(mainConfig):
                  az : float = None,
                  name : str = '',
                  objtype : str = None,
+                 id_ : str = None,
                  
                  # Exposure information
                  exptime : float or str = None,
@@ -127,7 +128,8 @@ class SingleTarget(mainConfig):
                  binning : int or str = 1,
                  specmode : str = None,
                  obsmode : str = None,
-                 ntelescope : int = 1):
+                 ntelescope : int = 1,
+                 ):
         
         super().__init__()
         self._observer = observer
@@ -144,6 +146,7 @@ class SingleTarget(mainConfig):
         self._coordtype = None
         self.ra_hour = None
         self.dec_deg = None
+        self.id = id_
         
         if (not isinstance(alt, type(None))) & (not isinstance(az, type(None))):
             self._coordtype = 'altaz'
@@ -294,24 +297,25 @@ class SingleTarget(mainConfig):
         targetinfo['hourangle'] = None
         targetinfo['is_observable'] = None
         targetinfo['objtype'] = self.objtype
+        targetinfo['id_'] = self._id
         
         if self._coordtype == 'altaz':
-            targetinfo['alt'] = self.alt#"{:.3f}".format(self.alt)
-            targetinfo['az'] = self.az#"{:.3f}".format(self.az)
+            targetinfo['alt'] = self.alt
+            targetinfo['az'] = self.az
             targetinfo['coordtype'] = self._coordtype
             targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time'])
         
         elif self._coordtype == 'radec':
-            targetinfo['ra'] = self.ra#"{:.4f}".format(self.ra)
-            targetinfo['dec'] = self.dec#"{:.4f}".format(self.dec)
-            targetinfo['ra_hour'] = self.ra_hour#"{:.4f}".format(self.ra_hour)
-            targetinfo['dec_deg'] = self.dec_deg#"{:.4f}".format(self.dec_deg)
+            targetinfo['ra'] = self.ra
+            targetinfo['dec'] = self.dec
+            targetinfo['ra_hour'] = self.ra_hour
+            targetinfo['dec_deg'] = self.dec_deg
             targetinfo['ra_hour_hms'] = self.coordinate.ra.to_string(unit="hourangle", sep=":", precision=2, pad=True)
             targetinfo['dec_deg_dms'] = self.coordinate.dec.to_string(unit="deg", sep=":", precision=2, pad=True)
-            targetinfo['alt'] = self.alt#"{:.3f}".format(self.alt)
-            targetinfo['az'] = self.az#"{:.3f}".format(self.az)
+            targetinfo['alt'] = self.alt
+            targetinfo['az'] = self.az
             targetinfo['coordtype'] = self._coordtype
-            targetinfo['hourangle'] = "{:.3f}".format(self.hourangle(utctime = targetinfo['update_time']).value,3)
+            targetinfo['hourangle'] = self.hourangle(utctime = targetinfo['update_time']).to_string(sep = " ")
             targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time']) 
         else:
             pass
@@ -615,7 +619,7 @@ class SingleTarget(mainConfig):
 # %%
 if __name__ == '__main__':
     unitnum = 21
-    observer = mainObserver(21)
+    observer = mainObserver()
     ra = 150.444
     dec = -20.5523
     S = SingleTarget(observer = observer, 

@@ -96,6 +96,7 @@ class mainCamera(mainConfig):
         status['readoutmode'] = None
         status['gain'] = None
         status['ccdtemp'] = None
+        status['set_ccdtemp'] = None
         status['power_cooler'] = None
         status['name_sensor'] = None
         status['type_sensor'] = None
@@ -167,6 +168,10 @@ class mainCamera(mainConfig):
             except:
                 pass
             try:
+                status['set_ccdtemp'] = round(self.device.SetCCDTemperature,1)
+            except:
+                pass
+            try:
                 status['power_cooler'] = round(self.device.CoolerPower,1)
             except:
                 pass
@@ -205,8 +210,9 @@ class mainCamera(mainConfig):
         imginfo['numDimension'] = None
         imginfo['exptime'] = None
         imginfo['date_obs_ltc'] = None
-        imginfo['date_obs_utc'] = Time.now().isot
-        imginfo['jd'] = round(Time.now().jd,6)
+        imginfo['date_obs_utc'] = None
+        imginfo['jd'] = None
+        imginfo['mjd'] = None
         
         if status['is_imgReady']:
             imgdata_alpaca =  self.device.ImageArray
@@ -257,6 +263,7 @@ class mainCamera(mainConfig):
                 imginfo['date_obs_ltc'] = lt.iso
                 imginfo['date_obs_utc'] = ut.isot
                 imginfo['jd'] = ut.jd
+                imginfo['mjd'] = ut.mjd
             except:
                 pass
         print(self.unitnum, Time.now().isot)

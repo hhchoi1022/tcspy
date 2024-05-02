@@ -77,6 +77,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             az : float = None,
             name : str = None,
             objtype : str = None,
+            id_ : str = None,
             force_slewing : bool = False,
             autofocus_use_history : bool = True,
             autofocus_history_duration : float = 60,
@@ -170,6 +171,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
                                     az = az,
                                     name = name,
                                     objtype = objtype,
+                                    id_ = id_,
                                     
                                     exptime = exptime,
                                     count = count,

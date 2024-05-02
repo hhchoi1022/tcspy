@@ -67,6 +67,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             az : float = None,
             name : str = None,
             objtype : str = None,
+            id_ : str = None,
             force_slewing : bool = False,
             autofocus_use_history : bool = True,
             autofocus_history_duration : float = 60,
@@ -162,6 +163,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                                     az = az,
                                     name = name,
                                     objtype = objtype,
+                                    id_ = id_,
                                     
                                     exptime = exptime,
                                     count = count,
