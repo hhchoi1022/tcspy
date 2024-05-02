@@ -231,7 +231,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
 # %%
 
 if __name__ == '__main__':
-    device = SingleTelescope(unitnum = 21)
+    device = SingleTelescope(unitnum = 1)
     abort_action = Event()
     #device.filt.connect()
     #device.cam.connect()

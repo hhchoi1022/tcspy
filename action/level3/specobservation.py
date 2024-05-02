@@ -212,9 +212,10 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             is_succeeded = self.shared_memory[tel_name]
             if is_succeeded:
                 self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
+                return True
             else:
                 self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
-        return True
+                return False
 
     def abort(self):
         """

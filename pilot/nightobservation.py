@@ -53,11 +53,11 @@ class NightObservation(mainConfig):
     def _default_autofocus_config(self):
         class default_autofocus: 
             def __init__(self):
-                self.use_history = False
+                self.use_history = True
                 self.history_duration = 60 
-                self.before_start = False
-                self.when_filterchange = False
-                self.when_elapsed = False
+                self.before_start = True
+                self.when_filterchange = True
+                self.when_elapsed = True
                 self.elapsed_duration = 60
             def __repr__(self):
                 return ('AUTOFOCUS CONFIGURATION ============\n'
@@ -425,7 +425,7 @@ class NightObservation(mainConfig):
             print(f'Best target: {best_target}')
             
             # Check weather status
-            is_weather_safe = True#self._is_safe()
+            is_weather_safe = self._is_safe()
             aborted_action = None
             
             # If weather is safe
@@ -449,7 +449,7 @@ class NightObservation(mainConfig):
                         else:
                             self._obstrigger(target = best_target, abort_action = self._observation_abort)
                     else:
-                        print('No observable target exists')
+                        print('No observable target exists... Waiting for target being observable or new target input')
             # If weather is unsafe
             else:
                 aborted_action = self.abort_observation()
@@ -558,7 +558,7 @@ if __name__ == '__main__':
                          SingleTelescope(7),
                          SingleTelescope(8),
                          SingleTelescope(9),
-                         #SingleTelescope(10),
+                         SingleTelescope(10),
                          SingleTelescope(11),
                          ]
 #%%

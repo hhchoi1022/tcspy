@@ -330,13 +330,13 @@ class mainImage(mainConfig):
         info['DEC'] = None
         info['AIRMASS'] = None
         if self._mountinfo:
-            altitude = self._mountinfo['alt']
+            altitude = float(self._mountinfo['alt'])
             airmass = 1/np.sin(np.deg2rad((90 - altitude) + 244/(165+47*(90-altitude)**1.1))) # Pickering 2002
             info['AIRMASS'] = self._format_header(airmass, 'Airmass at frame center (Pickering 2002) ')
-            info['ALTITUDE'] = self._format_header(self._mountinfo['alt'], '[deg] Altitude of the telescope pointing')
-            info['AZIMUTH'] = self._format_header(self._mountinfo['az'], '[deg] Azimuth of the telescope pointing')
-            info['RA'] = self._format_header(self._mountinfo['ra'], '[deg] Right ascension of the telescope pointing')
-            info['DEC'] = self._format_header(self._mountinfo['dec'], '[deg] Declination of the telescope pointing')
+            info['ALTITUDE'] = self._format_header(altitude, '[deg] Altitude of the telescope pointing')
+            info['AZIMUTH'] = self._format_header(float(self._mountinfo['az']), '[deg] Azimuth of the telescope pointing')
+            info['RA'] = self._format_header(float(self._mountinfo['ra']), '[deg] Right ascension of the telescope pointing')
+            info['DEC'] = self._format_header(float(self._mountinfo['dec']), '[deg] Declination of the telescope pointing')
         return info
         
     def _add_filtwheelinfo_to_hdr(self):

@@ -146,7 +146,7 @@ class SingleTarget(mainConfig):
         self._coordtype = None
         self.ra_hour = None
         self.dec_deg = None
-        self.id = id_
+        self._id = id_
         
         if (not isinstance(alt, type(None))) & (not isinstance(az, type(None))):
             self._coordtype = 'altaz'

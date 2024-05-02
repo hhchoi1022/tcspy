@@ -122,7 +122,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         """
           exptime = '5,5'
           count = '2,2'
-          filter_ = 'g,r'
+          filter_ = 'm400,m425'
           binning = '1'
           imgtype = 'Light'
           ra = 200
@@ -130,8 +130,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
           obsmode = 'Spec'
           autofocus_use_history = True
           autofocus_history_duration = 60
-          autofocus_before_start = False
-          autofocus_when_filterchange= False
+          autofocus_before_start = True
+          autofocus_when_filterchange= True
           autofocus_when_elapsed = True
           autofocus_elapsed_duration = 60
           observation_status = None
@@ -141,6 +141,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
           objtype = None
           specmode = None
           ntelescope = 1
+          id_ = '193yhiujashdijqhweu9'
         """        
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check condition of the instruments for this Action
@@ -435,7 +436,7 @@ if __name__ == '__main__':
                 autofocus_when_filterchange= False)              
     from multiprocessing import Process
     abort_action = Event()
-    s = SingleObservation(SingleTelescope(21),abort_action)
+    s = SingleObservation(SingleTelescope(1),abort_action)
     p = Process(target = s.run, kwargs = kwargs)
     p.start()
 # %%
