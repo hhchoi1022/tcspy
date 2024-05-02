@@ -338,8 +338,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
                 if autofocus_when_elapsed:
                     history = action_autofocus.history[filter_]
+                    now = Time.now()
                     if ((Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now) | history['succeeded']:
-                        now = Time.now()
                         try:
                             result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
                         except ConnectionException:

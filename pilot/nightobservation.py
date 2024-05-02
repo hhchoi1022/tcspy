@@ -346,7 +346,7 @@ class NightObservation(mainConfig):
     def _ToOobservation(self):
         self.is_ToO_triggered = True
         aborted_action = self.abort_observation()
-        
+        self.multitelescopes.log('ToO is triggered.================================')
         obs_start_time = self._obsnight.sunset_astro
         obs_end_time = self._obsnight.sunrise_astro
         now = Time.now()
@@ -357,13 +357,17 @@ class NightObservation(mainConfig):
             print(f'Wait until sunset... [sunset = {obs_start_time.isot}]')
             now = Time.now()
             if self.abort_action.is_set():
+                self.multitelescopes.log(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
                 
         
         # Trigger observation until sunrise
         while now < obs_end_time:
+            if self.abort_action.is_set():
+                self.multitelescopes.log(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
             now = Time.now()
-            is_weather_safe = True#self.is_safe()
+            is_weather_safe = self.is_safe()
             if is_weather_safe:      
                 self._DB.initialize(initialize_all = False)
                 time.sleep(0.5)  
@@ -377,13 +381,14 @@ class NightObservation(mainConfig):
                     if not objtype == 'TOO':
                         self.is_ToO_triggered = False
                     else:
-                        self._obstrigger(target = best_target, abort_action = self.ToO_abort)
+                        self._obstrigger(target = best_target, abort_action = self._ToO_abort)
             else:
                 self.abort_ToO()
             time.sleep(0.5)
         while len(self.action_queue) > 0:
             time.sleep(1)
         self.is_ToO_triggered = False
+        self._observation_abort = Event()
         
         for action in aborted_action:
             time.sleep(0.5)
@@ -416,11 +421,13 @@ class NightObservation(mainConfig):
             time.sleep(5)
             now = Time.now()
             if self.abort_action.is_set():
+                self.multitelescopes.log(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Trigger observation until sunrise
         while now < obs_end_time:
             if self.abort_action.is_set():
+                self.multitelescopes.log(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             now = Time.now() 
             
@@ -524,6 +531,9 @@ class NightObservation(mainConfig):
         action_history = self.action_queue
         self._observation_abort.set()
         for action in action_history:
+            self.multitelescopes.log('Waiting for ordinary observation aborted...')
+            while any(action['action'].multiaction.status.values()):
+                time.sleep(0.2)
             self._pop_action(action_id =action['id'])
             self._put_telescope(telescope = action['telescope'])
             self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')
@@ -543,6 +553,9 @@ class NightObservation(mainConfig):
                 for ToO_target in ToO_targets_unobserved:
                     self._DB.update_target(update_value = 'retracted', update_key = 'status', id_value =  ToO_target['id'], id_key = 'id')
         for action in action_history:
+            self.multitelescopes.log('Waiting for ordinary observation aborted...')
+            while any(action['action'].multiaction.status.values()):
+                time.sleep(0.2)
             self._pop_action(action_id =action['id'])
             self._put_telescope(telescope = action['telescope'])   
             self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')    
