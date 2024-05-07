@@ -339,7 +339,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 if autofocus_when_elapsed:
                     history = action_autofocus.history[filter_]
                     now = Time.now()
-                    if ((Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now) | history['succeeded']:
+                    if ((Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now) | (not history['succeeded']):
                         try:
                             result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
                         except ConnectionException:

@@ -254,24 +254,26 @@ if __name__ == '__main__':
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
-    exptime= '0.1'
+    exptime= '10'
     count= '2,2'
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
-    ra= 180
+    ra= 300
     dec= -20
     alt =None
     az = None
     name = "T07377"
     objtype = 'Commissioning'
-    autofocus_before_start= True
-    autofocus_when_filterchange= True
+    autofocus_before_start= False
+    autofocus_when_filterchange= False
+    autofocus_when_elapsed = False
     kwargs = dict(exptime = exptime, count = count, specmode = specmode,
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,
         alt = alt, az = az, name = name, objtype = objtype,
         autofocus_before_start= autofocus_before_start,
         autofocus_when_filterchange= autofocus_when_filterchange,
+        autofocus_when_elapsed = autofocus_when_elapsed,
         )
     from threading import Thread
     t = Thread(target = S.run, kwargs= kwargs)

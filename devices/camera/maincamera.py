@@ -519,6 +519,7 @@ class mainCamera(mainConfig):
         self.device.StartExposure(Duration = exptime, Light = is_light)
 
         time.sleep(self._checktime)
+        time.sleep(exptime)
         while not self.device.ImageReady:
             if abort_action.is_set():
                 self._log.warning('Camera exposure is aborted')

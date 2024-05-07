@@ -144,7 +144,7 @@ class mainConfig:
         safetymonitor_params = dict(SAFEMONITOR_HOSTIP= '10.0.11.3', #ip_address, #'10.0.11.3'
                                     SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
-                                    SAFEMONITOR_UPDATETIME=10,
+                                    SAFEMONITOR_UPDATETIME=60,
                                     SAFEMONITOR_SAVE_HISTORY=True,
                                     SAFEMONITOR_PATH= f'{os.path.join(self._configfilepath_global,"../devices/safetymonitor/safeinfo")}')
         
