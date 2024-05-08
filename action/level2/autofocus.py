@@ -60,8 +60,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self,
-            filter_ : str,
-            use_offset : bool,
+            filter_ : str = None,
+            use_offset : bool = True,
             use_history : bool = False,
             history_duration : float = 60):
         """
@@ -114,6 +114,9 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         # Define action
         action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action)
         action_changefilter = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action)
+        if filter_ == None:
+            info_filterwheel = self.telescope.filterwheel.get_status()
+            filter_ = info_filterwheel['filter']
         
         if use_offset:
             info_filterwheel = self.telescope.filterwheel.get_status()

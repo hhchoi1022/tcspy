@@ -110,7 +110,7 @@ if __name__ == '__main__':
                          SingleTelescope(7),
                          SingleTelescope(8),
                          SingleTelescope(9),
-                         SingleTelescope(10),
+                         #SingleTelescope(10),
                          SingleTelescope(11),
                         ]
     
