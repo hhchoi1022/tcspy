@@ -517,9 +517,8 @@ class mainCamera(mainConfig):
             raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
         # Exposure
         self.device.StartExposure(Duration = exptime, Light = is_light)
-
-        time.sleep(self._checktime)
-        time.sleep(exptime)
+        time.sleep(self._checktime * 3)
+        #time.sleep(exptime)
         while not self.device.ImageReady:
             if abort_action.is_set():
                 self._log.warning('Camera exposure is aborted')
@@ -569,6 +568,11 @@ if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
     A = mainCamera(unitnum = 1)
-    #C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= Event(), binning = 1, is_light = False)
+    abort_action = Event()
+    #C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= abort_action, binning = 1, is_light = False)
+    from multiprocessing import Process
+    p = Process(target = A.exposure, kwargs = dict(exptime = 10, imgtype = 'Light', abort_action= abort_action, binning = 1, is_light = False))
+    #p.start()
+    #A.abort()
     A.device.Gain
 # %%

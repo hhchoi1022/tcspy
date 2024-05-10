@@ -486,6 +486,9 @@ class mainMount_pwi4(mainConfig):
 # %%
 if __name__ == '__main__':
     tel  =mainMount_pwi4(unitnum = 1)
-    tel.slew_altaz(alt = 35, az = 270, abort_action = Event())
-    
+    abort_action = Event()
+    #tel.slew_altaz(alt = 35, az = 270, abort_action =abort_action)
+    from multiprocessing import Process
+    from threading import Thread
+    t  = Thread(target = tel.slew_altaz, kwargs = dict(alt = 35, az = 300, abort_action =abort_action))
 #%%

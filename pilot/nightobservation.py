@@ -553,13 +553,14 @@ class NightObservation(mainConfig):
         # Abort ordinary observation
         action_history = self.action_queue
         self._observation_abort.set()
-        for action in action_history:
-            self.multitelescopes.log.warning('Waiting for ordinary observation aborted...')
-            while any(action['action'].multiaction.status.values()):
-                time.sleep(0.2)
-            self._pop_action(action_id =action['id'])
-            self._put_telescope(telescope = action['telescope'])
-            self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')
+        if len(action_history) > 0:
+            for action in action_history:
+                self.multitelescopes.log.warning('Waiting for ordinary observation aborted...')
+                while any(action['action'].multiaction.status.values()):
+                    time.sleep(0.2)
+                self._pop_action(action_id =action['id'])
+                self._put_telescope(telescope = action['telescope'])
+                self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')
 
         self.is_obs_triggered = False
         self._observation_abort = Event()
@@ -575,13 +576,14 @@ class NightObservation(mainConfig):
             if len(ToO_targets_unobserved) > 0:
                 for ToO_target in ToO_targets_unobserved:
                     self._DB.update_target(update_value = 'retracted', update_key = 'status', id_value =  ToO_target['id'], id_key = 'id')
-        for action in action_history:
-            self.multitelescopes.log.warning('Waiting for ordinary observation aborted...')
-            while any(action['action'].multiaction.status.values()):
-                time.sleep(0.2)
-            self._pop_action(action_id =action['id'])
-            self._put_telescope(telescope = action['telescope'])   
-            self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')    
+        if len(action_history) > 0:
+            for action in action_history:
+                self.multitelescopes.log.warning('Waiting for ordinary observation aborted...')
+                while any(action['action'].multiaction.status.values()):
+                    time.sleep(0.2)
+                self._pop_action(action_id =action['id'])
+                self._put_telescope(telescope = action['telescope'])   
+                self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')    
         self.is_ToO_triggered = False
         self._ToO_abort = Event()
         return action_history

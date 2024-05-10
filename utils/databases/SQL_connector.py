@@ -6,7 +6,7 @@ import uuid
 import mysql
 import numpy as np
 import time
-#%%
+
 
 class SQL_Connector:
     """
@@ -385,3 +385,6 @@ class SQL_Connector:
         for id_, index in zip(uuidlist, values_to_update['idx']):
             self.update_row(tbl_name = tbl_name, update_value = id_, update_key = 'id', id_value = index, id_key='idx')
 
+
+
+# %%

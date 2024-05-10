@@ -25,3 +25,10 @@ alt = 50
 az = 0
 tracking= True
 action_slew = MultiAction(list_telescopes, dict(alt = alt, az = az, tracking = tracking), SlewAltAz, Event())
+# %%
+action_slew.run()
+# %%
+action_autofocus = MultiAction(list_telescopes, dict(), AutoFocus, Event())
+# %%
+action_autofocus.run()
+# %%

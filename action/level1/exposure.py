@@ -238,5 +238,8 @@ if __name__ == '__main__':
     #device.filt.connect()
     #device.cam.connect()
     e =Exposure(device, abort_action)
-    e.run(1, exptime = 1, filter_ = 'g', gain = 2750)
+    from multiprocessing import Process
+    p = Process(target = e.run, kwargs = dict(frame_number = 1, exptime = 10, filter_ = 'r', gain = 2750))
+    p.start()
+    #e.run(1, exptime = 1, filter_ = 'g', gain = 2750)
 # %%
