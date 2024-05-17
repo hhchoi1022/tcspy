@@ -60,6 +60,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             count : str,
             specmode : str,
             binning : str = '1',
+            gain : int = 2750,
             imgtype : str = 'Light',
             ra : float = None,
             dec : float = None,
@@ -169,6 +170,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                                     count = count,
                                     filter_ = None,
                                     binning = binning,
+                                    gain = gain,
                                     obsmode = 'Spec',
                                     specmode = specmode)                
         
@@ -259,12 +261,12 @@ if __name__ == '__main__':
     specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
-    ra= 200
-    dec= -30
-    alt =None
-    az = None
-    name = "T07377"
-    objtype = 'Commissioning'
+    ra= None
+    dec= None
+    alt =40 
+    az = 300
+    name = "GRB240516A"
+    objtype = 'ToO'
     autofocus_before_start= False
     autofocus_when_filterchange= False
     autofocus_when_elapsed = False

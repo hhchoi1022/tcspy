@@ -100,9 +100,24 @@ class MultiAction:
 # %%
 if __name__ == '__main__':
     from threading import Thread
-    from tcspy.action.level1 import *
+    from multiprocessing import Event
+    from tcspy.action.level2 import *
+    
+    list_telescope = [SingleTelescope(1),
+                      SingleTelescope(2),
+                      SingleTelescope(3),
+                      SingleTelescope(5),
+                      SingleTelescope(6),
+                      SingleTelescope(7),
+                      SingleTelescope(8),
+                      SingleTelescope(9),
+                      SingleTelescope(10),
+                      SingleTelescope(11),
+                      ]
+#%%
+if __name__ == '__main__':
     abort_action = Event()
-    m = MultiAction([SingleTelescope(21)], dict(alt = 40, az = 0), SlewAltAz, abort_action)
+    m = MultiAction(list_telescope, dict(exptime = 10, count = 3, filter_ = 'r', alt = 40, az = 300), SingleObservation, abort_action)
     p = Thread(target = m.run, kwargs = dict())
     p.start()
     #m.abort()

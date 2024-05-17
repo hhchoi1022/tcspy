@@ -227,13 +227,14 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         Sends an abort command to the filterwheel and camera if they are busy.
         """
         self.abort_action.set()
-        self.telescope.camera.abort()
+        #self.telescope.camera.abort()
         
         
 # %%
 
 if __name__ == '__main__':
-    device = SingleTelescope(unitnum = 1)
+    device = SingleTelescope(unitnum = 8)
+    
     abort_action = Event()
     #device.filt.connect()
     #device.cam.connect()

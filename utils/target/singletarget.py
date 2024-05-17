@@ -126,6 +126,7 @@ class SingleTarget(mainConfig):
                  count : int or str = None,
                  filter_ : str = None,
                  binning : int or str = 1,
+                 gain : int = 2750,
                  specmode : str = None,
                  obsmode : str = None,
                  ntelescope : int = 1,
@@ -177,6 +178,7 @@ class SingleTarget(mainConfig):
         self.count = count
         self.filter_ = filter_
         self.binning = binning
+        self.gain = gain
         self.specmode = specmode
         self.obsmode = obsmode
         self.ntelescope = ntelescope
@@ -221,6 +223,7 @@ class SingleTarget(mainConfig):
         exposureinfo['count'] = self.count
         exposureinfo['filter_'] = self.filter_
         exposureinfo['binning'] = self.binning
+        exposureinfo['gain'] = self.gain
         exposureinfo['obsmode'] = self.obsmode
         exposureinfo['specmode'] = self.specmode
         exposureinfo['specmode_filter'] = None

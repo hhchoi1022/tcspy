@@ -59,6 +59,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             count : str,
             filter_ : str,
             binning : str = '1',
+            gain : int = 2750,
             imgtype : str = 'Light',
             ra : float = None, # When radec == None: do not move 
             dec : float = None,
@@ -176,6 +177,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               count = count,
                               filter_ = filter_,
                               binning = binning, 
+                              gain = gain,
                               obsmode = obsmode,
                               specmode = specmode,
                               ntelescope = ntelescope
@@ -314,6 +316,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                           filter_ = filter_,
                                                           imgtype = imgtype,
                                                           binning = int(binning),
+                                                          gain = int(gain),
                                                           obsmode = obsmode,
                                                         
                                                           ra = ra,
@@ -419,31 +422,31 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 # %%
 if __name__ == '__main__':
     from tcspy.action.level1 import Connect
-    telescope = SingleTelescope(1)
+    telescope = SingleTelescope(8)
     abort_action = Event()
     C = Connect(telescope, abort_action)
     C.run()
     S = SingleObservation(telescope, abort_action)
 
-
-# %%
-# %%
 #%%    
 if __name__ == '__main__':
 
-    kwargs = dict(exptime = '0.1', 
+    kwargs = dict(exptime = '10', 
                 count = '2,2', 
                 filter_ = 'g,r', 
                 binning = '1', 
                 imgtype = 'Light',
-                ra = 180.5, 
-                dec = -58.0666 , 
-                obsmode = 'Spec',
-                autofocus_before_start = True, 
+                ra = None, 
+                dec =  None, 
+                alt = 40,
+                az = 300,
+                obsmode =None,
+                autofocus_use_history = False, 
+                autofocus_before_start = False, 
                 autofocus_when_filterchange= False)              
     from multiprocessing import Process
     abort_action = Event()
-    s = SingleObservation(SingleTelescope(1),abort_action)
+    s = SingleObservation(SingleTelescope(7),abort_action)
     p = Process(target = s.run, kwargs = kwargs)
     p.start()
 # %%
@@ -451,7 +454,6 @@ if __name__ == '__main__':
     s.abort()
 # %%
 if __name__ == '__main__':
-    observation_status = dict(s.shared_memory)['status']
     kwargs = dict(exptime = '5,5', 
                 count = '2,2', 
                 filter_ = 'g,r', 
@@ -459,12 +461,12 @@ if __name__ == '__main__':
                 imgtype = 'Light',
                 ra = 200.5, 
                 dec = -58.0666 , 
-                obsmode = 'Spec',
+                obsmode = 'Single',
                 autofocus_before_start = False, 
                 autofocus_when_filterchange= False,
-                observation_status = observation_status)
+                observation_status = None)
     from multiprocessing import Process
-    s = SingleObservation(SingleTelescope(21),Event())
+    s = SingleObservation(SingleTelescope(7),Event())
     p = Process(target = s.run, kwargs = kwargs)
     p.start()
 #%%

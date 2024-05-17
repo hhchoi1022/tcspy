@@ -70,6 +70,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             count : str,
             filter_ : str,
             binning : str = '1',
+            gain : int = 2750,
             imgtype : str = 'Light',
             ra : float = None,
             dec : float = None,
@@ -177,6 +178,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
                                     count = count,
                                     filter_ = filter_,
                                     binning = binning,
+                                    gain = gain,
                                     obsmode = 'Deep',
                                     ntelescope= ntelescope)                
         

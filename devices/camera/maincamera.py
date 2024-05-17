@@ -266,7 +266,6 @@ class mainCamera(mainConfig):
                 imginfo['mjd'] = ut.mjd
             except:
                 pass
-        print(self.unitnum, Time.now().isot)
         return imginfo, status
 
     @Timeout(5, 'Timeout') 
@@ -494,6 +493,12 @@ class mainCamera(mainConfig):
         gain : int, optional
             The gain value for the image.
 
+        abort_action = Event()
+        exptime = 10
+        binning = 1
+        imgtype = 'Light'
+        gain = 2750
+        
         Returns
         -------
         imginfo : dict
@@ -516,9 +521,8 @@ class mainCamera(mainConfig):
             self._log.critical(f'Type "{imgtype}" is not set as imagetype')
             raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
         # Exposure
+
         self.device.StartExposure(Duration = exptime, Light = is_light)
-        time.sleep(self._checktime * 3)
-        #time.sleep(exptime)
         while not self.device.ImageReady:
             if abort_action.is_set():
                 self._log.warning('Camera exposure is aborted')
@@ -539,6 +543,9 @@ class mainCamera(mainConfig):
         """
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
+        self.cam_lock.release()
+        # Flush the camera
+
     
     def _update_gain(self,
                     gain : int = 0):
@@ -567,12 +574,11 @@ class mainCamera(mainConfig):
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
-    A = mainCamera(unitnum = 1)
+    A = mainCamera(unitnum = 8)
     abort_action = Event()
     #C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= abort_action, binning = 1, is_light = False)
     from multiprocessing import Process
     p = Process(target = A.exposure, kwargs = dict(exptime = 10, imgtype = 'Light', abort_action= abort_action, binning = 1, is_light = False))
-    #p.start()
-    #A.abort()
-    A.device.Gain
+    p.start()
+   
 # %%

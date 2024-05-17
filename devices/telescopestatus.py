@@ -33,7 +33,7 @@ class TelescopeStatus(Interface):
         try:
             if self.telescope.camera.device.Connected:
                 status = 'idle'
-                if self.telescope.camera.device.CamsState.name == 'cameraIdle':
+                if self.telescope.camera.device.CameraState.name == 'cameraIdle':
                     status = 'idle'
                 else:
                     status = 'busy'    

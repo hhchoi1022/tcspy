@@ -35,10 +35,10 @@ class NightObservation(mainConfig):
         self.autofocus = self._default_autofocus_config()
         self._weather = next(iter(self.multitelescopes.devices.values())).devices['weather']
         self._safetymonitor = next(iter(self.multitelescopes.devices.values())).devices['safetymonitor']
-        if self.config['NIGHTOBS_SAFETYPE'].upper() == 'WEATHER':
-            self._is_safe = self._is_weather_safe
-        else:
-            self._is_safe = self._is_safetymonitor_safe
+        #if self.config['NIGHTOBS_SAFETYPE'].upper() == 'WEATHER':
+        self._is_safe = self._is_weather_safe
+        #else:
+            #self._is_safe = self._is_safetymonitor_safe
         self._weather_updater = None
         self._obsnight = None
         self.action_queue = list()
@@ -54,11 +54,11 @@ class NightObservation(mainConfig):
     def _default_autofocus_config(self):
         class default_autofocus: 
             def __init__(self):
-                self.use_history = True
+                self.use_history = False
                 self.history_duration = 60 
-                self.before_start = True
-                self.when_filterchange = True
-                self.when_elapsed = True
+                self.before_start = False
+                self.when_filterchange = False
+                self.when_elapsed = False
                 self.elapsed_duration = 60
             def __repr__(self):
                 return ('AUTOFOCUS CONFIGURATION ============\n'
@@ -125,6 +125,7 @@ class NightObservation(mainConfig):
                     count = target['count'],
                     specmode = target['specmode'],
                     binning = target['binning'], 
+                    gain = target['gain'],
                     imgtype = 'Light', 
                     ra = target['RA'],
                     dec = target['De'], 
@@ -165,6 +166,7 @@ class NightObservation(mainConfig):
                     count = target['count'],
                     filter_ = target['filter_'],
                     binning = target['binning'], 
+                    gain = target['gain'],
                     imgtype = 'Light',
                     ra = target['RA'],
                     dec = target['De'], 
@@ -205,6 +207,7 @@ class NightObservation(mainConfig):
                     count = target['count'],
                     filter_ = target['filter_'],
                     binning = target['binning'], 
+                    gain = target['gain'],
                     imgtype = 'Light', 
                     ra = target['RA'],
                     dec = target['De'], 
@@ -247,6 +250,7 @@ class NightObservation(mainConfig):
                     count = target['count'],
                     filter_ = target['filter_'],
                     binning = target['binning'], 
+                    gain = target['gain'],
                     imgtype = 'Light', 
                     ra = target['RA'],
                     dec = target['De'], 
@@ -400,7 +404,7 @@ class NightObservation(mainConfig):
                     objtype = best_target['objtype'].upper()
                     # If target is not ToO
                     if not objtype == 'TOO':
-                        self.is_ToO_triggered = False
+                        break
                     # Else; trigger observation
                     else:
                         self._obstrigger(target = best_target, abort_action = self._ToO_abort)
@@ -409,6 +413,7 @@ class NightObservation(mainConfig):
                 aborted_action_ToO = self.abort_ToO()
             time.sleep(0.5)
         while len(self.action_queue) > 0:
+            print('Waiting for ToO to be finished')
             time.sleep(1)
         self.is_ToO_triggered = False
         self._observation_abort = Event()
@@ -555,14 +560,21 @@ class NightObservation(mainConfig):
         self._observation_abort.set()
         if len(action_history) > 0:
             for action in action_history:
-                self.multitelescopes.log.warning('Waiting for ordinary observation aborted...')
+                action['telescope'].log.warning('Waiting for ordinary observation aborted...')
+                # Check process aborted
                 while any(action['action'].multiaction.status.values()):
                     time.sleep(0.2)
+                # Check telescope ready to observe
+                #all_tel_status = {tel_name:self._is_tel_ready(tel_status) for tel_name, tel_status in action['telescope'].status.items()}
+                #while not all(all_tel_status.values()):
+                #    all_tel_status = {tel_name:self._is_tel_ready(tel_status) for tel_name, tel_status in action['telescope'].status.items()}
                 self._pop_action(action_id =action['id'])
                 self._put_telescope(telescope = action['telescope'])
                 self._DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')
 
         self.is_obs_triggered = False
+        # Get status of all telescopes
+
         self._observation_abort = Event()
         return action_history
         
