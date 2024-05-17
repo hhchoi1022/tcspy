@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -122,6 +122,16 @@ class mainConfig:
                              LOGGER_PATH= f'/data1/obsdata/{self.tel_name}/log/')
         
         # Share configuration
+
+        transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
+                               TRANSFER_SERVER_USERNAME = 'hhchoi1022',
+                               TRANSFER_SERVER_KEY = 'gusgh1020!',
+                               TRANSFER_SERVER_PORTNUM = '2222',
+                               TRANSFER_GRIDFTP_NUMPARALLEL = 30,
+                               TRANSFER_GRIPFTP_VERBOSE = True,
+                               TRANSFER_GRIDFTP_RETRIES = 10,
+                               TRANSFER_GRIDFTP_RTINTERVAL = 60
+                               )
         
         weather_params = dict(WEATHER_HOSTIP= '10.0.11.3',#ip_address, #'10.0.11.3'
                               WEATHER_PORTNUM= 5575,#portnum, #5575
@@ -187,6 +197,8 @@ class mainConfig:
         self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self._configfilepath_global)
         self.make_configfile(observer_params, filename='Observer.config', savepath= self._configfilepath_global)
         self.make_configfile(target_params, filename='Target.config', savepath= self._configfilepath_global)
+        self.make_configfile(transfer_params, filename='Transfer.config', savepath= self._configfilepath_global)
+
         self.make_configfile(weather_params, filename='Weather.config', savepath= self._configfilepath_global)
         self.make_configfile(dome_params, filename='Dome.config', savepath= self._configfilepath_global)
         self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self._configfilepath_global)
