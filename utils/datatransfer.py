@@ -26,13 +26,15 @@ class DataTransferManager(mainConfig):
         if self.gridftp:
             verbose_command = '-vb'
         source_path = os.path.join(self.source_homedir, key)
-        command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} -list file://{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.destination_homedir}"
-        #try:
-            #result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            #print(f"Transfer successful: {result.stdout.decode()}")
-        #except subprocess.CalledProcessError as e:
-            #print(f"Error during transfer: {e.stderr.decode()}")
+        command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.destination_homedir}"
+        try:
+            result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print(f"Transfer successful: {result.stdout.decode()}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error during transfer: {e.stderr.decode()}")
         return command
+
+    
         
     
     def _set_server(self,
