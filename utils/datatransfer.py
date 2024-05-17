@@ -5,7 +5,7 @@
 import os
 from tcspy.configuration import mainConfig
 import subprocess
-
+from astropy.time import Time
 #%%
 
 
@@ -13,7 +13,7 @@ class DataTransferManager(mainConfig):
     
     def __init__(self,
                  source_home_directory : str = '/data1/obsdata/',
-                 destination_home_directory : str = '/large_data/obsdata/data1/'):
+                 destination_home_directory : str = '/data/obsdata/data1/'):
         super().__init__()
         self.source_homedir = source_home_directory
         self.destination_homedir = destination_home_directory
@@ -21,12 +21,13 @@ class DataTransferManager(mainConfig):
         self.gridftp = self._set_gridftp_params(**self.config)
     
     def gridFTP_transfer(self,
-                         key : str = '*/images/20240501'):
+                         key : str = '*/images/20240504',
+                         output_file_name : str = '/data1/temp.tar'):
         verbose_command = ''
         if self.gridftp:
             verbose_command = '-vb'
         source_abskey = os.path.join(self.source_homedir, key)
-        source_path = self.tar(source_file_key= source_abskey, output_file_key = f'{os.path.basename(key)}.tar', compress = False)
+        source_path = self.tar(source_file_key= source_abskey, output_file_key = f'{os.path.join(os.path.dirname(key), output_file_name)}', compress = False)
         command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.destination_homedir}"
         try:
             result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -35,6 +36,11 @@ class DataTransferManager(mainConfig):
             print(f"Error during transfer: {e.stderr.decode()}")
         return command
 
+    def hpnssh_transfer(self,
+                        key : str = '*/images/20240504',
+                        output_file_name : str = '/data1/temp.tar'):
+        pass
+
     def tar(self,
             source_file_key : str,
             output_file_key : str,
@@ -42,8 +48,9 @@ class DataTransferManager(mainConfig):
         compress_command = '-cvf'
         if compress:
             compress_command = '-cvjf'
-        command = f'tar {compress_command} {output_file_key} {source_file_key}'
+        command = f'tar {compress_command} {output_file_key} -C {source_file_key}'
         try:
+            print(f"Tarball started: {Time.now().isot}")
             result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             print(f"Tarball successful: {result.stdout.decode()}")
             return output_file_key
@@ -100,5 +107,7 @@ class DataTransferManager(mainConfig):
         
     
 # %%
-DataTransferManager().gridFTP_transfer()
+A = DataTransferManager()
+#%%
+A.gridFTP_transfer()
 # %%

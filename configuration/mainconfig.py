@@ -125,7 +125,6 @@ class mainConfig:
 
         transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022',
-                               TRANSFER_SERVER_KEY = 'gusgh1020!',
                                TRANSFER_SERVER_PORTNUM = '2222',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 30,
                                TRANSFER_GRIPFTP_VERBOSE = True,
