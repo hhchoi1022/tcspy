@@ -25,7 +25,8 @@ class DataTransferManager(mainConfig):
         verbose_command = ''
         if self.gridftp:
             verbose_command = '-vb'
-        source_path = os.path.join(self.source_homedir, key)
+        source_abskey = os.path.join(self.source_homedir, key)
+        source_path = self.tar(source_file_key= source_abskey, output_file_key = f'{os.path.basename(key)}.tar', compress = False)
         command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.destination_homedir}"
         try:
             result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -34,8 +35,21 @@ class DataTransferManager(mainConfig):
             print(f"Error during transfer: {e.stderr.decode()}")
         return command
 
-    
-        
+    def tar(self,
+            source_file_key : str,
+            output_file_key : str,
+            compress : bool = False):
+        compress_command = '-cvf'
+        if compress:
+            compress_command = '-cvjf'
+        command = f'tar {compress_command} {output_file_key} {source_file_key}'
+        try:
+            result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print(f"Tarball successful: {result.stdout.decode()}")
+            return output_file_key
+        except subprocess.CalledProcessError as e:
+            print(f"Error during Tarball: {e.stderr.decode()}")
+
     
     def _set_server(self,
                     TRANSFER_SERVER_IP,
