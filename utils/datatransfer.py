@@ -24,7 +24,7 @@ class DataTransferManager(mainConfig):
                          key : str = '*/images/20240504',
                          output_file_name : str = '/data1/temp.tar'):
         verbose_command = ''
-        if self.gridftp:
+        if self.gridftp.verbose:
             verbose_command = '-vb'
         source_abskey = os.path.join(self.source_homedir, key)
         source_path = self.tar(source_file_key= source_abskey, output_file_key = f'{os.path.join(os.path.dirname(key), output_file_name)}', compress = False)
@@ -36,10 +36,19 @@ class DataTransferManager(mainConfig):
             print(f"Error during transfer: {e.stderr.decode()}")
         return command
 
-    def hpnssh_transfer(self,
+    def hpnscp_transfer(self,
                         key : str = '*/images/20240504',
                         output_file_name : str = '/data1/temp.tar'):
-        pass
+
+        source_abskey = os.path.join(self.source_homedir, key)
+        source_path = self.tar(source_file_key= source_abskey, output_file_key = f'{os.path.join(os.path.dirname(key), output_file_name)}', compress = False)
+        command = f"hpnscp -P {self.server.portnum} {source_path} {self.server.username}@{self.server.ip}:{self.destination_homedir}"
+        try:
+            result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print(f"Transfer successful: {result.stdout.decode()}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error during transfer: {e.stderr.decode()}")
+        return command
 
     def tar(self,
             source_file_key : str,
@@ -100,9 +109,7 @@ class DataTransferManager(mainConfig):
                         '=================================')
         return gridftp()
     
-    
-    
-    
+
     
         
     
