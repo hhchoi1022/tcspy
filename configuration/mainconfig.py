@@ -123,10 +123,10 @@ class mainConfig:
         
         # Share configuration
 
-        transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
+        transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.72',
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022',
                                TRANSFER_SERVER_PORTNUM = '2222',
-                               TRANSFER_GRIDFTP_NUMPARALLEL = 30,
+                               TRANSFER_GRIDFTP_NUMPARALLEL = 128,
                                TRANSFER_GRIPFTP_VERBOSE = True,
                                TRANSFER_GRIDFTP_RETRIES = 10,
                                TRANSFER_GRIDFTP_RTINTERVAL = 60

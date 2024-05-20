@@ -13,7 +13,7 @@ class DataTransferManager(mainConfig):
     
     def __init__(self,
                  source_home_directory : str = '/data1/obsdata/',
-                 destination_home_directory : str = '/data/obsdata/data1/'):
+                 destination_home_directory : str = '/home/hhchoi1022/'):
         super().__init__()
         self.source_homedir = source_home_directory
         self.destination_homedir = destination_home_directory
@@ -21,13 +21,12 @@ class DataTransferManager(mainConfig):
         self.gridftp = self._set_gridftp_params(**self.config)
     
     def gridFTP_transfer(self,
-                         key : str = '*/images/20240504',
-                         output_file_name : str = '/data1/temp.tar'):
+                         key : str = '*/images/20240515',
+                         output_file_name : str = 'temp.tar'):
         verbose_command = ''
         if self.gridftp.verbose:
             verbose_command = '-vb'
-        source_abskey = os.path.join(self.source_homedir, key)
-        source_path = self.tar(source_file_key= source_abskey, output_file_key = f'{os.path.join(os.path.dirname(key), output_file_name)}', compress = False)
+        source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.source_homedir, output_file_name)}', compress = False)
         command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.destination_homedir}"
         try:
             result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -40,8 +39,7 @@ class DataTransferManager(mainConfig):
                         key : str = '*/images/20240504',
                         output_file_name : str = '/data1/temp.tar'):
 
-        source_abskey = os.path.join(self.source_homedir, key)
-        source_path = self.tar(source_file_key= source_abskey, output_file_key = f'{os.path.join(os.path.dirname(key), output_file_name)}', compress = False)
+        source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(os.path.dirname(key), output_file_name)}', compress = False)
         command = f"hpnscp -P {self.server.portnum} {source_path} {self.server.username}@{self.server.ip}:{self.destination_homedir}"
         try:
             result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -57,7 +55,7 @@ class DataTransferManager(mainConfig):
         compress_command = '-cvf'
         if compress:
             compress_command = '-cvjf'
-        command = f'tar {compress_command} {output_file_key} -C {source_file_key}'
+        command = f'cd {self.source_homedir} && tar {compress_command} {output_file_key} -C {self.source_homedir} {source_file_key}'
         try:
             print(f"Tarball started: {Time.now().isot}")
             result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -65,31 +63,29 @@ class DataTransferManager(mainConfig):
             return output_file_key
         except subprocess.CalledProcessError as e:
             print(f"Error during Tarball: {e.stderr.decode()}")
+        return command
 
     
     def _set_server(self,
                     TRANSFER_SERVER_IP,
                     TRANSFER_SERVER_USERNAME,
-                    TRANSFER_SERVER_KEY,
                     TRANSFER_SERVER_PORTNUM,
                     **kwrags
                     ):    
         class server: 
             ip = TRANSFER_SERVER_IP
             username = TRANSFER_SERVER_USERNAME
-            key = TRANSFER_SERVER_KEY
             portnum = TRANSFER_SERVER_PORTNUM
             def __repr__(self): 
                 return ('SERVER CONFIGURATION ============\n'
                         f'server.ip = {self.ip}\n'
                         f'server.username = {self.username}\n'
-                        f'server.key = {self.key}\n'
                         f'server.portnum = {self.portnum}\n' 
                         '=================================')
         return server()
         
     def _set_gridftp_params(self,
-                            TRANSFER_GRIDFTP_NUMPARALLEL : int = 30, # Number of parallel data connection
+                            TRANSFER_GRIDFTP_NUMPARALLEL : int = 128, # Number of parallel data connection
                             TRANSFER_GRIPFTP_VERBOSE : bool = True, # Verbose?
                             TRANSFER_GRIDFTP_RETRIES : int = 10, # Number of retries
                             TRANSFER_GRIDFTP_RTINTERVAL : int = 60, # Interval in seconds before retry                           
