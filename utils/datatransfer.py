@@ -13,7 +13,7 @@ class DataTransferManager(mainConfig):
     
     def __init__(self,
                  source_home_directory : str = '/data1/obsdata/',
-                 destination_home_directory : str = '/home/hhchoi1022/'):
+                 destination_home_directory : str = '/large_data/obsdata/obsdata_from_mcs/'):
         super().__init__()
         self.source_homedir = source_home_directory
         self.destination_homedir = destination_home_directory
@@ -36,10 +36,10 @@ class DataTransferManager(mainConfig):
         return command
 
     def hpnscp_transfer(self,
-                        key : str = '*/images/20240504',
-                        output_file_name : str = '/data1/temp.tar'):
+                        key : str = '*/images/20240503',
+                        output_file_name : str = 'temp.tar'):
 
-        source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(os.path.dirname(key), output_file_name)}', compress = False)
+        source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.source_homedir, output_file_name)}', compress = False)
         command = f"hpnscp -P {self.server.portnum} {source_path} {self.server.username}@{self.server.ip}:{self.destination_homedir}"
         try:
             result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -112,5 +112,5 @@ class DataTransferManager(mainConfig):
 # %%
 A = DataTransferManager()
 #%%
-A.gridFTP_transfer()
+A.gridFTP_transfer(key = '*/images/2024-05-03_gain2750', output_file_name= '/')
 # %%
