@@ -9,7 +9,7 @@ from tcspy.devices import MultiTelescopes
 from tcspy.utils.exception import *
 
 from tcspy.action import MultiAction
-from tcspy.action.level2 import SingleObservations
+from tcspy.action.level1 import Exposure
 #%%
 
 class BiasAcquisition(mainConfig):
@@ -41,28 +41,30 @@ class BiasAcquisition(mainConfig):
         self.abort_action.set()
         
     def _process(self, count, binning, gain):
-        params_singleobs = []
-        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
-        for telescope_name, telescope in self.multitelescopes.devices.items():
-            params_singleobs_for_bias = dict(exptime = 0,
-                                             count = count,
-                                             filter_ = None,
-                                             binning = binning,
-                                             gain = gain,
-                                             imgtype = 'BIAS',
-                                             autofocus_use_history = False,
-                                             autofocus_history_duration = 60,
-                                             autofocus_before_start = False,
-                                             autofocus_when_filterchange = False,
-                                             autofocus_when_elapsed = False,
-                                             autofocus_elapsed_duration = 60
-                                             ) 
-            params_singleobs.append(params_singleobs_for_bias)
-        multi_exposure =MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_singleobs, function = SingleObservation, abort_action = self.abort_action)    
-        result_multi_exposure = multi_exposure.shared_memory
-        ## Run   
-        try:
-            multi_exposure.run()
-        except AbortionException:
-            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')    
         
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
+        for i in range(count):
+            params_exposure_all = []
+            for telescope_name, telescope in self.multitelescopes.devices.items():
+                params_exposure = dict(frame_number = i,
+                                       exptime = 0,
+                                       filter_ = None,
+                                       imgtype = 'BIAS',
+                                       binning = binning,
+                                       gain = gain,
+                                       obsmode = 'Single',
+                                       objtyle = 'BIAS',
+                                       name = 'BIAS'
+                                       ) 
+                params_exposure_all.append(params_exposure)
+            multi_exposure =MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_exposure_all, function = Exposure, abort_action = self.abort_action)    
+            result_multi_exposure = multi_exposure.shared_memory
+            #Run
+            try:
+                multi_exposure.run()
+            except AbortionException:
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')    
+        
+
+        
+# %%
