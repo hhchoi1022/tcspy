@@ -35,11 +35,12 @@ class GoogleSheet:
     """
     
     def __init__(self,
-                 spreadsheet_url : str = 'https://docs.google.com/spreadsheets/d/1KaRax8XIg7QnlZqi2XCynRb_zfYFI3zKj0z4o7X7WXg/edit#gid=0',
-                 authorize_json_file : str = '../../../configuration/Google_authorize_lmd13bnd.json',
+                 spreadsheet_url : str = 'https://docs.google.com/spreadsheets/d/1UorU7P_UMr22Luw6q6GLQYk4-YicGRATwCePRxkx2Ms/edit#gid=0',
+                 authorize_json_file : str = './targetdb-423908-ee7bb8c14ff3.json',
                  scope = [
                  'https://spreadsheets.google.com/feeds',
-                 'https://www.googleapis.com/auth/drive'
+                 'https://www.googleapis.com/auth/drive',
+                 'https://www.googleapis.com/auth/spreadsheets'
                  ]
                  ):
         """
@@ -182,14 +183,5 @@ class GoogleSheet:
             header = original_data.columns.values.tolist()
             worksheet.clear()
             worksheet.update([header])
-    
-    @property
-    def address_sheets(self):
-        address_dict = dict()
-        address_dict['ccdinfo'] = 'https://docs.google.com/spreadsheets/d/1YkDkxdYxT6o4oGePELgk_MossrQWpFepeVz0NKy794s/edit#gid=0'
-        address_dict['allbricqs'] = 'https://docs.google.com/spreadsheets/d/15QmTtXJodcKb238hVV_dPszupOFs2udYUNE-2ibHoQw/edit#gid=0'
-        address_dict['targetlist'] = 'https://docs.google.com/spreadsheets/d/1KaRax8XIg7QnlZqi2XCynRb_zfYFI3zKj0z4o7X7WXg/edit#gid=1930204366'   
-        address_dict['serverroom'] = 'https://docs.google.com/spreadsheets/d/1tg-k55hgBGZ3GFH7O6uylVBOYLXbsIgyagakYj8nQEw/edit#gid=1609450750' 
-        return address_dict
     
 #%%

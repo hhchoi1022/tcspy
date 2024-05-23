@@ -552,6 +552,7 @@ class NightObservation(mainConfig):
         self.abort_action.set()
         obs_history = self.abort_observation()
         ToO_history = self.abort_ToO()
+        self.is_running = False
         return obs_history, ToO_history    
     
     def abort_observation(self):
