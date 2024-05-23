@@ -9,9 +9,7 @@ from tcspy.devices import MultiTelescopes
 from tcspy.utils.exception import *
 
 from tcspy.action import MultiAction
-from tcspy.action.level2 import SingleObservation
-
-
+from tcspy.action.level2 import SingleObservations
 #%%
 
 class BiasAcquisition(mainConfig):
