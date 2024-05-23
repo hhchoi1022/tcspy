@@ -65,7 +65,8 @@ class DarkAcquisition(mainConfig):
             try:
                 multi_exposure.run()
             except AbortionException:
-                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')    
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')  
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')  
         
 
         
@@ -83,5 +84,6 @@ if __name__ == '__main__':
                       SingleTelescope(11),
                      ]
     m = MultiTelescopes(list_telescope)
-    b = BiasAcquisition(m, Event())
+    b = DarkAcquisition(m, Event())
+    b.run(gain = 0)
 # %%

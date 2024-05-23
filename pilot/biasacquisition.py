@@ -67,7 +67,8 @@ class BiasAcquisition(mainConfig):
                 multi_exposure.run()
             except AbortionException:
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')    
-        
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')  
+
 
         
 # %%
