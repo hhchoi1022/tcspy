@@ -51,7 +51,7 @@ class DarkAcquisition(mainConfig):
                                        exptime = exptime,
                                        filter_ = None,
                                        imgtype = 'DARK',
-                                       binning = binning,
+                                       binning = binning, 
                                        gain = gain,
                                        obsmode = 'Single',
                                        objtype = 'DARK',
