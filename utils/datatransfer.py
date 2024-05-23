@@ -112,5 +112,5 @@ class DataTransferManager(mainConfig):
 # %%
 A = DataTransferManager()
 #%%
-A.gridFTP_transfer(key = '*/images/2024-05-09_gain2750', output_file_name= '2024-05-09_gain2750.tar')
+A.gridFTP_transfer(key = '*/images/20240522', output_file_name= '20240522.tar')
 # %%

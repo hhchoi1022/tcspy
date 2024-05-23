@@ -112,7 +112,7 @@ class mainConfig:
                                OBSERVER_NAME='Hyeonho Choi'
                                )
         
-        image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12$$",
+        image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
                             FILENAME_FORMAT= "$$TELESCOP$$-$$UTCDATE$$-$$UTCTIME$$-$$OBJECT$$-$$FILTER$$-$$EXPTIME$$s-$$FRAMENUM$$.fits",
                             IMAGE_PATH=f'/data1/obsdata/{self.tel_name}/images/')
         
