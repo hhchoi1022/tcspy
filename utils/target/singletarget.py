@@ -2,6 +2,7 @@
 # Other modules
 import os
 import json
+import uuid
 from astroplan import FixedTarget, is_event_observable
 from astroplan import AltitudeConstraint, AirmassConstraint, MoonSeparationConstraint, GalacticLatitudeConstraint, AtNightConstraint
 import astropy.units as u
@@ -15,7 +16,7 @@ from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
 
-#%%
+
 class SingleTarget(mainConfig):
     """
     Represents a single observational target for a telescope.
@@ -147,7 +148,10 @@ class SingleTarget(mainConfig):
         self._coordtype = None
         self.ra_hour = None
         self.dec_deg = None
+        if id_ is None:
+            id_ = uuid.uuid4().hex
         self._id = id_
+        
         
         if (not isinstance(alt, type(None))) & (not isinstance(az, type(None))):
             self._coordtype = 'altaz'
@@ -183,7 +187,7 @@ class SingleTarget(mainConfig):
         self.obsmode = obsmode
         self.ntelescope = ntelescope
         self.exist_exposureinfo = False
-        if (self.exptime is not None) & (self.count is not None) & (self.filter_ is not None) & (self.binning is not None) & (self.obsmode is not None):
+        if (self.exptime is not None) & (self.count is not None) & (self.binning is not None) & (self.obsmode is not None):
             self.exist_exposureinfo = True
                     
     def __repr__(self):
@@ -661,5 +665,7 @@ if __name__ == '__main__':
                      binning=  1, 
                      obsmode ='Spec',
                      specmode = None)
-
+    s = SingleTarget(observer = observer, 
+                     name = 'BIAS', objtype = 'BIAS',
+                     exptime = 0, count = 9, obsmode = ' Single')
 # %%
