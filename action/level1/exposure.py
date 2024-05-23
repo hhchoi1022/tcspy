@@ -182,7 +182,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 is_light = True
             else:
                 is_light = True
-            self._log.info(f'[%s] Start exposure... (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
+            self._log.info(f'[%s] Start exposure... (exptime = %.1f, filter = %s, binning = %s, gain = %s)'%(imgtype.upper(), exptime, filter_, binning, gain))
             try:
                 imginfo = camera.exposure(exptime = float(exptime),
                                           imgtype = imgtype,
@@ -200,7 +200,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             if imginfo:
-                self._log.info(f'[%s] Exposure finished (exptime = %.1f, filter = %s, binning = %s)'%(imgtype.upper(), exptime, filter_, binning))
+                self._log.info(f'[%s] Exposure finished (exptime = %.1f, filter = %s, binning = %s, gain = %s)'%(imgtype.upper(), exptime, filter_, binning, gain))
             
             status = self.telescope.status
             try:

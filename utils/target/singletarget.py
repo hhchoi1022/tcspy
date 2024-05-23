@@ -148,8 +148,6 @@ class SingleTarget(mainConfig):
         self._coordtype = None
         self.ra_hour = None
         self.dec_deg = None
-        if id_ is None:
-            id_ = uuid.uuid4().hex
         self._id = id_
         
         

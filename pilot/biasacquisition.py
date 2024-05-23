@@ -3,9 +3,12 @@
 #%%
 from multiprocessing import Event
 from threading import Thread
+import uuid
 
 from tcspy.configuration import mainConfig
 from tcspy.devices import MultiTelescopes
+from tcspy.devices import SingleTelescope
+
 from tcspy.utils.exception import *
 
 from tcspy.action import MultiAction
@@ -13,7 +16,6 @@ from tcspy.action.level1 import Exposure
 #%%
 
 class BiasAcquisition(mainConfig):
-
 
     def __init__(self,
                  multitelescopes : MultiTelescopes,
@@ -41,7 +43,7 @@ class BiasAcquisition(mainConfig):
         self.abort_action.set()
         
     def _process(self, count, binning, gain):
-        
+        id_ = uuid.uuid4().hex
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         for i in range(count):
             params_exposure_all = []
@@ -53,8 +55,9 @@ class BiasAcquisition(mainConfig):
                                        binning = binning,
                                        gain = gain,
                                        obsmode = 'Single',
-                                       objtyle = 'BIAS',
-                                       name = 'BIAS'
+                                       objtype = 'BIAS',
+                                       name = 'BIAS',
+                                       id_ = id_
                                        ) 
                 params_exposure_all.append(params_exposure)
             multi_exposure =MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_exposure_all, function = Exposure, abort_action = self.abort_action)    
@@ -67,4 +70,19 @@ class BiasAcquisition(mainConfig):
         
 
         
+# %%
+if __name__ == '__main__':
+    list_telescope = [SingleTelescope(1),
+                      SingleTelescope(2),
+                      SingleTelescope(3),
+                      SingleTelescope(5),
+                      SingleTelescope(6),
+                      SingleTelescope(7),
+                      SingleTelescope(8),
+                      SingleTelescope(9),
+                      SingleTelescope(10),
+                      SingleTelescope(11),
+                     ]
+    m = MultiTelescopes(list_telescope)
+    b = BiasAcquisition(m, Event())
 # %%
