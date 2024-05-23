@@ -62,7 +62,7 @@ class BiasAcquisition(mainConfig):
             params_singleobs.append(params_singleobs_for_bias)
         multi_exposure =MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_singleobs, function = SingleObservation, abort_action = self.abort_action)    
         result_multi_exposure = multi_exposure.shared_memory
-        ## Run 
+        ## Run   
         try:
             multi_exposure.run()
         except AbortionException:
