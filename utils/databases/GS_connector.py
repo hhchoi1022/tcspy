@@ -36,7 +36,7 @@ class GoogleSheet:
     
     def __init__(self,
                  spreadsheet_url : str = 'https://docs.google.com/spreadsheets/d/1UorU7P_UMr22Luw6q6GLQYk4-YicGRATwCePRxkx2Ms/edit#gid=0',
-                 authorize_json_file : str = './targetdb-423908-ee7bb8c14ff3.json',
+                 authorize_json_file : str = '~/.config/targetdb-423908-ee7bb8c14ff3.json',
                  scope = [
                  'https://spreadsheets.google.com/feeds',
                  'https://www.googleapis.com/auth/drive',
