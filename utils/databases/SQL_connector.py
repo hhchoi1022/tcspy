@@ -244,18 +244,43 @@ class SQL_Connector:
         ------
         mysql.connector.Error
             If an error occurred during the insertion operation.
-        """
+        
+        
         data_str = data.copy()
         for colname in data_str.columns:
             data_str[colname] = data_str[colname].astype(str)
-        data_str.remove_column('idx')
+        if 'idx' in data_str.keys():
+            data_str.remove_column('idx')
 
         common_colnames = [col for col in data_str.colnames if col in self.get_colnames(tbl_name)]
         placeholders = ', '.join(['%s'] * len(common_colnames))
         sql_command = f"INSERT INTO {tbl_name} ({', '.join(common_colnames)}) VALUES ({placeholders})"
-        values = [tuple(row[col] if row[col] != 'None' else None for col in common_colnames) for row in data_str]
+        values = [tuple(row[col] if row[col] != ('None' and '') else None for col in common_colnames) for row in data_str]
         self.cursor.executemany(sql_command, values)
         self.connector.commit()
+        
+        """
+
+        data_str = data.copy()
+        for colname in data_str.columns:
+            data_str[colname] = data_str[colname].astype(str)
+        if 'idx' in data_str.keys():
+            data_str.remove_column('idx')
+
+        common_colnames = [col for col in data_str.colnames if col in self.get_colnames(tbl_name)]
+        placeholders = ', '.join(['%s'] * len(common_colnames))
+        sql_command = f"INSERT INTO {tbl_name} ({', '.join(common_colnames)}) VALUES ({placeholders})"
+        values = [tuple(row[col] if row[col] != ('None' and '') else None for col in common_colnames) for row in data_str]
+        
+        insertion_results = []
+        for value in values:
+            try:
+                self.cursor.execute(sql_command, value)
+                self.connector.commit()
+                insertion_results.append(True)
+            except:
+                insertion_results.append(False)
+        return insertion_results
     
     def update_row(self,
                    tbl_name : str,

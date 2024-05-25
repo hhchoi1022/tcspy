@@ -2,14 +2,16 @@
 # coding: utf-8
 
 #%%
+from tcspy.configuration import mainConfig
 import gspread
 import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 from astropy.table import Table
 from astropy.io import ascii
 import numpy as np
+from pathlib import Path
 #%%
-class GoogleSheet:
+class GoogleSheet(mainConfig):
     """
     [History]
     =========
@@ -36,7 +38,7 @@ class GoogleSheet:
     
     def __init__(self,
                  spreadsheet_url : str = 'https://docs.google.com/spreadsheets/d/1UorU7P_UMr22Luw6q6GLQYk4-YicGRATwCePRxkx2Ms/edit#gid=0',
-                 authorize_json_file : str = '~/.config/targetdb-423908-ee7bb8c14ff3.json',
+                 authorize_json_file : str = f'{str(Path.home())}/.config/googlesheet/targetdb-423908-ee7bb8c14ff3.json',
                  scope = [
                  'https://spreadsheets.google.com/feeds',
                  'https://www.googleapis.com/auth/drive',
@@ -52,7 +54,7 @@ class GoogleSheet:
         authorize_json_file (str): The path of the JSON file that contains the authorization credentials.
         scope (list): The list of OAuth2 scopes.
         """
-        
+        super().__init__()
         self._url = spreadsheet_url
         self._authfile = authorize_json_file
         self._scope = scope
@@ -183,5 +185,20 @@ class GoogleSheet:
             header = original_data.columns.values.tolist()
             worksheet.clear()
             worksheet.update([header])
-    
-#%%
+            
+    def to_DB(self,
+              sheet_name : str,
+              DB_tbl_name : str = 'Daily'
+              ):
+        print('Querying GoogleSheet data...')
+        tbl_sheet = self.get_sheet_data(sheet_name = sheet_name, format_ = 'Table')
+        from tcspy.utils.databases import SQL_Connector
+        print('Connecting to DB...')
+        sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
+        # Insert data
+        print('Inserting GoogleSheet data to DB...')
+        insertion_results = sql.insert_rows(tbl_name = DB_tbl_name, data = tbl_sheet)
+        # Update google sheet 
+        tbl_sheet['is_inputted'] = insertion_results
+        print('Updating GoogleSheet data...')
+        self.write_sheet_data(sheet_name = sheet_name, data = tbl_sheet, append = False, clear_header = False)        
