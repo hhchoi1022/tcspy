@@ -243,11 +243,9 @@ class SingleTarget(mainConfig):
             exposureinfo['count'] = format_exposure['count']
             exposureinfo['filter_'] = format_exposure['filter_']
             exposureinfo['binning'] = format_exposure['binning']
-            exposureinfo['obsmode'] = self.obsmode
-            exposureinfo['specmode'] = self.specmode
             exposureinfo['exptime_tot'] = format_exposure['exptime_tot']
         
-        elif self.specmode:
+        if self.specmode:
             filter_info = self._get_filters_from_specmode()
             filter_str = list(filter_info.values())[0]
             format_exposure = self._format_expinfo(filter_str = str(filter_str),
@@ -258,12 +256,8 @@ class SingleTarget(mainConfig):
             exposureinfo['count'] = format_exposure['count']
             exposureinfo['filter_'] = exposureinfo['filter_']
             exposureinfo['binning'] = format_exposure['binning']
-            exposureinfo['obsmode'] = self.obsmode
-            exposureinfo['specmode'] = self.specmode
             exposureinfo['exptime_tot'] = format_exposure['exptime_tot']
-            exposureinfo['specmode_filter'] = filter_info
-            exposureinfo['ntelescope'] = len(filter_info.keys())    
-        
+            exposureinfo['specmode_filter'] = filter_info        
         return exposureinfo
     
     @property

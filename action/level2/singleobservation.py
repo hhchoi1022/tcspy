@@ -422,7 +422,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 # %%
 if __name__ == '__main__':
     from tcspy.action.level1 import Connect
-    telescope = SingleTelescope(8z)
+    telescope = SingleTelescope(8)
     abort_action = Event()
     C = Connect(telescope, abort_action)
     C.run()

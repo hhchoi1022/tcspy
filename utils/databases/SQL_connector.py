@@ -312,20 +312,19 @@ class SQL_Connector:
         """
         if isinstance(update_value,str):
             update_command = f"{update_key} = '{update_value}'"
-        elif isinstance(update_value, (list, np.ndarray)):
-            update_command_list = []
-            for i in range(len(update_value)):
-                value = update_value[i]
-                key = update_key [i]
-                command_single = f"{key} = '{value}'"
-                update_command_list.append(command_single)
-            update_command = ','.join(update_command_list)
+            sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
+            self.exec(sql_command)
+            self.connector.commit()
         else:
-            update_value = str(update_value)
-            update_command = f"{update_key} = '{update_value}'"
-        sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
-        self.exec(sql_command)
-        self.connector.commit()
+            update_command = ', '.join([f"{key} = %s" for key in update_key])
+            sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
+            value = tuple(value if value != ('None' and '') else None for value in update_value)
+            try:
+                self.cursor.execute(sql_command, value)
+                self.connector.commit()
+                return True
+            except:
+                return False
     
     def get_data(self,
                  tbl_name : str,
@@ -412,4 +411,7 @@ class SQL_Connector:
 
 
 
+# %%
+if __name__ == '__main__':
+    s = SQL_Connector(id_user = 'hhchoi', pwd_user = 'gusgh1020!')
 # %%

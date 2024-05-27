@@ -28,12 +28,12 @@ action_slew = MultiAction(list_telescopes, dict(alt = alt, az = az, tracking = t
 # %%
 action_slew.run()
 # %%
-action_autofocus = MultiAction(list_telescopes, dict(), AutoFocus, Event())
+action_autofocus = MultiAction(list_telescopes, dict(filter_ = 'r'), AutoFocus, Event())
 # %%
 action_autofocus.run()
 # %%
 from tcspy.action.level1 import *
-ChangeFilter(SingleTelescope(5), Event()).run('m750')
+ChangeFilter(SingleTelescope(1), Event()).run('r')
 # %%
 AutoFocus(SingleTelescope(5), Event()).run()
 # %%
