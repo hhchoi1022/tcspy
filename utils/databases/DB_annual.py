@@ -214,7 +214,7 @@ class DB_Annual(mainConfig):
         multitargets_for_scoring = MultiTargets(observer = self.observer,
                                    targets_ra = target_tbl_for_scoring['RA'],
                                    targets_dec = target_tbl_for_scoring['De'],
-                                   targets_name = target_tbl_for_scoring['objname'])
+                                   targets_name = target_tbl_for_scoring['objname']) 
         
         # Calculate the maximum altitude
         maxalt = 90 - np.abs(self.config['OBSERVER_LATITUDE'] - target_tbl_for_scoring['De'])
