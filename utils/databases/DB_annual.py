@@ -64,17 +64,16 @@ class DB_Annual(mainConfig):
     """
     
     def __init__(self,
-                 utcdate : Time = Time.now(),
+                 #utcdate : Time = Time.now(),
                  tbl_name : str = 'RIS'):
         super().__init__()       
         self.observer = mainObserver()
         self.tblname = tbl_name
-        self.sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
+        self.sql = SQL_Connector()#id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
         self.constraints = self._set_constrints()
-        self.utcdate = utcdate
-        self.obsinfo = self._set_obs_info(utcdate = utcdate)
-        self.obsnight = self._set_obsnight(utcdate = utcdate, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
-    
+        #self.utcdate = utcdate
+        #self.obsinfo = self._set_obs_info(utcdate = utcdate)
+        #self.obsnight = self._set_obsnight(utcdate = utcdate, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
     @property    
     def connected(self):
         return self.sql.connected
@@ -92,6 +91,7 @@ class DB_Annual(mainConfig):
         self.sql.disconnect()
     
     def initialize(self, 
+                   utcdate : Time = Time.now(),
                    initialize_all : bool = False):
         """
         Initializes and updates the target table.
@@ -127,7 +127,7 @@ class DB_Annual(mainConfig):
                                           targets_name = target_tbl_to_update['objname'])
         
         # Target information 
-        rbs_date = multitargetss.rts_date(year = self.utcdate.datetime.year, time_grid_resolution= 1)
+        rbs_date = multitargetss.rts_date(year = utcdate.datetime.year, time_grid_resolution= 1)
         targetinfo_listdict = [{'risedate' : rd, 'bestdate' : bd, 'setdate' : sd} for rd, bd, sd in rbs_date]
         
         from tcspy.utils.target import SingleTarget
@@ -158,7 +158,8 @@ class DB_Annual(mainConfig):
                             utcdate : Time = Time.now(),
                             size : int = 300,
                             mode : str = 'best', # best or urgent
-                            observable_minimum_hour : float = 2
+                            observable_minimum_hour : float = 2,
+                            n_time_grid : float = 10,
                             ):
         """
         Select the best observable targets at certain night.
@@ -178,8 +179,9 @@ class DB_Annual(mainConfig):
         -------
         Table
         	A table containing the best targets for the night.
-        """   
-        observable_fraction_criteria = observable_minimum_hour / self.obsnight.observable_hour 
+        """
+        obsnight = self._set_obsnight(utcdate = utcdate, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
+        observable_fraction_criteria = observable_minimum_hour / obsnight.observable_hour 
         
         if not self.sql.connected:
             self.connect()
@@ -199,25 +201,49 @@ class DB_Annual(mainConfig):
                                      targets_dec = target_tbl['De'],
                                      targets_name = target_tbl['objname'])
         obs_tbl = observability_table(constraints = self.constraints.astroplan, 
-                                      observer = self.obsinfo.observer_astroplan, 
+                                      observer = self.observer._observer,
                                       targets = multitargetss.coordinate, 
-                                      time_range = [self.obsnight.sunset_astro, self.obsnight.sunrise_astro],
+                                      time_range = [obsnight.sunset_astro, obsnight.sunrise_astro],
                                       time_grid_resolution = 30 * u.minute)
         target_tbl_observable_idx = obs_tbl['fraction of time observable'] > observable_fraction_criteria
         target_always_idx = target_tbl['risedate'] == 'Always'
         target_neverup_idx = target_tbl['risedate'] == 'Never'
-        target_normal_idx =  ~(target_always_idx | target_neverup_idx)
+        #target_normal_idx =  ~(target_always_idx | target_neverup_idx)
+        target_normal_idx =  ~(target_neverup_idx)
         target_tbl_for_scoring = target_tbl[target_tbl_observable_idx & target_normal_idx]
+        multitargets_for_scoring = MultiTargets(observer = self.observer,
+                                   targets_ra = target_tbl_for_scoring['RA'],
+                                   targets_dec = target_tbl_for_scoring['De'],
+                                   targets_name = target_tbl_for_scoring['objname'])
+        
+        # Calculate the maximum altitude
+        maxalt = 90 - np.abs(self.config['OBSERVER_LATITUDE'] - target_tbl_for_scoring['De'])
+        
+        # Create a time grid
+        time_grid = obsnight.sunset_astro + np.linspace(0, 1, n_time_grid) * (obsnight.sunrise_astro - obsnight.sunset_astro)
+        # Determine the number of targets for each time grid
+        n_target_for_each_timegrid = np.full(n_time_grid, size / n_time_grid, dtype = int)
+        n_target_for_each_timegrid[len(n_target_for_each_timegrid)//2] += size - sum(n_target_for_each_timegrid)
 
-        print('Selecting targets with the best score...')
-        if mode.upper() == 'BEST':
-            target_tbl_for_scoring['days_until_bestdate'] = np.abs((Time(target_tbl_for_scoring['bestdate']) - utcdate).jd)
-            target_tbl_for_scoring.sort('days_until_bestdate', reverse = False)
-            return target_tbl_for_scoring[:size]
-        elif mode.upper() == 'URGENT':
-            target_tbl_for_scoring['days_until_setdate'] = np.abs((Time(target_tbl_for_scoring['setdate']) - utcdate).jd)
-            target_tbl_for_scoring.sort('days_until_setdate', reverse = False)
-            return target_tbl_for_scoring[:size]
+        # Track already selected targets
+        selected_indices = set()
+
+        for n_target, time in zip(n_target_for_each_timegrid, time_grid):
+            altaz = multitargets_for_scoring.altaz(utctimes=time)
+            score = altaz.alt.value / maxalt
+            high_score_criteria = np.percentile(score, 90)
+            high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
+            
+            available_indices = np.setdiff1d(np.arange(len(target_tbl_for_scoring))[high_scored_idx], list(selected_indices))
+            
+            if len(available_indices) < n_target:
+                selected_idx = available_indices  # If not enough targets, select all available
+            else:
+                selected_idx = np.random.choice(available_indices, n_target, replace=False)
+            
+            selected_indices.update(selected_idx)
+        
+        return target_tbl_for_scoring[list(selected_indices)]
     
     def to_Daily(self,
                  target_tbl : Table):
@@ -266,7 +292,7 @@ class DB_Annual(mainConfig):
             self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
     
-    def _set_obs_info(self,
+    def _set_obsinfo(self,
                       utcdate : Time = Time.now()):
         class info: pass
         info.moon_phase = self.observer.moon_phase(utcdate)

@@ -452,12 +452,6 @@ class DB_Daily(mainConfig):
     def _get_target_observable(self,
                                multitargets : MultiTargets,
                                fraction_observable : float = 0.1):
-        '''
-        multitargets = MultiTargets(observer = self.observer, 
-                                  targets_ra = target_tbl['RA'], 
-                                  targets_dec = target_tbl['De'],    
-                                  targets_name = target_tbl['objname'])
-        '''
         observability_tbl = observability_table(constraints = self.constraints, observer = multitargets._astroplan_observer, targets = multitargets.coordinate , time_range = [self.obsnight.sunset_astro, self.obsnight.sunrise_astro], time_grid_resolution = 20 * u.minute)
         obs_tbl['fraction_obs'] = ['%.2f'%fraction for fraction in observability_tbl['fraction of time observable']]
         key = observability_tbl['fraction of time observable'] > fraction_observable
