@@ -115,7 +115,7 @@ class DB_Daily(mainConfig):
             target_tbl_all = self.data
         
         target_tbl_to_update = target_tbl_all
-        column_names_to_update = ['exptime', 'count', 'exptime_tot', 'ntelescope', 'id', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
+        column_names_to_update = ['id', 'binning', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
         
         # If initialize_all == False, filter the target table that requires update 
         if not initialize_all:
@@ -183,7 +183,7 @@ class DB_Daily(mainConfig):
             Whether to allow duplicate targets. Defaults to False.
         """
         all_targets = self.data
-        column_names_for_scoring = ['exptime','count','exptime_tot', 'ntelescope', 'binning', 'id', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
+        column_names_for_scoring = ['exptime_tot', 'id', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
         
         # If one of the targets do not have the required information, calculate
         rows_to_update = [any(row[name] is None or row[name] == '' for name in column_names_for_scoring) for row in all_targets]

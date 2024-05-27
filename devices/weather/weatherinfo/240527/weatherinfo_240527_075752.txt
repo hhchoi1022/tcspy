@@ -1,0 +1,27 @@
+{
+    "update_time": "2024-05-27T07:57:52.881",
+    "jd": 2460457.831862,
+    "is_connected": true,
+    "is_safe": true,
+    "name": "OBSTECH ObservingConditions",
+    "temperature": 8.6,
+    "dewpoint": -11.7,
+    "humidity": 22.6,
+    "pressure": 1024.0,
+    "windspeed": 0.7,
+    "windgust": 0.9,
+    "winddirection": 103.0,
+    "skybrightness": 14.02,
+    "skytemperature": -25.6,
+    "cloudfraction": 0.0,
+    "rainrate": 0,
+    "fwhm": 1.2,
+    "constraints": {
+        "HUMIDITY": 85,
+        "RAINRATE": 80,
+        "SKYMAG": 10,
+        "TEMPERATURE_LOWER": -25,
+        "TEMPERATURE_UPPER": 40,
+        "WINDSPEED": 20
+    }
+}

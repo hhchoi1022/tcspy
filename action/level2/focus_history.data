@@ -11,9 +11,9 @@
             "focusval": 10000
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:30.522",
+            "succeeded": true,
+            "focusval": 7539.1
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -53,9 +53,9 @@
             "focusval": 7478.9
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:26.595",
+            "succeeded": true,
+            "focusval": 7756.1
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -85,14 +85,14 @@
     },
     "7DT03": {
         "g": {
-            "update_time": "2024-05-10T02:50:13.336",
+            "update_time": "2024-05-27T04:45:43.834",
             "succeeded": true,
-            "focusval": 6360.6
+            "focusval": 6297.9
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:28.767",
+            "succeeded": true,
+            "focusval": 6313.6
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -122,14 +122,14 @@
     },
     "7DT05": {
         "g": {
-            "update_time": "2024-05-16T03:36:17.641",
+            "update_time": "2024-05-27T04:45:43.221",
             "succeeded": true,
-            "focusval": 5914.7
+            "focusval": 5877.2
         },
         "r": {
-            "update_time": "2024-05-16T03:34:33.809",
+            "update_time": "2024-05-27T06:04:29.113",
             "succeeded": true,
-            "focusval": 5909.6
+            "focusval": 5851.2
         },
         "i": {
             "update_time": "2024-05-16T03:37:57.416",
@@ -159,14 +159,14 @@
     },
     "7DT06": {
         "g": {
-            "update_time": "2024-05-10T02:50:12.759",
+            "update_time": "2024-05-27T04:45:43.717",
             "succeeded": true,
-            "focusval": 6799.8
+            "focusval": 6771.2
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:29.922",
+            "succeeded": true,
+            "focusval": 6756.4
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -196,14 +196,14 @@
     },
     "7DT07": {
         "g": {
-            "update_time": "2024-05-10T02:50:13.295",
+            "update_time": "2024-05-27T04:45:40.213",
             "succeeded": true,
-            "focusval": 7177.3
+            "focusval": 7146.0
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:30.877",
+            "succeeded": true,
+            "focusval": 7186.5
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -233,14 +233,14 @@
     },
     "7DT08": {
         "g": {
-            "update_time": "2024-05-10T02:50:12.660",
+            "update_time": "2024-05-27T04:45:44.810",
             "succeeded": true,
-            "focusval": 8194.9
+            "focusval": 8207.0
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:29.870",
+            "succeeded": true,
+            "focusval": 8171.8
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -270,14 +270,14 @@
     },
     "7DT09": {
         "g": {
-            "update_time": "2024-05-10T02:50:13.655",
+            "update_time": "2024-05-27T04:45:43.949",
             "succeeded": true,
-            "focusval": 7386.1
+            "focusval": 7431.9
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:29.002",
+            "succeeded": true,
+            "focusval": 7358.6
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -302,14 +302,14 @@
     },
     "7DT10": {
         "g": {
-            "update_time": "2024-05-10T02:50:12.768",
+            "update_time": "2024-05-27T04:45:42.586",
             "succeeded": true,
-            "focusval": 5859.9
+            "focusval": 5887.6
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:28.904",
+            "succeeded": true,
+            "focusval": 5805.7
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -344,14 +344,14 @@
     },
     "7DT11": {
         "g": {
-            "update_time": "2024-05-10T02:50:12.625",
+            "update_time": "2024-05-27T04:45:43.745",
             "succeeded": true,
-            "focusval": 8459.0
+            "focusval": 8431.0
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-05-27T06:04:31.941",
+            "succeeded": true,
+            "focusval": 8423.9
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",

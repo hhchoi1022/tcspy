@@ -202,3 +202,7 @@ class GoogleSheet(mainConfig):
         tbl_sheet['is_inputted'] = insertion_results
         print('Updating GoogleSheet data...')
         self.write_sheet_data(sheet_name = sheet_name, data = tbl_sheet, append = False, clear_header = False)        
+# %%
+if __name__ =='__main__':
+    GoogleSheet().to_DB(sheet_name = '240527', DB_tbl_name = 'Daily')
+# %%

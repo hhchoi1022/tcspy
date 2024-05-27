@@ -112,5 +112,10 @@ class DataTransferManager(mainConfig):
 # %%
 A = DataTransferManager()
 #%%
-A.gridFTP_transfer(key = '*/images/20240522', output_file_name= '20240522.tar')
+import time
+list_date = ['08', '09', '11', '16', '17', '18']
+for date in list_date:
+    A.gridFTP_transfer(key = f'*/images/2024-05-{date}_gain2750', output_file_name= f'2024-05-{date}_gain2750.tar')
+    time.sleep(100)
+
 # %%
