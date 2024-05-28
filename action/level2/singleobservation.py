@@ -55,22 +55,28 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
 
     def run(self, 
+            # Exposure information
             exptime : str,
             count : str,
-            filter_ : str,
-            binning : str = '1',
+            obsmode : str = 'Single',
+            filter_ : str = None,
+            specmode : str = None,
+            ntelescope : int = 1,
             gain : int = 2750,
-            imgtype : str = 'Light',
+            binning : str = '1',
+            imgtype : str = 'Light'
+            
+            # Target information
             ra : float = None, # When radec == None: do not move 
             dec : float = None,
             alt : float = None, # When altaz == None: do not move 
             az : float = None,
             name : str = None,
-            id_: str = None,
-            obsmode : str = 'Single',
-            specmode : str = None,
-            ntelescope : int = 1,
             objtype : str = None,
+            id_: str = None,
+            note : str = None,
+            
+            # Auxiliary parameters
             force_slewing : bool = False,
             autofocus_use_history : bool = True,
             autofocus_history_duration : float = 60,
@@ -172,6 +178,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               name = name, 
                               objtype= objtype,
                               id_ = id_,
+                              note = note,
                               
                               exptime = exptime,
                               count = count,
@@ -313,11 +320,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 try:
                     result_exposure = action_exposure.run(frame_number = int(observation_status[filter_]['observed']),
                                                           exptime = float(exptime),
-                                                          filter_ = filter_,
-                                                          imgtype = imgtype,
-                                                          binning = int(binning),
-                                                          gain = int(gain),
                                                           obsmode = obsmode,
+                                                          filter_ = filter_,
+                                                          specmode = specmode,
+                                                          ntelescope = ntelescope,
+                                                          gain = int(gain),
+                                                          binning = int(binning),
+                                                          imgtype = imgtype,
                                                         
                                                           ra = ra,
                                                           dec = dec,
@@ -325,7 +334,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                           az = az,
                                                           name = name,
                                                           objtype = objtype,
-                                                          id_ = id_)
+                                                          id_ = id_
+                                                          note = note)
                     # Update self.observation_status
                     observation_status[filter_]['observed'] += 1
                     self.shared_memory['status'] = observation_status

@@ -326,6 +326,8 @@ class mainImage(mainConfig):
         info = dict()
         info['ALTITUDE'] = None
         info['AZIMUTH'] = None
+        infi['CENTALT'] = None
+        info['CENTAZ'] = None
         info['RA'] = None
         info['DEC'] = None
         info['AIRMASS'] = None
@@ -335,6 +337,8 @@ class mainImage(mainConfig):
             info['AIRMASS'] = self._format_header(airmass, 'Airmass at frame center (Pickering 2002) ')
             info['ALTITUDE'] = self._format_header(altitude, '[deg] Altitude of the telescope pointing')
             info['AZIMUTH'] = self._format_header(float(self._mountinfo['az']), '[deg] Azimuth of the telescope pointing')
+            info['CENTALT'] = self._format_header(altitude, '[deg] Altitude of the telescope pointing')
+            info['CENTAZ'] = self._format_header(float(self._mountinfo['az']), '[deg] Azimuth of the telescope pointing')
             info['RA'] = self._format_header(float(self._mountinfo['ra']), '[deg] Right ascension of the telescope pointing')
             info['DEC'] = self._format_header(float(self._mountinfo['dec']), '[deg] Declination of the telescope pointing')
         return info
@@ -392,6 +396,7 @@ class mainImage(mainConfig):
         info['OBJCTHA'] = None
         info['OBSMODE'] = None
         info['OBJCTID'] = None
+        info['NOTE'] = None
         if self._targetinfo:
             info['OBJECT'] = self._format_header(self._targetinfo['name'], 'Name of the target')            
             info['OBJTYPE'] = self._format_header(self._targetinfo['objtype'], 'Type of the target')
@@ -404,6 +409,7 @@ class mainImage(mainConfig):
             info['OBJCTHA'] = self._format_header(self._targetinfo['hourangle'], '[h m s] Hourangle of the target')
             info['OBSMODE'] = self._format_header(self._targetinfo['obsmode'], 'Observation mode')
             info['OBJCTID'] = self._format_header(self._targetinfo['id_'], 'ID of the target')
+            info['NOTE'] = self._format_header(self._targetinfo['note'], 'Note of the target')
         return info
 
 

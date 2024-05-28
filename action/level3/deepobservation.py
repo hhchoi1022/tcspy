@@ -66,12 +66,16 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         return format_kwargs
     
     def run(self, 
+            # Exposure information
             exptime : str,
             count : str,
             filter_ : str,
-            binning : str = '1',
+            ntelescope : int = 1,
             gain : int = 2750,
+            binning : str = '1',
             imgtype : str = 'Light',
+            
+            # Target information
             ra : float = None,
             dec : float = None,
             alt : float = None,
@@ -79,6 +83,9 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
             name : str = None,
             objtype : str = None,
             id_ : str = None,
+            note : str = None,
+            
+            # Auxiliary parameters
             force_slewing : bool = False,
             autofocus_use_history : bool = True,
             autofocus_history_duration : float = 60,
@@ -173,14 +180,17 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
                                     name = name,
                                     objtype = objtype,
                                     id_ = id_,
+                                    note = note,
                                     
                                     exptime = exptime,
                                     count = count,
-                                    filter_ = filter_,
-                                    binning = binning,
-                                    gain = gain,
                                     obsmode = 'Deep',
-                                    ntelescope= ntelescope)                
+                                    filter_ = filter_,
+                                    specmode = None,
+                                    ntelescope= ntelescope,
+                                    gain = gain,
+                                    binning = binning
+                                    )                
         
         # Get filter information
         exposure_params = singletarget.exposure_info

@@ -56,12 +56,15 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         self._specmode_folder = self.config['SPECMODE_FOLDER']        
     
     def run(self, 
+            # Exposure information
             exptime : str,
             count : str,
             specmode : str,
-            binning : str = '1',
             gain : int = 2750,
+            binning : str = '1',
             imgtype : str = 'Light',
+            
+            # Target information
             ra : float = None,
             dec : float = None,
             alt : float = None,
@@ -69,6 +72,9 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             name : str = None,
             objtype : str = None,
             id_ : str = None,
+            note : str = None,
+            
+            # Auxiliary parameters
             force_slewing : bool = False,
             autofocus_use_history : bool = True,
             autofocus_history_duration : float = 60,
@@ -165,14 +171,17 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                                     name = name,
                                     objtype = objtype,
                                     id_ = id_,
+                                    note = note,
                                     
                                     exptime = exptime,
                                     count = count,
-                                    filter_ = None,
-                                    binning = binning,
-                                    gain = gain,
                                     obsmode = 'Spec',
-                                    specmode = specmode)                
+                                    filter_ = None,
+                                    specmode = specmode,
+                                    ntelescope= len(self.multitelescopes.devices),
+                                    gain = gain,
+                                    binning = binning
+                                    )                
         
         # Get filter information
         exposure_params = singletarget.exposure_info

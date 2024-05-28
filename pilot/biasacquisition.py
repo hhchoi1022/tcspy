@@ -86,5 +86,5 @@ if __name__ == '__main__':
                      ]
     m = MultiTelescopes(list_telescope)
     b = BiasAcquisition(m, Event())
-    b.run(gain = 0)
+    b.run(gain = 2750)
 # %%

@@ -121,16 +121,17 @@ class SingleTarget(mainConfig):
                  name : str = '',
                  objtype : str = None,
                  id_ : str = None,
+                 note : str = None,
                  
                  # Exposure information
                  exptime : float or str = None,
                  count : int or str = None,
-                 filter_ : str = None,
-                 binning : int or str = 1,
-                 gain : int = 2750,
-                 specmode : str = None,
                  obsmode : str = None,
+                 filter_ : str = None,
+                 specmode : str = None,
                  ntelescope : int = 1,
+                 gain : int = 2750,
+                 binning : int or str = 1,
                  ):
         
         super().__init__()
@@ -149,6 +150,7 @@ class SingleTarget(mainConfig):
         self.ra_hour = None
         self.dec_deg = None
         self._id = id_
+        self.note = note
         
         
         if (not isinstance(alt, type(None))) & (not isinstance(az, type(None))):
@@ -283,7 +285,6 @@ class SingleTarget(mainConfig):
         targetinfo = dict()
         targetinfo['update_time'] = Time.now().isot
         targetinfo['jd'] = "{:.6f}".format(Time.now().jd)
-        targetinfo['name'] = self.name
         targetinfo['ra'] = None
         targetinfo['dec'] = None
         targetinfo['ra_hour'] = None
@@ -295,8 +296,10 @@ class SingleTarget(mainConfig):
         targetinfo['coordtype'] = None
         targetinfo['hourangle'] = None
         targetinfo['is_observable'] = None
+        targetinfo['name'] = self.name
         targetinfo['objtype'] = self.objtype
         targetinfo['id_'] = self._id
+        targetinfo['note'] = self.note
         
         if self._coordtype == 'altaz':
             targetinfo['alt'] = self.alt

@@ -28,12 +28,14 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             # Exposure information
             frame_number : int,
             exptime : float,
+            obsmode : str = 'Single',
             filter_ : str = None,
-            imgtype : str = 'Light',
-            binning : int = 1,
-            obsmode = 'Single',
+            specmode : str = None,
+            ntelescope : int = 1,
             gain = 0,
-            
+            binning : int = 1,
+            imgtype : str = 'Light',
+
             # Target information            
             ra : float = None,
             dec : float = None,
@@ -41,7 +43,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             az : float = None,
             name : str = '',
             objtype : str = None,
-            id_ : str = None
+            id_ : str = None,
+            note : str = None
             ):
         """
         Performs the action to expose the camera, saves the image, and returns True if successful.
@@ -134,7 +137,10 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                               count = 1,
                               filter_ = filter_,
                               binning = binning, 
+                              gain = gain,
                               obsmode = obsmode,
+                              specmode = specmode,
+                              ntelescope = ntelescope
                               )
         exposure_info = target.exposure_info
         # Move filter

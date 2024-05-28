@@ -37,3 +37,10 @@ ChangeFilter(SingleTelescope(1), Event()).run('r')
 # %%
 AutoFocus(SingleTelescope(5), Event()).run()
 # %%
+from tcspy.action.level1 import Exposure
+from tcspy.action.level1 import ChangeFocus
+
+for i in range(3):
+    action_exposure = MultiAction(list_telescopes, dict(frame_number = i, exptime = 10, filter_ = 'r', gain = 2750, alt = 50, az = 160, name = 'Defocus_test', objtype = 'Test', note ='Use this image for quality test' ))
+
+#%%

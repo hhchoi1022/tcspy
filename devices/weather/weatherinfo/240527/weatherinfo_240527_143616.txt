@@ -1,0 +1,27 @@
+{
+    "update_time": "2024-05-27T14:36:16.656",
+    "jd": 2460458.108526,
+    "is_connected": false,
+    "is_safe": null,
+    "name": null,
+    "temperature": null,
+    "dewpoint": null,
+    "humidity": null,
+    "pressure": null,
+    "windspeed": null,
+    "windgust": null,
+    "winddirection": null,
+    "skybrightness": null,
+    "skytemperature": null,
+    "cloudfraction": null,
+    "rainrate": null,
+    "fwhm": null,
+    "constraints": {
+        "HUMIDITY": 85,
+        "RAINRATE": 80,
+        "SKYMAG": 10,
+        "TEMPERATURE_LOWER": -25,
+        "TEMPERATURE_UPPER": 40,
+        "WINDSPEED": 20
+    }
+}
