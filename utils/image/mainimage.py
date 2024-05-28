@@ -326,7 +326,7 @@ class mainImage(mainConfig):
         info = dict()
         info['ALTITUDE'] = None
         info['AZIMUTH'] = None
-        infi['CENTALT'] = None
+        info['CENTALT'] = None
         info['CENTAZ'] = None
         info['RA'] = None
         info['DEC'] = None
@@ -394,8 +394,10 @@ class mainImage(mainConfig):
         info['OBJCTALT'] = None
         info['OBJCTAZ'] = None
         info['OBJCTHA'] = None
-        info['OBSMODE'] = None
         info['OBJCTID'] = None
+        info['OBSMODE'] = None
+        info['SPECMODE'] = None
+        info['NTELSCOP'] = None
         info['NOTE'] = None
         if self._targetinfo:
             info['OBJECT'] = self._format_header(self._targetinfo['name'], 'Name of the target')            
@@ -407,8 +409,10 @@ class mainImage(mainConfig):
             info['OBJCTALT'] = self._format_header(self._targetinfo['alt'], '[deg] Altitude of the target')
             info['OBJCTAZ'] = self._format_header(self._targetinfo['az'], '[deg] Azimuth of the target')
             info['OBJCTHA'] = self._format_header(self._targetinfo['hourangle'], '[h m s] Hourangle of the target')
-            info['OBSMODE'] = self._format_header(self._targetinfo['obsmode'], 'Observation mode')
             info['OBJCTID'] = self._format_header(self._targetinfo['id_'], 'ID of the target')
+            info['OBSMODE'] = self._format_header(self._targetinfo['obsmode'], 'Observation mode')
+            info['SPECMODE'] = self._format_header(self._targetinfo['specmode'], 'Specmode (when OBSMODE == "SPEC")')
+            info['NTELSCOP'] = self._format_header(self._targetinfo['ntelescope'], 'Number of telescopes involved in the observation')
             info['NOTE'] = self._format_header(self._targetinfo['note'], 'Note of the target')
         return info
 

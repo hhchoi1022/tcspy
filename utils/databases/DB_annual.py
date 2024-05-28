@@ -64,16 +64,13 @@ class DB_Annual(mainConfig):
     """
     
     def __init__(self,
-                 #utcdate : Time = Time.now(),
                  tbl_name : str = 'RIS'):
         super().__init__()       
         self.observer = mainObserver()
         self.tblname = tbl_name
-        self.sql = SQL_Connector()#id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
+        self.sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
         self.constraints = self._set_constrints()
-        #self.utcdate = utcdate
-        #self.obsinfo = self._set_obs_info(utcdate = utcdate)
-        #self.obsnight = self._set_obsnight(utcdate = utcdate, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
+
     @property    
     def connected(self):
         return self.sql.connected

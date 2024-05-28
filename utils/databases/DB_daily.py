@@ -460,5 +460,5 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     D = DB_Daily()
-    D.initialize()
+    D.initialize(True)
 # %%

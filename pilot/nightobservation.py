@@ -56,9 +56,9 @@ class NightObservation(mainConfig):
             def __init__(self):
                 self.use_history = False
                 self.history_duration = 60 
-                self.before_start = False
-                self.when_filterchange = False
-                self.when_elapsed = False
+                self.before_start = True
+                self.when_filterchange = True
+                self.when_elapsed = True
                 self.elapsed_duration = 60
             def __repr__(self):
                 return ('AUTOFOCUS CONFIGURATION ============\n'
@@ -554,10 +554,13 @@ class NightObservation(mainConfig):
     def abort(self):
         # Abort NightObservation
         self.abort_action.set()
-        obs_history = self.abort_observation()
-        ToO_history = self.abort_ToO()
+        obs_history = None
+        if self.is_ToO_triggered:
+            obs_history = self.abort_ToO()
+        else:
+            obs_history = self.abort_observation()
         self.is_running = False
-        return obs_history, ToO_history    
+        return obs_history    
     
     def abort_observation(self):
         # Abort ordinary observation
@@ -609,14 +612,7 @@ class NightObservation(mainConfig):
         for action in self.action_queue:
             for shared_memory in action['action'].shared_memory.values():
                 print(dict(shared_memory))
-    
 
-        
-        
-        
-        
-    
-    
 # %%
 if __name__ == '__main__':
     list_telescopes = [SingleTelescope(1),

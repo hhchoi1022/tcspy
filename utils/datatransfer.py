@@ -113,7 +113,7 @@ class DataTransferManager(mainConfig):
 A = DataTransferManager()
 #%%
 import time
-A.gridFTP_transfer(key = f'*/images/2024-05-{26}_gain2750', output_file_name= f'2024-05-{26}_gain2750.tar')
+A.gridFTP_transfer(key = f'*/images/2024-05-{27}_gain2750', output_file_name= f'2024-05-{27}_gain2750.tar')
 time.sleep(100)
 
 # %%

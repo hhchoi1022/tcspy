@@ -64,7 +64,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             ntelescope : int = 1,
             gain : int = 2750,
             binning : str = '1',
-            imgtype : str = 'Light'
+            imgtype : str = 'Light',
             
             # Target information
             ra : float = None, # When radec == None: do not move 
@@ -149,6 +149,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
           specmode = None
           ntelescope = 1
           id_ = '193yhiujashdijqhweu9'
+          force_slewing = False
+          note = 'This is for Deep observing mode. (5 Telescopes will be used for sequential g,r,i observation)'
         """        
         self._log.info(f'[{type(self).__name__}] is triggered.')
         # Check condition of the instruments for this Action
@@ -317,6 +319,25 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             # Exposure
             action_exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
             for frame_number in range(int(count)):
+                
+                # Autofocus_when_elapsed
+                if autofocus_when_elapsed:
+                    history = action_autofocus.history[filter_]
+                    now = Time.now()
+                    if ((Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now) | (not history['succeeded']):
+                        try:
+                            result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
+                        except ConnectionException:
+                            self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                            raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                        except AbortionException:
+                            self._log.warning(f'[{type(self).__name__}] is aborted.')
+                            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                        except ActionFailedException:
+                            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
+                            pass
+                
+                # Exposure
                 try:
                     result_exposure = action_exposure.run(frame_number = int(observation_status[filter_]['observed']),
                                                           exptime = float(exptime),
@@ -334,7 +355,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                           az = az,
                                                           name = name,
                                                           objtype = objtype,
-                                                          id_ = id_
+                                                          id_ = id_,
                                                           note = note)
                     # Update self.observation_status
                     observation_status[filter_]['observed'] += 1
@@ -349,21 +370,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 except ActionFailedException:
                     self._log.critical(f'[{type(self).__name__}] is failed: exposure failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
-                if autofocus_when_elapsed:
-                    history = action_autofocus.history[filter_]
-                    now = Time.now()
-                    if ((Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now) | (not history['succeeded']):
-                        try:
-                            result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
-                        except ConnectionException:
-                            self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
-                            raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
-                        except AbortionException:
-                            self._log.warning(f'[{type(self).__name__}] is aborted.')
-                            raise AbortionException(f'[{type(self).__name__}] is aborted.')
-                        except ActionFailedException:
-                            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
-                            pass
+
         self._log.info(f'[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(result_all_exposure)
         return all(result_all_exposure)

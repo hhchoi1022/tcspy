@@ -36,7 +36,7 @@ class DB(mainConfig):
                  utctime = Time.now()):
         super().__init__()
         self.Daily = self.update_Daily(utctime = utctime)
-        self.RIS = self.update_RIS(utcdate = utctime)
+        self.RIS = self.update_RIS()
     
     def update_Daily(self, utctime):
         """
@@ -55,7 +55,7 @@ class DB(mainConfig):
         Daily = DB_Daily(utctime = utctime, tbl_name = 'Daily')
         return Daily
 
-    def update_RIS(self, utcdate):
+    def update_RIS(self):
         """
         Returns an instance of DB_Annual updated at utcdate.
 
@@ -69,5 +69,5 @@ class DB(mainConfig):
         DB_Annual
             An instance of the DB_Annual class updated at utcdate.
         """
-        return DB_Annual(utcdate = utcdate, tbl_name = 'RIS')
+        return DB_Annual(tbl_name = 'RIS')
 # %%

@@ -89,11 +89,13 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         frame_number = 1
         exptime = 1
         filter_ : str = None
-        imgtype : str = 'BIAS'
+        imgtype : str = 'LIGHT'
         binning : int = 1
         name : str = None
         objtype = None
         obsmode = 'Single'
+        specmode = 'specall'
+        ntelescope = 10
         gain = 0
         ra : float = None
         dec : float = None
@@ -101,6 +103,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         az : float = None
         name : str = ''
         objtype : str = None
+        id = 'asdasdas'
+        note = 'This is for Deep observing mode. (5 Telescopes will be used for sequential g,r,i observation)'
         """
         # Check condition of the instruments for this Action
         self._log.info(f'[{type(self).__name__}] is triggered.')
@@ -132,6 +136,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                               name = name, 
                               objtype= objtype,
                               id_ = id_,
+                              note = note,
                               
                               exptime = exptime,
                               count = 1,
@@ -142,7 +147,6 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                               specmode = specmode,
                               ntelescope = ntelescope
                               )
-        exposure_info = target.exposure_info
         # Move filter
         result_changefilter = True
         if imgtype.upper() == 'LIGHT':
@@ -239,7 +243,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
 # %%
 
 if __name__ == '__main__':
-    device = SingleTelescope(unitnum = 8)
+    device = SingleTelescope(unitnum = 1)
     
     abort_action = Event()
     #device.filt.connect()
