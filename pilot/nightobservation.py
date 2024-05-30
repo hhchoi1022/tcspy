@@ -35,10 +35,10 @@ class NightObservation(mainConfig):
         self.autofocus = self._default_autofocus_config()
         self._weather = next(iter(self.multitelescopes.devices.values())).devices['weather']
         self._safetymonitor = next(iter(self.multitelescopes.devices.values())).devices['safetymonitor']
-        #if self.config['NIGHTOBS_SAFETYPE'].upper() == 'WEATHER':
-        self._is_safe = self._is_weather_safe
-        #else:
-            #self._is_safe = self._is_safetymonitor_safe
+        if self.config['NIGHTOBS_SAFETYPE'].upper() == 'WEATHER':
+            self._is_safe = self._is_weather_safe
+        else:
+            self._is_safe = self._is_safetymonitor_safe
         self._weather_updater = None
         self._obsnight = None
         self.action_queue = list()
@@ -54,7 +54,7 @@ class NightObservation(mainConfig):
     def _default_autofocus_config(self):
         class default_autofocus: 
             def __init__(self):
-                self.use_history = False
+                self.use_history = True
                 self.history_duration = 60 
                 self.before_start = True
                 self.when_filterchange = True
@@ -83,10 +83,10 @@ class NightObservation(mainConfig):
         
         # Connect Weather Updater
         self._weather_updater = WeatherUpdater()
-        Thread(target = self._weather_updater.run, kwargs = dict(abort_action = self.abort_action), daemon = True).start()
+        Thread(target = self._weather_updater.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
         # Connect SafetyMonitor Updater
         self._safemonitor_updater = SafetyMonitorUpdater()
-        Thread(target = self._safemonitor_updater.run, kwargs = dict(abort_action = self.abort_action), daemon = True).start()
+        Thread(target = self._safemonitor_updater.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
         
         # Get status of all telescopes
         status_devices = self.multitelescopes.status
