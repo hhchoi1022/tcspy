@@ -135,8 +135,8 @@ class DB_Daily(mainConfig):
         risetime_tmp = self._get_risetime(multitargets = multitargets, utctime = self.obsnight.sunrise_civil, mode = 'previous', horizon = self.config['TARGET_MINALT'], n_grid_points= 100)
         settime_tmp = self._get_settime(multitargets = multitargets, utctime = self.obsnight.sunset_civil, mode = 'next', horizon = self.config['TARGET_MINALT'], n_grid_points= 100)
         # If targets are always up
-        risetime = Time([self.obsnight.sunset_astro if np.isnan(rt.value.data) else rt for rt in risetime_tmp])
-        settime_tmp2 = Time([self.obsnight.sunset_astro + 1 * u.day if np.isnan(st.value.data) else st for st in settime_tmp])
+        risetime = Time([self.obsnight.sunset_astro if rt.mask else rt for rt in risetime_tmp])
+        settime_tmp2 = Time([self.obsnight.sunset_astro + 1 * u.day if st.mask else st for st in settime_tmp])
         # If targets are never up
         settime = Time([st - 1*u.day if (st - rt).value > 1 else st for rt, st in zip(risetime, settime_tmp2)])
         transittime, maxalt, besttime = self._get_transit_besttime(multitargets = multitargets)
