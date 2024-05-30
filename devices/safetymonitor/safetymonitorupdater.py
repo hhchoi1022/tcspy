@@ -135,6 +135,6 @@ class SafetyMonitorUpdater(mainSafetyMonitor):
 if __name__ =='__main__':
     safe = SafetyMonitorUpdater()
     
-    #weather.run(Event())
+    safe.run(Event())
     #weather.disconnect()
 # %%

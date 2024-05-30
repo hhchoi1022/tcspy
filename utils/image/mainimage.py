@@ -262,14 +262,14 @@ class mainImage(mainConfig):
         info['FOC_IP'] = self._format_header(self._configinfo['FOCUSER_HOSTIP'],'Hosting IP for ALPACA focuser device')
         info['FOC_PRT'] = self._format_header(self._configinfo['FOCUSER_PORTNUM'],'Port number of ALPACA focuser device')
         info['FOC_NUM'] = self._format_header(self._configinfo['FOCUSER_DEVICENUM'],'Device number of ALPACA focuser device')
-        # focuser
-        info['FOC_IP'] = self._format_header(self._configinfo['WEATHER_HOSTIP'],'Hosting IP for ALPACA weather device')
-        info['FOC_PRT'] = self._format_header(self._configinfo['WEATHER_PORTNUM'],'Port number of ALPACA weather device')
-        info['FOC_NUM'] = self._format_header(self._configinfo['WEATHER_DEVICENUM'],'Device number of ALPACA weather device')
-        # focuser
-        info['FOC_IP'] = self._format_header(self._configinfo['SAFEMONITOR_HOSTIP'],'Hosting IP for ALPACA weather device')
-        info['FOC_PRT'] = self._format_header(self._configinfo['SAFEMONITOR_PORTNUM'],'Port number of ALPACA weather device')
-        info['FOC_NUM'] = self._format_header(self._configinfo['SAFEMONITOR_DEVICENUM'],'Device number of ALPACA weather device')
+        # weather
+        info['WTER_IP'] = self._format_header(self._configinfo['WEATHER_HOSTIP'],'Hosting IP for ALPACA weather device')
+        info['WTER_PRT'] = self._format_header(self._configinfo['WEATHER_PORTNUM'],'Port number of ALPACA weather device')
+        info['WTER_NUM'] = self._format_header(self._configinfo['WEATHER_DEVICENUM'],'Device number of ALPACA weather device')
+        # safetymonitor
+        info['SAFE_IP'] = self._format_header(self._configinfo['SAFEMONITOR_HOSTIP'],'Hosting IP for ALPACA weather device')
+        info['SAFE_PRT'] = self._format_header(self._configinfo['SAFEMONITOR_PORTNUM'],'Port number of ALPACA weather device')
+        info['SAFE_NUM'] = self._format_header(self._configinfo['SAFEMONITOR_DEVICENUM'],'Device number of ALPACA weather device')
         # logger
         info['LOGPATH'] = self._format_header(self._configinfo['LOGGER_PATH'], 'Log file path')######################3
         return info

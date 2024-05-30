@@ -23,12 +23,18 @@ class DataTransferManager(mainConfig):
         self.gridftp = self._set_gridftp_params(**self.config)
         self.process: Optional[subprocess.Popen] = None
         
-    def run(self, key: str = '*/images/20240515', output_file_name: str = 'temp.tar', protocol = 'gridftp'):
-        if protocol == 'hpnscp':
-            self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name))
-        else:            
-            self.transfer_thread = Thread(target=self.hpnscp_transfer, kwargs=dict(key = key, output_file_name = output_file_name))
-        self.transfer_thread.start()
+    def run(self, key: str = '*/images/20240515', output_file_name: str = 'temp.tar', protocol = 'gridftp', thread = True):
+        if thread:
+            if protocol == 'hpnscp':
+                self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name))
+            else:            
+                self.transfer_thread = Thread(target=self.hpnscp_transfer, kwargs=dict(key = key, output_file_name = output_file_name))
+            self.transfer_thread.start()
+        else:
+            if protocol == 'hpnscp':
+                self.hpnscp_transfer(key = key, output_file_name= output_file_name)
+            else:
+                self.gridFTP_transfer(key = key, output_file_name= output_file_name)
         
     def abort(self):
         if self.process and self.process.poll() is None:
@@ -153,10 +159,10 @@ class DataTransferManager(mainConfig):
 A = DataTransferManager()
 #%%
 import time
-datelist = [25, 28]
+datelist = [28,27,25,18,17,16,11,'09','08','03','02']
 for date in datelist:
+    A.run(key = f'*/images/2024-05-{date}_gain2750', output_file_name= f'2024-05-{date}_gain2750.tar', thread = False)
     time.sleep(100)
-    A.run(key = f'*/images/2024-05-{date}_gain2750', output_file_name= f'2024-05-{date}_gain2750.tar')
 
 
 # %%

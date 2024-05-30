@@ -231,6 +231,6 @@ class WeatherUpdater(mainWeather):
 if __name__ =='__main__':
     weather = WeatherUpdater()
     
-    #weather.run(Event())
+    weather.run(Event())
     #weather.disconnect()
 # %%

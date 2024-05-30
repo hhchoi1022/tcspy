@@ -4,6 +4,7 @@ from tcspy.action import MultiAction
 from tcspy.action.level1 import SlewAltAz
 from tcspy.devices import SingleTelescope, MultiTelescopes
 from multiprocessing import Event
+import json
 #%%
 
 
@@ -28,14 +29,24 @@ action_slew = MultiAction(list_telescopes, dict(alt = alt, az = az, tracking = t
 # %%
 action_slew.run()
 # %%
-action_autofocus = MultiAction(list_telescopes, dict(filter_ = 'r'), AutoFocus, Event())
+from tcspy.configuration import mainConfig
+config = mainConfig().config
+def history(tel_name):
+    focus_history_file = config['AUTOFOCUS_FOCUSHISTORY_FILE']
+    with open(focus_history_file, 'r') as f:
+        focus_history_data = json.load(f)
+    return focus_history_data[tel_name]
+
+
+#%%
+action_autofocus = MultiAction(list_telescopes, dict(filter_ = None), AutoFocus, Event())
 # %%
 action_autofocus.run()
 # %%
 from tcspy.action.level1 import *
-ChangeFilter(SingleTelescope(1), Event()).run('r')
+ChangeFilter(SingleTelescope(1), Event()).run('m400')
 # %%
-AutoFocus(SingleTelescope(5), Event()).run()
+AutoFocus(SingleTelescope(1), Event()).run()
 # %%
 from tcspy.action.level1 import Exposure
 from tcspy.action.level1 import ChangeFocus

@@ -131,6 +131,5 @@ if __name__ == '__main__':
     safe = mainSafetyMonitor()
     safe.connect()
     safe.get_status()
-    safe.disconnect()
 
 # %%

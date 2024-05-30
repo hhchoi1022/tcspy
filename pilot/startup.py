@@ -190,6 +190,7 @@ if __name__ == '__main__':
 
 #%%
 if __name__ == '__main__':
+    import schedule
     start = time.time()
 
     M = MultiTelescopes(list_telescopes)
@@ -198,5 +199,21 @@ if __name__ == '__main__':
     print(time.time() - start)
     abort_action = Event()
     S = Startup(M, abort_action = abort_action)
+    import schedule
+    import time
+
+    def job_that_executes_once():
+        # Do some work that only needs to happen once...
+        S.run()
+        return schedule.CancelJob
+    from tcspy.utils.databases import DB
+    time_prepare = DB().Daily.obsnight.sunset_prepare.datetime
+    time_prepare_str = '%.2d:%.2d'%(time_prepare.hour-3, time_prepare.minute)
+
+    schedule.every().day.at(time_prepare_str).do(job_that_executes_once)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 #%%
         
