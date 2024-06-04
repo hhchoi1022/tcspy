@@ -11,9 +11,9 @@
             "focusval": 10000
         },
         "r": {
-            "update_time": "2024-05-30T01:33:53.103",
+            "update_time": "2024-05-31T01:40:59.992",
             "succeeded": true,
-            "focusval": 7507.5
+            "focusval": 7552.2
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -53,9 +53,9 @@
             "focusval": 7478.9
         },
         "r": {
-            "update_time": "2024-05-30T00:12:22.746",
+            "update_time": "2024-05-31T01:41:01.023",
             "succeeded": true,
-            "focusval": 7418.8
+            "focusval": 7485.1
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -63,9 +63,9 @@
             "focusval": 10000
         },
         "m450": {
-            "update_time": "2024-05-30T08:15:16.530",
+            "update_time": "2024-05-31T03:58:47.416",
             "succeeded": true,
-            "focusval": 7559.5
+            "focusval": 7582.6
         },
         "m475": {
             "update_time": "2024-05-30T08:22:13.925",
@@ -90,9 +90,9 @@
             "focusval": 6297.9
         },
         "r": {
-            "update_time": "2024-05-30T00:12:22.446",
+            "update_time": "2024-05-31T01:40:59.939",
             "succeeded": true,
-            "focusval": 6268.7
+            "focusval": 6326.2
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -100,9 +100,9 @@
             "focusval": 10000
         },
         "m500": {
-            "update_time": "2024-05-30T08:15:15.966",
+            "update_time": "2024-05-31T03:58:49.104",
             "succeeded": true,
-            "focusval": 6381.3
+            "focusval": 6387.0
         },
         "m525": {
             "update_time": "2024-05-30T08:22:14.843",
@@ -127,9 +127,9 @@
             "focusval": 5877.2
         },
         "r": {
-            "update_time": "2024-05-30T00:12:19.606",
+            "update_time": "2024-05-31T01:41:01.532",
             "succeeded": true,
-            "focusval": 5776.9
+            "focusval": 5824.2
         },
         "i": {
             "update_time": "2024-05-16T03:37:57.416",
@@ -137,9 +137,9 @@
             "focusval": 5872.5
         },
         "m550": {
-            "update_time": "2024-05-30T08:15:15.752",
+            "update_time": "2024-05-31T03:58:48.592",
             "succeeded": true,
-            "focusval": 5934.2
+            "focusval": 5957.1
         },
         "m575": {
             "update_time": "2024-05-30T08:22:14.237",
@@ -164,9 +164,9 @@
             "focusval": 6771.2
         },
         "r": {
-            "update_time": "2024-05-30T00:12:21.888",
+            "update_time": "2024-05-31T01:40:59.133",
             "succeeded": true,
-            "focusval": 6707.6
+            "focusval": 6732.9
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -174,9 +174,9 @@
             "focusval": 10000
         },
         "m600": {
-            "update_time": "2024-05-30T08:15:17.344",
+            "update_time": "2024-05-31T03:58:51.665",
             "succeeded": true,
-            "focusval": 6826.2
+            "focusval": 6853.6
         },
         "m625": {
             "update_time": "2024-05-30T08:22:18.151",
@@ -201,9 +201,9 @@
             "focusval": 7146.0
         },
         "r": {
-            "update_time": "2024-05-30T00:12:19.229",
+            "update_time": "2024-05-31T01:41:00.885",
             "succeeded": true,
-            "focusval": 7156.8
+            "focusval": 7143.7
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -211,9 +211,9 @@
             "focusval": 10000
         },
         "m650": {
-            "update_time": "2024-05-30T08:15:14.519",
+            "update_time": "2024-05-31T03:58:48.978",
             "succeeded": true,
-            "focusval": 7278.2
+            "focusval": 7294.1
         },
         "m675": {
             "update_time": "2024-05-30T08:22:10.966",
@@ -238,9 +238,9 @@
             "focusval": 8207.0
         },
         "r": {
-            "update_time": "2024-05-30T00:12:20.060",
+            "update_time": "2024-05-31T01:41:00.378",
             "succeeded": true,
-            "focusval": 8115.2
+            "focusval": 8151.4
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -248,9 +248,9 @@
             "focusval": 10000
         },
         "m700": {
-            "update_time": "2024-05-30T08:15:15.960",
+            "update_time": "2024-05-31T03:58:49.524",
             "succeeded": true,
-            "focusval": 8264.8
+            "focusval": 8239.9
         },
         "m725": {
             "update_time": "2024-05-30T08:22:12.859",
@@ -275,9 +275,9 @@
             "focusval": 7431.9
         },
         "r": {
-            "update_time": "2024-05-30T00:12:20.829",
+            "update_time": "2024-05-31T01:41:00.847",
             "succeeded": true,
-            "focusval": 7342.1
+            "focusval": 7343.7
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -285,9 +285,9 @@
             "focusval": 10000
         },
         "m750": {
-            "update_time": "2024-05-30T08:15:15.797",
+            "update_time": "2024-05-31T03:58:48.143",
             "succeeded": true,
-            "focusval": 7438.7
+            "focusval": 7447.7
         },
         "m775": {
             "update_time": "2024-05-30T08:22:13.237",
@@ -307,9 +307,9 @@
             "focusval": 5887.6
         },
         "r": {
-            "update_time": "2024-05-30T00:12:18.961",
+            "update_time": "2024-05-31T01:41:01.687",
             "succeeded": true,
-            "focusval": 5814.1
+            "focusval": 5867.8
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -322,9 +322,9 @@
             "focusval": 10000
         },
         "m800": {
-            "update_time": "2024-05-30T08:15:18.829",
+            "update_time": "2024-05-31T03:58:48.089",
             "succeeded": true,
-            "focusval": 5862.5
+            "focusval": 5912.4
         },
         "m825": {
             "update_time": "2024-05-30T08:22:16.163",
@@ -349,9 +349,9 @@
             "focusval": 8431.0
         },
         "r": {
-            "update_time": "2024-05-30T00:12:18.693",
+            "update_time": "2024-05-31T01:40:58.033",
             "succeeded": true,
-            "focusval": 8365.3
+            "focusval": 8404.9
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -364,9 +364,9 @@
             "focusval": 10000
         },
         "m850": {
-            "update_time": "2024-05-30T08:15:17.982",
+            "update_time": "2024-05-31T03:58:47.295",
             "succeeded": true,
-            "focusval": 8618.5
+            "focusval": 8629.5
         },
         "m875": {
             "update_time": "2024-05-30T08:22:14.469",

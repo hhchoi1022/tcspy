@@ -1,11 +1,14 @@
 
 
 #%%
+
+from tcspy.configuration import mainConfig
+from tcspy.devices.observer import mainObserver
 from tcspy.utils.target import MultiTargets
 from tcspy.utils.target import SingleTarget
-from tcspy.configuration import mainConfig
 from tcspy.utils.databases import SQL_Connector
-from tcspy.devices.observer import mainObserver
+from tcspy.utils.databases import DB_Annual
+from tcspy.utils.databases import GoogleSheet
 
 from astropy.table import Table 
 from astropy.time import Time
@@ -219,7 +222,8 @@ class DB_Daily(mainConfig):
         target_tbl : Table
             An astropy table containing the target data to be inserted.
         """
-        self.sql.insert_rows(tbl_name = self.tblname, data = target_tbl)
+        insertion_result = self.sql.insert_rows(tbl_name = self.tblname, data = target_tbl)
+        return insertion_result
         
     def update_target(self,
                       update_value,
@@ -245,6 +249,35 @@ class DB_Daily(mainConfig):
                             update_key = update_key,
                             id_value = id_value,
                             id_key = id_key)
+    
+    def from_RIS(self,
+                 utcdate : Time = Time.now(),
+                 size : int = 300,
+                 mode : str = 'best', # best or urgent
+                 observable_minimum_hour : float = 2,
+                 n_time_grid : float = 10,
+                 ):
+        RIS = DB_Annual(tbl_name = 'RIS')
+        best_targets = RIS.select_best_targets(utcdate = utcdate, size = size, mode = mode, observable_minimum_hour = observable_minimum_hour, n_time_grid = n_time_grid)
+        self.insert(best_targets)
+        print(f'{len(best_targets)} are inserted')
+    
+    def from_GSheet(self,
+                    sheet_name : str,
+                    update: bool = True
+                    ):
+        print('Connecting to DB...')
+        gsheet = GoogleSheet()
+        tbl_sheet = gsheet.get_sheet_data(sheet_name = sheet_name, format_ = 'Table')
+        # Insert data
+        print('Inserting GoogleSheet data to DB...')
+        insertion_result = self.insert(tbl_sheet)
+        # Update google sheet 
+        if update:
+            tbl_sheet['is_inputted'] = insertion_result
+            print('Updating GoogleSheet data...')
+            gsheet.write_sheet_data(sheet_name = sheet_name, data = tbl_sheet, append = False, clear_header = False)        
+
         
     @property
     def data(self):
