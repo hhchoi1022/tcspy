@@ -23,8 +23,14 @@ class AutofocusInitializer(mainConfig):
         self.abort_action = abort_action
         self.filtinfo = self._get_filtinfo()
     
-    def run(self):
-        startup_thread = Thread(target=self._process, kwargs = dict(count = count, binning = binning, gain = gain))
+    def run(self,
+                 initial_filter : str = 'r',
+                 use_offset : bool = True,
+                 use_history : bool = True, 
+                 history_duration : float = 60,
+                 search_focus_when_failed : bool = True, 
+                 search_focus_range : int = 3000):
+        startup_thread = Thread(target=self._process, kwargs = dict(initial_filter = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range))
         startup_thread.start()
     
     def abort(self):
@@ -32,7 +38,8 @@ class AutofocusInitializer(mainConfig):
         
     def _get_filtinfo(self):
         with open(self.config['AUTOFOCUS_FILTINFO_FILE'], 'r') as f:
-            filtinfo = json.load(f)
+            filtinfo_all = json.load(f)
+        filtinfo = {key : filtinfo_all[key] for key in self.multitelescopes.devices.keys()}
         return filtinfo
     
     def _process(self,
@@ -48,7 +55,7 @@ class AutofocusInitializer(mainConfig):
         alt = 50
         az = 160
         tracking= True
-        action_slew = MultiAction(self.multitelescopes.devices, dict(alt = alt, az = az, tracking = tracking), SlewAltAz, Event())
+        action_slew = MultiAction(self.multitelescopes.devices.values(), dict(alt = alt, az = az, tracking = tracking), SlewAltAz, Event())
         try:
             action_slew.run()
         except ConnectionException:
@@ -61,24 +68,46 @@ class AutofocusInitializer(mainConfig):
             self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed')
             raise ActionFailedException(f'[{type(self).__name__}] is failed.')
         # Run Autofocus
-        action_autofocus = MultiAction(list_telescopes, dict(filter_ = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range), AutoFocus, self.abort_action)
+        action_autofocus = MultiAction(self.multitelescopes.devices.values(), dict(filter_ = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range), AutoFocus, self.abort_action)
         
         try:
             action_autofocus.run()
+            for filtinfo in self.filtinfo.values():
+                filtinfo.remove(initial_filter)
         except AbortionException:
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
-    
+        
+        # After initial_filter, run Autofocus for other filters
+        autofocus_filtinfo = self.filtinfo.copy()
+        max_length = max(len(lst) for lst in autofocus_filtinfo.values())
+        # Extend each list to the maximum length by repeating its elements
+        for key, lst in autofocus_filtinfo.items():
+            if len(lst) < max_length:
+                repeat_times = (max_length // len(lst)) + 1  # Determine how many times to repeat the list
+                extended_list = (lst * repeat_times)[:max_length]  # Repeat and slice to the maximum length
+                autofocus_filtinfo[key] = extended_list
+        
+        for idx_filter in range(max_length):
+            kwargs_autofocus_all = []
+            for tel_name in self.multitelescopes.devices.keys():
+                filter_ = autofocus_filtinfo[tel_name][idx_filter]
+                kwargs_autofocus_single = dict(filter_ = filter_, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range)
+                kwargs_autofocus_all.append(kwargs_autofocus_single)
+            action_autofocus = MultiAction(self.multitelescopes.devices.values(), kwargs_autofocus_all, AutoFocus, self.abort_action)
+            try:
+                action_autofocus.run()
+            except AbortionException:
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            
 
 #%%  
-
-
-
-list_telescopes = [SingleTelescope(1),
+list_telescopes = [#SingleTelescope(1),
                    SingleTelescope(2),
                    SingleTelescope(3),
                    SingleTelescope(5),
-                   SingleTelescope(6),
+                   #SingleTelescope(6),
                    SingleTelescope(7),
                    SingleTelescope(8),
                    SingleTelescope(9),
@@ -87,39 +116,8 @@ list_telescopes = [SingleTelescope(1),
                    ]
 mtel = MultiTelescopes(list_telescopes)
 #%%
-filtinfo_filepath = '../configuration/filtinfo.data'
-with open(filtinfo_filepath, 'r') as f:
-    filtinfo = json.load(f)
-# Find the maximum length of the lists
-max_length = max(len(lst) for lst in filtinfo.values())
-# Extend each list to the maximum length by repeating its elements
-for key, lst in filtinfo.items():
-    if len(lst) < max_length:
-        repeat_times = (max_length // len(lst)) + 1  # Determine how many times to repeat the list
-        extended_list = (lst * repeat_times)[:max_length]  # Repeat and slice to the maximum length
-        filtinfo[key] = extended_list
-#%%
-# %%
-
-# %%
-action_slew.run()
-# %%
-
+a = AutofocusInitializer(mtel, Event())
+a.run()
 
 #%%
-action_autofocus = MultiAction(list_telescopes, dict(filter_ = None), AutoFocus, Event())
 # %%
-action_autofocus.run()
-# %%
-from tcspy.action.level1 import *
-ChangeFilter(SingleTelescope(1), Event()).run('m400')
-# %%
-AutoFocus(SingleTelescope(1), Event()).run()
-# %%
-from tcspy.action.level1 import Exposure
-from tcspy.action.level1 import ChangeFocus
-
-for i in range(3):
-    action_exposure = MultiAction(list_telescopes, dict(frame_number = i, exptime = 10, filter_ = 'r', gain = 2750, alt = 50, az = 160, name = 'Defocus_test', objtype = 'Test', note ='Use this image for quality test' ))
-
-#%%

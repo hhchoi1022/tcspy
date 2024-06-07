@@ -170,7 +170,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             # Else: use focus history value. In this case, do not run Autofocus
             else:    
                 if focus_history['succeeded']:
-                    optimal_position = focus_history['position']
+                    optimal_position = focus_history['focusval']
                     now = Time.now()
                     elapsed_time = now - Time(focus_history['update_time'])
                     if elapsed_time < (history_duration * u.minute):
