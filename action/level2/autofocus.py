@@ -1,5 +1,6 @@
 #%%
 #%%
+import numpy as np
 import os
 import json
 import astropy.units as u
@@ -158,7 +159,9 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
         
         # run Autofocus
+        result_autofocus = False
         info_focuser = self.telescope.focuser.get_status()
+        optimal_position = info_focuser['position']
         self._log.info(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}]')
         try:
             # If use_history == False, run Autofocus
@@ -167,6 +170,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             # Else: use focus history value. In this case, do not run Autofocus
             else:    
                 if focus_history['succeeded']:
+                    optimal_position = focus_history['position']
                     now = Time.now()
                     elapsed_time = now - Time(focus_history['update_time'])
                     if elapsed_time < (history_duration * u.minute):
@@ -181,6 +185,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         except AbortionException:
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        except AutofocusFailedException:
+            self._log.warning(f'Autofocus 1st try failed. Try autofocus with the focus history')
 
         # When succeeded
         if result_autofocus:
@@ -216,19 +222,16 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             except AbortionException:
                 self._log.warning(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except AutofocusFailedException:
+                self._log.warning(f'Autofocus 2nd try failed.')
 
         # If autofocus process is still failed, grid search
         if search_focus_when_failed:
-            info_focuser = self.telescope.focuser.get_status()
             relative_position = 500
             n_focus_search = 2*search_focus_range//relative_position
             sign = 1
             for i in range(n_focus_search):
                 print(relative_position)
-                relative_position = np.abs(relative_position) + 500
-                sign *= -1
-                relative_position *= sign
-                
                 # Change focus 
                 try:
                     action_changefocus.run(position = relative_position, is_relative = True)
@@ -254,9 +257,26 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 except AbortionException:
                     self._log.warning(f'[{type(self).__name__}] is aborted.')
                     raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                except AutofocusFailedException:
+                    self._log.warning(f'Autofocus {i+3}th try failed.')
+
+                relative_position = np.abs(relative_position) + 500
+                sign *= -1
+                relative_position *= sign
 
         # If autofocus process is still failed, return ActionFailedException
         self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed.')
+        try:
+            action_changefocus.run(position = optimal_position, is_relative = False)
+        except ConnectionException:
+            self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+        except AbortionException:
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        except ActionFailedException:
+            self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
         raise ActionFailedException(f'[{type(self).__name__}] is failed: Autofocus process is failed')
 
     def write_default_focus_history(self):
@@ -311,3 +331,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         if info_focuser['is_moving']:
             self.telescope.focuser.abort()
         return 
+# %%
+if __name__ == '__main__':
+    from tcspy.devices import SingleTelescope
+    a = AutoFocus(SingleTelescope(1), Event())
+# %%
