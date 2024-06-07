@@ -138,9 +138,10 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
         #    pass 
 #%%
 if __name__ == '__main__':
-    device = SingleTelescope(unitnum = 21)
+    device = SingleTelescope(unitnum = 1)
     abort_action = Event()
     s =SlewAltAz(device, abort_action)
     #s.run(alt=40, az= 270, tracking = True)  
     from threading import Thread
-    p = Thread(target = s.run, kwargs = dict(alt = 40, az = 270))
+    p = Thread(target = s.run, kwargs = dict(alt = 40, az = 160, tracking = True))
+# %%
