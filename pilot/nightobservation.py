@@ -86,8 +86,7 @@ class NightObservation(mainConfig):
         Thread(target = self._weather_updater.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
         # Connect SafetyMonitor Updater
         self._safemonitor_updater = SafetyMonitorUpdater()
-        Thread(target = self._safemonitor_updater.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
-        
+        Thread(target = self._safemonitor_updater.run, kwargs = dict(abort_action = self.abort_action), daemon = False).star        
         # Get status of all telescopes
         status_devices = self.multitelescopes.status
         for tel_name, status in status_devices.items():

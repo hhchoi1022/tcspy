@@ -114,10 +114,13 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         # Define action
         action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action)
         action_changefilter = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action)
+        focus_history = self.history[filter_]
+        
         if filter_ == None:
             info_filterwheel = self.telescope.filterwheel.get_status()
             filter_ = info_filterwheel['filter']
         
+        # Apply focus offset
         if use_offset:
             info_filterwheel = self.telescope.filterwheel.get_status()
             current_filter = info_filterwheel['filter']
@@ -156,15 +159,16 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         info_focuser = self.telescope.focuser.get_status()
         self._log.info(f'Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}]')
         try:
+            # If use_history == False, run Autofocus
             if not use_history:
                 result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
+            # Else: use focus history value. In this case, do not run Autofocus
             else:    
-                history = self.history[filter_]
-                if history['succeeded']:
+                if focus_history['succeeded']:
                     now = Time.now()
-                    elapsed_time = now - Time(history['update_time'])
+                    elapsed_time = now - Time(focus_history['update_time'])
                     if elapsed_time < (history_duration * u.minute):
-                        result_changefocus = action_changefocus.run(position = history['focusval'], is_relative = False)
+                        result_changefocus = action_changefocus.run(position = focus_history['focusval'], is_relative = False)
                         self._log.info(f'Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')
                         result_autofocus = True
                         autofocus_position = None
@@ -175,16 +179,47 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         except AbortionException:
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
-        except AutofocusFailedException:
-            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed.')
-            raise ActionFailedException(f'[{type(self).__name__}] is failed: Autofocus process is failed')
-        
+
         if result_autofocus:
             self._log.info(f'[{type(self).__name__}] is finished')
             self.shared_memory['succeeded'] = result_autofocus
             if autofocus_position:
                 self.update_focus_history(filter_ = filter_, focusval =autofocus_position, is_succeeded = result_autofocus)
             return True
+        # If autofocus process is failed, try autofocus with the focus value in the history 
+        elif focus_history['succeeded']:
+            self._log.warning(f'[{type(self).__name__}] is failed. 2nd try with the focus_history')
+            self._log.info(f'Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')
+            try:
+                result_changefocus = action_changefocus.run(position = focus_history['focusval'], is_relative = False)
+            except ConnectionException:
+                self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+                       
+            try: 
+                result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
+                self._log.info(f'[{type(self).__name__}] is finished')
+                self.shared_memory['succeeded'] = result_autofocus
+                if autofocus_position:
+                    self.update_focus_history(filter_ = filter_, focusval =autofocus_position, is_succeeded = result_autofocus)
+                return True
+            except AbortionException:
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except AutofocusFailedException:
+                self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: Autofocus process is failed')
+
+        # If there is no focus history, return to the original focus value and return ActionFailedException
+        else:
+            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus process is failed.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Autofocus process is failed')
 
     def write_default_focus_history(self):
         with open(self.config['AUTOFOCUS_FILTINFO_FILE'], 'r') as f:

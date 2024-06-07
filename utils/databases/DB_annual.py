@@ -9,7 +9,6 @@ from tcspy.devices.observer import mainObserver
 from astropy.table import Table 
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import SkyCoord
 import numpy as np
 from astroplan import observability_table
 from astroplan import AltitudeConstraint, MoonSeparationConstraint

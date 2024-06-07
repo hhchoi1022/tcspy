@@ -7,8 +7,6 @@ from tcspy.devices.observer import mainObserver
 from tcspy.utils.target import MultiTargets
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.databases import SQL_Connector
-from tcspy.utils.databases import DB_Annual
-from tcspy.utils.databases import GoogleSheet
 
 from astropy.table import Table 
 from astropy.time import Time
@@ -188,7 +186,7 @@ class DB_Daily(mainConfig):
         all_targets = self.data
         column_names_for_scoring = ['exptime_tot', 'id', 'risetime', 'transittime', 'settime', 'besttime', 'maxalt', 'moonsep']
         
-        # If one of the targets do not have the required information, calculate
+        # If one of the targets do not have the required information, initialize
         rows_to_update = [any(row[name] is None or row[name] == '' for name in column_names_for_scoring) for row in all_targets]
         target_tbl_to_update =  all_targets[rows_to_update]
         if len(target_tbl_to_update) > 0:
@@ -199,17 +197,22 @@ class DB_Daily(mainConfig):
         target_ToO = target_all[idx_ToO]
         target_ordinary = target_all[~idx_ToO]
         
+        # If there is any observable ToO target, return ToO target with the scoring algorithm
         exist_ToO = (len(target_ToO) > 0)
         if exist_ToO:
             target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ToO)        
             if target_score:
                 return target_best, target_score
         
+        # Else, ordinary targets are scored with the group. First, Observe Group 1 target, seconds, group 2 targets, and so on...
         exist_ordinary = (len(target_ordinary) > 0)
         if exist_ordinary:
-            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary)        
-            if target_score:
-                return target_best, target_score
+            target_ordinary_by_group = target_ordinary.group_by('group').groups
+            for target_ordinary_group in target_ordinary_by_group:
+                target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary_group)        
+                print(target_best, target_score)
+                if target_score:
+                    return target_best, target_score
         return None, None
     
     def insert(self,
@@ -257,6 +260,7 @@ class DB_Daily(mainConfig):
                  observable_minimum_hour : float = 2,
                  n_time_grid : float = 10,
                  ):
+        from tcspy.utils.databases import DB_Annual
         RIS = DB_Annual(tbl_name = 'RIS')
         best_targets = RIS.select_best_targets(utcdate = utcdate, size = size, mode = mode, observable_minimum_hour = observable_minimum_hour, n_time_grid = n_time_grid)
         self.insert(best_targets)
@@ -266,6 +270,7 @@ class DB_Daily(mainConfig):
                     sheet_name : str,
                     update: bool = True
                     ):
+        from tcspy.utils.databases import GoogleSheet
         print('Connecting to DB...')
         gsheet = GoogleSheet()
         tbl_sheet = gsheet.get_sheet_data(sheet_name = sheet_name, format_ = 'Table')

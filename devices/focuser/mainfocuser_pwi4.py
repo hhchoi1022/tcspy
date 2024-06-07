@@ -304,8 +304,8 @@ class mainFocuser_pwi4(mainConfig):
             self._log.info('Autofocus complete! (Best position : %s (%s))'%(status['autofocus_bestposition'], status['autofocus_tolerance']))
         else:
             self.move(position = current_position, abort_action= abort_action)
-            self._log.warning('Autofocus failed')
-            raise AutofocusFailedException('Autofocus failed')
+            self._log.warning('Autofocus failed. Move back to the previous position')
+            raise AutofocusFailedException('Autofocus failed. Move back to the previous position')
         return status['is_autofocus_success'], status['autofocus_bestposition']
 
     def autofocus_stop(self):

@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -124,7 +124,7 @@ class mainConfig:
         # Share configuration
 
         transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.72',
-                               TRANSFER_SERVER_USERNAME = 'hhchoi1022',
+                               TRANSFER_SERVER_USERNAME = 'hhchoi1022', 
                                TRANSFER_SERVER_PORTNUM = '2222',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 128,
                                TRANSFER_GRIPFTP_VERBOSE = True,
@@ -167,7 +167,7 @@ class mainConfig:
 
         DB_params = dict(DB_HOSTIP='localhost',
                          DB_ID='hhchoi',
-                         DB_PWD='gusgh1020!',
+                         DB_PWD='lksdf1020', # gusgh1020! for MCS, lksdf1020 for Lnx
                          DB_NAME='target')
         
         autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self._configfilepath_global,"filtinfo.data")}',

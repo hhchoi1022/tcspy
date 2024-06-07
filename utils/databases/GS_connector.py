@@ -185,23 +185,6 @@ class GoogleSheet(mainConfig):
             header = original_data.columns.values.tolist()
             worksheet.clear()
             worksheet.update([header])
-            
-    def to_DB(self,
-              sheet_name : str,
-              DB_tbl_name : str = 'Daily'
-              ):
-        print('Querying GoogleSheet data...')
-        tbl_sheet = self.get_sheet_data(sheet_name = sheet_name, format_ = 'Table')
-        from tcspy.utils.databases import SQL_Connector
-        print('Connecting to DB...')
-        sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
-        # Insert data
-        print('Inserting GoogleSheet data to DB...')
-        insertion_results = sql.insert_rows(tbl_name = DB_tbl_name, data = tbl_sheet)
-        # Update google sheet 
-        tbl_sheet['is_inputted'] = insertion_results
-        print('Updating GoogleSheet data...')
-        self.write_sheet_data(sheet_name = sheet_name, data = tbl_sheet, append = False, clear_header = False)        
 # %%
 if __name__ =='__main__':
     GoogleSheet().to_DB(sheet_name = 'S240422ed', DB_tbl_name = 'Daily')
