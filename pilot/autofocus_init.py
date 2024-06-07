@@ -5,6 +5,7 @@ from tcspy.action import MultiAction
 from tcspy.action.level1 import SlewAltAz
 from tcspy.devices import SingleTelescope, MultiTelescopes
 from multiprocessing import Event
+from threading import Thread
 from tcspy.utils.exception import *
 import json
 #%%
@@ -22,13 +23,25 @@ class AutofocusInitializer(mainConfig):
         self.abort_action = abort_action
         self.filtinfo = self._get_filtinfo()
     
+    def run(self):
+        startup_thread = Thread(target=self._process, kwargs = dict(count = count, binning = binning, gain = gain))
+        startup_thread.start()
+    
+    def abort(self):
+        self.abort_action.set()
+        
     def _get_filtinfo(self):
         with open(self.config['AUTOFOCUS_FILTINFO_FILE'], 'r') as f:
             filtinfo = json.load(f)
         return filtinfo
     
     def _process(self,
-                 initial_filter : str = 'r'):
+                 initial_filter : str = 'r',
+                 use_offset : bool = True,
+                 use_history : bool = True, 
+                 history_duration : float = 60,
+                 search_focus_when_failed : bool = True, 
+                 search_focus_range : int = 3000):
         
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         # Slew 
@@ -48,9 +61,16 @@ class AutofocusInitializer(mainConfig):
             self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed')
             raise ActionFailedException(f'[{type(self).__name__}] is failed.')
         # Run Autofocus
-        max_length = max(len(lst) for lst in self.filtinfo.values())
-        action_autofocus = MultiAction(list_telescopes, dict(filter_ = initial_filter, use_offset = True, use_history = True), AutoFocus, Event())
-        result_autofocus = action_autofocus.shared_memory
+        action_autofocus = MultiAction(list_telescopes, dict(filter_ = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range), AutoFocus, self.abort_action)
+        
+        try:
+            action_autofocus.run()
+        except AbortionException:
+            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+    
+
+#%%  
 
 
 
