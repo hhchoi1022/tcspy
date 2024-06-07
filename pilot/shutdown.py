@@ -69,20 +69,6 @@ class Shutdown(mainConfig):
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
         # Warm camera
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         params_warm = []
         for telescope_name, telescope in self.multitelescopes.devices.items():
             params_warm.append(dict(settemperature = self.config['SHUTDOWN_CCDTEMP'],

@@ -187,7 +187,11 @@ if __name__ == '__main__':
     
     print(time.time() - start)
 #%%
-
+if __name__ == '__main__':
+    M = MultiTelescopes(list_telescopes)
+    abort_action = Event()
+    S = Startup(M, abort_action = abort_action)
+    S.run()
 #%%
 if __name__ == '__main__':
     import schedule
