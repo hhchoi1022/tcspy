@@ -172,8 +172,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                     if elapsed_time < (history_duration * u.minute):
                         result_changefocus = action_changefocus.run(position = focus_history['focusval'], is_relative = False)
                         self._log.info(f'Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')
-                        result_autofocus = True
-                        autofocus_position = None
+                        self._log.info(f'[{type(self).__name__}] is finished')
+                        return True
                     else:
                         result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)                
                 else:
@@ -182,6 +182,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
+        # When succeeded
         if result_autofocus:
             self._log.info(f'[{type(self).__name__}] is finished')
             self.shared_memory['succeeded'] = result_autofocus
@@ -207,6 +208,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             try: 
                 result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
                 if result_autofocus:
+                    # When succeeded
                     self._log.info(f'[{type(self).__name__}] is finished')
                     self.shared_memory['succeeded'] = result_autofocus
                     self.update_focus_history(filter_ = filter_, focusval =autofocus_position, is_succeeded = result_autofocus)
@@ -243,10 +245,11 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 # Autofocus
                 try: 
                     result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
-                    self._log.info(f'[{type(self).__name__}] is finished')
-                    self.shared_memory['succeeded'] = result_autofocus
-                    if autofocus_position:
+                    # When succeeded
+                    if result_autofocus:
                         self.update_focus_history(filter_ = filter_, focusval =autofocus_position, is_succeeded = result_autofocus)
+                        self._log.info(f'[{type(self).__name__}] is finished')
+                        self.shared_memory['succeeded'] = result_autofocus
                         return True
                 except AbortionException:
                     self._log.warning(f'[{type(self).__name__}] is aborted.')
