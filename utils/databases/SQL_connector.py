@@ -269,7 +269,7 @@ class SQL_Connector:
 
         common_colnames = [col for col in data_str.colnames if col in self.get_colnames(tbl_name)]
         placeholders = ', '.join(['%s'] * len(common_colnames))
-        sql_command = f"INSERT INTO {tbl_name} ({', '.join(common_colnames)}) VALUES ({placeholders})"
+        sql_command = f"INSERT INTO {tbl_name} (`{'`, `'.join(common_colnames)}`) VALUES ({placeholders})"
         values = [tuple(row[col] if row[col] != ('None' and '') else None for col in common_colnames) for row in data_str]
         
         insertion_results = []
