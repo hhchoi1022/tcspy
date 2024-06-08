@@ -92,6 +92,8 @@ class SafetyMonitorUpdater(mainSafetyMonitor):
             self.connect()  
         print(f'SafetyMonitorUpdater activated')
         while not abort_action.is_set():
+            if not self.device.Connected:
+                self.connect()  
             self.update_info_file(overwrite = not self.config['SAFEMONITOR_SAVE_HISTORY'])
             
             print(f'Last safemonitorinfo update: {Time.now().isot}')
