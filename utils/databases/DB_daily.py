@@ -498,5 +498,7 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     D = DB_Daily()
+    #D.from_GSheet('S240422ed')
+    D.from_RIS(size = 40)
     D.initialize(True)
 # %%

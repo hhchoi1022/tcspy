@@ -159,10 +159,8 @@ class DataTransferManager(mainConfig):
 A = DataTransferManager()
 #%%
 import time
-datelist = [28,27,25,18,17,16,11,'09','08','03','02']
+datelist = ['06']
 for date in datelist:
-    A.run(key = f'*/images/2024-05-{date}_gain2750', output_file_name= f'2024-05-{date}_gain2750.tar', thread = False)
+    A.run(key = f'*/images/2024-06-09_gain2750', output_file_name= f'2024-06-09_gain2750.tar', thread = False)
     time.sleep(100)
-
-
 # %%

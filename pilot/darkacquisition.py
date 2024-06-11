@@ -72,11 +72,11 @@ class DarkAcquisition(mainConfig):
         
 # %%
 if __name__ == '__main__':
-    list_telescope = [SingleTelescope(1),
+    list_telescope = [#SingleTelescope(1),
                       SingleTelescope(2),
                       SingleTelescope(3),
                       SingleTelescope(5),
-                      SingleTelescope(6),
+                      #SingleTelescope(6),
                       SingleTelescope(7),
                       SingleTelescope(8),
                       SingleTelescope(9),
@@ -85,5 +85,5 @@ if __name__ == '__main__':
                      ]
     m = MultiTelescopes(list_telescope)
     b = DarkAcquisition(m, Event())
-    b.run(gain = 2750, exptime = 10)
+    b.run(gain = 2750, exptime = 100)
 # %%
