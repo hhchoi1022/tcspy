@@ -444,6 +444,7 @@ class mainObserver(mainConfig):
 # %%
 if __name__ == '__main__':
     import astropy.units as u
+    obs = mainObserver()
     start = Time('2023-01-01')
     settime = []
     risetime = []
@@ -458,8 +459,3 @@ if __name__ == '__main__':
     from datetime import datetime
     import matplotlib.pyplot as plt
     hourlist = []
-    for rt in tbl['rt']:
-        dt = Time(rt).to_datetime()
-        hourlist.append(dt.hour + dt.minute/60)
-    plt.plot(hourlist)
-    # %%
