@@ -15,7 +15,7 @@ class DataTransferManager(mainConfig):
     
     def __init__(self,
                  source_home_directory : str = '/data1/obsdata/',
-                 destination_home_directory : str = '/large_data/obsdata/obsdata_from_mcs/'):
+                 destination_home_directory : str = '/data/obsdata/obsdata_from_mcs/'):
         super().__init__()
         self.source_homedir = source_home_directory
         self.destination_homedir = destination_home_directory
@@ -161,6 +161,6 @@ A = DataTransferManager()
 import time
 datelist = ['06']
 for date in datelist:
-    A.run(key = f'*/images/2024-06-09_gain2750', output_file_name= f'2024-06-09_gain2750.tar', thread = False)
+    A.run(key = f'*/images/2024-06-29_gain2750', output_file_name= f'2024-06-29_gain2750.tar', thread = False)
     time.sleep(100)
 # %%

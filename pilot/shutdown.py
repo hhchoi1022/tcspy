@@ -103,7 +103,7 @@ if __name__ == '__main__':
     import time
     start = time.time()
     list_telescopes = [SingleTelescope(1),
-                         SingleTelescope(2),
+                        SingleTelescope(2),
                          SingleTelescope(3),
                          SingleTelescope(5),
                          SingleTelescope(6),

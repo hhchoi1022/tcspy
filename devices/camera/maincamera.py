@@ -522,6 +522,11 @@ class mainCamera(mainConfig):
             raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
         # Exposure
 
+        # if previous images are not flushed
+        if self.device.ImageReady:
+            self._log.warning('Previous image is flushed')
+            _ = self.get_imginfo()
+        
         self.device.StartExposure(Duration = exptime, Light = is_light)
         while not self.device.ImageReady:
             if abort_action.is_set():
@@ -541,6 +546,7 @@ class mainCamera(mainConfig):
         """
         Aborts the current exposure.
         """
+        self.cam_lock.acquire()
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
         self.cam_lock.release()

@@ -210,7 +210,6 @@ class DB_Daily(mainConfig):
             target_ordinary_by_group = target_ordinary.group_by('group').groups
             for target_ordinary_group in target_ordinary_by_group:
                 target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary_group)        
-                print(target_best, target_score)
                 if target_score:
                     return target_best, target_score
         return None, None
@@ -498,7 +497,7 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     D = DB_Daily()
-    #D.from_GSheet('S240422ed')
-    D.from_RIS(size = 40)
-    D.initialize(True)
+    D.from_GSheet('240626')
+    D.from_RIS(size = 100)
+    #D.initialize(True)
 # %%

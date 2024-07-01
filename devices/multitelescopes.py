@@ -97,6 +97,16 @@ class MultiTelescopes:
         
         return status_dict
     
+    @property
+    def filters(self):
+        filters_dict = dict()
+        for telescope in self._devices_list:
+            try:
+                filters_dict[telescope.name] = telescope.filterwheel.filtnames
+            except:
+                filters_dict[telescope.name] = None
+        return filters_dict
+    
     def _get_device_status(self, telescope):
         return TelescopeStatus(telescope).dict
     

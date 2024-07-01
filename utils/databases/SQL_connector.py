@@ -94,7 +94,7 @@ class SQL_Connector:
         password=self.pwd_user,
         database = self.db_name
         )
-        self.cursor = self.connector.cursor()
+        self.cursor = self.connector.cursor(buffered = True)
         self.exec = self.cursor.execute
         self.connected = True
         
@@ -310,6 +310,13 @@ class SQL_Connector:
         mysql.connector.Error
             If an error occurred during the update operation.
         """
+        def convert_value(val):
+            if isinstance(val, (np.integer, np.int64)):
+                return int(val)
+            elif isinstance(val, (np.floating, np.float64)):
+                return float(val)
+            return val
+        
         if isinstance(update_value,str):
             update_command = f"{update_key} = '{update_value}'"
             sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
@@ -318,9 +325,10 @@ class SQL_Connector:
         else:
             update_command = ', '.join([f"{key} = %s" for key in update_key])
             sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
-            value = tuple(value if value != ('None' and '') else None for value in update_value)
+            value_None = tuple(None if val in ('None', '') else val for val in update_value)
+            value = tuple(convert_value(val) for val in value_None)
             try:
-                self.cursor.execute(sql_command, value)
+                self.cursor.execute(sql_command, convert_value(value))
                 self.connector.commit()
                 return True
             except:

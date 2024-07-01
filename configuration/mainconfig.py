@@ -123,7 +123,7 @@ class mainConfig:
         
         # Share configuration
 
-        transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.72',
+        transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022', 
                                TRANSFER_SERVER_PORTNUM = '2222',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 128,
@@ -223,7 +223,7 @@ if __name__ == '__main__':
                    '10.0.106.12',
                    '10.0.106.13',
                    '10.0.106.14',
-                   '10.0.106.16',
+                   '10.0.106.15',
                    '10.0.106.9']
     for unitnum, address in zip(unitnumlist, addresslist):
         A = mainConfig(unitnum=unitnum)

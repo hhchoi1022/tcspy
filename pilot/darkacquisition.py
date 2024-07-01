@@ -67,16 +67,17 @@ class DarkAcquisition(mainConfig):
             except AbortionException:
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')  
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')  
-        
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
+
 
         
 # %%
 if __name__ == '__main__':
-    list_telescope = [#SingleTelescope(1),
+    list_telescope = [SingleTelescope(1),
                       SingleTelescope(2),
                       SingleTelescope(3),
                       SingleTelescope(5),
-                      #SingleTelescope(6),
+                      SingleTelescope(6),
                       SingleTelescope(7),
                       SingleTelescope(8),
                       SingleTelescope(9),
@@ -85,5 +86,6 @@ if __name__ == '__main__':
                      ]
     m = MultiTelescopes(list_telescope)
     b = DarkAcquisition(m, Event())
-    b.run(gain = 2750, exptime = 100)
+    #b.run(gain = 2750, exptime = 100)
+    b.run(gain = 2750, exptime = 40)
 # %%
