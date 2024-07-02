@@ -157,6 +157,7 @@ class DB_Daily(mainConfig):
                                 binning = target['binning'], 
                                 specmode = target['specmode'],
                                 obsmode = target['obsmode'],
+                                gain = target['gain'],
                                 ntelescope = target['ntelescope'])
                 exposure_info = S.exposure_info
                 del exposure_info['specmode_filter']
@@ -497,7 +498,7 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     D = DB_Daily()
-    D.from_GSheet('240626')
-    D.from_RIS(size = 100)
-    #D.initialize(True)
+    #D.from_GSheet('240626_1')
+    #D.from_RIS(size = 100)
+    D.initialize(True)
 # %%

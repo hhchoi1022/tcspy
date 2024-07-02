@@ -503,6 +503,7 @@ class NightObservation(mainConfig):
             else:
                 aborted_action = self.abort_observation()
             time.sleep(0.5)
+        self.is_running = False
         print('observation finished', Time.now())
         
     def _put_action(self, target, action, telescopes, action_id):

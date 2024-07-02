@@ -23,7 +23,11 @@ class DataTransferManager(mainConfig):
         self.gridftp = self._set_gridftp_params(**self.config)
         self.process: Optional[subprocess.Popen] = None
         
-    def run(self, key: str = '*/images/20240515', output_file_name: str = 'temp.tar', protocol = 'gridftp', thread = True):
+    def run(self, 
+            key: str = '*/images/20240515', 
+            output_file_name: str = None, 
+            protocol = 'gridftp', 
+            thread = True):
         if thread:
             if protocol == 'hpnscp':
                 self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name))
@@ -52,7 +56,9 @@ class DataTransferManager(mainConfig):
             
     def gridFTP_transfer(self,
                          key : str = '*/images/20240515',
-                         output_file_name : str = 'temp.tar'):
+                         output_file_name : str =  None):
+        if not output_file_name:
+            output_file_name = os.path.basename(key)+'.tar'
         verbose_command = ''
         if self.gridftp.verbose:
             verbose_command = '-vb'
@@ -72,8 +78,10 @@ class DataTransferManager(mainConfig):
 
     def hpnscp_transfer(self,
                         key : str = '*/images/20240503',
-                        output_file_name : str = 'temp.tar'):
+                        output_file_name : str = None):
 
+        if not output_file_name:
+            output_file_name = os.path.basename(key)+'.tar'
         source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.source_homedir, output_file_name)}', compress = False)
         command = f"hpnscp -P {self.server.portnum} {source_path} {self.server.username}@{self.server.ip}:{self.destination_homedir}"
         try:
@@ -158,9 +166,5 @@ class DataTransferManager(mainConfig):
 # %%
 A = DataTransferManager()
 #%%
-import time
-datelist = ['06']
-for date in datelist:
-    A.run(key = f'*/images/2024-06-29_gain2750', output_file_name= f'2024-06-29_gain2750.tar', thread = False)
-    time.sleep(100)
+A.run(key = f'*/images/2024-06-30_gain2750', thread = False)
 # %%

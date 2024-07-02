@@ -236,9 +236,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         """
         Sends an abort command to the filterwheel and camera if they are busy.
         """
-        self.abort_action.set()
-        #self.telescope.camera.abort()
-        
+        self.abort_action.set()        
         
 # %%
 
@@ -250,6 +248,11 @@ if __name__ == '__main__':
     #device.cam.connect()
     e =Exposure(device, abort_action)
     from multiprocessing import Process
+#%%
+if __name__ == '__main__':
+    abort_action = Event()
+
+    e =Exposure(device, abort_action)
     p = Process(target = e.run, kwargs = dict(frame_number = 1, exptime = 10, filter_ = 'r', gain = 2750))
     p.start()
     #e.run(1, exptime = 1, filter_ = 'g', gain = 2750)
