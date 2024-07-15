@@ -121,7 +121,7 @@ class SafetyMonitorUpdater(mainSafetyMonitor):
         str_date = dt_ut.strftime('%y%m%d')
         str_time = dt_ut.strftime('%H%M%S')
         filename = f'safemonitorinfo_{str_date}_{str_time}.txt'
-        directory = os.path.join(self.safemonitorinfo_path, str_date)
+        directory = os.path.join(self.safemonitorinfo_path)
         if not os.path.exists(directory):
             os.makedirs(name = directory)
         abspath_file = os.path.join(directory, filename)

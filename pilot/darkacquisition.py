@@ -8,7 +8,6 @@ from tcspy.devices import MultiTelescopes
 from tcspy.devices import SingleTelescope
 
 from tcspy.utils.exception import *
-
 from tcspy.action import MultiAction
 from tcspy.action.level1 import Exposure
 #%%
@@ -22,6 +21,7 @@ class DarkAcquisition(mainConfig):
         super().__init__()
         self.multitelescopes = multitelescopes
         self.abort_action = abort_action
+        self.is_running = False
         
     def run(self,
             count : int = 9,
@@ -39,9 +39,11 @@ class DarkAcquisition(mainConfig):
         """
         Aborts the startup process.
         """
+        self.is_running = False
         self.abort_action.set()
         
     def _process(self, count, exptime, binning, gain):
+        self.is_running = True
         id_ = uuid.uuid4().hex
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         for i in range(count):
@@ -65,10 +67,11 @@ class DarkAcquisition(mainConfig):
             try:
                 multi_exposure.run()
             except AbortionException:
+                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')  
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')  
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
-
+        self.is_running = False
 
         
 # %%
@@ -86,6 +89,6 @@ if __name__ == '__main__':
                      ]
     m = MultiTelescopes(list_telescope)
     b = DarkAcquisition(m, Event())
-    #b.run(gain = 2750, exptime = 100)
-    b.run(gain = 0, exptime = 30)
+    b.run(gain = 2750, exptime = 100)
+    #b.run(gain = 0, exptime = 30)
 # %%

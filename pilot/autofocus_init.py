@@ -30,8 +30,9 @@ class AutofocusInitializer(mainConfig):
                  use_history : bool = True, 
                  history_duration : float = 60,
                  search_focus_when_failed : bool = True, 
-                 search_focus_range : int = 3000):
-        startup_thread = Thread(target=self._process, kwargs = dict(initial_filter = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range))
+                 search_focus_range : int = 3000,
+                 all_filter : bool = False):
+        startup_thread = Thread(target=self._process, kwargs = dict(initial_filter = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range, all_filter = all_filter))
         startup_thread.start()
     
     def abort(self):
@@ -126,7 +127,9 @@ list_telescopes = [SingleTelescope(1),
 mtel = MultiTelescopes(list_telescopes)
 #%%
 a = AutofocusInitializer(mtel, Event())
+a.run(all_filter = False)
 #a.run()
+
 
 #%%
 # %%

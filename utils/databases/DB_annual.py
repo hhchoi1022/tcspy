@@ -9,6 +9,7 @@ from tcspy.devices.observer import mainObserver
 from astropy.table import Table 
 from astropy.time import Time
 import astropy.units as u
+from astropy.coordinates import SkyCoord
 import numpy as np
 from astroplan import observability_table
 from astroplan import AltitudeConstraint, MoonSeparationConstraint
@@ -69,7 +70,7 @@ class DB_Annual(mainConfig):
         self.tblname = tbl_name
         self.sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
         self.constraints = self._set_constrints()
-
+    '''
     @property    
     def connected(self):
         return self.sql.connected
@@ -85,7 +86,7 @@ class DB_Annual(mainConfig):
         Disconnect from the MySQL database and update the connection status flag to False.
         """
         self.sql.disconnect()
-    
+    '''
     def initialize(self, 
                    utcdate : Time = Time.now(),
                    initialize_all : bool = False):
@@ -97,7 +98,7 @@ class DB_Annual(mainConfig):
         initialize_all : bool
         	Whether to re-calculate all rows of the table, or only the rows that need update.
         """
-        self.connect()
+        #self.connect()
         target_tbl_all = self.data
         
         # If there is targets with no "id", set ID for each target
@@ -153,7 +154,6 @@ class DB_Annual(mainConfig):
     def select_best_targets(self,
                             utcdate : Time = Time.now(),
                             size : int = 300,
-                            mode : str = 'best', # best or urgent
                             observable_minimum_hour : float = 2,
                             n_time_grid : float = 10,
                             ):
@@ -179,8 +179,8 @@ class DB_Annual(mainConfig):
         obsnight = self._set_obsnight(utcdate = utcdate, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
         observable_fraction_criteria = observable_minimum_hour / obsnight.observable_hour 
         
-        if not self.sql.connected:
-            self.connect()
+        #if not self.sql.connected:
+        #    self.connect()
         all_targets = self.data
         column_names_for_scoring = ['risedate', 'bestdate', 'setdate']
         
@@ -192,28 +192,17 @@ class DB_Annual(mainConfig):
         
         target_tbl = self.data
         print('Checking Observability of the targets...')
-        multitargetss = MultiTargets(observer = self.observer,
-                                     targets_ra = target_tbl['RA'],
-                                     targets_dec = target_tbl['De'],
-                                     targets_name = target_tbl['objname'])
         obs_tbl = observability_table(constraints = self.constraints.astroplan, 
                                       observer = self.observer._observer,
-                                      targets = multitargetss.coordinate, 
+                                      targets = SkyCoord(target_tbl['RA'], target_tbl['De'], unit = 'deg'), 
                                       time_range = [obsnight.sunset_astro, obsnight.sunrise_astro],
                                       time_grid_resolution = 30 * u.minute)
         target_tbl_observable_idx = obs_tbl['fraction of time observable'] > observable_fraction_criteria
         target_always_idx = target_tbl['risedate'] == 'Always'
         target_neverup_idx = target_tbl['risedate'] == 'Never'
-        #target_normal_idx =  ~(target_always_idx | target_neverup_idx)
         target_normal_idx =  ~(target_neverup_idx)
-        target_tbl_for_scoring = target_tbl[target_tbl_observable_idx & target_normal_idx]
-        multitargets_for_scoring = MultiTargets(observer = self.observer,
-                                   targets_ra = target_tbl_for_scoring['RA'],
-                                   targets_dec = target_tbl_for_scoring['De'],
-                                   targets_name = target_tbl_for_scoring['objname']) 
-        
-        # Calculate the maximum altitude
-        maxalt = 90 - np.abs(self.config['OBSERVER_LATITUDE'] - target_tbl_for_scoring['De'])
+        target_tbl_observable = target_tbl[target_tbl_observable_idx & target_normal_idx]
+        target_tbl_by_obscount = target_tbl_observable.group_by('obs_count')        
         
         # Create a time grid
         time_grid = obsnight.sunset_astro + np.linspace(0, 1, n_time_grid) * (obsnight.sunrise_astro - obsnight.sunset_astro)
@@ -221,26 +210,38 @@ class DB_Annual(mainConfig):
         n_target_for_each_timegrid = np.full(n_time_grid, size / n_time_grid, dtype = int)
         n_target_for_each_timegrid[len(n_target_for_each_timegrid)//2] += size - sum(n_target_for_each_timegrid)
 
-        # Track already selected targets
-        selected_indices = set()
+        for target_tbl_for_scoring in target_tbl_by_obscount.groups:
 
-        for n_target, time in zip(n_target_for_each_timegrid, time_grid):
-            altaz = multitargets_for_scoring.altaz(utctimes=time)
-            score = altaz.alt.value / maxalt
-            high_score_criteria = np.percentile(score, 90)
-            high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
+            multitargets_for_scoring = MultiTargets(observer = self.observer,
+                                    targets_ra = target_tbl_for_scoring['RA'],
+                                    targets_dec = target_tbl_for_scoring['De'],
+                                    targets_name = target_tbl_for_scoring['objname']) 
             
-            available_indices = np.setdiff1d(np.arange(len(target_tbl_for_scoring))[high_scored_idx], list(selected_indices))
+            # Calculate the maximum altitude
+            maxalt = 90 - np.abs(self.config['OBSERVER_LATITUDE'] - target_tbl_for_scoring['De'])
             
-            if len(available_indices) < n_target:
-                selected_idx = available_indices  # If not enough targets, select all available
-            else:
-                selected_idx = np.random.choice(available_indices, n_target, replace=False)
+            # Track already selected targets
+            selected_indices = list()
+
+            for i, (n_target, time) in enumerate(zip(n_target_for_each_timegrid, time_grid)):
+                altaz = multitargets_for_scoring.altaz(utctimes=time)
+                score = altaz.alt.value / maxalt
+                high_score_criteria = np.percentile(score, 90)
+                high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
+                
+                available_indices = list(np.setdiff1d(np.arange(len(target_tbl_for_scoring))[high_scored_idx], list(selected_indices)))
+                
+                if len(available_indices) < n_target:
+                    selected_idx = available_indices  # If not enough targets, select all available
+                else:
+                    selected_idx = list(np.random.choice(available_indices, n_target, replace=False))
+                
+                selected_indices += selected_idx
+                n_target_for_each_timegrid[i] -= len(selected_idx)
             
-            selected_indices.update(selected_idx)
-        
-        return target_tbl_for_scoring[list(selected_indices)]
-    
+            if len(selected_indices) == size:
+                return target_tbl_for_scoring[list(selected_indices)]
+                
     def to_Daily(self,
                  target_tbl : Table):
         """
@@ -254,8 +255,8 @@ class DB_Annual(mainConfig):
         self.sql.insert_rows(tbl_name = 'Daily', data = target_tbl)
     
     def update_targets_count(self,
-                             targets_id : list or np.array,
-                             targets_count : int or list or np.array
+                             target_id : list,
+                             count : list 
                              ):
         """
         Update observation counts for target.
@@ -267,12 +268,7 @@ class DB_Annual(mainConfig):
         targets_count : int or list or np.array
         	A list containing the count of each target or int to set the all observations to.
         """
-        if isinstance(targets_count, int):
-            targets_count = list(targets_count) * len(targets_id)
-        else:
-            if len(targets_id) != len(targets_count):
-                raise ValueError('size of targets_id is not consistent to sie of targets_count')
-        self.sql.update_row(tbl_name = self.tblname, update_value = targets_count, update_key = 'obs_count', id_value = targets_id, id_key = 'id')
+        self.sql.update_row(tbl_name = self.tblname, update_value = count, update_key = 'obs_count', id_value = target_id, id_key = 'id')
     
     @property
     def data(self):
@@ -284,8 +280,8 @@ class DB_Annual(mainConfig):
         Table
         	The table containing the data from the database. 
         """
-        if not self.sql.connected:
-            self.connect()
+        #if not self.sql.connected:
+        #Z    self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
     
     def _set_obsinfo(self,

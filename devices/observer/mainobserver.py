@@ -1,14 +1,12 @@
 
 
 #%%
-
 from astropy.coordinates import EarthLocation, get_sun, get_moon
 import astropy.units as u
 from datetime import datetime
 from astropy.time import Time
 import pytz
 from astroplan import Observer
-
 from tcspy.configuration import mainConfig
 #%%
 class mainObserver(mainConfig):

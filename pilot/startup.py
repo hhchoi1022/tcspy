@@ -55,6 +55,7 @@ class Startup(mainConfig):
         super().__init__()
         self.multitelescopes = multitelescopes
         self.abort_action = abort_action
+        self.is_running = False
     
     def run(self):
         """
@@ -68,6 +69,7 @@ class Startup(mainConfig):
         Aborts the startup process.
         """
         self.abort_action.set()
+        self.is_running = False
     
     def _process(self):
         """
@@ -78,6 +80,7 @@ class Startup(mainConfig):
         AbortionException
             If the abortion event is triggered during the startup process.
         """
+        self.is_running = True
         # Connect
         params_connect = []
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
@@ -91,6 +94,7 @@ class Startup(mainConfig):
         try:
             multi_connect.run()
         except AbortionException:
+            self.is_running = False
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
         
         ## Check result
@@ -102,10 +106,12 @@ class Startup(mainConfig):
         
         ## Check len(devices) > 0
         if len(self.multitelescopes.devices) == 0:
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
         
         ## Check abort_action
         if self.abort_action.is_set():
+            self.is_running = False
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
@@ -122,6 +128,7 @@ class Startup(mainConfig):
         try:
             multi_slew.run()
         except AbortionException:
+            self.is_running = False
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
 
         ## Check result
@@ -133,10 +140,12 @@ class Startup(mainConfig):
 
         ## Check len(devices) > 0
         if len(self.multitelescopes.devices) == 0:
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
         
         ## Check abort_action
         if self.abort_action.is_set():
+            self.is_running = False
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
@@ -153,6 +162,7 @@ class Startup(mainConfig):
         try:
             multi_cool.run()
         except AbortionException:
+            self.is_running = False
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
 
         ## Check result
@@ -163,11 +173,12 @@ class Startup(mainConfig):
                 self.multitelescopes.remove(tel_name)        
         ## Check len(devices) > 0
         if len(self.multitelescopes.devices) == 0:
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
         
         for tel_name, telescope in self.multitelescopes.devices.items():
             self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished.')
-    
+        self.is_running = False
 
 # %%
 if __name__ == '__main__':
@@ -211,6 +222,7 @@ if __name__ == '__main__':
     time_prepare_str = '%.2d:%.2d'%(time_prepare.hour-3, time_prepare.minute)
 
     schedule.every().day.at(time_prepare_str).do(job_that_executes_once)
+    
 
     while True:
         schedule.run_pending()

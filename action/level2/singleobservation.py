@@ -3,6 +3,7 @@ from multiprocessing import Event
 from multiprocessing import Manager
 from astropy.time import Time
 import astropy.units as u
+import time
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
@@ -335,8 +336,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                             raise AbortionException(f'[{type(self).__name__}] is aborted.')
                         except ActionFailedException:
                             self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
-                            pass
-                
+                            pass                 
+                            
                 # Exposure
                 try:
                     result_exposure = action_exposure.run(frame_number = int(observation_status[filter_]['observed']),

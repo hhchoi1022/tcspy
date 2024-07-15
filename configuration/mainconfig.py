@@ -114,12 +114,12 @@ class mainConfig:
         
         image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
                             FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$.fits",
-                            IMAGE_PATH=f'/data1/obsdata/{self.tel_name}/images/')
+                            IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/')
         
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT=f'[%(levelname)s,{self.tel_name}]%(asctime)-15s |%(message)s',
-                             LOGGER_PATH= f'/data1/obsdata/{self.tel_name}/log/')
+                             LOGGER_PATH= f'/data2/obsdata/{self.tel_name}/log/')
         
         # Share configuration
 

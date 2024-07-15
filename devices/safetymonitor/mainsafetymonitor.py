@@ -65,16 +65,16 @@ class mainSafetyMonitor(mainConfig):
         
         dt_ut = datetime.strptime(Time.now().isot, '%Y-%m-%dT%H:%M:%S.%f')
         str_date = dt_ut.strftime('%y%m%d')
-        directory = os.path.join(self.safemonitorinfo_path, str_date)
-        safemonitorinfo_list = glob.glob(directory + '/safemonitorinfo*.txt')
-        updatetime_list =  [datetime.strptime(re.findall(pattern = f'({str_date}_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in safemonitorinfo_list]
+        directory = os.path.join(self.safemonitorinfo_path)
+        safemonitorinfo_list = glob.glob(directory + f'/safemonitorinfo*.txt')
+        updatetime_list =  [datetime.strptime(re.findall(pattern = f'(\d\d\d\d\d\d_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in safemonitorinfo_list]
 
         # If there is no weather information file, generate weather info file
         if len(updatetime_list) == 0:
             last_update_file = None
             print ('No safetymonitor information file exists. Run "SafetyMonitorUpdater.py"')
         # Else, find the latest weather information file
-        else:
+        else:        
             updatetime = Time(updatetime_list)
             last_update_idx =  np.argmin(np.abs((updatetime - Time(dt_ut)).jd * 86400))
             elapse_time_since_update = (np.abs((updatetime - Time(dt_ut)).jd * 86400))[last_update_idx]

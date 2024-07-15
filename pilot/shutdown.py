@@ -26,6 +26,7 @@ class Shutdown(mainConfig):
         super().__init__()
         self.multitelescopes = MultiTelescopes
         self.abort_action = abort_action
+        self.is_running = False
     
     def run(self):
         startup_thread = Thread(target=self._process)
@@ -35,7 +36,7 @@ class Shutdown(mainConfig):
         self.abort_action.set()
 
     def _process(self):
-
+        self.is_running = True
         # Telescope slewing
         params_slew = []
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
@@ -50,6 +51,7 @@ class Shutdown(mainConfig):
         try:
             multi_slew.run()
         except AbortionException:
+            self.is_running = False
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
         
         ## Check result
@@ -92,11 +94,12 @@ class Shutdown(mainConfig):
         
         ## Check len(devices) > 0
         if len(self.multitelescopes.devices) == 0:
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
         
         for tel_name, telescope in self.multitelescopes.devices.items():
             self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished.')
-
+        self.is_running = False
 
 # %%
 if __name__ == '__main__':
@@ -112,8 +115,9 @@ if __name__ == '__main__':
                          SingleTelescope(9),
                          SingleTelescope(10),
                          SingleTelescope(11),
+                  
                         ]
-    
+
     print(time.time() - start)
     M = MultiTelescopes(list_telescopes)
     abort_action = Event()

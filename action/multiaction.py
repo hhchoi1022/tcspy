@@ -3,6 +3,7 @@ from multiprocessing import Process, Event
 from tcspy.devices import SingleTelescope
 from typing import List, Union
 import time
+from tcspy.action.level1 import *
 
 from tcspy.utils.exception import *
 
@@ -84,6 +85,14 @@ class MultiAction:
             time.sleep(0.1) ########################
             if self.abort_action.is_set():
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        
+        # After running all processes, check succeeded or not
+        is_all_succeeded = []
+        for tel_name, result in self.shared_memory.items():
+            is_succeeded = self.shared_memory[tel_name]['succeeded']
+            is_all_succeeded.append(is_succeeded)
+        if not all(is_all_succeeded):
+            raise ActionFailedException(f'[{type(self).__name__}] is failed.')
 
     def abort(self):
         """
@@ -102,7 +111,6 @@ if __name__ == '__main__':
     from threading import Thread
     from multiprocessing import Event
     from tcspy.action.level2 import *
-    
     list_telescope = [SingleTelescope(1),
                       SingleTelescope(2),
                       SingleTelescope(3),
@@ -117,7 +125,7 @@ if __name__ == '__main__':
 #%%
 if __name__ == '__main__':
     abort_action = Event()
-    m = MultiAction(list_telescope, dict(exptime = 10, count = 3, filter_ = 'r', alt = 40, az = 300), SingleObservation, abort_action)
+    m = MultiAction(list_telescope, dict(alt = 80, az =180), SlewAltAz, abort_action)
     p = Thread(target = m.run, kwargs = dict())
     p.start()
     #m.abort()

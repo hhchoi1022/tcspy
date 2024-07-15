@@ -24,6 +24,7 @@ class BiasAcquisition(mainConfig):
         super().__init__()
         self.multitelescopes = multitelescopes
         self.abort_action = abort_action
+        self.is_running = False
         
     def run(self,
             count : int = 9,
@@ -40,9 +41,11 @@ class BiasAcquisition(mainConfig):
         """
         Aborts the startup process.
         """
+        self.is_running = False
         self.abort_action.set()
         
     def _process(self, count, binning, gain):
+        self.is_running = True
         id_ = uuid.uuid4().hex
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         for i in range(count):
@@ -66,9 +69,11 @@ class BiasAcquisition(mainConfig):
             try:
                 multi_exposure.run()
             except AbortionException:
+                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')    
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')  
-
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
+        self.is_running = False
 
         
 # %%
@@ -86,5 +91,5 @@ if __name__ == '__main__':
                      ]
     m = MultiTelescopes(list_telescope)
     b = BiasAcquisition(m, Event())
-    b.run(gain = 0)
+    b.run(gain = 2750)
 # %%

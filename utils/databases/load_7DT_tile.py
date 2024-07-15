@@ -4,7 +4,7 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from SQL_connector import SQL_Connector
 # %%
-sql = SQL_Connector(db_name = 'target')
+sql = SQL_Connector(db_name = 'target', id_user = 'hhchoi', pwd_user = 'gusgh1020!')
 # %% 
 from astropy.io import ascii
 import uuid
@@ -16,9 +16,10 @@ tbl.rename_column('dec', 'De')
 str_tile = tbl['objname']
 objnames = []
 for tilenum in str_tile:
-    objname = 'Tile_' + str(tilenum).zfill(5)
+    objname = 'T' + str(tilenum).zfill(5)
     objnames.append(objname)
 tbl['objname'] = objnames
+tbl = tbl[tbl['De'] < 20]
 #%%
 sql.initialize_tbl(tbl_name = 'RIS')
 #%%

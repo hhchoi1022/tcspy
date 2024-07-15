@@ -45,6 +45,7 @@ class MultiTelescopes:
         self.log_dict = self._dict_logs()
         self.log = self._all_logs()
         self.observer = mainObserver()
+        self._status_dict = dict()
         
     def __repr__(self):
         txt=  f'MultiTelescopes[{list(self.devices.keys())}]'
@@ -89,13 +90,15 @@ class MultiTelescopes:
         dict
             A dictionary containing the status of all telescopes.
         """
-        with ThreadPoolExecutor() as executor:
-            # Submit each telescope to the executor
-            futures = {executor.submit(self._get_device_status, device): device for device in self._devices_list}
-            # Wait for all futures to complete and collect results
-            status_dict = {futures[future].name: future.result() for future in futures}
-        
-        return status_dict
+        thread_list = []
+        for device in self._devices_list:
+            thread = Thread(target=self._get_device_status, args=(device,))
+            thread_list.append(thread)
+            thread.start()
+
+        for thread in thread_list:
+            thread.join()
+        return self._status_dict
     
     @property
     def filters(self):
@@ -108,7 +111,7 @@ class MultiTelescopes:
         return filters_dict
     
     def _get_device_status(self, telescope):
-        return TelescopeStatus(telescope).dict
+        self._status_dict[telescope. name] = TelescopeStatus(telescope).dict
     
     def _get_telescopes(self):
         telescopes_dict = dict()

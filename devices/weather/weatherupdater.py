@@ -181,7 +181,7 @@ class WeatherUpdater(mainWeather):
         str_date = dt_ut.strftime('%y%m%d')
         str_time = dt_ut.strftime('%H%M%S')
         filename = f'weatherinfo_{str_date}_{str_time}.txt'
-        directory = os.path.join(self.weatherinfo_path, str_date)
+        directory = os.path.join(self.weatherinfo_path)
         if not os.path.exists(directory):
             os.makedirs(name = directory)
         abspath_file = os.path.join(directory, filename)

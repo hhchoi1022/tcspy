@@ -1,7 +1,6 @@
 
 
 #%%
-
 from tcspy.configuration import mainConfig
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.target import MultiTargets
@@ -16,7 +15,6 @@ import numpy as np
 from astroplan import observability_table
 from astroplan import AltitudeConstraint, MoonSeparationConstraint
 from tqdm import tqdm
-
 # %%
 
 class DB_Daily(mainConfig):
@@ -79,7 +77,7 @@ class DB_Daily(mainConfig):
         self.utctime = utctime
         self.obsinfo = self._set_obs_info(utctime = utctime)
         self.obsnight = self._set_obsnight(utctime = utctime, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
-    
+    '''
     @property    
     def connected(self):
         return self.sql.connected
@@ -95,7 +93,7 @@ class DB_Daily(mainConfig):
         Disconnects from the MySQL database and update the connection status flag to 
         """
         self.sql.disconnect()
-    
+    '''
     def initialize(self, 
                    initialize_all : bool = False):       
         """
@@ -106,7 +104,7 @@ class DB_Daily(mainConfig):
         initialize_all : bool
             Boolean flag to control whether all targets should be initialized or not. Defaults to False.
         """
-        self.connect()
+        #self.connect()
         target_tbl_all = self.data
         
         # If there is targets with no "id", set ID for each target
@@ -256,15 +254,34 @@ class DB_Daily(mainConfig):
     def from_RIS(self,
                  utcdate : Time = Time.now(),
                  size : int = 300,
-                 mode : str = 'best', # best or urgent
                  observable_minimum_hour : float = 2,
                  n_time_grid : float = 10,
                  ):
         from tcspy.utils.databases import DB_Annual
         RIS = DB_Annual(tbl_name = 'RIS')
-        best_targets = RIS.select_best_targets(utcdate = utcdate, size = size, mode = mode, observable_minimum_hour = observable_minimum_hour, n_time_grid = n_time_grid)
+        best_targets = RIS.select_best_targets(utcdate = utcdate, size = size, observable_minimum_hour = observable_minimum_hour, n_time_grid = n_time_grid)
         self.insert(best_targets)
         print(f'{len(best_targets)} are inserted')
+    
+    def update_RIS_obscount(self,
+                            remove : bool = True):
+        daily_tbl = self.data
+        obs_tbl = daily_tbl[daily_tbl['status'] == 'observed']
+        from tcspy.utils.databases import DB_Annual
+        RIS = DB_Annual(tbl_name = 'RIS')
+        RIS_data = RIS.data
+        obscount = 0
+        for target in obs_tbl:
+            try:
+                count_before = RIS_data[RIS_data['id'] == target['id']]['obs_count']
+                if len(count_before) == 1:
+                    RIS.update_targets_count(target_id = target['id'], count = count_before[0] +1)
+                    obscount +=1
+            except:
+                pass
+        if remove:
+            self.sql.remove_rows(tbl_name = self.tblname, ids = list(obs_tbl['id']))
+        print(f'{obscount} RIS tiles are updated')
     
     def from_GSheet(self,
                     sheet_name : str,
@@ -298,8 +315,8 @@ class DB_Daily(mainConfig):
         Table
             An astropy table containing all the data in the observing table.
         """
-        if not self.sql.connected:
-            self.connect()
+        #if not self.sql.connected:
+        #    self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
     
     def _scorer(self,
@@ -499,6 +516,7 @@ class DB_Daily(mainConfig):
 if __name__ == '__main__':
     D = DB_Daily()
     #D.from_GSheet('240626_1')
-    #D.from_RIS(size = 100)
+    #D.update_RIS_obscount()
+    #D.from_RIS(size = 300)
     D.initialize(True)
 # %%

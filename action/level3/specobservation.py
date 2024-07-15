@@ -221,16 +221,16 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         except AbortionException:
             self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
             raise AbortionException(f'[{type(self).__name__}] is aborted.')
-        
-        is_all_succeeded = []
-        for tel_name, result in self.shared_memory.items():
-            is_succeeded = self.shared_memory[tel_name]['succeeded']
-            is_all_succeeded.append(is_succeeded)
-            if is_succeeded:
-                self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
-            else:
-                self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
-        return all(is_all_succeeded)
+        except ActionFailedException:
+            for tel_name, result in self.shared_memory.items():
+                is_succeeded = self.shared_memory[tel_name]['succeeded']
+                if is_succeeded:
+                    self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
+                else:
+                    self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
+            self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed.')    
+        return True
 
     def abort(self):
         """

@@ -449,7 +449,8 @@ class mainCamera(mainConfig):
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
                         self._log.critical('Warming operation has stalled')
-                        raise WarmingFailedException('Warming operation has stalled')
+                        break
+                        #raise WarmingFailedException('Warming operation has stalled')
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
                     time.sleep(5)

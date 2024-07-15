@@ -86,9 +86,9 @@ class mainWeather(mainConfig):
 
         dt_ut = datetime.strptime(Time.now().isot, '%Y-%m-%dT%H:%M:%S.%f')
         str_date = dt_ut.strftime('%y%m%d')
-        directory = os.path.join(self.weatherinfo_path, str_date)
-        weatherinfo_list = glob.glob(directory + '/weatherinfo*.txt')
-        updatetime_list =  [datetime.strptime(re.findall(pattern = f'({str_date}_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in weatherinfo_list]
+        directory = os.path.join(self.weatherinfo_path)
+        weatherinfo_list = glob.glob(directory + f'/weatherinfo*.txt')
+        updatetime_list =  [datetime.strptime(re.findall(pattern = f'(\d\d\d\d\d\d_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in weatherinfo_list]
         
         # If there is no weather information file, generate weather info file
         if len(updatetime_list) == 0:

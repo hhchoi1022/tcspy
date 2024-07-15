@@ -12,12 +12,11 @@ list_telescopes = [SingleTelescope(1),
                         SingleTelescope(7),
                         SingleTelescope(8),
                         SingleTelescope(9),
-                        #SingleTelescope(10),
+                        SingleTelescope(10),
                         SingleTelescope(11),
                         ]
 M = MultiTelescopes(list_telescopes)
 abort_action = Event()
-#Startup(multitelescopes= M , abort_action= abort_action).run()
 R = NightObservation(M, abort_action= abort_action)
 R.run()
 # %%

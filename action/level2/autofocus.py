@@ -58,6 +58,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         self.abort_action = abort_action
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
+        self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
     def run(self,
