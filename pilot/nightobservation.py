@@ -468,7 +468,7 @@ class NightObservation(mainConfig):
             
             # Retrieve best target
             best_target, score = self.DB.best_target(utctime = now)
-            print(f'Best target: {best_target}')
+            print(f'Best target: {now.isot, best_target["objname"]}')
             
             # Check weather status
             is_weather_safe = self.is_safe()
@@ -498,6 +498,8 @@ class NightObservation(mainConfig):
             # If weather is unsafe
             else:
                 aborted_action = self.abort_observation()
+                self.multitelescopes.log.info(f'[{type(self).__name__} is aborted: Unsafe weather]')
+                time.sleep(200)
             time.sleep(0.5)
         self.is_running = False
         print('observation finished', Time.now())

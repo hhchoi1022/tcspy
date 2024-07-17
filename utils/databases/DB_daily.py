@@ -361,8 +361,11 @@ class DB_Daily(mainConfig):
         if len(target_tbl_for_scoring) == 0:
             return None, None
         
-        # When target observation time is specified
-        obstime_fixed_targets = target_tbl_for_scoring[target_tbl_for_scoring['obstime'] != None]
+        obstime_specified_idx = (target_tbl_for_scoring['obstime'] != None)
+        obstime_fixed_targets = target_tbl_for_scoring[obstime_specified_idx]
+        obstime_nonfixed_targets = target_tbl_for_scoring[~obstime_specified_idx]
+         
+        # When target observation time is specified       
         urgent_targets = Table()
         if len(obstime_fixed_targets) > 0:
             obstime = Time([Time(time) for time in obstime_fixed_targets['obstime']])
@@ -378,20 +381,23 @@ class DB_Daily(mainConfig):
                     urgent_targets_scored.sort('obstime')
                     return urgent_targets_scored[0], 1
         
-        # Scoring
-        score, multitarget_alt = calc_constraints(target_tbl_for_scoring)
+        # When target observation time is not specified
+        if len(obstime_nonfixed_targets) == 0:
+            return None, None
+        
+        score, multitarget_alt = calc_constraints(obstime_nonfixed_targets)
                 
         # Exit when no observable target
         if np.sum(score) == 0:
             return None, None
         
-        multitarget_priority = target_tbl_for_scoring['priority'].astype(float)
+        multitarget_priority = obstime_nonfixed_targets['priority'].astype(float)
         weight_sum = self.config['TARGET_WEIGHT_ALT'] + self.config['TARGET_WEIGHT_PRIORITY']
         weight_alt = self.config['TARGET_WEIGHT_ALT'] / weight_sum
         weight_priority = self.config['TARGET_WEIGHT_PRIORITY'] / weight_sum
         
         multitarget_alt = np.array([0 if target_alt <= 0 else target_alt for target_alt in multitarget_alt])
-        score_relative_alt = weight_alt * np.clip(0, 1, (multitarget_alt) / (np.abs(target_tbl_for_scoring['maxalt'])))
+        score_relative_alt = weight_alt * np.clip(0, 1, (multitarget_alt) / (np.abs(obstime_nonfixed_targets['maxalt'])))
         
         highest_priority = np.max(multitarget_priority)
         score_weight = weight_priority* (multitarget_priority / highest_priority)
@@ -514,9 +520,9 @@ class DB_Daily(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    D = DB_Daily()
-    #D.from_GSheet('240626_1')
+    D = DB_Daily(Time.now())
+    #D.from_GSheet('240715')
     #D.update_RIS_obscount()
     #D.from_RIS(size = 300)
-    D.initialize(True)
+    #D.initialize(True)
 # %%
