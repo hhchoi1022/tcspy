@@ -9,9 +9,13 @@ from tcspy.utils.logger import mainLogger
 from tcspy.utils.target import mainTarget
 from tcspy.action.level1.slewRADec import SlewRADec
 from tcspy.action.level1.slewAltAz import SlewAltAz
+from tcspy.action.level1.changefocus import ChangeFocus
+from tcspy.action.level1.changefilter import ChangeFilter
+
 from tcspy.action.level1.exposure import Exposure
 from tcspy.action.level2.autofocus import Autofocus
 from tcspy.utils.exception import *
+import numpy as np
 #%%
 class AutoFlat(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
@@ -22,21 +26,11 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         self.abort_action = abort_action
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
     
-    def run(self, 
-            exptime : float,
-            count : int = 1,
-            filter_ : str = None,
-            imgtype : str = 'Light',
-            binning : int = 1,
-            ra : float = None,
-            dec : float = None,
-            alt : float = None,
-            az : float = None,
-            target_name : str = None,
-            target : mainTarget = None,
-            autofocus_before_start : bool = False
-            ):
+    def run(self,
+            gain = 2750,
+            binning = 1):
         
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         # Check condition of the instruments for this Action
         status_filterwheel = self.telescope_status.filterwheel
         status_camera = self.telescope_status.camera
@@ -55,66 +49,90 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
         
-        # Slewing when not aborted
+        # Abort action when triggered
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
+
+        # Define actions required
+        action_slew = SlewAltAz(singletelescope = self.telescope, abort_action= self.abort_action)
+        action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action)
+        action_changefilter = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action)
+        action_exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
         
-        if not target:
-            target = mainTarget(unitnum = self.telescope.unitnum, observer = self.telescope.observer, target_ra = ra, target_dec = dec, target_alt = alt, target_az = az, target_name = target_name)
-         
         # Slewing
-        elif target.status['coordtype'] == 'radec':
-            try:
-                slew = SlewRADec(singletelescope = self.telescope, abort_action= self.abort_action)
-                result_slew = slew.run(ra = target.status['ra'], dec = target.status['dec'])
-            except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-                raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-            except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
-                raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
+        try:
+            result_slew = action_slew.run(alt = self.config['AUTOFLAT_ALT'], az = self.config['AUTOFLAT_AZ'], tracking = False)
+        except ConnectionException:
+            self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+            raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+        except AbortionException:
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        except ActionFailedException:
+            self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
 
-        elif target.status['coordtype'] == 'altaz':
-            try:
-                slew = SlewAltAz(singletelescope = self.telescope, abort_action= self.abort_action)
-                result_slew = slew.run(alt = target.status['alt'], az = target.status['az'])
-            except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-                raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
-            except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
-                raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
-
-        else:
-            raise ActionFailedException(f'Coordinate type of the target : {target.status["coordtype"]} is not defined')
-        
-        # Autofocus when activated
-        if autofocus_before_start:
-            try:
-                result_autofocus = Autofocus(singletelescope= self.telescope, abort_action= self.abort_action).run(filter_ = filter_).run()
-            except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
-                raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
-            except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
-            except ActionFailedException:
-                self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
-                pass
-        
-        # Exposure when not aborted
+        # Defocusing 
+        try:
+            result_changefocus = action_changefocus.run(position = 3000, is_relative= True)
+        except ConnectionException:
+            self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+        except AbortionException:
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        except ActionFailedException:
+            self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+    
+        # Abort action when triggered
         if self.abort_action.is_set():
             self.abort()
             self._log.warning(f'[{type(self).__name__}] is aborted.')
             raise  AbortionException(f'[{type(self).__name__}] is aborted.')
+        
+        # Get bias value
+        camera = self.telescope.camera
+        # Check camera status
+        if status_camera.lower() == 'disconnected':
+            self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
+            raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
+        elif status_camera.lower() == 'busy':
+            self._log.critical(f'[{type(self).__name__}] is failed: camera is busy.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is busy.')
+        elif status_camera.lower() == 'idle':
+            is_light = False
+            self._log.info(f'Start exposure for calculation of a BIAS level')
+            try:
+                imginfo = camera.exposure(exptime = 0,
+                                          imgtype = 'BIAS',
+                                          binning = binning,
+                                          is_light = is_light,
+                                          gain = gain,
+                                          abort_action = self.abort_action)
+                bias_level = int(np.mean(imginfo['data']))
+                self._log.info(f'BIAS level: {bias_level}')
+            except ExposureFailedException:
+                self.abort()
+                self._log.critical(f'[{type(self).__name__}] is failed: camera exposure failure.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: camera exposure failure.')
+            except AbortionException:
+                self.abort()
+                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except:
+                self.abort()
+                self._log.warning(f'[{type(self).__name__}] is failed.')
+                raise AbortionException(f'[{type(self).__name__}] is failed: BIAS level calculation failure')
+        else:
+            self._log.critical(f'[{type(self).__name__}] is failed: camera is under unknown condition.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is under unknown condition.')
+
+        
+
+        
         
         exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
         result_all_exposure = []

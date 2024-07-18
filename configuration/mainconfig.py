@@ -173,6 +173,9 @@ class mainConfig:
         autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self._configfilepath_global,"filtinfo.data")}',
                                 AUTOFOCUS_FOCUSHISTORY_FILE = f'{os.path.join(self._configfilepath_global,"../action/level2/focus_history.data")}')
         
+        autoflat_params = dict(AUTOFLAT_ALTITUDE = 40,
+                               AUTOFLAT_AZIMUTH = 270)
+        
         specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self._configfilepath_global,"specmode/u10/")}')
         
         startup_params = dict(STARTUP_ALT = 30,
