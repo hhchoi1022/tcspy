@@ -130,6 +130,5 @@ a = AutofocusInitializer(mtel, Event())
 a.run(all_filter = False)
 #a.run()
 
-
 #%%
 # %%

@@ -361,9 +361,9 @@ class DB_Daily(mainConfig):
         if len(target_tbl_for_scoring) == 0:
             return None, None
         
-        obstime_specified_idx = (target_tbl_for_scoring['obstime'] != None)
-        obstime_fixed_targets = target_tbl_for_scoring[obstime_specified_idx]
-        obstime_nonfixed_targets = target_tbl_for_scoring[~obstime_specified_idx]
+        obstime_nonspecified_idx = (target_tbl_for_scoring['obstime'] == None) | (target_tbl_for_scoring['obstime'] == "")
+        obstime_fixed_targets = target_tbl_for_scoring[~obstime_nonspecified_idx]
+        obstime_nonfixed_targets = target_tbl_for_scoring[obstime_nonspecified_idx]
          
         # When target observation time is specified       
         urgent_targets = Table()

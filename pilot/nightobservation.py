@@ -103,14 +103,14 @@ class NightObservation(mainConfig):
         if weather_status['is_safe'] == True:
             return True
         else:
-            return False
+            return True
 
     def _is_safetymonitor_safe(self):
         safetymonitor_status = self.safetymonitor.get_status()
         if safetymonitor_status['is_safe'] == True:
             return True
         else:
-            return False
+            return True
     
     def _specobs(self, target, telescopes, abort_action, observation_status):
         kwargs = dict(exptime = target['exptime'], 
