@@ -130,7 +130,23 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self._log.critical(f'[{type(self).__name__}] is failed: camera is under unknown condition.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is under unknown condition.')
 
+        filtnames = self.telescope.filtnames
+        ordered_filt = sorted(filtnames, key=lambda x: self.config['AUTOFLAT_FILTERORDER'].index(x))
+
         
+        
+        # Filterchange
+        try:    
+            result_filterchange = ChangeFilter(singletelescope= self.telescope, abort_action= self.abort_action).run(filter_ = filter_)
+        except ConnectionException:
+            self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+            raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+        except AbortionException:
+            self._log.warning(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        except ActionFailedException:
+            self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
 
         
         

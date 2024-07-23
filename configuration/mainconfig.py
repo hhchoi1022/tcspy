@@ -174,7 +174,9 @@ class mainConfig:
                                 AUTOFOCUS_FOCUSHISTORY_FILE = f'{os.path.join(self._configfilepath_global,"../action/level2/focus_history.data")}')
         
         autoflat_params = dict(AUTOFLAT_ALTITUDE = 40,
-                               AUTOFLAT_AZIMUTH = 270)
+                               AUTOFLAT_AZIMUTH = 270,
+                               AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
+                               )
         
         specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self._configfilepath_global,"specmode/u10/")}')
         
