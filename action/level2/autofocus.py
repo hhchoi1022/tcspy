@@ -199,6 +199,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         # If autofocus process is failed, try autofocus again with the focus value in the history 
         elif focus_history['succeeded']:
             self._log.warning(f'[{type(self).__name__}] is failed. 2nd try with the focus_history')
+            now = Time.now()
+            elapsed_time = now - Time(focus_history['update_time'])
             self._log.info(f'Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')
             try:
                 result_changefocus = action_changefocus.run(position = focus_history['focusval'], is_relative = False)
@@ -327,7 +329,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             When the autofocus action is aborted.
         """
         info_focuser = self.telescope.focuser.get_status()
-        if info_focuser['is_autofousing']:
+        if info_focuser['is_autofocusing']:
             self.telescope.focuser.autofocus_stop()
         if info_focuser['is_moving']:
             self.telescope.focuser.abort()

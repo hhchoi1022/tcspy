@@ -154,8 +154,6 @@ class WeatherUpdater(mainWeather):
             self.connect()  
         print(f'WeatherUpdater activated')
         while not abort_action.is_set():
-            if not self.device.Connected:
-                self.connect()  
             self.update_info_file(overwrite = not self.config['WEATHER_SAVE_HISTORY'])
             print(f'Last weatherinfo update: {Time.now().isot}')
             time.sleep(self.config['WEATHER_UPDATETIME'])

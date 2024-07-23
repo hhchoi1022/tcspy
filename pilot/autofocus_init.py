@@ -27,12 +27,13 @@ class AutofocusInitializer(mainConfig):
     def run(self,
                  initial_filter : str = 'r',
                  use_offset : bool = True,
-                 use_history : bool = True, 
+                 use_history : bool = False, 
                  history_duration : float = 60,
                  search_focus_when_failed : bool = True, 
                  search_focus_range : int = 3000,
-                 all_filter : bool = False):
-        startup_thread = Thread(target=self._process, kwargs = dict(initial_filter = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range, all_filter = all_filter))
+                 all_filter : bool = False,
+                 slew : bool = True):
+        startup_thread = Thread(target=self._process, kwargs = dict(initial_filter = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range, all_filter = all_filter, slew = slew))
         startup_thread.start()
     
     def abort(self):
@@ -51,29 +52,31 @@ class AutofocusInitializer(mainConfig):
                  history_duration : float = 60,
                  search_focus_when_failed : bool = True, 
                  search_focus_range : int = 3000,
-                 all_filter : bool = False):
+                 all_filter : bool = False,
+                 slew : bool = True):
         
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         self.is_running = True
         # Slew 
-        alt = 50
-        az = 160
-        tracking= True
-        action_slew = MultiAction(self.multitelescopes.devices.values(), dict(alt = alt, az = az, tracking = tracking), SlewAltAz, Event())
-        try:
-            action_slew.run()
-        except ConnectionException:
-            self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
-            self.is_running = False
-            raise ConnectionException(f'[{type(self).__name__}] is failed.')
-        except AbortionException:
-            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
-            self.is_running = False
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
-        except ActionFailedException:
-            self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed')
-            self.is_running = False
-            raise ActionFailedException(f'[{type(self).__name__}] is failed.')
+        if slew:
+            alt = 50
+            az = 160
+            tracking= True
+            action_slew = MultiAction(self.multitelescopes.devices.values(), dict(alt = alt, az = az, tracking = tracking), SlewAltAz, Event())
+            try:
+                action_slew.run()
+            except ConnectionException:
+                self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
+                self.is_running = False
+                raise ConnectionException(f'[{type(self).__name__}] is failed.')
+            except AbortionException:
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            except ActionFailedException:
+                self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed')
+                self.is_running = False
+                raise ActionFailedException(f'[{type(self).__name__}] is failed.')
         # Run Autofocus
         action_autofocus = MultiAction(self.multitelescopes.devices.values(), dict(filter_ = initial_filter, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range), AutoFocus, self.abort_action)
         
@@ -127,7 +130,7 @@ list_telescopes = [SingleTelescope(1),
 mtel = MultiTelescopes(list_telescopes)
 #%%
 a = AutofocusInitializer(mtel, Event())
-a.run(all_filter = False)
+a.run(slew = False, all_filter = True)
 #a.run()
 
 #%%

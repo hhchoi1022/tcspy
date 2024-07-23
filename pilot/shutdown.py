@@ -116,14 +116,13 @@ if __name__ == '__main__':
                          SingleTelescope(9),
                          SingleTelescope(10),
                          SingleTelescope(11),
-                  
                         ]
 
     print(time.time() - start)
     M = MultiTelescopes(list_telescopes)
     abort_action = Event()
     S = Shutdown(M, abort_action = abort_action)
-    S.run(warm = True)
+    S.run(slew = False, warm = True)
     
     
 # %%
