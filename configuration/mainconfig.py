@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -175,6 +175,11 @@ class mainConfig:
         
         autoflat_params = dict(AUTOFLAT_ALTITUDE = 40,
                                AUTOFLAT_AZIMUTH = 270,
+                               AUTOFLAT_MINCOUNT = 20000,
+                               AUTOFLAT_MAXCOUNT = 40000,
+                               AUTOFLAT_MINEXPTIME = 0.1,
+                               AUTOFLAT_MAXEXPTIME = 20,
+                               AUTOFLAT_WAITDURATION = 10,
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
@@ -208,6 +213,7 @@ class mainConfig:
         self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self._configfilepath_global)
         self.make_configfile(DB_params, filename = 'DB.config', savepath= self._configfilepath_global)
         self.make_configfile(autofocus_params, filename = 'Autofocus.config', savepath= self._configfilepath_global)
+        self.make_configfile(autoflat_params, filename = 'Autoflat.config', savepath= self._configfilepath_global)
         self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self._configfilepath_global)
         self.make_configfile(startup_params, filename = 'startup.config', savepath= self._configfilepath_global)
         self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self._configfilepath_global)
