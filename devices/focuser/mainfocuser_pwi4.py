@@ -59,10 +59,9 @@ class mainFocuser_pwi4(mainConfig):
                  **kwargs):
         
         super().__init__(unitnum = unitnum)
-        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
-        self._checktime = float(self.config['FOCUSER_CHECKTIME'])
         self.device = PWI4(self.config['FOCUSER_HOSTIP'], self.config['FOCUSER_PORTNUM'])
         self.status = self.get_status()
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         
     def get_status(self) -> dict:
         """
@@ -124,9 +123,9 @@ class mainFocuser_pwi4(mainConfig):
         try:
             if not status['is_connected']:
                 self.device.focuser_connect()
-            time.sleep(self._checktime)
+            time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             while not status['is_connected']:
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
                 status = self.get_status()
             if status['is_connected']:
                 self._log.info('Focuser connected')
@@ -145,9 +144,9 @@ class mainFocuser_pwi4(mainConfig):
         try:
             if status['is_connected']:
                 self.device.focuser_disconnect()
-            time.sleep(self._checktime)
+            time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             while status['is_connected']:
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
                 status = self.get_status() 
             if not status['is_connected']:
                 self._log.info('Focuser disconnected')
@@ -167,10 +166,10 @@ class mainFocuser_pwi4(mainConfig):
                 self.device.focuser_enable()
             else:
                 pass
+            self._log.info('Focuer movement is enabled ')
         except:
             self._log.critical('Focuser cannot be enabled')
             raise FocuserEnableFailedException()
-        self._log.info('Focuer movement is enabled ')
         return True
     
     def disable(self):
@@ -183,10 +182,10 @@ class mainFocuser_pwi4(mainConfig):
                 self.device.focuser_disable()
             else:
                 pass
+            self._log.info('Focuer movement is disabled ')
         except:
             self._log.critical('Focuser cannot be disabled')
             raise FocuserEnableFailedException()
-        self._log.info('Focuer movement is disabled ')
         return True
     
     def move(self,
@@ -212,20 +211,15 @@ class mainFocuser_pwi4(mainConfig):
             current_position = status['position']
             self._log.info('Moving focuser position... (Current : %s To : %s)'%(current_position, position))
             self.device.focuser_goto(target = position)
-            time.sleep(self._checktime)
+            time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             status =  self.get_status()
-            #while not np.abs(current_position - position) < 10:
             while status['is_moving']:
                 status =  self.get_status()
                 current_position = status['position']
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
                 if abort_action.is_set():
                     self.abort()
-                    self._log.warning('Focuser moving is aborted')
-                    status =  self.get_status()
-                    current_position = status['position']
-                    raise AbortionException('Focuser moving is aborted (Current : %s)'%(current_position))
-            time.sleep(5 * self._checktime)
+            time.sleep(3 * float (self.config['FOCUSER_CHECKTIME']))
             status =  self.get_status()
             current_position = status['position']
             self._log.info('Focuser position is set (Current : %s)'%(current_position))
@@ -242,7 +236,9 @@ class mainFocuser_pwi4(mainConfig):
         """
         try:
             self.device.fans_on()
+            self._log.info('Fans are turned on')
         except:
+            self._log.critical('Fans cannot be turned on')
             raise FocusFansFailedException('Fans cannot be turned on')
         return True
 
@@ -257,7 +253,9 @@ class mainFocuser_pwi4(mainConfig):
         """
         try:
             self.device.fans_off()
+            self._log.info('Fans are turned off')
         except:
+            self._log.critical('Fans cannot be turned off')
             raise FocusFansFailedException('Fans cannot be turned off')
         return True
 
@@ -281,24 +279,23 @@ class mainFocuser_pwi4(mainConfig):
         """
         status =  self.get_status()
         current_position = status['position']
-        self._log.info('Start Autofocus (Center position : %s)'%(current_position))
+        self._log.info('Start autofocus (Central position : %s)'%(current_position))
         self.device.autofocus_start()
-        time.sleep(self._checktime)
+        time.sleep(float(self.config['FOCUSER_CHECKTIME']))
         status =  self.get_status()
         while status['is_autofocusing']:
             status =  self.get_status()
-            time.sleep(self._checktime)
+            time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             if abort_action.is_set():
                 self.autofocus_stop()
-                self.abort()
-                self._log.warning('Autofocus is aborted')
                 status =  self.get_status()
+                self._log.warning('Autofocus is aborted. Move back to the previous position')
                 self.move(position = current_position, abort_action= Event())
                 raise AbortionException('Autofocus is aborted. Move back to the previous position')
         status =  self.get_status()
         while status['is_moving']:
             status =  self.get_status()
-        time.sleep(3 * self._checktime)
+        time.sleep(3 * float(self.config['FOCUSER_CHECKTIME']))
         status =  self.get_status()
         if status['is_autofocus_success']:
             self._log.info('Autofocus complete! (Best position : %s (%s))'%(status['autofocus_bestposition'], status['autofocus_tolerance']))
@@ -319,6 +316,9 @@ class mainFocuser_pwi4(mainConfig):
         Abort the movement of the Focuser device
         """
         self.device.focuser_stop()   
+        self._log.warning('Focuser moving is aborted')
+        raise AbortionException('Focuser moving is aborted')
+
         
 # %% Test
 if __name__ == '__main__':

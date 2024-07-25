@@ -109,4 +109,6 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         """
         return
 
-# %%f
+# %%
+c = ChangeFilter(SingleTelescope(21), Event())
+# %%

@@ -65,11 +65,10 @@ class mainCamera(mainConfig):
         
         super().__init__(unitnum=unitnum)
         self._unitnum = unitnum
-        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
-        self._checktime = float(self.config['CAMERA_CHECKTIME'])
         self.device = Camera(f"{self.config['CAMERA_HOSTIP']}:{self.config['CAMERA_PORTNUM']}",self.config['CAMERA_DEVICENUM'])
         self.status = self.get_status()
         self.cam_lock = Lock()
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
 
     def get_status(self) -> dict:
         """
@@ -277,13 +276,13 @@ class mainCamera(mainConfig):
         try:
             if not self.device.Connected:
                 self.device.Connected = True
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['CAMERA_CHECKTIME']))
             while not self.device.Connected:
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['CAMERA_CHECKTIME']))
             if  self.device.Connected:
                 self._log.info('Camera connected')
         except:
-            self._log.warning('Connection failed')
+            self._log.critical('Connection failed')
             raise ConnectionError('Connection failed')
         return True
         
@@ -293,38 +292,18 @@ class mainCamera(mainConfig):
         """
         Disconnect from the camera and wait until the disconnection is completed.
         """
-        self._log.info('Disconnecting camera...')
+        self._log.info('Disconnecting the camera...')
         try:
             if self.device.Connected:
                 self.device.Connected = False
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['CAMERA_CHECKTIME']))
             while self.device.Connected:
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['CAMERA_CHECKTIME']))
             if not self.device.Connected:
                 self._log.info('Camera disconnected')
         except:
-            self._log.warning('Disconnect failed')
+            self._log.critical('Disconnect failed')
             raise ConnectionError('Connection failed')
-        return True
-    
-    def cooler_on(self):
-        """
-        Turn on the cooler for the connected camera.
-        """
-        if self.device.CanSetCCDTemperature:
-            self.device.CoolerOn = True
-        else:
-            raise CoolingFailedException()
-        return True
-
-    def cooler_off(self):
-        """
-        Turn off the cooler for the connected camera.
-        """
-        if self.device.CanSetCCDTemperature:
-            self.device.CoolerOn = False
-        else:
-            raise CoolingFailedException()
         return True
             
     def cool(self,
@@ -351,7 +330,7 @@ class mainCamera(mainConfig):
             if self.device.CanSetCCDTemperature:
                 self.device.CoolerOn = True
                 while not self.device.CoolerOn:
-                    time.sleep(self._checktime)
+                    time.sleep(float(self.config['CAMERA_CHECKTIME']))
                 self.device.SetCCDTemperature = settemperature
                 self._log.info('Start cooling...')
                 
@@ -380,8 +359,8 @@ class mainCamera(mainConfig):
 
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
-                        self._log.critical('Cooling operation has stalled')
-                        raise CoolingFailedException('Cooling operation has stalled')
+                        self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
+                        raise CoolingFailedException('Cooling operation has stalled: camera cannot reach the set temperature')
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
                     time.sleep(5)
@@ -392,7 +371,7 @@ class mainCamera(mainConfig):
                 self._log.info('Cooling finished. Current temperature: %.1f' % self.device.CCDTemperature)
                 return True
             else:
-                self._log.warning('Cooling is not implemented on this device')
+                self._log.critical('Cooling is not implemented on this device')
                 raise CoolingFailedException('Cooling is not implemented on this device')
         except TimeoutError as e:
             self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
@@ -448,9 +427,8 @@ class mainCamera(mainConfig):
 
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
-                        self._log.critical('Warming operation has stalled')
+                        self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
                         break
-                        #raise WarmingFailedException('Warming operation has stalled')
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
                     time.sleep(5)
@@ -462,7 +440,7 @@ class mainCamera(mainConfig):
                 self._log.info('Warning finished. Current temperature: %.1f' % self.device.CCDTemperature)
                 return True
             else:
-                self._log.warning('Warming is not implemented on this device')
+                self._log.critical('Warming is not implemented on this device')
                 raise WarmingFailedException('Warming is not implemented on this device')
         except TimeoutError as e:
             self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
@@ -523,19 +501,20 @@ class mainCamera(mainConfig):
             raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
         
         # Exposure
+        self._log.info('Start exposure...')
         self.device.StartExposure(Duration = exptime, Light = is_light)
         while not self.device.ImageReady:
             if abort_action.is_set():
                 self.cam_lock.release()
-                self._log.warning('Camera exposure is aborted')
                 self.abort()
-                raise AbortionException('Camera exposure is aborted')
-            time.sleep(self._checktime)
-
+            time.sleep(float(self.config['CAMERA_CHECKTIME']))
+            
+        self._log.info('Exposure finished, Downloading data...')
         imginfo, status = self.get_imginfo()
 
         # Modify image information if camera returns too detailed exposure time
         imginfo['exptime'] = round(float(imginfo['exptime']),1)
+        self._log.info('Data downloaded')
         self.cam_lock.release()
         return imginfo 
 
@@ -544,10 +523,11 @@ class mainCamera(mainConfig):
         Aborts the current exposure.
         """
         self.cam_lock.acquire()
+        self._log.warning('Camera exposure is aborted')
         if self.device.CanAbortExposure:
             self.device.AbortExposure()
         self.cam_lock.release()
-        # Flush the camera
+        raise AbortionException('Camera exposure is aborted')
     
     def _update_gain(self,
                     gain : int = 0):

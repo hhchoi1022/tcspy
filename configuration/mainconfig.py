@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -136,8 +136,7 @@ class mainConfig:
                               WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
                               WEATHER_UPDATETIME=60,
-                              WEATHER_SAVE_HISTORY=True,
-                              WEATHER_PATH= f'{os.path.join(self._configfilepath_global,"../devices/weather/weatherinfo")}',
+                              WEATHER_PATH= f'/data2/obsdata/weather_history/',
                               WEATHER_HUMIDITY=85,
                               WEATHER_RAINRATE=80,
                               WEATHER_SKYMAG=10,
@@ -154,8 +153,7 @@ class mainConfig:
                                     SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_UPDATETIME=60,
-                                    SAFEMONITOR_SAVE_HISTORY=True,
-                                    SAFEMONITOR_PATH= f'{os.path.join(self._configfilepath_global,"../devices/safetymonitor/safeinfo")}')
+                                    SAFEMONITOR_PATH= f'/data2/obsdata/safetymonitor_history/')
         
         target_params = dict(TARGET_MINALT=30,
                              TARGET_MAXALT=90,

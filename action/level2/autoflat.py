@@ -141,9 +141,11 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is under unknown condition.')
 
         filtnames = self.telescope.filterwheel.filtnames
-        ordered_filtnames = sorted(filtnames, key=lambda x: self.telescope.config['AUTOFLAT_FILTERORDER'].index(x))
-        for filtname in ordered_filtnames:
-            self.shared_memory['status'][filtname] = False
+        auto_flat_order = self.telescope.config.get('AUTOFLAT_FILTERORDER', [])
+        defined_filtnames = [f for f in filtnames if f in auto_flat_order]
+        ordered_filtnames = sorted(defined_filtnames, key=lambda x: auto_flat_order.index(x))
+        observation_status = {filter_name: False for filter_name in ordered_filtnames}
+        self.shared_memory['status'] = observation_status
 
         # Start autoflat
         def autoflat_filter(filter_, count, gain, binning):
@@ -269,7 +271,8 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         for filtname in ordered_filtnames:
             try:
                 autoflat_filter(filtname, count, gain, binning)
-                self.shared_memory['status'][filtname] = True
+                observation_status[filtname] = True
+                self.shared_memory['status'] = observation_status
             except ActionFailedException:
                 self.log.critical(f'[{type(self).__name__}] is failed: autoflat_filter failure.')
             except ConnectionException:
