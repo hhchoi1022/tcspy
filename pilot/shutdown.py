@@ -122,7 +122,7 @@ if __name__ == '__main__':
     M = MultiTelescopes(list_telescopes)
     abort_action = Event()
     S = Shutdown(M, abort_action = abort_action)
-    S.run(slew = False, warm = True)
+    S.run(slew = True, warm = True)
     
     
 # %%

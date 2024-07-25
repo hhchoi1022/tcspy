@@ -522,7 +522,7 @@ class DB_Daily(mainConfig):
 if __name__ == '__main__':
     D = DB_Daily(Time.now())
     #D.from_GSheet('240715')
-    #D.update_RIS_obscount()
+    D.update_RIS_obscount()
     #D.from_RIS(size = 300)
     #D.initialize(True)
 # %%

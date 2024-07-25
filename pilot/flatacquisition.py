@@ -82,21 +82,20 @@ class FlatAcquisition(mainConfig):
         
 # %%
 if __name__ == '__main__':
-    list_telescope = [SingleTelescope(21),
-                      #SingleTelescope(2),
-                      #SingleTelescope(3),
-                      #SingleTelescope(5),
-                      #SingleTelescope(6),
-                      ##SingleTelescope(7),
-                      #SingleTelescope(8),
-                      #SingleTelescope(9),
-                      #SingleTelescope(10),
-                      #SingleTelescope(11),
+    list_telescope = [SingleTelescope(1),
+                      SingleTelescope(2),
+                      SingleTelescope(3),
+                      SingleTelescope(5),
+                      SingleTelescope(6),
+                      SingleTelescope(7),
+                      SingleTelescope(8),
+                      SingleTelescope(9),
+                      SingleTelescope(10),
+                      SingleTelescope(11),
                      ]
 
     m = MultiTelescopes(list_telescope)
-#%%
     b = FlatAcquisition(m, Event())
-    #b.run(gain = 2750, exptime = 100)
+    b.run(count = 9, gain = 2750, binning = 1)
     #b.run(gain = 0, exptime = 30)
 # %%

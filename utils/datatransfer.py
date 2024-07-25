@@ -200,7 +200,7 @@ class DataTransferManager(mainConfig):
 A = DataTransferManager()
 #%%
 import time
-file_key_list = ['*/image/2024-07-16_gain0']
+file_key_list = ['*/image/2024-07-23_gain2750']
 for file_key in file_key_list:
     A.run(key = file_key, thread = False)
     time.sleep(100)
