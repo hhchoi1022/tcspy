@@ -53,7 +53,11 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
         self.shared_memory = dict()
-        self._specmode_folder = self.config['SPECMODE_FOLDER']        
+        self.shared_memory['status'] = dict()
+        self.shared_memory['succeeded'] = False
+        self.is_running = False
+        self._specmode_folder = self.config['SPECMODE_FOLDER']
+
     
     def run(self, 
             # Exposure information
@@ -147,21 +151,29 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         observation_status = None
         """
         # Check condition of the instruments for this Action
-        self.abort_action.clear()
+        self.multitelescopes.log.info(f'===============LV3[{type(self).__name__}] is triggered.')
+        self.is_running = True
+        self.shared_memory['succeeded'] = False
+        # Check condition of the instruments for this Action
         status_multitelescope = self.multitelescopes.status
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         for telescope_name, telescope_status in status_multitelescope.items():
+            is_all_connected = True
             status_filterwheel = telescope_status['filterwheel']
             status_camera = telescope_status['camera']
             status_mount = telescope_status['mount']
             status_focuser = telescope_status['focuser']
             if status_filterwheel.lower() == 'dicconnected':
+                is_all_connected = False
                 self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} filterwheel is disconnected.')
             if status_camera.lower() == 'dicconnected':
+                is_all_connected = False
                 self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} camera is disconnected.')
             if status_mount.lower() == 'dicconnected':
+                is_all_connected = False                
                 self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} mount is disconnected.')
             if status_focuser.lower() == 'dicconnected':
+                is_all_connected = False
                 self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} focuser is disconnected.')
                 
         # Get target instance
@@ -215,29 +227,33 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         
         # Run Multiple actions
         self.multiaction = MultiAction(array_telescope = self.multitelescopes.devices.values(), array_kwargs = all_params_obs.values(), function = SingleObservation, abort_action  = self.abort_action)
-        self.shared_memory = self.multiaction.shared_memory
+        self.shared_memory['status'] = self.multiaction.shared_memory
         try:
             self.multiaction.run()
         except AbortionException:
-            self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            self.abort()
         except ActionFailedException:
-            for tel_name, result in self.shared_memory.items():
-                is_succeeded = self.shared_memory[tel_name]['succeeded']
+            for tel_name, result in self.shared_memory['status'].items():
+                is_succeeded = self.shared_memory['status'][tel_name]['succeeded']
                 if is_succeeded:
-                    self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
+                    self.multitelescopes.log_dict[tel_name].info(f'===============LV3[{type(self).__name__}] is finished')
                 else:
-                    self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
-            self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
+                    self.multitelescopes.log_dict[tel_name].info(f'===============LV3[{type(self).__name__}] is failed')
             raise ActionFailedException(f'[{type(self).__name__}] is failed.')    
-        return True
+        self.shared_memory['succeeded'] = all(self.shared_memory['status'].values())
+        self.is_running = False 
+        if self.shared_memory['succeeded']:
+            return True
 
     def abort(self):
         """
         A function to abort the ongoing spectroscopic observation process.
         """
-        #self.multiaction.abort()
         self.abort_action.set()
+        self.is_running = False
+        self.multitelescopes.log.warning(f'===============LV3[{type(self).__name__}] is aborted.')
+        raise AbortionException(f'[{type(self).__name__}] is aborted.')
+     
     
 # %%
 if __name__ == '__main__':

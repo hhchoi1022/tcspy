@@ -48,6 +48,7 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
+        self.is_running = False
 
     def run(self,
             position: int = None,
@@ -78,17 +79,18 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
         ActionFailedException
             If action fails due to any other reason.
         """
-        self._log.info(f'[{type(self).__name__}] is triggered.')
+        self._log.info(f'=====LV1[{type(self).__name__}] is triggered.')
+        self.is_running = True
+        self.shared_memory['succeeded'] = False
         # Check device connection
         if self.telescope_status.focuser.lower() == 'disconnected':
-            self._log.critical(f'[{type(self).__name__}] is failed: focuser is disconnected.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: focuser is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: focuser is disconnected.')
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
             self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
          
         # Start action
         if self.telescope_status.focuser.lower() == 'idle':
@@ -98,34 +100,29 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
                     position = info_focuser['position'] + position
                 result_move = self.telescope.focuser.move(position = position, abort_action= self.abort_action)
             except FocusChangeFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: focuser move failure.')
+                self.is_running = False
+                self._log.critical(f'=====LV1[{type(self).__name__}] is failed: focuser move failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser move failure.')            
             except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                self.abort()
         elif self.telescope_status.focuser.lower() == 'busy':
-            self._log.critical(f'[{type(self).__name__}] is failed: focuser is busy.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: focuser is busy.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser is busy.')
         else:
-            self._log.critical(f'[{type(self).__name__}] is failed: focuser status error.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: focuser status error.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser status error.')
-
         if result_move:
-            self._log.info(f'[{type(self).__name__}] is finished.')
             self.shared_memory['succeeded'] = True
-        return True
-    
+        
+        self.is_running = False
+        self._log.info(f'=====LV1[{type(self).__name__}] is finished.')
+        if self.shared_memory['succeeded']:
+            return True
+            
     def abort(self):
-        """
-        Aborts the change focus action if the focuser is busy.
-        """
         self.abort_action.set()
-        self.telescope.focuser.abort()
-        #self.abort_action = Event()
-        '''
-        status_focuser = self.telescope_status.focuser.lower()
-        if status_focuser == 'busy':
-            self.telescope.focuser.abort()
-        else:
-            pass 
-        '''
+        self.is_running = False
+        self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        raise AbortionException(f'[{type(self).__name__}] is aborted.')

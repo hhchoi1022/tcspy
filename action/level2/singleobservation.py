@@ -54,6 +54,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.shared_memory['succeeded'] = False
         self.shared_memory['status'] = dict()
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
+        self.is_running = False
 
     def run(self, 
             # Exposure information
@@ -153,7 +154,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
           force_slewing = False
           note = 'This is for Deep observing mode. (5 Telescopes will be used for sequential g,r,i observation)'
         """        
-        self._log.info(f'[{type(self).__name__}] is triggered.')
+        self._log.info(f'==========LV2[{type(self).__name__}] is triggered.')
+        self.is_running = True
+        self.shared_memory['succeeded'] = False
         # Check condition of the instruments for this Action
         status_filterwheel = self.telescope_status.filterwheel
         status_camera = self.telescope_status.camera
@@ -161,15 +164,16 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'Camera is disconnected. Action "{type(self).__name__}" is not triggered')
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is disconnected.')
         if status_filterwheel.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: filterwheel is disconnected.')
         if status_mount.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'mount is disconnected. Action "{type(self).__name__}" is not triggered') 
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: mount is disconnected.')
         if trigger_abort_disconnected:
-            raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
+            self.is_running = False
+            raise ConnectionException(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
         
         # Set target
@@ -194,6 +198,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               )
         target_info = target.target_info
         exposure_info = target.exposure_info
+        if exposure_info['filter_'] == 'None':
+            try:
+                exposure_info['filter_'] = exposure_info['specmode_filter'][self.telescope.tel_name]
+            except:
+                self.is_running = False
+                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: filter is not defined.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed: filter is not defined.')
          
         # Slewing
         if target.status['coordtype'] == 'radec':
@@ -201,13 +212,14 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 slew = SlewRADec(singletelescope = self.telescope, abort_action= self.abort_action)
                 result_slew = slew.run(ra = float(target_info['ra']), dec = float(target_info['dec']), force_action = force_slewing)
             except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+                self.is_running = False
+                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: telescope is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
             except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                self.abort()
             except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
+                self.is_running = False
+                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
 
         elif target.status['coordtype'] == 'altaz':
@@ -215,16 +227,19 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 slew = SlewAltAz(singletelescope = self.telescope, abort_action= self.abort_action)
                 result_slew = slew.run(alt = float(target_info['alt']), az = float(target_info['az']), force_action = force_slewing)
             except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: telescope is disconnected.')
+                self.is_running = False
+                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: telescope is disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
             except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                self.abort()
             except ActionFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: slewing failure.')
+                self.is_running = False
+                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
         else:
-            raise ActionFailedException(f'Coordinate type of the target : {target.status["coordtype"]} is not defined')
+            self.is_running = False
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Coordinate type of the target : {target.status["coordtype"]} is not defined')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Coordinate type of the target : {target.status["coordtype"]} is not defined')
 
         # Get exposure information
         observation_requested = self._exposureinfo_to_list(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
@@ -243,6 +258,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                'exptime': [],
                                'count': [],
                                'binning': []}
+        
         for filter_, exptime, count, binning in zip(observation_requested['filter_'], observation_requested['exptime'], observation_requested['count'], observation_requested['binning']):
              observation_status_filter = observation_status[filter_]
              net_count = observation_status_filter['triggered'] - observation_status_filter['observed']
@@ -258,13 +274,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 filter_ = observation_trigger['filter_'][0]
                 result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = True, use_history= autofocus_use_history, history_duration = autofocus_history_duration)
             except ConnectionException:
-                self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                self.is_running = False
+                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
             except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                self.abort()
             except ActionFailedException:
-                self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
+                self._log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                 pass
             
         result_all_exposure = []
@@ -277,30 +293,32 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 
                 # Apply offset
                 offset = self.telescope.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
-                self._log.info(f'Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
+                self._log.info(f'[{type(self).__name__}] Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
                 try:
                     result_focus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action).run(position = offset, is_relative= True)
                 except ConnectionException:
-                    self._log.critical(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                    self.is_running = False
+                    self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
                 except AbortionException:
-                    self._log.warning(f'[{type(self).__name__}] is aborted.')
-                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                    self.abort()
                 except ActionFailedException:
-                    self._log.critical(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+                    self.is_running = False
+                    self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
                 
                 # Filterchange
                 try:    
                     result_filterchange = ChangeFilter(singletelescope= self.telescope, abort_action= self.abort_action).run(filter_ = filter_)
                 except ConnectionException:
-                    self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                    self.is_running = False
+                    self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
                 except AbortionException:
-                    self._log.warning(f'[{type(self).__name__}] is aborted.')
-                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                    self.abort()
                 except ActionFailedException:
-                    self._log.critical(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
+                    self.is_running = False
+                    self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel movement failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
 
                 # Autofocus when filter changed
@@ -308,13 +326,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     try:
                         result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history= autofocus_use_history, history_duration= autofocus_history_duration)
                     except ConnectionException:
-                        self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                        self.is_running = False
+                        self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
                         raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
                     except AbortionException:
-                        self._log.warning(f'[{type(self).__name__}] is aborted.')
-                        raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                        self.abort()
                     except ActionFailedException:
-                        self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
+                        self._log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                         pass
         
             # Exposure
@@ -329,14 +347,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                         try:
                             result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
                         except ConnectionException:
-                            self._log.critical(f'[{type(self).__name__}] is failed: Device connection is lost.')
+                            self.is_running = False
+                            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
                             raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
                         except AbortionException:
-                            self._log.warning(f'[{type(self).__name__}] is aborted.')
-                            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                            self.abort()
                         except ActionFailedException:
-                            self._log.warning(f'[{type(self).__name__}] is failed: Autofocus is failed. Return to the previous focus value')
-                            pass                 
+                            self._log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                             
                 # Exposure
                 try:
@@ -363,45 +380,27 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     self.shared_memory['status'] = observation_status
                     result_all_exposure.append(result_exposure)
                 except ConnectionException:
-                    self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
+                    self.is_running = False
+                    self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is disconnected.')
                     raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
                 except AbortionException:
-                    self._log.warning(f'[{type(self).__name__}] is aborted.')
-                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                    self.abort()
                 except ActionFailedException:
-                    self._log.critical(f'[{type(self).__name__}] is failed: exposure failure.')
+                    self.is_running = False
+                    self._log.critical(f'==========LV2[{type(self).__name__}] is failed: exposure failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
-
-        self._log.info(f'[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(result_all_exposure)
+        self.is_running = False
+        
+        self._log.info(f'==========LV2[{type(self).__name__}] is finished')
         return all(result_all_exposure)
 
     def abort(self):
-        """
-        Aborts any running actions related to the filter wheel, camera, and mount.
-
-        This method checks the status of the filter wheel, camera, and mount. If any of them is busy, it will call 
-        its respective abort method to stop the ongoing operation.
-
-        Raises
-        ------
-        AbortionException:
-            If the device operation is explicitly aborted during the operation.
-        """
         self.abort_action.set()
-        #self.telescope.camera.abort()
-        #self.telescope.mount.abort()        
-        #status_filterwheel = self.telescope_status.filterwheel
-        #status_camera = self.telescope_status.camera
-        #status_mount = self.telescope_status.mount
-        #if status_filterwheel.lower() == 'busy':
-        #    self.telescope.filterwheel.abort()
-        #if status_camera.lower() == 'busy':
-        #    self.telescope.camera.abort()
-        #if status_mount.lower() == 'busy':
-        #    self.telescope.mount.abort()   
-        #self.abort_action = Event()
-    
+        self.is_running = False
+        self._log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+        raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        
     def _exposureinfo_to_list(self,
                               filter_ : str,
                               exptime : str,
@@ -440,7 +439,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 # %%
 if __name__ == '__main__':
     from tcspy.action.level1 import Connect
-    telescope = SingleTelescope(8)
+    telescope = SingleTelescope(21)
     abort_action = Event()
     C = Connect(telescope, abort_action)
     C.run()
@@ -449,22 +448,23 @@ if __name__ == '__main__':
 #%%    
 if __name__ == '__main__':
 
-    kwargs = dict(exptime = '10', 
-                count = '2,2', 
-                filter_ = 'g,r', 
-                binning = '1', 
-                imgtype = 'Light',
-                ra = None, 
-                dec =  None, 
-                alt = 40,
-                az = 300,
-                obsmode =None,
-                autofocus_use_history = False, 
-                autofocus_before_start = False, 
-                autofocus_when_filterchange= False)              
+    kwargs = dict(
+    exptime= '5,5',
+    count= '1,1',
+    filter_ = 'g,r',
+    binning= '2,2',
+    imgtype = 'Light',
+    ra= None,
+    dec= None,
+    alt = 40,
+    az = 300,
+    name = "COSMOS",
+    objtype = 'Commissioning',
+    autofocus_before_start= True,
+    autofocus_when_filterchange= True)              
     from multiprocessing import Process
     abort_action = Event()
-    s = SingleObservation(SingleTelescope(7),abort_action)
+    s = SingleObservation(SingleTelescope(21),abort_action)
     p = Process(target = s.run, kwargs = kwargs)
     p.start()
 # %%

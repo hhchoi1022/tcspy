@@ -54,11 +54,9 @@ class mainFocuser_Alpaca(mainConfig):
                  **kwargs):
         
         super().__init__(unitnum = unitnum)
-        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
-        self._checktime = float(self.config['FOCUSER_CHECKTIME'])
         self.device = Focuser(f"{self.config['FOCUSER_HOSTIP']}:{self.config['FOCUSER_PORTNUM']}",self.config['FOCUSER_DEVICENUM'])
         self.status = self.get_status()
-        
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
     
     def get_status(self) -> dict:
         """
@@ -141,9 +139,9 @@ class mainFocuser_Alpaca(mainConfig):
         try:
             if not self.device.Connected:
                 self.device.Connected = True
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             while not self.device.Connected:
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             if  self.device.Connected:
                 self._log.info('Focuser connected')
         except:
@@ -160,9 +158,9 @@ class mainFocuser_Alpaca(mainConfig):
         try:
             if self.device.Connected:
                 self.device.Connected = False
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             while self.device.Connected:
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             if not self.device.Connected:
                 self._log.info('Focuser disconnected')
         except:
@@ -191,10 +189,10 @@ class mainFocuser_Alpaca(mainConfig):
             current_position = self.device.Position
             self._log.info('Moving focuser position... (Current : %s To : %s)'%(current_position, position))
             self.device.Move(position)
-            time.sleep(self._checktime)
+            time.sleep(float(self.config['FOCUSER_CHECKTIME']))
             while not np.abs(current_position - position) < 10:
                 current_position = self.device.Position
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
                 if abort_action.is_set():
                     self.abort()
                     self._log.warning('Focuser moving is aborted')

@@ -5,12 +5,10 @@ import time
 import json
 from alpaca.filterwheel import FilterWheel
 
-from tcspy.utils.logger import mainLogger
-from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
+from tcspy.utils import Timeout
 from tcspy.utils.exception import *
-from tcspy.utils import FocusModel
-
+from tcspy.utils.logger import mainLogger
 # %%
 class mainFilterwheel(mainConfig):
     """
@@ -50,15 +48,12 @@ class mainFilterwheel(mainConfig):
                  unitnum : int,
                  **kwargs):
         super().__init__(unitnum = unitnum)
-        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
-        self._checktime = float(self.config['FTWHEEL_CHECKTIME'])
         self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])        
-        self.filtnames = None
-        self.offsets = None
+        self.status = self.get_status()
         self.filtnames = self._get_all_filt_names()
         self.offsets = self._get_all_filt_offset()
-        self.status = self.get_status()
-        
+        self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
+
     def get_status(self) -> dict:
         """
         Returns a dictionary containing the current status of the filter wheel.
@@ -117,13 +112,13 @@ class mainFilterwheel(mainConfig):
         try:
             if not self.device.Connected:
                 self.device.Connected = True
-            time.sleep(self._checktime)
+            time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
             while not self.device.Connected:
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
             if  self.device.Connected:
                 self._log.info('Filterwheel connected')
         except:
-            self._log.warning('Connection failed')
+            self._log.critical('Connection failed')
             raise ConnectionException('Connection failed')
         return True
     
@@ -132,17 +127,17 @@ class mainFilterwheel(mainConfig):
         """
         Disconnects from the filter wheel device.
         """
-        self._log.info('Disconnecting filterwheel...')
+        self._log.info('Disconnecting the filterwheel...')
         try:
             if self.device.Connected:
                 self.device.Connected = False
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
             while self.device.Connected:
-                time.sleep(self._checktime)
+                time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
             if not self.device.Connected:
                 self._log.info('Filterwheel is disconnected')
         except:
-            self._log.warning('Disconnect failed')
+            self._log.critical('Disconnect failed')
             raise ConnectionException('Disconnect failed')
         return True
             
@@ -169,17 +164,13 @@ class mainFilterwheel(mainConfig):
             if filter_ > len(self.filtnames):
                 self._log.critical(f'Position "{filter_}" is not implemented')
                 raise FilterChangeFailedException(f'Position "{filter_}" is not implemented')
-            else:
-                self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
         
         # Change filter
-        try:
-            self.device.Position = filter_
-        except:
-            pass
-        time.sleep(self._checktime)
+        self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
+        self.device.Position = filter_
+        time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
         while not self.device.Position == filter_:
-            time.sleep(self._checktime)
+            time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
             
         # Return result
         self._log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
@@ -277,10 +268,7 @@ class mainFilterwheel(mainConfig):
         except:
             self._log.warning('%s is not implemented in the filterwheel'%filtname)
             raise FilterRegisterException('%s is not implemented in the filterwheel'%filtname)
-    
-    def _is_connected(self) -> bool:
-        return self.device.Connected
-    
+
     def _get_current_filtinfo(self) -> str:
         position = self.device.Position
         filtname = self._position_to_filtname(position = position)
@@ -290,7 +278,7 @@ class mainFilterwheel(mainConfig):
         
 # %% Test
 if __name__ == '__main__':
-    F = mainFilterwheel(unitnum= 8)
+    F = mainFilterwheel(unitnum= 21)
     F.connect()
 
 # %%

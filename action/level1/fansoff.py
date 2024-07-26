@@ -46,6 +46,7 @@ class FansOff(Interface_Runnable, Interface_Abortable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
+        self.is_running = False
 
     def run(self):
         """
@@ -60,32 +61,36 @@ class FansOff(Interface_Runnable, Interface_Abortable):
         ActionFailedException
             If there is an error during the fan operation.
         """
-        self._log.info(f'[{type(self).__name__}] is triggered.')
+        self._log.info(f'=====LV1[{type(self).__name__}] is triggered.')
+        self.is_running = True
+        self.shared_memory['succeeded'] = False
         # Check device connection
         if self.telescope_status.focuser.lower() == 'disconnected':
-            self._log.critical(f'[{type(self).__name__}] is failed: focuser is disconnected.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: focuser is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: focuser is disconnected.')
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
             self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
          
         # Start action
         try:
             result_fansoff = self.telescope.focuser.fans_off()
         except FocusFansFailedException:
-            self._log.critical(f'[{type(self).__name__}] is failed: fan operation failure.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: fan operation failure.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: fan operation failure.')          
-
         if result_fansoff:
-            self._log.info(f'[{type(self).__name__}] is finished.')
             self.shared_memory['succeeded'] = True
-        return True
+        
+        self.is_running = False
+        self._log.info(f'=====LV1[{type(self).__name__}] is finished.')
+        if self.shared_memory['succeeded']:
+            return True    
     
     def abort(self):
-        """
-        Dummy abort function
-        """
-        pass 
+        self.abort_action.set()
+        self.is_running = False
+        self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        raise AbortionException(f'[{type(self).__name__}] is aborted.')

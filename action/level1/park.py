@@ -45,6 +45,7 @@ class Park(Interface_Runnable, Interface_Abortable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
+        self.is_running = False
 
     def run(self):
         """
@@ -59,50 +60,50 @@ class Park(Interface_Runnable, Interface_Abortable):
         ActionFailedException
             If there is an error during the park operation.
         """
-        self._log.info(f'[{type(self).__name__}] is triggered.')
+        self._log.info(f'=====LV1[{type(self).__name__}] is triggered.')
+        self.is_running = True
+        self.shared_memory['succeeded'] = False
         # Check device connection
+        mount = self.telescope.mount
         status_mount = self.telescope_status.mount.lower()
-        if status_mount == 'disconnected':
-            self._log.critical(f'[{type(self).__name__}] is failed: mount is disconnected.')
-            return ConnectionException(f'[{type(self).__name__}] is failed: mount is disconnected.')
-        
+
         # If not aborted, execute the action
         if self.abort_action.is_set():
             self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
         # Start action
-        
+        if status_mount == 'disconnected':
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: mount is disconnected.')
+            raise ConnectionException(f'[{type(self).__name__}] is failed: mount is disconnected.')
         if status_mount == 'busy':
-            self._log.critical(f'[{type(self).__name__}] is failed: mount is busy.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: mount is busy.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: mount is busy.')
         else:
             try:
-                result_park = self.telescope.mount.park(abort_action = self.abort_action)
+                self._log.info(f'[{type(self).__name__}] Move to the park position (Alt={self.telescope.config["MOUNT_PARKALT"]}, Az={self.telescope.config["MOUNT_PARKAZ"]})')
+                result_park = mount.park(abort_action = self.abort_action)
             except ParkingFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed')
+                self.is_running = False
+                self._log.critical(f'=====LV1[{type(self).__name__}] is failed')
                 ActionFailedException(f'[{type(self).__name__}] is failed: mount park failure.')
             except AbortionException:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')        
-
+                self.abort()
         if result_park:
-            self._log.info(f'[{type(self).__name__}] is finished.')
             self.shared_memory['succeeded'] = True
-        return True
             
+        self.is_running = False
+        self._log.info(f'=====LV1[{type(self).__name__}] is finished.')            
+        if self.shared_memory['succeeded']:
+            return True    
+        
     def abort(self):
-        """
-        Performs the action to park the telescope.
-        """
         self.abort_action.set()
-        self.telescope.mount.abort()
-        #status_mount = self.telescope_status.mount.lower()
-        #if status_mount == 'busy':
-        #    self.telescope.mount.abort()
-        #else:
-        #    pass
+        self.is_running = False
+        self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        raise AbortionException(f'[{type(self).__name__}] is aborted.')
+
 #%%
 if __name__ == '__main__':
     device = SingleTelescope(unitnum = 8)
