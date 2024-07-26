@@ -45,7 +45,7 @@ class mainSafetyMonitor(mainConfig):
     """
     
     def __init__(self):        
-        super().__init__(21)
+        super().__init__()
         self.device = SafetyMonitor(f"{self.config['SAFEMONITOR_HOSTIP']}:{self.config['SAFEMONITOR_PORTNUM']}",self.config['SAFEMONITOR_DEVICENUM'])
         self.is_running = False
 

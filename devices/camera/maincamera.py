@@ -485,38 +485,41 @@ class mainCamera(mainConfig):
         """
         # Set Gain
         self.cam_lock.acquire()
-        self._update_gain(gain = gain)
-        
-        # Set binning 
-        self._set_binning(binning = binning)
-        self.imgtype = imgtype.upper()
-
-        # Set minimum exposure time
-        if exptime < self.device.ExposureMin:
-            exptime = self.device.ExposureMin
-        
-        # Set imagetype & exposure time & is_light
-        if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'LIGHT']:
-            self._log.critical(f'Type "{imgtype}" is not set as imagetype')
-            raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
-        
-        # Exposure
-        self._log.info('Start exposure...')
-        self.device.StartExposure(Duration = exptime, Light = is_light)
-        while not self.device.ImageReady:
-            if abort_action.is_set():
-                self.cam_lock.release()
-                self.abort()
-            time.sleep(float(self.config['CAMERA_CHECKTIME']))
+        try:
+            self._update_gain(gain = gain)
             
-        self._log.info('Exposure finished, Downloading data...')
-        imginfo, status = self.get_imginfo()
+            # Set binning 
+            self._set_binning(binning = binning)
+            self.imgtype = imgtype.upper()
 
-        # Modify image information if camera returns too detailed exposure time
-        imginfo['exptime'] = round(float(imginfo['exptime']),1)
-        self._log.info('Data downloaded')
-        self.cam_lock.release()
-        return imginfo 
+            # Set minimum exposure time
+            if exptime < self.device.ExposureMin:
+                exptime = self.device.ExposureMin
+            
+            # Set imagetype & exposure time & is_light
+            if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'LIGHT']:
+                self._log.critical(f'Type "{imgtype}" is not set as imagetype')
+                self.cam_lock.release()
+                raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
+            
+            # Exposure
+            self._log.info('Start exposure...')
+            self.device.StartExposure(Duration = exptime, Light = is_light)
+            while not self.device.ImageReady:
+                if abort_action.is_set():
+                    self.cam_lock.release()
+                    self.abort()
+                time.sleep(float(self.config['CAMERA_CHECKTIME']))
+                
+            imginfo, status = self.get_imginfo()
+
+            # Modify image information if camera returns too detailed exposure time
+            imginfo['exptime'] = round(float(imginfo['exptime']),1)
+            self._log.info('Exposure finished')
+            return imginfo 
+        
+        finally:
+            self.cam_lock.release()
 
     def abort(self):
         """
@@ -524,10 +527,12 @@ class mainCamera(mainConfig):
         """
         self.cam_lock.acquire()
         self._log.warning('Camera exposure is aborted')
-        if self.device.CanAbortExposure:
-            self.device.AbortExposure()
-        self.cam_lock.release()
-        raise AbortionException('Camera exposure is aborted')
+        try:
+            if self.device.CanAbortExposure:
+                self.device.AbortExposure()
+        finally:
+            self.cam_lock.release()
+            raise AbortionException('Camera exposure is aborted')
     
     def _update_gain(self,
                     gain : int = 0):

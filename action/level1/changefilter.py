@@ -45,6 +45,7 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
+        self.is_running = False
 
     def run(self,
             filter_ : str):
@@ -70,45 +71,46 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         ActionFailedException
             If the action fails due to any other reason.
         """
-        self._log.info(f'[{type(self).__name__}] is triggered.')
+        self._log.info(f'=====LV1[{type(self).__name__}] is triggered.')
+        self.is_running = True
+        self.shared_memory['succeeded'] = False
         # Check device connection
         if self.telescope_status.filterwheel.lower() == 'disconnected':
-            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
+            self.is_running = True
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            self.abort()
         
         # Start action
         if self.telescope_status.filterwheel.lower() == 'idle':
             try:
                 result_move = self.telescope.filterwheel.move(filter_ = filter_)
             except FilterChangeFailedException:
-                self._log.critical(f'[{type(self).__name__}] is failed: filterwheel move failure.')
+                self.is_running = False
+                self._log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel move failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel move failure.')
                 
         elif self.telescope_status.filterwheel.lower() == 'busy':
-            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel is busy.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is busy.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel is busy.')
         else:
-            self._log.critical(f'[{type(self).__name__}] is failed: filterwheel status error.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel status error.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel status error.')
-
         if result_move:
-            self._log.info(f'[{type(self).__name__}] is finished.')
             self.shared_memory['succeeded'] = True
-            return True
-    
-    def abort(self):
-        """
-        A function that needs to be defined to enable abort functionality. 
         
-        In this class, it does nothing and should be overridden in subclasses if needed.
-        """
-        return
-
-# %%
-c = ChangeFilter(SingleTelescope(21), Event())
-# %%
+        self.is_running = False
+        self._log.info(f'=====LV1[{type(self).__name__}] is finished.')            
+        if self.shared_memory['succeeded']:
+            return True    
+        
+    def abort(self):
+        self.abort_action.set()
+        self.is_running = False
+        self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        raise AbortionException(f'[{type(self).__name__}] is aborted.')

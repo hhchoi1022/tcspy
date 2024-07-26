@@ -44,7 +44,7 @@ class mainWeather(mainConfig):
     
     def __init__(self):
 
-        super().__init__(21)
+        super().__init__()
         self.device = ObservingConditions(f"{self.config['WEATHER_HOSTIP']}:{self.config['WEATHER_PORTNUM']}",self.config['WEATHER_DEVICENUM'])
         self.constraints = self._get_constraints()
         self.is_running = False

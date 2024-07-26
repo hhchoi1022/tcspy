@@ -140,28 +140,3 @@ class MultiTelescopes:
                 for log_unit in self.log_dict.values():
                     log_unit.critical(message)
         return log
-# %%
-if __name__ == '__main__':
-    list_telescopes = [SingleTelescope(1),
-                         SingleTelescope(2),
-                         SingleTelescope(3),
-                         SingleTelescope(5),
-                         SingleTelescope(6),
-                         SingleTelescope(7),
-                         SingleTelescope(8),
-                         SingleTelescope(9),
-                         SingleTelescope(10),
-                         SingleTelescope(11),
-                         ]
-    #telescope_2 = SingleTelescope(2)
-    #M =  MultiTelescopes([telescope_1])
-    M =  MultiTelescopes(list_telescopes)
-#%%
-if __name__ == '__main__':
-    start = time.time()
-    M.status
-    print(time.time() -start)
-    
-
-
-# %%

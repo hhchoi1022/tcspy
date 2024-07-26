@@ -46,7 +46,8 @@ class Warm(Interface_Runnable, Interface_Abortable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
-
+        self.is_running = False
+        
     def run(self,
             settemperature : float,
             tolerance : float = 1):
@@ -74,37 +75,38 @@ class Warm(Interface_Runnable, Interface_Abortable):
         bool
             True if the action is finished, False otherwise.
         """
-        self._log.info(f'[{type(self).__name__}] is triggered.')
+        self._log.info(f'=====LV1[{type(self).__name__}] is triggered.')
+        self.is_running = False
+        self.shared_memory['succeeded'] = False
         # Check device connection
         if self.telescope_status.camera.lower() == 'disconnected':
-            self._log.critical(f'[{type(self).__name__}] is failed: camera is disconnected.')
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is disconnected.')
             return ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
 
         # If not aborted, execute the action
         if self.abort_action.is_set():
             self.abort()
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         try:
             result_warm = self.telescope.camera.warm(settemperature = settemperature,
-                                                   tolerance= tolerance,
-                                                   abort_action = self.abort_action)
+                                                     tolerance= tolerance,
+                                                     abort_action = self.abort_action)
         except WarmingFailedException:
-            self._log.critical(f'[{type(self).__name__}] is failed: camera warming failure.')
+            self.is_running = False
+            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: camera warming failure.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: camera warming failure.')
         except AbortionException:
-            self._log.warning(f'[{type(self).__name__}] is aborted.')
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
-                        
+            self.abort()
         if result_warm:
-            self._log.info(f'[{type(self).__name__}] is finished.')
             self.shared_memory['succeeded'] = True
-        return True 
-            
-    
+        
+        self.is_running = False
+        self._log.info(f'=====LV1[{type(self).__name__}] is finished.')
+        if self.shared_memory['succeeded']:
+            return True    
+        
     def abort(self):
-        """
-        Dummy abort function
-        """
-        pass
+        self.abort_action.set()
+        self.is_running = False
+        self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        raise AbortionException(f'[{type(self).__name__}] is aborted.')

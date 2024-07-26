@@ -150,7 +150,6 @@ class mainFocuser_pwi4(mainConfig):
                 status = self.get_status() 
             if not status['is_connected']:
                 self._log.info('Focuser disconnected')
-
         except:
             self._log.critical('Disconnect failed')
             raise ConnectionException('Disconnect failed')

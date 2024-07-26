@@ -418,12 +418,12 @@
     },
     "7DT21": {
         "g": {
-            "update_time": "2024-04-30T05:17:38.355",
+            "update_time": "2024-07-26T07:35:43.555",
             "succeeded": true,
             "focusval": 10000
         },
         "r": {
-            "update_time": "2024-04-29T12:05:57.797",
+            "update_time": "2024-07-26T07:37:25.138",
             "succeeded": true,
             "focusval": 10000
         },

@@ -297,8 +297,6 @@ class mainMount_pwi4(mainConfig):
             status = self.get_status()
             if abort_action.is_set():
                 self.abort()
-                self._log.warning('Mount homing is aborted')
-                raise AbortionException('Mount homing is aborted')
         self._log.info('Mount is homed')
         return True
 
@@ -430,8 +428,6 @@ class mainMount_pwi4(mainConfig):
             status = self.get_status()
             if abort_action.is_set():
                 self.abort()
-                self._log.warning('Mount parking is aborted')
-                raise AbortionException('Mount slewing is aborted')
         self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
         time.sleep(float(self.config['MOUNT_SETTLETIME']))    
         if not tracking:
@@ -446,7 +442,6 @@ class mainMount_pwi4(mainConfig):
                 raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
         status = self.get_status()
         self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(float(status['alt']), float(status['az'])))
-
         return True
 
     def tracking_on(self):

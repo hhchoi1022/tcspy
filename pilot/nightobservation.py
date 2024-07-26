@@ -389,7 +389,7 @@ class NightObservation(mainConfig):
                         time.sleep(0.5)
                         if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
                             if isinstance(action['action'], (SpecObservation, DeepObservation)):
-                                observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory.items()}
+                                observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory['status'].items()}
                             else:
                                 observation_status =  action['action'].shared_memory['status']
                             self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
@@ -422,7 +422,7 @@ class NightObservation(mainConfig):
             time.sleep(0.5)
             if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
                 if isinstance(action['action'], (SpecObservation, DeepObservation)):
-                    observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory.items()}
+                    observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory['status'].items()}
                 else:
                     observation_status =  action['action'].shared_memory['status']
                 self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
@@ -481,7 +481,7 @@ class NightObservation(mainConfig):
                         time.sleep(0.5)
                         if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
                             if isinstance(action['action'], (SpecObservation, DeepObservation)):
-                                observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory.items()}
+                                observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory['status'].items()}
                             else:
                                 observation_status =  action['action'].shared_memory['status']
                             action_tried = self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
@@ -616,7 +616,7 @@ class NightObservation(mainConfig):
 
     def observation_status(self):
         for action in self.action_queue:
-            for shared_memory in action['action'].shared_memory.values():
+            for shared_memory in action['action'].shared_memory['status'].values():
                 print(dict(shared_memory))
 
 # %%

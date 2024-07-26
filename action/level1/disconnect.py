@@ -46,50 +46,56 @@ class Disconnect(Interface_Runnable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
+        self.is_running = False
     
     def run(self):
         """
         Execute the disconnection action.
         """
-        self._log.info(f'[{type(self).__name__}]" is triggered.')
+        self._log.info(f'=====LV1[{type(self).__name__}] is triggered.')
+        self.is_running = True
+        self.shared_memory['succeeded'] = False
         # disconnect devices
         devices_status = self.telescope_status.dict
         for device_name in self.telescope.devices.keys():
             if self.abort_action.is_set():
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
-                return False
+                self.abort()
             device = self.telescope.devices[device_name]
             status = devices_status[device_name]
             try:
                 device.disconnect()
             except:
                 pass
+                        
 
         # check the device connection
         devices_status = self.telescope_status.dict
-        self._log.info('Checking devices connection...')
+        self._log.info(f'[{type(self).__name__}]Checking devices connection...')
         self._log.info('='*30)
         for device_name in self.telescope.devices.keys():
             if not self.abort_action.is_set():
                 device = self.telescope.devices[device_name]
                 status = devices_status[device_name]
                 if not status == 'disconnected':
-                    self._log.critical(f'{device_name} cannot be disconnected. Check the ASCOM Remote Server')
+                    self._log.critical(f'{device_name} : Connected')
                 else:
                     self._log.info(f'{device_name} : Disconnected')
             else:
-                self._log.warning(f'[{type(self).__name__}] is aborted.')
+                self.abort()
         self._log.info('='*30)
-        self._log.info(f'[{type(self).__name__}] is finished.')
         self.shared_memory['status'] = devices_status
         self.shared_memory['succeeded'] = True
-        return True 
+        
+        self.is_running = False
+        self._log.info(f'=====LV1[{type(self).__name__}] is finished.')
+        if self.shared_memory['succeeded']:
+            return True
     
     def abort(self):
-        """
-        Dummy abort function. Disconnect cannot be aborted 
-        """
-        return 
+        self.abort_action.set()
+        self.is_running = False
+        self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        raise AbortionException(f'[{type(self).__name__}] is aborted.')
 # %%
 if __name__ == '__main__':
     tel1 = SingleTelescope(unitnum = 1)
