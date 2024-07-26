@@ -1,7 +1,0 @@
-{
-    "update_time": "2024-07-04T06:05:58.518",
-    "jd": 2460495.75415,
-    "is_connected": true,
-    "is_safe": true,
-    "name": "OBSTECH Safetymonitor"
-}
