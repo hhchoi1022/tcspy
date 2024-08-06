@@ -6,6 +6,7 @@ from tcspy.devices.observer import mainObserver
 from tcspy.utils.target import MultiTargets
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.databases import SQL_Connector
+from tcspy.utils.nightsession import NightSession
 
 from astropy.table import Table 
 from astropy.time import Time
@@ -76,7 +77,7 @@ class DB_Daily(mainConfig):
         self.constraints = self._set_constrints()
         self.utctime = utctime
         self.obsinfo = self._set_obs_info(utctime = utctime)
-        self.obsnight = self._set_obsnight(utctime = utctime, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
+        self.obsnight = NightSession(utctime = utctime).obsnight
     '''
     @property    
     def connected(self):
@@ -418,24 +419,6 @@ class DB_Daily(mainConfig):
         info.observer_astroplan = self.observer._observer
         info.is_night = self.observer.is_night(utctime)
         return info
-    
-    def _set_obsnight(self,
-                      utctime : Time = Time.now(),
-                      horizon_prepare : float = -5,
-                      horizon_astro : float = -18):
-        class night: pass
-        night.sunrise_civil = self.observer.tonight(time = utctime, horizon = 0)[1]
-        night.sunset_civil = self.observer.sun_settime(night.sunrise_civil, mode = 'previous', horizon= 0)        
-        night.sunrise_prepare = self.observer.sun_risetime(night.sunrise_civil, mode = 'previous', horizon= horizon_prepare)
-        night.sunset_prepare = self.observer.sun_settime(night.sunrise_civil, mode = 'previous', horizon= horizon_prepare)
-        night.sunrise_astro = self.observer.sun_risetime(night.sunrise_civil, mode = 'previous', horizon= horizon_astro)
-        night.sunset_astro = self.observer.sun_settime(night.sunrise_civil, mode = 'previous', horizon= horizon_astro)
-        #night.sunrise_civil = self.observer.sun_risetime(night.sunrise_prepare, mode = 'previous', horizon= 0)
-        #night.sunset_civil = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= 0)        
-        night.midnight = Time((night.sunset_astro.jd + night.sunrise_astro.jd)/2, format = 'jd')
-        night.time_inputted = utctime
-        night.current = Time.now()
-        return night
 
     def _set_constrints(self):
         class constraint: pass
@@ -522,7 +505,7 @@ class DB_Daily(mainConfig):
 if __name__ == '__main__':
     D = DB_Daily(Time.now())
     #D.from_GSheet('240715')
-    D.update_RIS_obscount()
+    #D.update_RIS_obscount()
     #D.from_RIS(size = 300)
     #D.initialize(True)
 # %%

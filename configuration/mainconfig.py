@@ -8,7 +8,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration',
+                 configpath : str = '/home/hhchoi1022/tcspy/configuration',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -114,7 +114,9 @@ class mainConfig:
         
         image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
                             FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$.fits",
-                            IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/')
+                            IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/',
+                            IMAGE_SAVEHEADER = True,
+                            )
         
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
@@ -158,8 +160,9 @@ class mainConfig:
         target_params = dict(TARGET_MINALT=30,
                              TARGET_MAXALT=90,
                              TARGET_MOONSEP=40,
+                             TARGET_SUNALT_FLAT=0,
                              TARGET_SUNALT_PREPARE=-5,
-                             TARGET_SUNALT_ASTRO=-18,
+                             TARGET_SUNALT_OBSERVATION=-18,
                              TARGET_WEIGHT_ALT = 0.5,
                              TARGET_WEIGHT_PRIORITY = 0.5)
 

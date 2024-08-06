@@ -5,6 +5,7 @@ from tcspy.utils.target import MultiTargets
 from tcspy.configuration import mainConfig
 from tcspy.utils.databases import SQL_Connector
 from tcspy.devices.observer import mainObserver
+from tcspy.utils.nightsession import NightSession
 
 from astropy.table import Table 
 from astropy.time import Time
@@ -70,6 +71,8 @@ class DB_Annual(mainConfig):
         self.tblname = tbl_name
         self.sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
         self.constraints = self._set_constrints()
+        self.nightsession = NightSession()
+
     '''
     @property    
     def connected(self):
@@ -176,7 +179,7 @@ class DB_Annual(mainConfig):
         Table
         	A table containing the best targets for the night.
         """
-        obsnight = self._set_obsnight(utcdate = utcdate, horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_astro = self.config['TARGET_SUNALT_ASTRO'])
+        obsnight = self.nightsession.set_obsnight(utctime = utcdate, horizon_flat = self.config['TARGET_SUNALT_FLAT'], horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_observation = self.config['TARGET_SUNALT_OBSERVATION'])
         observable_fraction_criteria = observable_minimum_hour / obsnight.observable_hour 
         
         #if not self.sql.connected:
@@ -195,7 +198,7 @@ class DB_Annual(mainConfig):
         obs_tbl = observability_table(constraints = self.constraints.astroplan, 
                                       observer = self.observer._observer,
                                       targets = SkyCoord(target_tbl['RA'], target_tbl['De'], unit = 'deg'), 
-                                      time_range = [obsnight.sunset_astro, obsnight.sunrise_astro],
+                                      time_range = [obsnight.sunset_observation, obsnight.sunrise_observation],
                                       time_grid_resolution = 30 * u.minute)
         target_tbl_observable_idx = obs_tbl['fraction of time observable'] > observable_fraction_criteria
         target_always_idx = target_tbl['risedate'] == 'Always'
@@ -205,7 +208,7 @@ class DB_Annual(mainConfig):
         target_tbl_by_obscount = target_tbl_observable.group_by('obs_count')        
         
         # Create a time grid
-        time_grid = obsnight.sunset_astro + np.linspace(0, 1, n_time_grid) * (obsnight.sunrise_astro - obsnight.sunset_astro)
+        time_grid = obsnight.sunset_observation + np.linspace(0, 1, n_time_grid) * (obsnight.sunrise_observation - obsnight.sunset_observation)
         # Determine the number of targets for each time grid
         n_target_for_each_timegrid = np.full(n_time_grid, size / n_time_grid, dtype = int)
         n_target_for_each_timegrid[len(n_target_for_each_timegrid)//2] += size - sum(n_target_for_each_timegrid)
@@ -283,32 +286,6 @@ class DB_Annual(mainConfig):
         #if not self.sql.connected:
         #Z    self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
-    
-    def _set_obsinfo(self,
-                      utcdate : Time = Time.now()):
-        class info: pass
-        info.moon_phase = self.observer.moon_phase(utcdate)
-        info.moon_radec = self.observer.moon_radec(utcdate)
-        info.sun_radec = self.observer.sun_radec(utcdate)
-        info.observer_info = self.observer.get_status()
-        info.observer_astroplan = self.observer._observer
-        info.is_night = self.observer.is_night(utcdate)
-        return info
-    
-    def _set_obsnight(self,
-                      utcdate : Time = Time.now(),
-                      horizon_prepare : float = -5,
-                      horizon_astro : float = -18):
-        class night: pass
-        night.sunrise_prepare = self.observer.tonight(time = utcdate, horizon = horizon_prepare)[1]
-        night.sunset_prepare = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_prepare)
-        night.sunrise_astro = self.observer.sun_risetime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
-        night.sunset_astro = self.observer.sun_settime(night.sunrise_prepare, mode = 'previous', horizon= horizon_astro)
-        night.observable_hour = (night.sunrise_astro - night.sunset_astro).jd * 24
-        night.midnight = Time((night.sunset_astro.jd + night.sunrise_astro.jd)/2, format = 'jd')
-        night.time_inputted = utcdate
-        night.current = Time.now()
-        return night
 
     def _set_constrints(self):
         class constraint: pass
@@ -324,4 +301,3 @@ class DB_Annual(mainConfig):
             constraint.moonsep = self.config['TARGET_MOONSEP']
         constraint.astroplan = constraint_astroplan
         return constraint  
-# %%

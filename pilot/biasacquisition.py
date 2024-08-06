@@ -44,7 +44,10 @@ class BiasAcquisition(mainConfig):
         self.is_running = False
         self.abort_action.set()
         
-    def _process(self, count, binning, gain):
+    def _process(self, 
+                 count, 
+                 binning : int = 1, 
+                 gain : int = 2750):
         self.is_running = True
         id_ = uuid.uuid4().hex
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
