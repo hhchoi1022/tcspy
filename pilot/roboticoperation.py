@@ -17,31 +17,34 @@ from tcspy.utils.databases import DB
 from tcspy.utils import NightSession
 import astropy.units as u
 #%%
+obsnight = NightSession(Time.now()).obsnight
 
 time_now = Time.now().datetime
 time_now_str = '%.2d:%.2d'%(time_now.hour, time_now.minute)
 
 # Startup
-time_prepare = DB().Daily.obsnight.sunset_prepare.datetime
-time_prepare_str = '%.2d:%.2d'%(time_prepare.hour-4, time_prepare.minute)
+time_startup =obsnight.sunset_prepare.datetime
+time_startup_str = '%.2d:%.2d'%(time_startup.hour-4, time_startup.minute)
 
 # Observation start 
-time_startobs = DB().Daily.obsnight.sunset_astro.datetime
+time_startobs =obsnight.sunset_astro.datetime
 time_startobs_str = '%.2d:%.2d'%(time_startobs.hour-4, time_startobs.minute)
 
 # BIAS
-time_bias = DB().Daily.obsnight.sunrise_prepare.datetime
+time_bias =obsnight.sunrise_prepare.datetime
 time_bias_str = '%.2d:%.2d'%(time_bias.hour-4, time_bias.minute)
 
 # DARK
 time_dark = (Time(time_bias) + 5* u.minute).datetime
 time_dark_str = '%.2d:%.2d'%(time_dark.hour-4, time_dark.minute )
 
-# Shutdown
-time_endobs = (Time(DB().Daily.obsnight.sunrise_civil.datetime) + 30 * u.minute).datetime
-time_endobs_str = '%.2d:%.2d'%(time_endobs.hour-4, time_endobs.minute)
+# FLAT
+time_flat = obsnight.sunrise_flat.datetime
+time_flat_str = '%.2d:%.2d'%(time_flat.hour-4, time_flat.minute )
 
-#%%
+# Shutdown
+time_shutdown = (Time(obsnight.sunrise_civil.datetime) + 30 * u.minute).datetime
+time_shutdown_str = '%.2d:%.2d'%(time_shutdown.hour-4, time_shutdown.minute)
 
 #%%
 # Define the telescopes
@@ -104,16 +107,16 @@ def run_shutdown():
         while action_shutdown.is_running:
             time.sleep(1)
 
-    
 def run_threaded(job_func):
     job_thread = threading.Thread(target=job_func)
     job_thread.start()
     
-schedule.every().day.at(time_prepare_str).do(run_threaded, run_startup)
+schedule.every().day.at(time_startup_str).do(run_threaded, run_startup)
 schedule.every().day.at(time_startobs_str).do(run_threaded, run_nightobs)
 schedule.every().day.at(time_bias_str).do(run_threaded, run_bias)
 schedule.every().day.at(time_dark_str).do(run_threaded, run_dark)
-schedule.every().day.at(time_endobs_str).do(run_threaded, run_shutdown)
+schedule.every().day.at(time_flat_str).do(run_threaded, run_flat)
+schedule.every().day.at(time_shutdown_str).do(run_threaded, run_shutdown)
 
 while True:
     schedule.run_pending()
