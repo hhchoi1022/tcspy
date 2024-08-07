@@ -16,6 +16,7 @@ from tcspy.pilot import Shutdown
 from tcspy.utils.databases import DB
 from tcspy.utils import NightSession
 import astropy.units as u
+
 #%%
 obsnight = NightSession(Time.now()).obsnight
 
@@ -23,11 +24,11 @@ time_now = Time.now().datetime
 time_now_str = '%.2d:%.2d'%(time_now.hour, time_now.minute)
 
 # Startup
-time_startup =obsnight.sunset_prepare.datetime
+time_startup =obsnight.sunset_observation.datetime
 time_startup_str = '%.2d:%.2d'%(time_startup.hour-4, time_startup.minute)
 
 # Observation start 
-time_startobs =obsnight.sunset_astro.datetime
+time_startobs =obsnight.sunset_observation.datetime
 time_startobs_str = '%.2d:%.2d'%(time_startobs.hour-4, time_startobs.minute)
 
 # BIAS
@@ -35,7 +36,7 @@ time_bias =obsnight.sunrise_prepare.datetime
 time_bias_str = '%.2d:%.2d'%(time_bias.hour-4, time_bias.minute)
 
 # DARK
-time_dark = (Time(time_bias) + 5* u.minute).datetime
+time_dark = (obsnight.sunrise_prepare + 5 * u.minute).datetime
 time_dark_str = '%.2d:%.2d'%(time_dark.hour-4, time_dark.minute )
 
 # FLAT

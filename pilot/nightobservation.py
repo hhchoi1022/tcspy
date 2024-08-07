@@ -16,6 +16,7 @@ from tcspy.utils.databases import DB
 from tcspy.utils.error import *
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.exception import *
+from tcspy.utils.nightsession import NightSession
 #%%
 
 
@@ -29,6 +30,7 @@ class NightObservation(mainConfig):
         self.multitelescopes = MultiTelescopes
         self.abort_action = abort_action
         self.DB = DB(utctime = Time.now()).Daily
+        self.obsnight = NightSession(Time.now()).obsnight
         self.weather = next(iter(self.multitelescopes.devices.values())).devices['weather']
         self.safetymonitor = next(iter(self.multitelescopes.devices.values())).devices['safetymonitor']
 
@@ -82,9 +84,6 @@ class NightObservation(mainConfig):
         for tel_name, status in status_devices.items():
             if self._is_tel_ready(status):
                 self.tel_queue[tel_name] = self.multitelescopes.devices[tel_name]
-        
-        # Set observing night
-        self.obsnight = self.DB.obsnight
         
         # Initialization is finished
 
