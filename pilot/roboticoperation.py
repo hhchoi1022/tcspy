@@ -24,7 +24,7 @@ time_now = Time.now().datetime
 time_now_str = '%.2d:%.2d'%(time_now.hour, time_now.minute)
 
 # Startup
-time_startup =obsnight.sunset_observation.datetime
+time_startup =obsnight.sunset_prepare.datetime
 time_startup_str = '%.2d:%.2d'%(time_startup.hour-4, time_startup.minute)
 
 # Observation start 
@@ -46,7 +46,13 @@ time_flat_str = '%.2d:%.2d'%(time_flat.hour-4, time_flat.minute )
 # Shutdown
 time_shutdown = (Time(obsnight.sunrise_civil.datetime) + 30 * u.minute).datetime
 time_shutdown_str = '%.2d:%.2d'%(time_shutdown.hour-4, time_shutdown.minute)
-
+print('The schedule is:')   
+print('Startup:', time_startup_str)
+print('Startobs:', time_startobs_str)
+print('Bias:', time_bias_str)
+print('Dark:', time_dark_str)
+print('Flat:', time_flat_str)
+print('Shutdown:', time_shutdown_str)
 #%%
 # Define the telescopes
 list_telescopes = [SingleTelescope(1),

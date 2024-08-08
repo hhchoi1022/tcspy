@@ -142,7 +142,7 @@ class mainImage(mainConfig):
             self.hdu.writeto(filepath, overwrite = False) 
         
         if self._configinfo['IMAGE_SAVEHEADER']:
-            headername = filename.split('')[0] + '.hdr'
+            headername = filename.split('.')[0] + '.hdr'
             headerpath = os.path.join(self._configinfo['IMAGE_PATH'], foldername, headername)
             with open(headerpath, 'w') as f:
                 f.write(self.hdu.header.tostring(sep = '\n'))

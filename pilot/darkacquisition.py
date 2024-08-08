@@ -42,11 +42,7 @@ class DarkAcquisition(mainConfig):
         self.is_running = False
         self.abort_action.set()
         
-    def _process(self, 
-                 count, 
-                 exptime, 
-                 binning : int = 1, 
-                 gain : int = 2750):
+    def _process(self, count, exptime, binning, gain):
         self.is_running = True
         id_ = uuid.uuid4().hex
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
@@ -95,4 +91,3 @@ if __name__ == '__main__':
     b = DarkAcquisition(m, Event())
     b.run(gain = 2750, exptime = 100)
     #b.run(gain = 0, exptime = 30)
-# %%

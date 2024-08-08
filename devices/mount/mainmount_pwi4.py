@@ -330,7 +330,7 @@ class mainMount_pwi4(mainConfig):
         if force_action:
             self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
         else:
-            if altaz.alt.deg < self.float(self.config['TARGET_MINALT']):
+            if altaz.alt.deg < float(self.config['TARGET_MINALT']):
                 self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
                 raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
         
@@ -401,7 +401,7 @@ class mainMount_pwi4(mainConfig):
         if force_action:
             self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %alt)
         else:
-            if alt < self.float(self.config['TARGET_MINALT']):
+            if alt < float(self.config['TARGET_MINALT']):
                 self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
                 raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %alt)
         
