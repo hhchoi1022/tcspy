@@ -31,12 +31,16 @@ time_startup_str = '%.2d:%.2d'%(time_startup.hour-4, time_startup.minute)
 time_startobs =obsnight.sunset_observation.datetime
 time_startobs_str = '%.2d:%.2d'%(time_startobs.hour-4, time_startobs.minute)
 
+# Observation start 
+time_endobs =obsnight.sunrise_observation.datetime
+time_endobs_str = '%.2d:%.2d'%(time_endobs.hour-4, time_endobs.minute)
+
 # BIAS
-time_bias =obsnight.sunrise_prepare.datetime
+time_bias =obsnight.sunrise_observation.datetime
 time_bias_str = '%.2d:%.2d'%(time_bias.hour-4, time_bias.minute)
 
 # DARK
-time_dark = (obsnight.sunrise_prepare + 5 * u.minute).datetime
+time_dark = (obsnight.sunrise_observation + 5 * u.minute).datetime
 time_dark_str = '%.2d:%.2d'%(time_dark.hour-4, time_dark.minute )
 
 # FLAT
@@ -49,6 +53,7 @@ time_shutdown_str = '%.2d:%.2d'%(time_shutdown.hour-4, time_shutdown.minute)
 print('The schedule is:')   
 print('Startup:', time_startup_str)
 print('Startobs:', time_startobs_str)
+print('Endobs:', time_endobs_str)
 print('Bias:', time_bias_str)
 print('Dark:', time_dark_str)
 print('Flat:', time_flat_str)

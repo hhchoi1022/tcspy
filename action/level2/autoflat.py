@@ -34,6 +34,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         self.shared_memory['status'] = dict()
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
         self.is_running = False
+        self.is_focus_changed = False
     
     def run(self,
             count : int = 9,
@@ -92,6 +93,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         # Defocusing 
         try:
             result_changefocus = action_changefocus.run(position = 3000, is_relative= True)
+            self.is_focus_changed = True
         except ConnectionException:
             self.is_running = False
             self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
@@ -287,6 +289,22 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                 raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
             except AbortionException:
                 self.abort()
+        
+        # Defocusing 
+        try:
+            result_changefocus = action_changefocus.run(position = -3000, is_relative= True)
+            self.is_focus_changed = False
+        except ConnectionException:
+            self.is_running = False
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+        except AbortionException:
+            self.abort()
+        except ActionFailedException:
+            self.is_running = False
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+    
         self.is_running = False
         self.shared_memory['succeeded'] = all(observation_status.values())
         
@@ -296,9 +314,27 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         
     def abort(self):
         self.abort_action.set()
+        time.sleep(10)
+        # Defocusing 
+        try:
+            action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = Event())
+            result_changefocus = action_changefocus.run(position = 3000, is_relative= True)
+        except ConnectionException:
+            self.is_running = False
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
+        except ActionFailedException:
+            self.is_running = False
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
+    
         self.is_running = False
         self._log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
 
+# %%
+S = SingleTelescope(11)
+# %%
+B = AutoFlat(S, Event())
 # %%

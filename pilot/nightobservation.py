@@ -637,6 +637,5 @@ if __name__ == '__main__':
     abort_action = Event()
     #Startup(multitelescopes= M , abort_action= abort_action).run()
     R = NightObservation(M, abort_action= abort_action)
-    #Thread(target= R.observation).start()
-    #R.run()
+    R.run()
 # %%
