@@ -11,7 +11,7 @@ from astropy.io import ascii
 import numpy as np
 from pathlib import Path
 #%%
-class GoogleSheet(mainConfig):
+class GoogleSheet():
     """
     [History]
     =========
@@ -54,7 +54,6 @@ class GoogleSheet(mainConfig):
         authorize_json_file (str): The path of the JSON file that contains the authorization credentials.
         scope (list): The list of OAuth2 scopes.
         """
-        super().__init__()
         self._url = spreadsheet_url
         self._authfile = authorize_json_file
         self._scope = scope
@@ -187,5 +186,17 @@ class GoogleSheet(mainConfig):
             worksheet.update([header])
 # %%
 if __name__ =='__main__':
-    GoogleSheet().to_DB(sheet_name = 'S240422ed', DB_tbl_name = 'Daily')
+    tbl = ascii.read('/home/hhchoi1022/Downloads/calspec_2024-07-20.csv')
+    tbl.rename_column('Star name', 'objname')
+    tbl.rename_column('Decl', 'De')
+    tbl.rename_column('obs_count', 'count')
+    obscount_new = [obscount//2 for obscount in tbl['count']]
+    tbl['obsmode'] = 'Spec'
+    tbl['specmode'] = 'calspec'
+    tbl['group'] = 1
+    tbl['priority'] = 1 
+    tbl['gain'] = 0
+    tbl['count'] = obscount_new
+    GoogleSheet().write_sheet_data(sheet_name = '20240808', data  = tbl, append = False)
+    
 # %%
