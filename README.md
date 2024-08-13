@@ -10,7 +10,7 @@ To achieve these objectives, TCSpy leverages the ASCOM Alpaca and PWI4 HTTP API 
 
 1. ASCOM supported observation devices: TCSpy requires observation devices that is compatible with the ASCOM (AStronomy Common Object Model) platform.
 2. Telescope Control System computer (TCS computers): Dedicated computers for each telescope are necessary for the communication between the telescope and MCS computer. For example, if there are 20 telescopes, 20 TCS computers are required. 
-3. Mother Control System computer (MCS computer):  MCS computer serves as a central hub for coordinating the operations of multiple telescopes, receiving commands and transmitting instructions to individual telescopes via the TCS computers.
+3. Main Control System computer (MCS computer):  MCS computer serves as a central hub for coordinating the operations of multiple telescopes, receiving commands and transmitting instructions to individual telescopes via the TCS computers.
 4. Network configuration: All MCS and TCS computers must be connected to the same local network for securer and faster communication.
 5. High-speed local network speed: A high-speed local network infrastructure is crucial for facilitating rapid data transfer and communication between MCS computer and multiple telescopes. 
 6. (Optional) Planewave instruments: For Planewave instruments, TCSpy can establish connections solely with the focuser and mount. This connectivity is possible if the instruments support the PWI4 HTTP API. 
