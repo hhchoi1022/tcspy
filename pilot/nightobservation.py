@@ -344,8 +344,8 @@ class NightObservation(mainConfig):
         self.is_ToO_triggered = True
         aborted_action = self.abort_observation()
         self.multitelescopes.log.info('ToO is triggered.================================')
-        obs_start_time = self.obsnight.sunset_astro
-        obs_end_time = self.obsnight.sunrise_astro
+        obs_start_time = self.obsnight.sunset_observation
+        obs_end_time = self.obsnight.sunrise_observation
         now = Time.now()
         
         # Wait until sunset
@@ -359,8 +359,8 @@ class NightObservation(mainConfig):
             if self.abort_action.is_set():
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
-                
-        aborted_action = None
+        
+        aborted_action_ToO = None
         # Trigger observation until sunrise
         while now < obs_end_time:
             if self.abort_action.is_set():
@@ -382,8 +382,8 @@ class NightObservation(mainConfig):
             # If weather is safe
             if is_weather_safe:      
                 # If there is any aborted_action due to unsafe weather, resume the observation
-                if aborted_action:
-                    for action in aborted_action:
+                if aborted_action_ToO:
+                    for action in aborted_action_ToO:
                         time.sleep(0.5)
                         if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
                             if isinstance(action['action'], (SpecObservation, DeepObservation)):
@@ -409,7 +409,7 @@ class NightObservation(mainConfig):
                     self._obstrigger(target = best_target, abort_action = self._ToO_abort)
             # If weather is unsafe
             else:
-                aborted_action = self.abort_ToO()
+                aborted_action_ToO = self.abort_ToO()
                 self.multitelescopes.log.info(f'[{type(self).__name__} ToO is aborted: Unsafe weather]')
                 time.sleep(200)
                 self._ToO_abort = Event()
@@ -445,11 +445,11 @@ class NightObservation(mainConfig):
         self.is_running = True
         self._observation_abort = Event()
         self._ToO_abort = Event()
-        obs_start_time = self.obsnight.sunset_astro
-        obs_end_time = self.obsnight.sunrise_astro
+        obs_start_time = self.obsnight.sunset_observation
+        obs_end_time = self.obsnight.sunrise_observation
         now = Time.now() 
         
-        # Wait until sunset
+        # Wait until sunse
         if now < obs_start_time:
             self.multitelescopes.log.info('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
             print('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
@@ -503,11 +503,16 @@ class NightObservation(mainConfig):
                         print('No observable target exists... Waiting for target being observable or new target input')
             # If weather is unsafe
             else:
-                aborted_action = self.abort_observation()
-                self.multitelescopes.log.info(f'[{type(self).__name__} is aborted: Unsafe weather]')
+                if len(self.action_queue) > 0:
+                    aborted_action = self.abort_observation()
+                    self.multitelescopes.log.info(f'[{type(self).__name__}] is aborted: Unsafe weather')
+                self.multitelescopes.log.info(f'[{type(self).__name__}] is waiting for safe weather condition')
                 time.sleep(200)
                 self._observation_abort = Event()
             time.sleep(0.5)
+        if len(self.action_queue) > 0:
+            aborted_action = self.abort_observation()
+        time.sleep(10)
         self.is_running = False
         print('observation finished', Time.now())
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished')

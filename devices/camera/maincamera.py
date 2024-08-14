@@ -359,7 +359,7 @@ class mainCamera(mainConfig):
 
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
-                        self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
+                        self._log.warning('CCD Temperature cannot be reached to the set temp, current temp: {}'.format(self.device.CCDTemperature))
                         raise CoolingFailedException('Cooling operation has stalled: camera cannot reach the set temperature')
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
@@ -427,7 +427,7 @@ class mainCamera(mainConfig):
 
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
-                        self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
+                        self._log.warning('CCD Temperature cannot be reached to the set temp, current temp: {}'.format(self.device.CCDTemperature))
                         break
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))

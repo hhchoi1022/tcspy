@@ -12,7 +12,7 @@ from tqdm import tqdm
 class DataTransferManager(mainConfig):
     
     def __init__(self,
-                 source_home_directory : str = '/data2/obsdata/',
+                 source_home_directory : str = '/data1/obsdata_archive/',
                  archive_home_directory : str = '/data1/obsdata_archive/',
                  server_home_directory : str = '/data/obsdata/obsdata_from_mcs/'):
         super().__init__()
@@ -26,19 +26,20 @@ class DataTransferManager(mainConfig):
     def run(self, 
             key: str = '*/image/20240515', 
             output_file_name: str = None, 
+            tar : bool = True,
             protocol = 'gridftp', 
             thread = True):
         if thread:
             if protocol == 'hpnscp':
-                self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name))
+                self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name, tar = tar))
             else:            
-                self.transfer_thread = Thread(target=self.hpnscp_transfer, kwargs=dict(key = key, output_file_name = output_file_name))
+                self.transfer_thread = Thread(target=self.hpnscp_transfer, kwargs=dict(key = key, output_file_name = output_file_name, tar = tar))
             self.transfer_thread.start()
         else:
             if protocol == 'hpnscp':
-                self.hpnscp_transfer(key = key, output_file_name= output_file_name)
+                self.hpnscp_transfer(key = key, output_file_name= output_file_name, tar = tar)
             else:
-                self.gridFTP_transfer(key = key, output_file_name= output_file_name)
+                self.gridFTP_transfer(key = key, output_file_name= output_file_name, tar = tar)
         
     def abort(self):
         if self.process and self.process.poll() is None:
@@ -56,13 +57,17 @@ class DataTransferManager(mainConfig):
             
     def gridFTP_transfer(self,
                          key : str = '*/image/20240515',
-                         output_file_name : str =  None):
+                         output_file_name : str =  None,
+                         tar : bool = True):
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
         verbose_command = ''
         if self.gridftp.verbose:
             verbose_command = '-vb'
-        source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.source_homedir, output_file_name)}', compress = False)
+        if tar:
+            source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.archive_homedir, output_file_name)}', compress = False)
+        else:
+            source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
         command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir}"
         try:
             self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -79,11 +84,15 @@ class DataTransferManager(mainConfig):
 
     def hpnscp_transfer(self,
                         key : str = '*/image/20240503',
-                        output_file_name : str = None):
+                        output_file_name : str = None,
+                        tar : bool = True):
 
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
-        source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.source_homedir, output_file_name)}', compress = False)
+        if tar:
+            source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.archive_homedir, output_file_name)}', compress = False)
+        else:
+            source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
         command = f"hpnscp -P {self.server.portnum} {source_path} {self.server.username}@{self.server.ip}:{self.server_homedir}"
         try:
             self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -200,9 +209,9 @@ class DataTransferManager(mainConfig):
 A = DataTransferManager()
 #%%
 import time
-file_key_list = ['*/image/2024-07-25_gain2750', '*/image/2024-07-26_gain2750', '*/image/2024-07-27_gain2750', '*/image/2024-07-28_gain2750', '*/image/2024-07-29_gain2750']
+file_key_list = ['*/2024-08-08_gain2750']
 for file_key in file_key_list:
-    A.run(key = file_key, thread = False)
+    A.run(key = file_key, thread = False, tar=  False)
     time.sleep(100)
 #A.run(key = f'*/images/2024-07-01_gain0', thread = False)
 # %%

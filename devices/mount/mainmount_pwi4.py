@@ -252,7 +252,7 @@ class mainMount_pwi4(mainConfig):
                 raise ParkingFailedException('Mount parking is failed : Mount disable failed')
         self._log.info('Mount is parked')
         return True
-
+    
     def unpark(self):
         """
         Unpark the telescope.
@@ -285,16 +285,24 @@ class mainMount_pwi4(mainConfig):
         
         # Find home
         try:
-            self.device.mount_find_home()            
+            self.device.mount_find_home()
+            is_slewing = True       
         except:
             self._log.critical('Mount homing is failed')
             raise FindingHomeFailedException('Mount homing is failed')  
         
         time.sleep(float(self.config['MOUNT_CHECKTIME']))
-        status = self.get_status()
-        while not status['is_stationary']:
+        PWI_status = self.PWI_status
+        alt = PWI_status.mount.altitude_degs
+        az = PWI_status.mount.azimuth_degs
+        while is_slewing:
             time.sleep(float(self.config['MOUNT_CHECKTIME']))
-            status = self.get_status()
+            PWI_status = self.PWI_status
+            diff = abs(PWI_status.mount.altitude_degs - alt) + abs(PWI_status.mount.azimuth_degs - az)
+            alt = PWI_status.mount.altitude_degs
+            az = PWI_status.mount.azimuth_degs
+            if diff < 0.1:
+                is_slewing = False
             if abort_action.is_set():
                 self.abort()
         self._log.info('Mount is homed')
@@ -491,5 +499,5 @@ if __name__ == '__main__':
     #tel.slew_altaz(alt = 35, az = 270, abort_action =abort_action)
     from multiprocessing import Process
     from threading import Thread
-    t  = Thread(target = tel.slew_altaz, kwargs = dict(alt = 35, az = 300, abort_action =abort_action))
+    tel.find_home(abort_action)
 #%%

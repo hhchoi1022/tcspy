@@ -271,7 +271,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Sky is too bright.')
                 #
                 else:
-                    exptime = np.round(np.max([exptime_min, self.telescope.config['AUTOFLAT_MINEXPTIME']]),2)
+                    exptime = np.round(np.max([np.mean([exptime_min, exptime_max]), self.telescope.config['AUTOFLAT_MINEXPTIME']]),2)
                     self._log.info(f'[{type(self).__name__}] Exposure time is adjusted to {exptime} sec')
             self._log.info(f'=====[{type(self).__name__}] for filter {filter_} is succeeded')
         

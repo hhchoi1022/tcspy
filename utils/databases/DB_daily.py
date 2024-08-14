@@ -272,16 +272,18 @@ class DB_Daily(mainConfig):
         RIS = DB_Annual(tbl_name = 'RIS')
         RIS_data = RIS.data
         obscount = 0
+        remove_ids = []
         for target in obs_tbl:
             try:
                 count_before = RIS_data[RIS_data['id'] == target['id']]['obs_count']
                 if len(count_before) == 1:
-                    RIS.update_targets_count(target_id = target['id'], count = count_before[0] +1)
+                    RIS.update_targets_count(target_id = target['id'], count = count_before[0] +1, note = target['note'])
                     obscount +=1
+                    remove_ids.append(obs_tbl['id'])
             except:
                 pass
         if remove:
-            self.sql.remove_rows(tbl_name = self.tblname, ids = list(obs_tbl['id']))
+            self.sql.remove_rows(tbl_name = self.tblname, ids = remove_ids)
         print(f'{obscount} RIS tiles are updated')
     
     def from_GSheet(self,
@@ -504,8 +506,8 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     D = DB_Daily(Time.now())
-    #D.from_GSheet('240715')
-    #D.update_RIS_obscount()
+    #D.from_GSheet('240808')
+    #D.update_RIS_obscount(remove = False)
     #D.from_RIS(size = 300)
     #D.initialize(True)
 # %%

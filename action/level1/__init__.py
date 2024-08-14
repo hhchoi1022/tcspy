@@ -7,6 +7,7 @@ from .exposure import Exposure
 from .fansoff import FansOff
 from .fanson import FansOn
 from .park import Park
+from .home import Home
 from .slewRADec import SlewRADec
 from .slewAltAz import SlewAltAz
 from .trackingoff import TrackingOff

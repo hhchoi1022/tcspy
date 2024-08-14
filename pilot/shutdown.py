@@ -35,7 +35,7 @@ class Shutdown(mainConfig):
     def abort(self):
         self.abort_action.set()
 
-    def _process(self, slew = True, warm= True):
+    def _process(self, slew, warm):
         self.is_running = True
         if slew:
             # Telescope slewing

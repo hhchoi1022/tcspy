@@ -89,5 +89,7 @@ if __name__ == '__main__':
                      ]
     m = MultiTelescopes(list_telescope)
     b = DarkAcquisition(m, Event())
-    b.run(gain = 2750, exptime = 100)
+    b.run(gain = 2750, exptime = 30)
     #b.run(gain = 0, exptime = 30)
+
+# %%
