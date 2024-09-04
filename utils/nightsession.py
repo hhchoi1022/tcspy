@@ -13,7 +13,7 @@ class NightSession:
 
     def set_obsnight(self,
                      utctime : Time = Time.now(),
-                     horizon_flat : float = -7,
+                     horizon_flat : float = -8,
                      horizon_prepare : float = -10,
                      horizon_observation : float = -18):
         class obsnight: 

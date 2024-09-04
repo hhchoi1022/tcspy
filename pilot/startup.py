@@ -76,7 +76,7 @@ class Startup(mainConfig):
         self.abort_action.set()
         self.is_running = False
     
-    def _process(self, home, slew, cool):
+    def _process(self, home = True, slew = True, cool = True):
         """
         Performs the necessary steps to startup the telescopes.
 
@@ -227,15 +227,16 @@ class Startup(mainConfig):
 if __name__ == '__main__':
     import time
     start = time.time()
-    list_telescopes = [SingleTelescope(1),
+    list_telescopes = [#SingleTelescope(1),
                          SingleTelescope(2),
                          SingleTelescope(3),
+                         SingleTelescope(4),
                          SingleTelescope(5),
                          SingleTelescope(6),
                          SingleTelescope(7),
                          SingleTelescope(8),
                          SingleTelescope(9),
-                         SingleTelescope(10),
+                         SingleTelescope(10),  
                          SingleTelescope(11),
                         ]
     
@@ -245,7 +246,7 @@ if __name__ == '__main__':
     M = MultiTelescopes(list_telescopes)
     abort_action = Event()
     S = Startup(M, abort_action = abort_action)
-    S.run(slew = False, cool = False)
+    S.run(home = True, slew = True, cool = True)
 #%%
 if __name__ == '__main__':
     import schedule

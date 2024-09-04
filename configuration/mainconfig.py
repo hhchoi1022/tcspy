@@ -14,13 +14,13 @@ class mainConfig:
         self.config = dict()
                 
         # global config params
-        self._configfilepath_global = configpath
-        self._configfilekey_global = os.path.join(self._configfilepath_global, '*.config')
+        self.path_global = configpath
+        self._configfilekey_global = os.path.join(self.path_global, '*.config')
         self._configfiles_global = glob.glob(self._configfilekey_global)
             
-        if not os.path.isfile(os.path.join(self._configfilepath_global, 'TCSpy.config')):
-            self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self._configfilepath_global)
-            raise RuntimeError(f'TCSpy.config must be located in the configuration folder. \n New TCSpy.config file is created: {os.path.join(self._configfilepath_global, "TCSpy.config")} ')
+        if not os.path.isfile(os.path.join(self.path_global, 'TCSpy.config')):
+            self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_global)
+            raise RuntimeError(f'TCSpy.config must be located in the configuration folder. \n New TCSpy.config file is created: {os.path.join(self.path_global, "TCSpy.config")} ')
         else:
             config_global = self._load_configuration(self._configfiles_global)
             self.config.update(config_global)
@@ -28,8 +28,8 @@ class mainConfig:
         if self.unitnum:
             # Specified units config params
             self.tel_name = self.config["TCSPY_TEL_NAME"] + '%.2d' % self.unitnum
-            self._configfilepath_unit = os.path.join(configpath, self.tel_name)
-            self._configfilekey_unit = os.path.join(self._configfilepath_unit, '*.config')
+            self.path_unit = os.path.join(configpath, self.tel_name)
+            self._configfilekey_unit = os.path.join(self.path_unit, '*.config')
             self._configfiles_unit = glob.glob(self._configfilekey_unit)
             if len(self._configfiles_unit) == 0:
                 print('No configuration file is found.\nTo make default configuration files, run tcspy.configuration.make_config')
@@ -63,8 +63,11 @@ class mainConfig:
 
     def _initialize_config(self,
                            ip_address: str = '10.0.106.6',
-                           portnum : int = '11111'):
-        savepath_unit = self._configfilepath_unit
+                           portnum : int = '11111',
+                           update_focusmodel : bool = True,
+                           calc_focusmodel : bool = False,
+                           **kwargs):
+        savepath_unit = self.path_unit
         if not os.path.exists(savepath_unit):
             os.makedirs(savepath_unit, exist_ok=True)
             
@@ -125,7 +128,7 @@ class mainConfig:
         
         # Share configuration
 
-        transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
+        transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.72',
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022', 
                                TRANSFER_SERVER_PORTNUM = '2222',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 128,
@@ -171,8 +174,8 @@ class mainConfig:
                          DB_PWD='gusgh1020!', # gusgh1020! for MCS, lksdf1020 for Lnx
                          DB_NAME='target')
         
-        autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self._configfilepath_global,"filtinfo.data")}',
-                                AUTOFOCUS_FOCUSHISTORY_FILE = f'{os.path.join(self._configfilepath_global,"../action/level2/focus_history.data")}')
+        autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self.path_global,"filtinfo.data")}',
+                                AUTOFOCUS_FOCUSHISTORY_FILE = f'{os.path.join(self.path_global,"../action/level2/focus_history.data")}')
         
         autoflat_params = dict(AUTOFLAT_ALTITUDE = 40,
                                AUTOFLAT_AZIMUTH = 270,
@@ -184,7 +187,7 @@ class mainConfig:
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self._configfilepath_global,"specmode/u10/")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_global,"specmode/u10/")}')
         
         startup_params = dict(STARTUP_ALT = 30,
                               STARTUP_AZ = 90,
@@ -204,32 +207,41 @@ class mainConfig:
         self.make_configfile(image_params, filename='Image.config', savepath = savepath_unit)
 
         # Global params
-        self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self._configfilepath_global)
-        self.make_configfile(observer_params, filename='Observer.config', savepath= self._configfilepath_global)
-        self.make_configfile(target_params, filename='Target.config', savepath= self._configfilepath_global)
-        self.make_configfile(transfer_params, filename='Transfer.config', savepath= self._configfilepath_global)
+        self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_global)
+        self.make_configfile(observer_params, filename='Observer.config', savepath= self.path_global)
+        self.make_configfile(target_params, filename='Target.config', savepath= self.path_global)
+        self.make_configfile(transfer_params, filename='Transfer.config', savepath= self.path_global)
 
-        self.make_configfile(weather_params, filename='Weather.config', savepath= self._configfilepath_global)
-        self.make_configfile(dome_params, filename='Dome.config', savepath= self._configfilepath_global)
-        self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self._configfilepath_global)
-        self.make_configfile(DB_params, filename = 'DB.config', savepath= self._configfilepath_global)
-        self.make_configfile(autofocus_params, filename = 'Autofocus.config', savepath= self._configfilepath_global)
-        self.make_configfile(autoflat_params, filename = 'Autoflat.config', savepath= self._configfilepath_global)
-        self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self._configfilepath_global)
-        self.make_configfile(startup_params, filename = 'startup.config', savepath= self._configfilepath_global)
-        self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self._configfilepath_global)
+        self.make_configfile(weather_params, filename='Weather.config', savepath= self.path_global)
+        self.make_configfile(dome_params, filename='Dome.config', savepath= self.path_global)
+        self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self.path_global)
+        self.make_configfile(DB_params, filename = 'DB.config', savepath= self.path_global)
+        self.make_configfile(autofocus_params, filename = 'Autofocus.config', savepath= self.path_global)
+        self.make_configfile(autoflat_params, filename = 'Autoflat.config', savepath= self.path_global)
+        self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self.path_global)
+        self.make_configfile(startup_params, filename = 'startup.config', savepath= self.path_global)
+        self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_global)
 
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
+        
+        if update_focusmodel:
+            from tcspy.configuration import FocusModel
+            F = FocusModel(unitnum = self.unitnum, configpath = self.path_global, filtinfo_file = './filtinfo.data', offset_file = 'filter.offset')
+            if calc_focusmodel:
+                F.calc_model_params(**kwar)
+            F.update_params()
+        
 
 
 
 #%%
 if __name__ == '__main__':
-    unitnumlist = [1,2,3,5,6,7,8,9,10,11]
+    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11]
     addresslist = ['10.0.106.6',
                    '10.0.106.7',
                    '10.0.106.8',
+                   '10.0.106.16',
                    '10.0.106.10',
                    '10.0.106.11',
                    '10.0.106.12',
@@ -239,7 +251,7 @@ if __name__ == '__main__':
                    '10.0.106.9']
     for unitnum, address in zip(unitnumlist, addresslist):
         A = mainConfig(unitnum=unitnum)
-        A._initialize_config(ip_address=address, portnum = 11111)
+        A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = False)
 
 # %%
 if __name__ == '__main__':

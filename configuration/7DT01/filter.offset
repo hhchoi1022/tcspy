@@ -1,39 +1,39 @@
 {
-    "updated_date": "2024-04-11T08:39:10.695",
+    "updated_date": "2024-09-02T08:41:36.312",
     "u": {
-        "offset": 58,
-        "error": 15
+        "offset": 999,
+        "error": 999
     },
     "g": {
-        "offset": 17,
-        "error": 7
+        "offset": 999,
+        "error": 999
     },
     "r": {
-        "offset": 0,
-        "error": 0
+        "offset": 999,
+        "error": 999
     },
     "i": {
-        "offset": -9,
-        "error": 4
+        "offset": 999,
+        "error": 999
     },
     "z": {
-        "offset": -39,
-        "error": 14
+        "offset": 999,
+        "error": 999
     },
     "m400": {
-        "offset": 155,
-        "error": 9
+        "offset": 999,
+        "error": 999
     },
     "m425": {
-        "offset": 304,
-        "error": 12
+        "offset": 999,
+        "error": 999
     },
-    "m650": {
-        "offset": 106,
-        "error": 6
+    "Slot8": {
+        "offset": 999,
+        "error": 999
     },
     "m675": {
-        "offset": 92,
-        "error": 10
+        "offset": 999,
+        "error": 999
     }
 }

@@ -14,6 +14,7 @@ from tcspy.action.level1 import ChangeFocus
 from tcspy.action.level1 import ChangeFilter
 from tcspy.action.level1 import Exposure
 
+
 from tcspy.utils.image import mainImage
 from tcspy.utils.target import SingleTarget
 from tcspy.action.level2 import AutoFocus
@@ -42,6 +43,9 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             binning : int = 1):
         
         self._log.info(f'==========LV2[{type(self).__name__}] is triggered.')
+        if self.telescope.safetymonitor.get_status()['is_safe'] == False | self.telescope.weather.get_status()['is_safe'] == False:
+            self._log.warning(f'==========LV2[{type(self).__name__}] is failed: Unsafe weather.')
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Unsafe weather.')
         self.is_running = True
         self.shared_memory['succeeded'] = False
         # Check condition of the instruments for this Action
@@ -131,7 +135,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                                           is_light = is_light,
                                           gain = gain,
                                           abort_action = self.abort_action)
-                bias_level = int(np.mean(imginfo['data'])) 
+                bias_level = float(np.mean(imginfo['data'])) 
                 self._log.info(f'=====[{type(self).__name__}] BIAS level: {bias_level}')
             except ExposureFailedException:
                 self.is_running = False
@@ -175,6 +179,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             # Exposure with default value & wait for the sky level arised
             obs_count = 0
             exptime = self.telescope.config['AUTOFLAT_MINEXPTIME']
+            sky_level_per_second_this = 0
             
             while obs_count < count:    
                 # Check camera status
@@ -194,8 +199,10 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                                                   is_light = True,
                                                   gain = gain,
                                                   abort_action = self.abort_action)
-                        sky_level = int(np.mean(imginfo['data']) ) - bias_level
-                        sky_level_per_second = sky_level/exptime
+                        sky_level = float(np.mean(imginfo['data']) ) - bias_level
+                        sky_level_acceleration = np.abs(sky_level_per_second_this - sky_level_per_second_this)
+                        sky_level_per_second_this = sky_level/exptime 
+                        sky_level_per_second_expected = sky_level_per_second_this + sky_level_acceleration
                         self._log.info(f'[{type(self).__name__}] Sky level: {sky_level} with {exptime}s exposure')
                     except ExposureFailedException:
                         self._log.critical(f'=====[{type(self).__name__}] is failed: camera exposure failure.')
@@ -257,8 +264,8 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                     raise AbortionException(f'[{type(self).__name__}] is aborted.')
                 
                 # Adjust the exposure time
-                exptime_min = np.round(np.abs(self.telescope.config['AUTOFLAT_MINCOUNT']/sky_level_per_second),2)
-                exptime_max = np.round(np.abs(self.telescope.config['AUTOFLAT_MAXCOUNT']/sky_level_per_second),2)
+                exptime_min = np.round(np.abs(self.telescope.config['AUTOFLAT_MINCOUNT']/sky_level_per_second_expected),2)
+                exptime_max = np.round(np.abs(self.telescope.config['AUTOFLAT_MAXCOUNT']/sky_level_per_second_this),2)
                 self._log.info(f'[{type(self).__name__}] Required exposure time: (%s~%s) sec'%(exptime_min, exptime_max))
                 
                 # If sky level is too low, then wait for the sky level arised
@@ -271,7 +278,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Sky is too bright.')
                 #
                 else:
-                    exptime = np.round(np.max([np.mean([exptime_min, exptime_max]), self.telescope.config['AUTOFLAT_MINEXPTIME']]),2)
+                    exptime = np.round(np.max([np.sum([0.9*exptime_min, 0.1*exptime_max]), self.telescope.config['AUTOFLAT_MINEXPTIME']]),2)
                     self._log.info(f'[{type(self).__name__}] Exposure time is adjusted to {exptime} sec')
             self._log.info(f'=====[{type(self).__name__}] for filter {filter_} is succeeded')
         

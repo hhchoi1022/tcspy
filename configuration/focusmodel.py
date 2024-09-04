@@ -22,15 +22,14 @@ class FocusModel:
     
     def __init__(self, 
                  unitnum : int,
-                 config_path : str = '../configuration/',
-                 filtinfo_file : str = 'filtinfo.data',
+                 configpath : str = '/home/kds/tcspy/configuration/',
+                 filtinfo_file : str = './filtinfo.data',
                  offset_file : str = 'filter.offset'):
         self.unitnum = unitnum
         self.name_telescope = '7DT%.2d' % self.unitnum
-        self._filtinfo_file = config_path + filtinfo_file
-        self._filterinfo = self._read_json(self._filtinfo_file)
+        self._filterinfo = self._read_json(filtinfo_file)
         self.filters = self._filterinfo[self.name_telescope]
-        self._offset_file = config_path + self.name_telescope + f'/{offset_file}'
+        self._offset_file = os.path.join(configpath,self.name_telescope,offset_file)
         self.is_exist_offset = os.path.isfile(self._offset_file)
         self.offsets = None
         self.errors = None
@@ -256,9 +255,10 @@ class FocusModel:
         print(f'{self._offset_file} is updated')
 # %%
 if __name__ == '__main__':
-    unitnum = 11
+    unitnum = 3
     FModel = FocusModel(unitnum)
-    folder = '/large_data/obsdata/7DT%.2d' %unitnum
-    offset_vallist, offset_stdlist = FModel.calc_model_params(folder, start_obsdate = Time('2024-02-20'))
-    FModel.update_params(offset_vallist, offset_stdlist)
+    #folder = '/large_data/obsdata/7DT%.2d' %unitnum
+    #offset_vallist, offset_stdlist = FModel.calc_model_params(folder, start_obsdate = Time('2024-02-20'))
+    #FModel.update_params(None, None)
+    #FModel.update_params(offset_vallist, offset_stdlist)
 #%%

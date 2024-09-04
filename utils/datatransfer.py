@@ -12,9 +12,9 @@ from tqdm import tqdm
 class DataTransferManager(mainConfig):
     
     def __init__(self,
-                 source_home_directory : str = '/data1/obsdata_archive/',
+                 source_home_directory : str = '/data2/obsdata/',
                  archive_home_directory : str = '/data1/obsdata_archive/',
-                 server_home_directory : str = '/data/obsdata/obsdata_from_mcs/'):
+                 server_home_directory : str = '/large_data/obsdata/obsdata_from_mcs/'):
         super().__init__()
         self.source_homedir = source_home_directory
         self.archive_homedir = archive_home_directory
@@ -136,7 +136,8 @@ class DataTransferManager(mainConfig):
         
         for source_dir in tqdm(source_dirs, desc = f'Moving folders...'):
             # Extract the 7DT?? part of the directory path
-            parent_dir = os.path.basename(os.path.dirname(os.path.dirname(source_dir)))
+            parent_dir = re.findall(r'7DT\d+', source_dir)[0]
+            #parent_dir = os.path.basename(os.path.dirname(os.path.dirname(source_dir)))
 
             # Define the corresponding archive directory
             archive_dir = os.path.join(self.archive_homedir, parent_dir)
@@ -209,9 +210,11 @@ class DataTransferManager(mainConfig):
 A = DataTransferManager()
 #%%
 import time
-file_key_list = ['*/2024-08-08_gain2750']
+file_key_list = ['*/image/2024-08-30_gain2750/*','*/image/2024-09-02_gain2750/*' ]#, '*/image/2024-08-12_gain2750']
 for file_key in file_key_list:
-    A.run(key = file_key, thread = False, tar=  False)
+    A.run(key = file_key, thread = False, tar=  True)
     time.sleep(100)
 #A.run(key = f'*/images/2024-07-01_gain0', thread = False)
+# %%
+
 # %%

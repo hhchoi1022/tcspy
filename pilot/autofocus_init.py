@@ -116,9 +116,10 @@ class AutofocusInitializer(mainConfig):
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
         self.is_running = False
 #%%  
-list_telescopes = [SingleTelescope(1),
+list_telescopes = [#SingleTelescope(1),
                    SingleTelescope(2),
                    SingleTelescope(3),
+                   SingleTelescope(4),
                    SingleTelescope(5),
                    SingleTelescope(6),
                    SingleTelescope(7),
@@ -130,7 +131,7 @@ list_telescopes = [SingleTelescope(1),
 mtel = MultiTelescopes(list_telescopes)
 #%%
 a = AutofocusInitializer(mtel, Event())
-a.run(slew = False, all_filter = True)
+a.run(slew = False, all_filter = False)
 #a.run()
 
 #%%

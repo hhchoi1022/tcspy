@@ -274,11 +274,3 @@ class mainFilterwheel(mainConfig):
         filtname = self._position_to_filtname(position = position)
         return dict( position = position, name = self.filtnames[position], offset = self.offsets[filtname]['offset'])
     
-
-        
-# %% Test
-if __name__ == '__main__':
-    F = mainFilterwheel(unitnum= 21)
-    F.connect()
-
-# %%

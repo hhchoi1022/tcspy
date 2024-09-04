@@ -201,4 +201,3 @@ if __name__ =='__main__':
     tbl['exptime'] = exptime_new
     GoogleSheet().write_sheet_data(sheet_name = '20240809', data  = tbl, append = False)
 # %%
-d

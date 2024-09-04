@@ -1,39 +1,39 @@
 {
-    "updated_date": "2024-04-11T08:48:19.494",
+    "updated_date": "2024-09-02T08:41:36.348",
     "g": {
-        "offset": 20,
-        "error": 3
+        "offset": 999,
+        "error": 999
     },
     "r": {
-        "offset": 0,
-        "error": 0
+        "offset": 999,
+        "error": 999
     },
     "i": {
-        "offset": -31,
-        "error": 1
+        "offset": 999,
+        "error": 999
     },
     "z": {
-        "offset": -37,
-        "error": 8
+        "offset": 999,
+        "error": 999
     },
     "m850": {
-        "offset": 233,
-        "error": 13
+        "offset": 999,
+        "error": 999
     },
     "m875": {
-        "offset": 79,
-        "error": 16
+        "offset": 999,
+        "error": 999
     },
     "m625": {
-        "offset": 267,
-        "error": 11
+        "offset": 999,
+        "error": 999
     },
     "m400": {
-        "offset": 157,
-        "error": 13
+        "offset": 999,
+        "error": 999
     },
     "m375w": {
-        "offset": 190,
-        "error": 3
+        "offset": 999,
+        "error": 999
     }
 }

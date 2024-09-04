@@ -74,9 +74,10 @@ print('Dark100:', time_dark100_str)
 print('Shutdown:', time_shutdown_str)
 #%%
 # Define the telescopes
-list_telescopes = [SingleTelescope(1),
+list_telescopes = [#SingleTelescope(1),
                     SingleTelescope(2),
                     SingleTelescope(3),
+                    SingleTelescope(4),
                     SingleTelescope(5),
                     SingleTelescope(6),
                     SingleTelescope(7),
@@ -116,7 +117,7 @@ def run_dark10():
     with process_lock:
         action = DarkAcquisition(M, abort_action = abort_action)
         action.run(gain = 2750, exptime = 10)
-        while action_nightobs.is_running:
+        while actuon.is_running:
             time.sleep(1)
 def run_dark20():
     with process_lock:

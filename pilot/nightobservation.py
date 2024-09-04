@@ -625,9 +625,10 @@ class NightObservation(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    list_telescopes = [SingleTelescope(1),
+    list_telescopes = [#SingleTelescope(1),
                          SingleTelescope(2),
                          SingleTelescope(3),
+                         SingleTelescope(4),
                          SingleTelescope(5),
                          SingleTelescope(6),
                          SingleTelescope(7),

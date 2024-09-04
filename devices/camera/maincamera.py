@@ -557,13 +557,3 @@ class mainCamera(mainConfig):
         self.device.NumX = self.device.CameraXSize // self.device.BinX
         self.device.NumY = self.device.CameraYSize // self.device.BinY
         #self.status = self.get_status()
-# %% Test
-if __name__ == '__main__':
-    import numpy as np
-    import matplotlib.pyplot as plt
-    A = mainCamera(unitnum = 2)
-    abort_action = Event()
-    #C = A.exposure(exptime = 10, imgtype = 'Light', abort_action= abort_action, binning = 1, is_light = False)
-    from multiprocessing import Process
-    p = Process(target = A.exposure, kwargs = dict(exptime = 10, imgtype = 'Dark', abort_action= abort_action, binning = 1, is_light = False))
-    p.start()

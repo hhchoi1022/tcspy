@@ -44,3 +44,19 @@ AutoFlat(tel, abort_action).run(5, 0, 1)
 #%%
 SingleObservation(tel, abort_action).run(exptime = 5, count = 2, specmode = 'specall', binning=  1, imgtype = 'Light', ra = 350, dec = -20, obsmode = 'Spec')
 # %%
+from tcspy.action import MultiAction
+# %%
+list_telescopes = [#SingleTelescope(1),
+                        SingleTelescope(2),
+                        SingleTelescope(3),
+                        SingleTelescope(5),
+                        SingleTelescope(6),
+                        SingleTelescope(7),
+                        SingleTelescope(8),
+                        SingleTelescope(9),
+                    #    SingleTelescope(10),
+                        SingleTelescope(11),
+                        ]
+# %%
+MultiAction(list_telescopes, dict(position = -3000, is_relative = True), ChangeFocus, Event()).run()
+# %%

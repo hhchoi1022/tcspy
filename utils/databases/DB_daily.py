@@ -279,7 +279,7 @@ class DB_Daily(mainConfig):
                 if len(count_before) == 1:
                     RIS.update_targets_count(target_id = target['id'], count = count_before[0] +1, note = target['note'])
                     obscount +=1
-                    remove_ids.append(obs_tbl['id'])
+                    remove_ids.append(target['id'])
             except:
                 pass
         if remove:
@@ -506,8 +506,8 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     D = DB_Daily(Time.now())
-    #D.from_GSheet('240808')
-    #D.update_RIS_obscount(remove = False)
+    #D.from_GSheet('240826')
+    D.update_RIS_obscount(remove = True)
     #D.from_RIS(size = 300)
     #D.initialize(True)
 # %%
