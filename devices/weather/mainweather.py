@@ -80,14 +80,21 @@ class mainWeather(mainConfig):
         return status   
 
     def run(self, abort_action : Event):
-        if not self.device.Connected:
-            self.connect()  
-        print(f'WeatherUpdater activated')
-        while not abort_action.is_set():
-            self.update_info_file(return_status = False)
-            print(f'Last weatherinfo update: {Time.now().isot}')
-            time.sleep(self.config['WEATHER_UPDATETIME'])
-            self.is_running = True
+        
+        @Timeout(5, 'Timeout')
+        def update_status():
+            if not self.device.Connected:
+                self.connect()  
+            print(f'WeatherUpdater activated')
+            while not abort_action.is_set():
+                self.update_info_file(return_status = False)
+                print(f'Last weatherinfo update: {Time.now().isot}')
+                time.sleep(self.config['WEATHER_UPDATETIME'])
+                self.is_running = True
+        try:
+            update_status()
+        except:
+            pass
         print(f'WeatherUpdater disconnected: {Time.now().isot}')
         self.is_running = False
 
@@ -204,86 +211,92 @@ class mainWeather(mainConfig):
         status['fwhm'] = None
         status['constraints'] = self.constraints
 
-        if self.device.Connected:
-            try:
-                self._update()
-            except:
-                pass
-            try:
-                status['update_time'] = Time.now().isot
-            except:
-                pass
-            try:
-                status['jd'] = round(Time.now().jd,6)
-            except:
-                pass
-            try:
-                status['name'] = self.device.Name
-            except:
-                pass
-            try:
-                status['temperature'] = round(self.device.Temperature,1)
-            except:
-                pass
-            try:
-                status['dewpoint'] = round(self.device.DewPoint,1)
-            except:
-                pass
-            try:
-                status['humidity'] = round(self.device.Humidity,1)
-            except:
-                pass
-            try:
-                status['pressure'] = round(self.device.Pressure,1)
-            except:
-                pass
-            try:
-                status['windspeed'] = round(self.device.WindSpeed,1)
-            except:
-                pass
-            try:
-                status['windgust'] = round(self.device.WindGust,1)
-            except:
-                pass
-            try:
-                status['winddirection'] = round(self.device.WindDirection,1)
-            except:
-                pass
-            try:
-                status['skybrightness'] = round(self.device.SkyQuality,2)
-            except:
-                pass
-            try:
-                status['skytemperature'] = round(self.device.SkyTemperature,1)
-            except:
-                pass
-            try:
-                status['cloudfraction'] = round(self.device.CloudCover,2)
-            except:
-                pass
-            try:
-                status['rainrate'] = int(self.device.RainRate)
-            except:
-                pass
-            try:
-                status['fwhm'] = round(self.device.StarFWHM,2)
-            except:
-                pass
-            try:
-                status['is_safe'] = self._is_safe(weather_status = status)
-            except:
-                pass
-            try:
-                status['is_connected'] = self.device.Connected
-            except:
-                pass
+        @Timeout(3, 'Timeout')
+        def update_status(status):
+            if self.device.Connected:
+                try:
+                    self._update()
+                except:
+                    pass
+                try:
+                    status['update_time'] = Time.now().isot
+                except:
+                    pass
+                try:
+                    status['jd'] = round(Time.now().jd,6)
+                except:
+                    pass
+                try:
+                    status['name'] = self.device.Name
+                except:
+                    pass
+                try:
+                    status['temperature'] = round(self.device.Temperature,1)
+                except:
+                    pass
+                try:
+                    status['dewpoint'] = round(self.device.DewPoint,1)
+                except:
+                    pass
+                try:
+                    status['humidity'] = round(self.device.Humidity,1)
+                except:
+                    pass
+                try:
+                    status['pressure'] = round(self.device.Pressure,1)
+                except:
+                    pass
+                try:
+                    status['windspeed'] = round(self.device.WindSpeed,1)
+                except:
+                    pass
+                try:
+                    status['windgust'] = round(self.device.WindGust,1)
+                except:
+                    pass
+                try:
+                    status['winddirection'] = round(self.device.WindDirection,1)
+                except:
+                    pass
+                try:
+                    status['skybrightness'] = round(self.device.SkyQuality,2)
+                except:
+                    pass
+                try:
+                    status['skytemperature'] = round(self.device.SkyTemperature,1)
+                except:
+                    pass
+                try:
+                    status['cloudfraction'] = round(self.device.CloudCover,2)
+                except:
+                    pass
+                try:
+                    status['rainrate'] = int(self.device.RainRate)
+                except:
+                    pass
+                try:
+                    status['fwhm'] = round(self.device.StarFWHM,2)
+                except:
+                    pass
+                try:
+                    status['is_safe'] = self._is_safe(weather_status = status)
+                except:
+                    pass
+                try:
+                    status['is_connected'] = self.device.Connected
+                except:
+                    pass
+            return status
+        try:
+            status = update_status(status)
+        except:
+            pass
 
         return status
 # %%
 
 if __name__ =='__main__':
     weather = mainWeather()
-    weather.run(Event())
     import time
 
 # %%

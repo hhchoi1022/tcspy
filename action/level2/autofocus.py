@@ -55,6 +55,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         super().__init__(singletelescope.unitnum)
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
+        self.focus_history_file = os.path.join(self.config['AUTOFOCUS_FOCUSHISTORY_PATH'], self.tel_name, 'focus_history.json')
         self.abort_action = abort_action
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
@@ -68,7 +69,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             use_history : bool = False,
             history_duration : float = 60,
             search_focus_when_failed : bool = False,
-            search_focus_range : int = 3000):
+            search_focus_range : int = 2000):
         """
         Performs the action of starting autofocus for the telescope.
 
@@ -300,29 +301,27 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             for filt_name in filt_list:
                 focus_history_telescope[filt_name] = default_focus_history_filter
             focus_history_default[tel_name] = focus_history_telescope
-        with open(self.config['AUTOFOCUS_FOCUSHISTORY_FILE'], 'w') as f:
+        with open(self.focus_history_file, 'w') as f:
             json.dump(focus_history_default, f, indent=4)
 
     def update_focus_history(self, filter_ : str, focusval : float, is_succeeded : bool):
-        focus_history_file = self.config['AUTOFOCUS_FOCUSHISTORY_FILE']
-        if not os.path.isfile(focus_history_file):
+        if not os.path.isfile(self.focus_history_file):
             print('No focus_hostory file exists. Default format is generated.')
-            self.write_default_focus_history(output_file = focus_history_file)
-        with open(focus_history_file, 'r') as f:
+            self.write_default_focus_history(output_file = self.focus_history_file)
+        with open(self.focus_history_file, 'r') as f:
             focus_history_data = json.load(f)
         focus_history_data[self.telescope.tel_name][filter_]['update_time'] = Time.now().isot
         focus_history_data[self.telescope.tel_name][filter_]['succeeded'] = is_succeeded
         focus_history_data[self.telescope.tel_name][filter_]['focusval'] = focusval
-        with open(focus_history_file, 'w') as f:
+        with open(self.focus_history_file, 'w') as f:
             json.dump(focus_history_data, f, indent=4)
     
     @property
     def history(self):
-        focus_history_file = self.config['AUTOFOCUS_FOCUSHISTORY_FILE']
-        if not os.path.isfile(focus_history_file):
+        if not os.path.isfile(self.focus_history_file):
             print('No focus_hostory file exists. Default format is generated.')
             self.write_default_focus_history()
-        with open(focus_history_file, 'r') as f:
+        with open(self.focus_history_file, 'r') as f:
             focus_history_data = json.load(f)
         return focus_history_data[self.telescope.tel_name]
     

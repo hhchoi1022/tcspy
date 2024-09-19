@@ -12,6 +12,7 @@ from tcspy.configuration import mainConfig
 from tcspy.devices import MultiTelescopes
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
+from tcspy.pilot import Shutdown
 from tcspy.utils.databases import DB
 from tcspy.utils.error import *
 from tcspy.utils.target import SingleTarget
@@ -30,7 +31,7 @@ class NightObservation(mainConfig):
         self.multitelescopes = MultiTelescopes
         self.abort_action = abort_action
         self.DB = DB(utctime = Time.now()).Daily
-        self.obsnight = NightSession(Time.now()).obsnight
+        self.obsnight = NightSession(Time.now()).obsnight_utc
         self.weather = next(iter(self.multitelescopes.devices.values())).devices['weather']
         self.safetymonitor = next(iter(self.multitelescopes.devices.values())).devices['safetymonitor']
 
@@ -361,6 +362,7 @@ class NightObservation(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         aborted_action_ToO = None
+        unsafe_weather_count = 0
         # Trigger observation until sunrise
         while now < obs_end_time:
             if self.abort_action.is_set():
@@ -380,7 +382,8 @@ class NightObservation(mainConfig):
             aborted_action_ToO = None
             
             # If weather is safe
-            if is_weather_safe:      
+            if is_weather_safe:    
+                unsafe_weather_count = 0  
                 # If there is any aborted_action due to unsafe weather, resume the observation
                 if aborted_action_ToO:
                     for action in aborted_action_ToO:
@@ -409,11 +412,13 @@ class NightObservation(mainConfig):
                     self._obstrigger(target = best_target, abort_action = self._ToO_abort)
             # If weather is unsafe
             else:
+                unsafe_weather_count += 1
                 aborted_action_ToO = self.abort_ToO()
                 self.multitelescopes.log.info(f'[{type(self).__name__} ToO is aborted: Unsafe weather]')
                 time.sleep(200)
                 self._ToO_abort = Event()
                 self.is_ToO_triggered = True
+                Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
             time.sleep(0.5)
         while len(self.action_queue) > 0:
             print('Waiting for ToO to be finished')
@@ -461,6 +466,7 @@ class NightObservation(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         aborted_action = None
+        unsafe_weather_count = 0
         # Trigger observation until sunrise
         while now < obs_end_time:
             if self.abort_action.is_set():
@@ -480,6 +486,7 @@ class NightObservation(mainConfig):
             
             # If weather is safe
             if is_weather_safe:
+                unsafe_weather_count = 0
                 # If there is any aborted_action due to unsafe weather, resume the observation
                 if aborted_action:
                     for action in aborted_action:
@@ -508,13 +515,15 @@ class NightObservation(mainConfig):
                     self.multitelescopes.log.info(f'[{type(self).__name__}] is aborted: Unsafe weather')
                 self.multitelescopes.log.info(f'[{type(self).__name__}] is waiting for safe weather condition')
                 time.sleep(200)
+                Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
                 self._observation_abort = Event()
             time.sleep(0.5)
         if len(self.action_queue) > 0:
             aborted_action = self.abort_observation()
         time.sleep(10)
         self.is_running = False
-        print('observation finished', Time.now())
+        print('observation finished', Time.now())        
+        Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished')
         
     def _put_action(self, target, action, telescopes, action_id):
@@ -635,7 +644,7 @@ if __name__ == '__main__':
                          SingleTelescope(8),
                          SingleTelescope(9),
                          SingleTelescope(10),
-                         SingleTelescope(11),
+                         SingleTelescope(11)
                          ]
 #%%
 if __name__ == '__main__':
@@ -643,5 +652,5 @@ if __name__ == '__main__':
     abort_action = Event()
     #Startup(multitelescopes= M , abort_action= abort_action).run()
     R = NightObservation(M, abort_action= abort_action)
-    R.run()
+    #R.run()
 # %%

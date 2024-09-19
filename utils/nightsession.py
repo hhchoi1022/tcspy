@@ -9,7 +9,8 @@ class NightSession:
                  utctime : Time = Time.now()):
         self.utctime = utctime
         self.observer = mainObserver()
-        self.obsnight = self.set_obsnight(utctime)
+        self.obsnight_utc = self.set_obsnight(utctime)
+        self.obsnight_ltc = self.convert_obsnight_ltc()
 
     def set_obsnight(self,
                      utctime : Time = Time.now(),
@@ -47,3 +48,24 @@ class NightSession:
         obsnight.time_inputted = utctime
         obsnight.current = Time.now()
         return obsnight
+
+    def convert_obsnight_ltc(self):
+        class obsnight_ltc:
+            def __repr__(self):
+                attrs = {name: value.iso if isinstance(value, Time) else value
+                            for name, value in self.__dict__.items()}
+                max_key_len = max(len(key) for key in attrs.keys())
+                attrs_str = '\n'.join([f'{key:{max_key_len}}: {value}' for key, value in attrs.items()])
+                return f'{self.__class__.__name__} Attributes:\n{attrs_str}'
+        obsnight_ltc = obsnight_ltc()
+        obsnight_utc = self.obsnight_utc
+        
+        for key, value in obsnight_utc.__dict__.items():
+            if isinstance(value, Time):
+                local_time = self.observer.localtime(value.datetime)
+                setattr(obsnight_ltc, key, Time(local_time.replace(tzinfo=None), format='datetime'))
+            else:
+                setattr(obsnight_ltc, key, value)
+        return obsnight_ltc 
+
+# %%

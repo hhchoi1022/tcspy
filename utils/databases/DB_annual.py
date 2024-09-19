@@ -1,5 +1,3 @@
-
-
 #%%
 from tcspy.utils.target import MultiTargets
 from tcspy.configuration import mainConfig
@@ -302,3 +300,10 @@ class DB_Annual(mainConfig):
             constraint.moonsep = self.config['TARGET_MOONSEP']
         constraint.astroplan = constraint_astroplan
         return constraint  
+# %%
+if __name__ == '__main__':
+    db = DB_Annual()
+    current_obscount = len(db.data[db.data['obs_count']>  0])
+    tot_tilecount = len(db.data)
+    print(f'{current_obscount}/{tot_tilecount}')
+# %%

@@ -8,6 +8,7 @@ from typing import Optional
 from threading import Thread
 import glob
 from tqdm import tqdm
+import re
 #%%
 class DataTransferManager(mainConfig):
     
@@ -210,7 +211,7 @@ class DataTransferManager(mainConfig):
 A = DataTransferManager()
 #%%
 import time
-file_key_list = ['*/image/2024-08-30_gain2750/*','*/image/2024-09-02_gain2750/*' ]#, '*/image/2024-08-12_gain2750']
+file_key_list = ['*/image/2024-09-10_gain2750' ]#, '*/image/2024-08-12_gain2750']
 for file_key in file_key_list:
     A.run(key = file_key, thread = False, tar=  True)
     time.sleep(100)

@@ -1,5 +1,3 @@
-
-
 #%%
 from tcspy.configuration import mainConfig
 from tcspy.devices.observer import mainObserver
@@ -77,7 +75,7 @@ class DB_Daily(mainConfig):
         self.constraints = self._set_constrints()
         self.utctime = utctime
         self.obsinfo = self._set_obs_info(utctime = utctime)
-        self.obsnight = NightSession(utctime = utctime).obsnight
+        self.obsnight = NightSession(utctime = utctime).obsnight_utc
     '''
     @property    
     def connected(self):
@@ -322,6 +320,15 @@ class DB_Daily(mainConfig):
         #    self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
     
+    def write(self, clear : bool = True):
+        tbl = self.data
+        dt_ut = Time.now().datetime
+        if not os.path.exists(self.config['DB_PATH']):
+            os.makedirs(self.config['DB_PATH'], exist_ok = True)
+        file_abspath = os.path.join(self.config['DB_PATH'], f'Daily_%.4d%.2d%.2d.ascii_fixed_width' % (dt_ut.year, dt_ut.month, dt_ut.day))
+        tbl.write(file_abspath, format = 'ascii.fixed_width', overwrite = True)
+        print(f'Saved: {file_abspath}')
+    
     def _scorer(self,
                 utctime : Time,
                 target_tbl : Table
@@ -506,8 +513,14 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     D = DB_Daily(Time.now())
-    #D.from_GSheet('240826')
-    D.update_RIS_obscount(remove = True)
-    #D.from_RIS(size = 300)
+    from tcspy.utils.databases import DB_Annual
+    #A = DB_Annual()
+    #tbl = A.data
+    #tbl_insert = tbl[2067:2069]
+    #D.insert(tbl_insert)
+    #D.from_GSheet('240915')
+    #D.update_RIS_obscount(remove = True)
+    #D.from_RIS(size = 30)
     #D.initialize(True)
+    #D.write()
 # %%

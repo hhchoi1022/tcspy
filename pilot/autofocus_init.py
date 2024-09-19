@@ -10,8 +10,6 @@ from tcspy.utils.exception import *
 import json
 #%%
 
-
-
 class AutofocusInitializer(mainConfig):
     
     def __init__(self,
@@ -131,7 +129,7 @@ list_telescopes = [#SingleTelescope(1),
 mtel = MultiTelescopes(list_telescopes)
 #%%
 a = AutofocusInitializer(mtel, Event())
-a.run(slew = False, all_filter = False)
+a.run(slew = True, all_filter = False)
 #a.run()
 
 #%%

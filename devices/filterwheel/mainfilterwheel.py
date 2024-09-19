@@ -171,7 +171,8 @@ class mainFilterwheel(mainConfig):
         time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
         while not self.device.Position == filter_:
             time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
-            
+        time.sleep(2*float(self.config['FTWHEEL_CHECKTIME']))
+        
         # Return result
         self._log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
         return True

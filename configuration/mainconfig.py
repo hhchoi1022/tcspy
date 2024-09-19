@@ -172,10 +172,11 @@ class mainConfig:
         DB_params = dict(DB_HOSTIP='localhost',
                          DB_ID='hhchoi',
                          DB_PWD='gusgh1020!', # gusgh1020! for MCS, lksdf1020 for Lnx
-                         DB_NAME='target')
+                         DB_NAME='target',
+                         DB_PATH= f'/data2/obsdata/DB_history')
         
         autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self.path_global,"filtinfo.data")}',
-                                AUTOFOCUS_FOCUSHISTORY_FILE = f'{os.path.join(self.path_global,"../action/level2/focus_history.data")}')
+                                AUTOFOCUS_FOCUSHISTORY_PATH = self.path_global)
         
         autoflat_params = dict(AUTOFLAT_ALTITUDE = 40,
                                AUTOFLAT_AZIMUTH = 270,

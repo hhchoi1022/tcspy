@@ -18,48 +18,48 @@ from tcspy.utils import NightSession
 import astropy.units as u
 
 #%%
-obsnight = NightSession(Time.now()).obsnight
+obsnight = NightSession(Time.now()).obsnight_ltc
 
 time_now = Time.now().datetime
 time_now_str = '%.2d:%.2d'%(time_now.hour, time_now.minute)
 
 # Startup
 time_startup =obsnight.sunset_prepare.datetime
-time_startup_str = '%.2d:%.2d'%(time_startup.hour-4, time_startup.minute)
+time_startup_str = '%.2d:%.2d'%(time_startup.hour, time_startup.minute)
 
 # Observation start 
 time_startobs =obsnight.sunset_observation.datetime
-time_startobs_str = '%.2d:%.2d'%(time_startobs.hour-4, time_startobs.minute)
+time_startobs_str = '%.2d:%.2d'%(time_startobs.hour, time_startobs.minute)
 
 # Observation start 
 time_endobs =obsnight.sunrise_observation.datetime
-time_endobs_str = '%.2d:%.2d'%(time_endobs.hour-4, time_endobs.minute)
+time_endobs_str = '%.2d:%.2d'%(time_endobs.hour, time_endobs.minute)
 
 # BIAS
 time_bias = (obsnight.sunrise_observation + 15 * u.minute).datetime 
-time_bias_str = '%.2d:%.2d'%(time_bias.hour-4, time_bias.minute)
+time_bias_str = '%.2d:%.2d'%(time_bias.hour, time_bias.minute)
 
 # FLAT
 time_flat = (obsnight.sunrise_flat).datetime
 #time_flat = obsnight.sunrise_flat.datetime
-time_flat_str = '%.2d:%.2d'%(time_flat.hour-4, time_flat.minute )
+time_flat_str = '%.2d:%.2d'%(time_flat.hour, time_flat.minute )
 
 # DARK10
 time_dark10 = (obsnight.sunrise_flat + 40 * u.minute).datetime
-time_dark10_str = '%.2d:%.2d'%(time_dark10.hour-4, time_dark10.minute )
+time_dark10_str = '%.2d:%.2d'%(time_dark10.hour, time_dark10.minute )
 # DARK20
 time_dark20 = (obsnight.sunrise_flat + 45 * u.minute).datetime
-time_dark20_str = '%.2d:%.2d'%(time_dark20.hour-4, time_dark20.minute )
+time_dark20_str = '%.2d:%.2d'%(time_dark20.hour, time_dark20.minute )
 # DARK30
 time_dark30 = (obsnight.sunrise_flat +  55* u.minute).datetime
-time_dark30_str = '%.2d:%.2d'%(time_dark30.hour-4, time_dark30.minute )
+time_dark30_str = '%.2d:%.2d'%(time_dark30.hour, time_dark30.minute )
 # DARK100
 time_dark100 = (obsnight.sunrise_flat + 70 * u.minute).datetime
-time_dark100_str = '%.2d:%.2d'%(time_dark100.hour-4, time_dark100.minute )
+time_dark100_str = '%.2d:%.2d'%(time_dark100.hour, time_dark100.minute )
 
 # Shutdown
 time_shutdown = (Time(time_dark100) + 30 * u.minute).datetime
-time_shutdown_str = '%.2d:%.2d'%(time_shutdown.hour-4, time_shutdown.minute)
+time_shutdown_str = '%.2d:%.2d'%(time_shutdown.hour, time_shutdown.minute)
 print('The schedule is:')   
 print('Startup:', time_startup_str)
 print('Startobs:', time_startobs_str)

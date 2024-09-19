@@ -81,14 +81,20 @@ class mainSafetyMonitor(mainConfig):
         return status   
 
     def run(self, abort_action : Event):
-        if not self.device.Connected:
-            self.connect()  
-        print(f'SafetyMonitorUpdater activated')
-        while not abort_action.is_set():
-            self.update_info_file(return_status = False)
-            print(f'Last safemonitorinfo update: {Time.now().isot}')
-            time.sleep(self.config['SAFEMONITOR_UPDATETIME'])
-            self.is_running = True
+        
+        def update_status():
+            if not self.device.Connected:
+                self.connect()  
+            print(f'SafetyMonitorUpdater activated')
+            while not abort_action.is_set():
+                self.update_info_file(return_status = False)
+                print(f'Last safemonitorinfo update: {Time.now().isot}')
+                time.sleep(self.config['SAFEMONITOR_UPDATETIME'])
+                self.is_running = True
+        try:
+            update_status()
+        except:
+            pass
         print(f'SafetyMonitorUpdater disconnected: {Time.now().isot}')
 
         self.is_running = False
@@ -166,31 +172,38 @@ class mainSafetyMonitor(mainConfig):
         status['is_safe'] = None
         status['name'] = None
 
-        if self.device.Connected:
-            try:
-                self._update()
-            except:
-                pass
-            try:
-                status['update_time'] = Time.now().isot
-            except:
-                pass
-            try:
-                status['jd'] = round(Time.now().jd,6)
-            except:
-                pass
-            try:
-                status['name'] = self.device.Name
-            except:
-                pass
-            try:
-                status['is_safe'] = self.device.IsSafe
-            except:
-                pass
-            try:
-                status['is_connected'] = self.device.Connected
-            except:
-                pass
+        @Timeout(3, 'Timeout')
+        def update_status(status: dict):
+            if self.device.Connected:
+                try:
+                    self._update()
+                except:
+                    pass
+                try:
+                    status['update_time'] = Time.now().isot
+                except:
+                    pass
+                try:
+                    status['jd'] = round(Time.now().jd,6)
+                except:
+                    pass
+                try:
+                    status['name'] = self.device.Name
+                except:
+                    pass
+                try:
+                    status['is_safe'] = self.device.IsSafe
+                except:
+                    pass
+                try:
+                    status['is_connected'] = self.device.Connected
+                except:
+                    pass
+            return status
+        try:
+            status = update_status(status)
+        except:
+            pass
         return status
     
 # %%
@@ -198,6 +211,6 @@ if __name__ == '__main__':
     safe = mainSafetyMonitor()
     safe.connect()
     safe.get_status()
-    safe.run(abort_action = Event())
+    #safe.run(abort_action = Event())
 
 # %%
