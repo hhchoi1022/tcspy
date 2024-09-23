@@ -296,11 +296,12 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             filtinfo = json.load(f)
         default_focus_history_filter = dict(zip(['update_time', 'succeeded', 'focusval'], [Time('2000-01-01').isot, False, 10000]))
         focus_history_default = dict()
-        for tel_name, filt_list in filtinfo.items():
-            focus_history_telescope = dict()
-            for filt_name in filt_list:
-                focus_history_telescope[filt_name] = default_focus_history_filter
-            focus_history_default[tel_name] = focus_history_telescope
+        tel_name = self.telescope.tel_name
+        filt_list = filtinfo[tel_name]
+        focus_history_telescope = dict()
+        for filt_name in filt_list:
+            focus_history_telescope[filt_name] = default_focus_history_filter
+        focus_history_default[tel_name] = focus_history_telescope
         with open(self.focus_history_file, 'w') as f:
             json.dump(focus_history_default, f, indent=4)
 
@@ -333,5 +334,5 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
 # %%
 if __name__ == '__main__':
     from tcspy.devices import SingleTelescope
-    a = AutoFocus(SingleTelescope(21), Event())
+    a = AutoFocus(SingleTelescope(2), Event())
 # %%

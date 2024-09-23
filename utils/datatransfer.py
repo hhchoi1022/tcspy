@@ -15,7 +15,7 @@ class DataTransferManager(mainConfig):
     def __init__(self,
                  source_home_directory : str = '/data2/obsdata/',
                  archive_home_directory : str = '/data1/obsdata_archive/',
-                 server_home_directory : str = '/large_data/obsdata/obsdata_from_mcs/'):
+                 server_home_directory : str = '/data/obsdata/obsdata_from_mcs/'):
         super().__init__()
         self.source_homedir = source_home_directory
         self.archive_homedir = archive_home_directory
@@ -211,7 +211,7 @@ class DataTransferManager(mainConfig):
 A = DataTransferManager()
 #%%
 import time
-file_key_list = ['*/image/2024-09-10_gain2750' ]#, '*/image/2024-08-12_gain2750']
+file_key_list = ['*/image/2024-09-17_gain2750']#, '*/image/2024-08-12_gain2750']
 for file_key in file_key_list:
     A.run(key = file_key, thread = False, tar=  True)
     time.sleep(100)

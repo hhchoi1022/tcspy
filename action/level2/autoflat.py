@@ -43,7 +43,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             binning : int = 1):
         
         self._log.info(f'==========LV2[{type(self).__name__}] is triggered.')
-        if self.telescope.safetymonitor.get_status()['is_safe'] == False | self.telescope.weather.get_status()['is_safe'] == False:
+        if (self.telescope.safetymonitor.get_status()['is_safe'] == False) | (self.telescope.weather.get_status()['is_safe'] == False):
             self._log.warning(f'==========LV2[{type(self).__name__}] is failed: Unsafe weather.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Unsafe weather.')
         self.is_running = True
