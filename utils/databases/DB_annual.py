@@ -258,7 +258,8 @@ class DB_Annual(mainConfig):
     def update_targets_count(self,
                              target_id : list,
                              count : list,
-                             note : str = None
+                             note : str = None,
+                             id_key : str = 'id'
                              ):
         """
         Update observation counts for target.
@@ -270,7 +271,7 @@ class DB_Annual(mainConfig):
         targets_count : int or list or np.array
         	A list containing the count of each target or int to set the all observations to.
         """
-        self.sql.update_row(tbl_name = self.tblname, update_value = [count, note], update_key = ['obs_count','note'], id_value = target_id, id_key = 'id')
+        self.sql.update_row(tbl_name = self.tblname, update_value = [count, note], update_key = ['obs_count','note'], id_value = target_id, id_key = id_key)
     
     @property
     def data(self):

@@ -273,9 +273,9 @@ class DB_Daily(mainConfig):
         remove_ids = []
         for target in obs_tbl:
             try:
-                count_before = RIS_data[RIS_data['id'] == target['id']]['obs_count']
+                count_before = RIS_data[RIS_data['objname'] == target['objname']]['obs_count']
                 if len(count_before) == 1:
-                    RIS.update_targets_count(target_id = target['id'], count = count_before[0] +1, note = target['note'])
+                    RIS.update_targets_count(target_id = target['objname'], count = count_before[0] +1, note = target['note'], id_key = 'objname')
                     obscount +=1
                     remove_ids.append(target['id'])
             except:
@@ -519,8 +519,8 @@ if __name__ == '__main__':
     #tbl_insert = tbl[2067:2069]
     #D.insert(tbl_insert)
     #D.from_GSheet('240911')
-    #D.update_RIS_obscount(remove = True)
-    D.from_RIS(size = 50)
+    D.update_RIS_obscount(remove = True)
+    #D.from_RIS(size = 50)
     #D.initialize(True)
     #D.write()
 # %%

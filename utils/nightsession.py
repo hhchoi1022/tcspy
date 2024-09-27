@@ -69,3 +69,7 @@ class NightSession:
         return obsnight_ltc 
 
 # %%
+NS = NightSession()
+# %%
+NS.obsnight_utc.sunset_astro
+# %%
