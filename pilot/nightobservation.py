@@ -652,8 +652,7 @@ if __name__ == '__main__':
                          SingleTelescope(8),
                          SingleTelescope(9),
                          SingleTelescope(10),
-                         SingleTelescope(11)
-                         ]
+                         SingleTelescope(11)]
 #%%
 if __name__ == '__main__':
     M = MultiTelescopes(list_telescopes)
