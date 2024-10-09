@@ -9,20 +9,68 @@ from threading import Thread
 import glob
 from tqdm import tqdm
 import re
+import datetime
+import time
 #%%
 class DataTransferManager(mainConfig):
     
-    def __init__(self,
-                 source_home_directory : str = '/data2/obsdata/',
-                 archive_home_directory : str = '/data1/obsdata_archive/',
-                 server_home_directory : str = '/data/obsdata/obsdata_from_mcs/'):
+    def __init__(self):
         super().__init__()
-        self.source_homedir = source_home_directory
-        self.archive_homedir = archive_home_directory
-        self.server_homedir = server_home_directory
+        self.source_homedir = self.config['TRANSFER_SOURCE_HOMEDIR']
+        self.archive_homedir = self.config['TRANSFER_ARCHIVE_HOMEDIR']
+        self.server_homedir = self.config['TRANSFER_SERVER_HOMEDIR']
         self.server = self._set_server(**self.config)
         self.gridftp = self._set_gridftp_params(**self.config)
         self.process: Optional[subprocess.Popen] = None
+        self.is_running = False
+        self.too_last_seen = None
+        
+    def start_monitoring(self, ordinary_file_key = '*/image/*', ToO_file_key = '*/image/*_ToO', inactivity_period = 1800, tar = True, protocol = 'gridftp'):
+        """Monitor files and initiate transfers."""
+        print(f'Monitoring started since {Time.now().isot}')
+        while True:
+            current_time = datetime.now()
+            
+            # Check for ordinary file transfer at 8 AM local time
+            if current_time.hour == 8 and current_time.minute == 0:
+                self.transfer_ordinary_files(ordinary_file_key = ordinary_file_key, tar = tar, protocol = protocol)
+
+            # Check for ToO file transfer based on inactivity (no new files for 30 minutes)
+            self.transfer_ToO_files(inactivity_period = inactivity_period, ToO_file_key = ToO_file_key, tar = tar, protocol = protocol)
+
+            # Sleep for a minute before checking again
+            time.sleep(60)
+
+    def transfer_ordinary_files(self, ordinary_file_key = '*/image/*', tar = True, protocol = 'gridftp'):
+        """Transfer ordinary files at 8 AM."""
+        # Transfer all files with ordinary criteria
+        print(f"Ordinary file transfer triggered at {Time.now().isot}")
+        folder_list = set([os.path.basename(folder) for folder in (glob.glob(os.path.join(self.source_homedir, ordinary_file_key)))])
+        if len(folder_list) > 0:
+            print(f"Transferring ordinary files at {Time.now().isot}")
+            for folder in folder_list:
+                key = os.path.join(os.path.dirname(ordinary_file_key), folder)
+                print('Transferring folder:', key)
+                self.run(key = key, tar = tar, protocol = protocol, thread = False)
+        
+    def transfer_ToO_files(self, inactivity_period, ToO_file_key = '*/image/*_ToO', tar = True, protocol = 'gridftp'):
+        """Transfer ToO files after 30 minutes of inactivity."""
+        too_files = glob.glob(os.path.join(self.source_homedir, ToO_file_key, '*'))
+        folder_list = set([os.path.basename(os.path.dirname(file_)) for file_ in too_files])
+        if too_files:
+            print("ToO files found. Waiting for inactivity...")
+            latest_file_time = max([os.path.getmtime(file_) for file_ in too_files])
+
+            if self.too_last_seen is None or latest_file_time > self.too_last_seen:
+                self.too_last_seen = latest_file_time
+
+            if time.time() - self.too_last_seen >= inactivity_period:
+                print(f'Transferring ToO files at {Time.now().isot}')
+                for folder in folder_list:
+                    key = os.path.join(os.path.dirname(ToO_file_key), folder)
+                    print(f"Transferring ToO folder: {key}")
+                    self.run(key=key, tar = tar, protocol = protocol, thread=False)
+                    self.too_last_seen = None
         
     def run(self, 
             key: str = '*/image/20240515', 
@@ -60,6 +108,7 @@ class DataTransferManager(mainConfig):
                          key : str = '*/image/20240515',
                          output_file_name : str =  None,
                          tar : bool = True):
+        self.is_running = True
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
         verbose_command = ''
@@ -82,12 +131,13 @@ class DataTransferManager(mainConfig):
             print(f"Error during transfer: {e.stderr.decode()}")
         finally:
             self.process = None
+            self.is_running = False
 
     def hpnscp_transfer(self,
                         key : str = '*/image/20240503',
                         output_file_name : str = None,
                         tar : bool = True):
-
+        self.is_running = True
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
         if tar:
@@ -107,6 +157,7 @@ class DataTransferManager(mainConfig):
             print(f"Error during transfer: {e.stderr.decode()}")
         finally:
             self.process = None
+            self.is_running = False
 
     def tar(self,
             source_file_key : str,
@@ -203,24 +254,17 @@ class DataTransferManager(mainConfig):
         return gridftp()
 
 
-
-    
         
     
 # %%
-if __name__ == '__main__':  
-    A = DataTransferManager()
-#%%
 if __name__ == '__main__':
-
-    import time
-    month = 10
-    datelist = [3]
-    file_key_list = [f'*/image/2024-%.2d-%.2d_gain2750' %(month,date) for date in datelist]#, '*/image/2024-08-12_gain2750']
-    for file_key in file_key_list:
-        A.run(key = file_key, thread = False, tar=  True)
-        time.sleep(100)
-    #A.run(key = f'*/images/2024-07-01_gain0', thread = False)
-# %%
-
-# %%
+    A = DataTransferManager()
+    
+    # Run the monitoring process
+    A.start_monitoring(
+        ordinary_file_key='*/image/*',   # Adjust these parameters as needed
+        ToO_file_key='*/image/*_ToO',
+        too_inactivity=1800,             # 30 minutes of inactivity
+        tar=True,                        # Compress files into tar
+        protocol='gridftp'               # File transfer protocol
+    )

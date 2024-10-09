@@ -131,6 +131,9 @@ class mainImage(mainConfig):
         """
         filename = self._format_filename()
         foldername = self._format_foldername()
+        
+        if self.hdu.header['OBJTYPE'].upper() == 'TOO':
+            foldername += '_ToO'
         if not os.path.isdir(os.path.join(self._configinfo['IMAGE_PATH'], foldername)):
             os.makedirs(os.path.join(self._configinfo['IMAGE_PATH'], foldername))
 

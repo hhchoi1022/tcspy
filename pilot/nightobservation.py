@@ -36,6 +36,9 @@ class NightObservation(mainConfig):
         self.safetymonitor = next(iter(self.multitelescopes.devices.values())).devices['safetymonitor']
 
         self.autofocus = self.autofocus_config()
+        self.transfer_manager = DataTransferManager(source_home_directory = self.config['TRANSFER_SOURCE_HOMEDIR'], 
+                                                    archive_home_directory = self.config['TRANSFER_ARCHIVE_HOMEDIR'], 
+                                                    server_home_directory = self.config['TRANSFER_SERVER_HOMEDIR'])
 
         self.action_queue = list()
         self.tel_queue = dict()
@@ -43,6 +46,7 @@ class NightObservation(mainConfig):
         self.action_lock = Lock()
         self.is_running = False
         self.is_obs_triggered = False
+        self.is_shutdown_triggered = False
         self.is_ToO_triggered = False
         self._ToO_abort = Event()
         self._observation_abort = Event()
@@ -81,15 +85,10 @@ class NightObservation(mainConfig):
             self.is_safe = self._is_safetymonitor_safe
 
         # Get status of all telescopes
-        #for tel_name, telescope in self.multitelescopes.devices.items():
-        #    print(tel_name)
-        #    if self._is_tel_ready(TelescopeStatus(telescope).dict):
-        #        self.tel_queue[tel_name] = telescope
         status_devices = self.multitelescopes.status
         for tel_name, status in status_devices.items():
             if self._is_tel_ready(status):
                 self.tel_queue[tel_name] = self.multitelescopes.devices[tel_name]
-        
         # Initialization is finished
 
     def _is_tel_ready(self, tel_status_dict):
@@ -421,8 +420,10 @@ class NightObservation(mainConfig):
                 self.multitelescopes.log.info(f'[{type(self).__name__} ToO is aborted: Unsafe weather]')
                 time.sleep(200)
                 self._ToO_abort = Event()
-                self.is_ToO_triggered = True
-                Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
+                #self.is_ToO_triggered = True
+                if not self.is_shutdown_triggered:
+                    Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
+                    self.is_shutdown_triggered = True
             time.sleep(0.5)
         while len(self.action_queue) > 0:
             print('Waiting for ToO to be finished')
@@ -490,6 +491,7 @@ class NightObservation(mainConfig):
             
             # If weather is safe
             if is_weather_safe:
+                self.is_shutdown_triggered = False
                 unsafe_weather_count = 0
                 # If there is any aborted_action due to unsafe weather, resume the observation
                 if aborted_action:
@@ -519,8 +521,10 @@ class NightObservation(mainConfig):
                     self.multitelescopes.log.info(f'[{type(self).__name__}] is aborted: Unsafe weather')
                 self.multitelescopes.log.info(f'[{type(self).__name__}] is waiting for safe weather condition')
                 time.sleep(200)
-                Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
                 self._observation_abort = Event()
+                if not self.is_shutdown_triggered:
+                    Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
+                    self.is_shutdown_triggered = True
             time.sleep(0.5)
         if len(self.action_queue) > 0:
             aborted_action = self.abort_observation()

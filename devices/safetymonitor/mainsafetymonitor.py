@@ -199,8 +199,8 @@ class mainSafetyMonitor(mainConfig):
         try:
             status = update_status(status)
         except:
-            pass
-        return status
+            return status
+        
     
 # %%
 if __name__ == '__main__':
