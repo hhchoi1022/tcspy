@@ -215,10 +215,6 @@ class mainWeather(mainConfig):
         def update_status(status):
             if self.device.Connected:
                 try:
-                    self._update()
-                except:
-                    pass
-                try:
                     status['update_time'] = Time.now().isot
                 except:
                     pass
