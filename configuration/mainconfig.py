@@ -107,7 +107,7 @@ class mainConfig:
                               FOCUSER_MAXSTEP= 14000,
                               FOCUSER_CHECKTIME=0.5)
         
-        observer_params = dict(OBSERVER_LONGITUDE= -70.7804,
+        observer_params = dict(OBSERVER_LONGITUDE= -70.7804,r
                                OBSERVER_LATITUDE= -30.4704,
                                OBSERVER_ELEVATION= 1580,
                                OBSERVER_TIMEZONE= 'America/Santiago',
