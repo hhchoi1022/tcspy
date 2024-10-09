@@ -304,7 +304,7 @@ class DB_Annual(mainConfig):
 # %%
 if __name__ == '__main__':
     db = DB_Annual()
-    #current_obscount = len(db.data[db.data['obs_count']>  0])
+    current_obscount = len(db.data[db.data['obs_count']>  1])
     tot_tilecount = len(db.data)
     #print(f'{current_obscount}/{tot_tilecount}')
 # %%

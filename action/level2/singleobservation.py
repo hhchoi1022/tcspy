@@ -175,6 +175,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self.is_running = False
             raise ConnectionException(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
+        self._log.info(f'Debugging point 1')
+
         
         # Set target
         target = SingleTarget(observer = self.telescope.observer, 
@@ -198,6 +200,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               )
         target_info = target.target_info
         exposure_info = target.exposure_info
+        self._log.info(f'Debugging point 2')
+
         if exposure_info['filter_'] == 'None':
             try:
                 exposure_info['filter_'] = exposure_info['specmode_filter'][self.telescope.tel_name]
@@ -205,7 +209,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 self.is_running = False
                 self._log.critical(f'==========LV2[{type(self).__name__}] is failed: filter is not defined.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: filter is not defined.')
-         
+        self._log.info(f'Debugging point 3')
+
         # Slewing
         if target.status['coordtype'] == 'radec':
             try:
@@ -240,6 +245,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self.is_running = False
             self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Coordinate type of the target : {target.status["coordtype"]} is not defined')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Coordinate type of the target : {target.status["coordtype"]} is not defined')
+        self._log.info(f'Debugging point 4')
 
         # Get exposure information
         observation_requested = self._exposureinfo_to_list(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
@@ -253,6 +259,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         
         action_autofocus = AutoFocus(singletelescope= self.telescope, abort_action= self.abort_action)
         self.shared_memory['status'] = observation_status
+        self._log.info(f'Debugging point 5')
 
         observation_trigger = {'filter_': [],
                                'exptime': [],
@@ -267,7 +274,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 observation_trigger['exptime'].append(exptime)
                 observation_trigger['count'].append(net_count)
                 observation_trigger['binning'].append(binning)
-                
+        self._log.info(f'Debugging point 6')
+ 
         # Autofocus before beginning the first observation set 
         if autofocus_before_start:
             try:
@@ -282,7 +290,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             except ActionFailedException:
                 self._log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                 pass
-            
+        self._log.info(f'Debugging point 7')
         result_all_exposure = []
         for filter_, exptime, count, binning in zip(observation_trigger['filter_'], observation_trigger['exptime'], observation_trigger['count'], observation_trigger['binning']):
             info_filterwheel = self.telescope.filterwheel.get_status()
@@ -290,7 +298,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             is_filter_changed = (current_filter != filter_)
             
             if is_filter_changed:
-                
+                self._log.info(f'Debugging point 8')
+
                 # Apply offset
                 offset = self.telescope.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
                 self._log.info(f'[{type(self).__name__}] Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
@@ -334,7 +343,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     except ActionFailedException:
                         self._log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                         pass
-        
+            self._log.info(f'Debugging point 9')
             # Exposure
             action_exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
             for frame_number in range(int(count)):
@@ -375,6 +384,8 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                           objtype = objtype,
                                                           id_ = id_,
                                                           note = note)
+                    self._log.info(f'Debugging point 9')
+
                     # Update self.observation_status
                     observation_status[filter_]['observed'] += 1
                     self.shared_memory['status'] = observation_status

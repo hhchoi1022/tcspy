@@ -1,6 +1,7 @@
 #%%
 from tcspy.interfaces import *
 from tcspy.devices import SingleTelescope
+from tcspy.utils import Timeout
 
 class TelescopeStatus(Interface):
     
@@ -139,12 +140,23 @@ class TelescopeStatus(Interface):
         Returns:
             status : str = safetymonitor's status [disconnected, safe, unsafe]
         """
+
         status = 'disconnected'
+
+        @Timeout(3, 'Timeout error when updating status of SafetyMonitor device')
+        def update_status(status):
+            status = 'disconnected'
+            try:
+                device_status = self.telescope.safetymonitor.get_status()
+                if device_status['is_connected']:
+                    status = 'unsafe'
+                    if device_status['is_safe']:
+                        status = 'safe'
+            except:
+                pass
+            return status
         try:
-            if self.telescope.safetymonitor.device.Connected:
-                status = 'unsafe'
-                if self.telescope.safetymonitor.device.IsSafe:
-                    status = 'safe'
+            status = update_status(status)
         except:
             pass
         return status
@@ -157,13 +169,28 @@ class TelescopeStatus(Interface):
             status : str = weather's status [disconnected, safe, unsafe]
         """
         status = 'disconnected'
+        
+        @Timeout(3, 'Timeout error when updating status of Weather device')
+        def update_status(status):
+            status = 'disconnected'
+            try:
+                device_status = self.telescope.weather.get_status()
+                if device_status['is_connected']:
+                    status = 'unsafe'
+                    if device_status['is_safe']:
+                        status = 'safe'
+            except:
+                pass
+            return status
         try:
-            if self.telescope.weather.device.Connected:
-                status = 'unsafe'
-                if self.telescope.weather.get_status()['is_safe']:
-                    status = 'safe'
+            status = update_status(status)
         except:
-            pass
+            pass    
+        
         return status
 
+# %%
+if __name__ == '__main__':
+    t = TelescopeStatus(SingleTelescope(2))
+    t.weather
 # %%

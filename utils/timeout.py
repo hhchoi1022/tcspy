@@ -39,7 +39,7 @@ def Timeout(timeout, error : str):
                     res[0] = func(*args, **kwargs)
                     #res[0] : api 데이터, 메서드를 실행시켜서 값을 저장
                 except Exception as e:
-                    print("오류발생")
+                    print(error)
                     res[0] = e
                     #print("res[0] except", res[0]) #함수 자체가 실행이 안 되는 오류 처리
             t = Thread(target=newFunc)
@@ -54,7 +54,7 @@ def Timeout(timeout, error : str):
             # print("ret", ret)
             #print("ret 타입", type(ret))
             if isinstance(ret, BaseException):
-                print("오류 발생")
+                print(error)
                 raise ret
             return ret
         return wrapper

@@ -67,9 +67,3 @@ class NightSession:
             else:
                 setattr(obsnight_ltc, key, value)
         return obsnight_ltc 
-
-# %%
-NS = NightSession()
-# %%
-NS.obsnight_utc.sunset_astro
-# %%

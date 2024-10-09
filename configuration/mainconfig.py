@@ -65,7 +65,6 @@ class mainConfig:
                            ip_address: str = '10.0.106.6',
                            portnum : int = '11111',
                            update_focusmodel : bool = True,
-                           calc_focusmodel : bool = False,
                            **kwargs):
         savepath_unit = self.path_unit
         if not os.path.exists(savepath_unit):
@@ -116,9 +115,10 @@ class mainConfig:
                                )
         
         image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
-                            FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$.fits",
+                            FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$",
                             IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/',
                             IMAGE_SAVEHEADER = True,
+                            IMAGE_FORMAT = 'FITS'
                             )
         
         logger_params = dict(LOGGER_SAVE=True,
@@ -229,8 +229,6 @@ class mainConfig:
         if update_focusmodel:
             from tcspy.configuration import FocusModel
             F = FocusModel(unitnum = self.unitnum, configpath = self.path_global, filtinfo_file = './filtinfo.data', offset_file = 'filter.offset')
-            if calc_focusmodel:
-                F.calc_model_params(**kwar)
             F.update_params()
         
 
@@ -252,7 +250,7 @@ if __name__ == '__main__':
                    '10.0.106.9']
     for unitnum, address in zip(unitnumlist, addresslist):
         A = mainConfig(unitnum=unitnum)
-        A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = False)
+        A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = True)
 
 # %%
 if __name__ == '__main__':

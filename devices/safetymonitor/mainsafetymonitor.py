@@ -172,7 +172,7 @@ class mainSafetyMonitor(mainConfig):
         status['is_safe'] = None
         status['name'] = None
 
-        @Timeout(3, 'Timeout')
+        @Timeout(3, 'Timeout error when updating status of SafetyMonitor device') 
         def update_status(status: dict):
             if self.device.Connected:
                 try:
@@ -196,7 +196,7 @@ class mainSafetyMonitor(mainConfig):
                 except:
                     pass
                 try:
-                    status['is_connected'] = self.device.Connected
+                    status['is_connected'] = True
                 except:
                     pass
             return status
@@ -209,8 +209,8 @@ class mainSafetyMonitor(mainConfig):
 # %%
 if __name__ == '__main__':
     safe = mainSafetyMonitor()
-    safe.connect()
-    safe.get_status()
+    #safe.connect()
+    #safe.get_status()
     #safe.run(abort_action = Event())
 
 # %%

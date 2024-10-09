@@ -81,6 +81,10 @@ class NightObservation(mainConfig):
             self.is_safe = self._is_safetymonitor_safe
 
         # Get status of all telescopes
+        #for tel_name, telescope in self.multitelescopes.devices.items():
+        #    print(tel_name)
+        #    if self._is_tel_ready(TelescopeStatus(telescope).dict):
+        #        self.tel_queue[tel_name] = telescope
         status_devices = self.multitelescopes.status
         for tel_name, status in status_devices.items():
             if self._is_tel_ready(status):

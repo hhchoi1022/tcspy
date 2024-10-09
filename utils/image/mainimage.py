@@ -142,7 +142,7 @@ class mainImage(mainConfig):
             self.hdu.writeto(filepath, overwrite = False) 
         
         if self._configinfo['IMAGE_SAVEHEADER']:
-            headername = filename.split('.')[0] + '.head'
+            headername = filename.replace(('.%s' %self._configinfo['IMAGE_FORMAT']).lower(), '.head')
             headerpath = os.path.join(self._configinfo['IMAGE_PATH'], foldername, headername)
             with open(headerpath, 'w') as f:
                 f.write(self.hdu.header.tostring(sep = '\n'))
@@ -234,6 +234,7 @@ class mainImage(mainConfig):
         # Use regular expressions to find and replace the placeholders
         pattern = r'\$\$(.*?)\$\$'
         output_string = re.sub(pattern, replace_placeholder, format_filename)
+        output_string += ('.%s' %self._configinfo['IMAGE_FORMAT']).lower()
         return output_string
     
     def _format_header(self,

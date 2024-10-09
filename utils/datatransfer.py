@@ -208,14 +208,19 @@ class DataTransferManager(mainConfig):
         
     
 # %%
-A = DataTransferManager()
+if __name__ == '__main__':  
+    A = DataTransferManager()
 #%%
-import time
-file_key_list = ['*/image/2024-09-19_gain2750']#, '*/image/2024-08-12_gain2750']
-for file_key in file_key_list:
-    A.run(key = file_key, thread = False, tar=  False)
-    time.sleep(100)
-#A.run(key = f'*/images/2024-07-01_gain0', thread = False)
+if __name__ == '__main__':
+
+    import time
+    month = 10
+    datelist = [3]
+    file_key_list = [f'*/image/2024-%.2d-%.2d_gain2750' %(month,date) for date in datelist]#, '*/image/2024-08-12_gain2750']
+    for file_key in file_key_list:
+        A.run(key = file_key, thread = False, tar=  True)
+        time.sleep(100)
+    #A.run(key = f'*/images/2024-07-01_gain0', thread = False)
 # %%
 
 # %%

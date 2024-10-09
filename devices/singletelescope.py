@@ -12,8 +12,6 @@ from tcspy.devices.mount import mainMount_Alpaca
 from tcspy.devices.mount import mainMount_pwi4
 #%%
 
-
-
 class SingleTelescope(mainConfig):
     """
     A class representing a single telescope setup.
@@ -159,3 +157,4 @@ class SingleTelescope(mainConfig):
     def _get_safetymonitor(self):
         return mainSafetyMonitor()
     
+# %%

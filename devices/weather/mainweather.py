@@ -81,7 +81,6 @@ class mainWeather(mainConfig):
 
     def run(self, abort_action : Event):
         
-        @Timeout(5, 'Timeout')
         def update_status():
             if not self.device.Connected:
                 self.connect()  
@@ -138,6 +137,7 @@ class mainWeather(mainConfig):
             raise ConnectionException('Disconnect failed')
         return True   
 
+    @Timeout(5, 'Timeout')
     def update_info_file(self, return_status : bool = False):
         current_status = self._status
         dt_ut = datetime.strptime(current_status['update_time'], '%Y-%m-%dT%H:%M:%S.%f')
@@ -211,7 +211,7 @@ class mainWeather(mainConfig):
         status['fwhm'] = None
         status['constraints'] = self.constraints
 
-        @Timeout(3, 'Timeout')
+        @Timeout(3, 'Timeout error when updating status of Weather device') 
         def update_status(status):
             if self.device.Connected:
                 try:
