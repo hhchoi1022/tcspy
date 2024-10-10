@@ -198,8 +198,9 @@ class mainSafetyMonitor(mainConfig):
             return status
         try:
             status = update_status(status)
-        except:
-            return status
+        except:    
+            pass
+        return status
         
     
 # %%

@@ -36,9 +36,6 @@ class NightObservation(mainConfig):
         self.safetymonitor = next(iter(self.multitelescopes.devices.values())).devices['safetymonitor']
 
         self.autofocus = self.autofocus_config()
-        self.transfer_manager = DataTransferManager(source_home_directory = self.config['TRANSFER_SOURCE_HOMEDIR'], 
-                                                    archive_home_directory = self.config['TRANSFER_ARCHIVE_HOMEDIR'], 
-                                                    server_home_directory = self.config['TRANSFER_SERVER_HOMEDIR'])
 
         self.action_queue = list()
         self.tel_queue = dict()

@@ -9,7 +9,7 @@ from threading import Thread
 import glob
 from tqdm import tqdm
 import re
-import datetime
+from datetime import datetime
 import time
 #%%
 class DataTransferManager(mainConfig):
@@ -264,7 +264,7 @@ if __name__ == '__main__':
     A.start_monitoring(
         ordinary_file_key='*/image/*',   # Adjust these parameters as needed
         ToO_file_key='*/image/*_ToO',
-        too_inactivity=1800,             # 30 minutes of inactivity
+        inactivity_period=1800,             # 30 minutes of inactivity
         tar=True,                        # Compress files into tar
         protocol='gridftp'               # File transfer protocol
     )

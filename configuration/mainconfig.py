@@ -107,7 +107,7 @@ class mainConfig:
                               FOCUSER_MAXSTEP= 14000,
                               FOCUSER_CHECKTIME=0.5)
         
-        observer_params = dict(OBSERVER_LONGITUDE= -70.7804,r
+        observer_params = dict(OBSERVER_LONGITUDE= -70.7804,
                                OBSERVER_LATITUDE= -30.4704,
                                OBSERVER_ELEVATION= 1580,
                                OBSERVER_TIMEZONE= 'America/Santiago',
@@ -203,6 +203,7 @@ class mainConfig:
                                SHUTDOWN_CCDTEMP = 10,
                                SHUTDOWN_CCDTEMP_TOLERANCE = 1)
         
+        nightobs_params = dict(NIGHTOBS_SAFETYPE = 'safetymonitor',)        
         self.make_configfile(mount_params, filename='Mount.config', savepath = savepath_unit)
         self.make_configfile(camera_params, filename='Camera.config', savepath = savepath_unit)
         self.make_configfile(filterwheel_params, filename='FilterWheel.config', savepath = savepath_unit)
@@ -216,6 +217,7 @@ class mainConfig:
         self.make_configfile(target_params, filename='Target.config', savepath= self.path_global)
         self.make_configfile(transfer_params, filename='Transfer.config', savepath= self.path_global)
 
+        
         self.make_configfile(weather_params, filename='Weather.config', savepath= self.path_global)
         self.make_configfile(dome_params, filename='Dome.config', savepath= self.path_global)
         self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self.path_global)
@@ -225,6 +227,7 @@ class mainConfig:
         self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self.path_global)
         self.make_configfile(startup_params, filename = 'startup.config', savepath= self.path_global)
         self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_global)
+        self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_global)
 
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
