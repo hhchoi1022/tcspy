@@ -518,9 +518,9 @@ if __name__ == '__main__':
     #tbl = A.data
     #tbl_insert = tbl[2067:2069]
     #D.insert(tbl_insert)
-    D.from_GSheet('20241010')
+    D.from_GSheet('20241012')
     #D.update_RIS_obscount(remove = True)
     #D.from_RIS(size = 50)
-    #D.initialize(True)
+    D.initialize(True)
     #D.write()
 # %%

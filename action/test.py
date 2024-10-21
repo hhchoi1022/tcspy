@@ -17,7 +17,7 @@ def return_image(cam):
 
 #%%
 
-unitnumlist = [1,2,3,5,6,7,8,9,10,11]
+unitnumlist = [1,2,3,4,5,6,7,8,9,10,11]
 camlist = dict()
 for unitnum in unitnumlist:
     camlist[unitnum] = mainCamera(unitnum)
@@ -63,6 +63,7 @@ from tcspy.devices import SingleTelescope
 telescope1 = SingleTelescope(1)
 telescope2 = SingleTelescope(2)
 telescope3 = SingleTelescope(3)
+telescope4 = SingleTelescope(4)
 telescope5 = SingleTelescope(5)
 telescope6 = SingleTelescope(6)
 telescope7 = SingleTelescope(7)
@@ -71,7 +72,7 @@ telescope9 = SingleTelescope(9)
 telescope10 = SingleTelescope(10)
 telescope11= SingleTelescope(11)
 
-array_telescope= [ telescope1, telescope2, telescope3, telescope5, telescope6, telescope7, telescope8, telescope9, telescope10, telescope11]
+array_telescope= [ telescope1, telescope2, telescope3, telescope4, telescope5, telescope6, telescope7, telescope8, telescope9, telescope10, telescope11]
 
 #%% Exposure
 kwargs = dict(frame_number = 1, exptime = 5, filter_ = 'r', imgtype = 'DARK')
@@ -92,4 +93,33 @@ m.run()
 kwargs = dict(ra = 300, dec=  -20)
 m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewRADec, abort_action = abort_action)
 m.run()
+# %%
+
+# %% SLew
+import time
+
+kwargs = dict(alt = 45, az=  200)
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewAltAz, abort_action = abort_action)
+m.run()
+time.sleep(15)
+kwargs = dict(alt = 35, az=  240)
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewAltAz, abort_action = abort_action)
+m.run()
+time.sleep(15)
+kwargs = dict(alt = 65, az=  180)
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewAltAz, abort_action = abort_action)
+m.run()
+time.sleep(15)
+kwargs = dict(alt = 60, az=  240)
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewAltAz, abort_action = abort_action)
+m.run()
+time.sleep(15)
+kwargs = dict(alt = 75, az=  270)
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewAltAz, abort_action = abort_action)
+m.run()
+time.sleep(15)
+kwargs = dict(alt = 30, az=  90)
+m = MultiAction(array_telescope = array_telescope, array_kwargs= kwargs, function = SlewAltAz, abort_action = abort_action)
+m.run()
+time.sleep(15)
 # %%

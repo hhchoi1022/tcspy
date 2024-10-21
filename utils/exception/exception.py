@@ -69,3 +69,6 @@ class SpecmodeRegisterException(Exception):
 
 class ObsModeRegisterException(Exception):
     pass
+
+class DeviceNotReadyException(Exception):
+    pass

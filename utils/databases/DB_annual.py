@@ -13,6 +13,8 @@ import numpy as np
 from astroplan import observability_table
 from astroplan import AltitudeConstraint, MoonSeparationConstraint
 import tqdm
+import matplotlib.pyplot as plt
+from astropy.io import ascii
 
 # %%
 
@@ -286,6 +288,79 @@ class DB_Annual(mainConfig):
         #if not self.sql.connected:
         #Z    self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
+    
+    def visualize(self, 
+                show_observed: bool = True, 
+                tileinfo_filepath: str = '../databases/sky-grid and tiling/7-DT/final_tiles.txt'):
+        from matplotlib.patches import Polygon
+        from astropy.table import join
+
+        # Read the tile information from the ASCII file
+        tileinfo = ascii.read(tileinfo_filepath)
+        # Extract tile information from the database
+        observed_tiles_in_DB = self.data[self.data['obs_count'] > 0]        
+        observed_tileinfo = join(tileinfo, observed_tiles_in_DB, keys_left = 'id', keys_right = 'objname', join_type = 'inner')
+        observed_tileinfo['ob_couunt'] = observed_tiles_in_DB['obs_count']
+        
+        # Prepare figure and axis
+        fig = plt.figure(figsize=(12, 6), dpi=300)
+        ax = fig.add_subplot(111, projection="mollweide")
+           
+        # Helper function to convert degrees to radians (for Mollweide projection)
+        def to_radians(ra, dec):
+            # Convert RA to the range [-180, 180) in radians
+            ra = np.deg2rad(ra - 180)
+            dec = np.deg2rad(dec)
+            return ra, dec
+
+        # Loop through tiles and add them as polygons
+        for tile in tileinfo:
+            # Extract the corners
+            corners = [
+                (tile['ra1'], tile['dec1']),
+                (tile['ra2'], tile['dec2']),
+                (tile['ra3'], tile['dec3']),
+                (tile['ra4'], tile['dec4']),
+            ]
+            
+            # Convert corners to radians for plotting
+            corners_rad = [to_radians(ra, dec) for ra, dec in corners]
+
+            # Create a polygon for the tile
+            polygon = Polygon(corners_rad, closed=True, edgecolor='black', facecolor='black', alpha=0.1, linewidth=0.3)
+            ax.add_patch(polygon)
+
+        if show_observed:
+            for tile in observed_tileinfo:
+                # Extract the corners
+                corners = [
+                    (tile['ra1'], tile['dec1']),
+                    (tile['ra2'], tile['dec2']),
+                    (tile['ra3'], tile['dec3']),
+                    (tile['ra4'], tile['dec4']),
+                ]
+                centers = (tile['ra'], tile['dec'])
+                
+                # Convert corners to radians for plotting
+                corners_rad = [to_radians(ra, dec) for ra, dec in corners]
+                
+                # Create a polygon for the tile
+                ax.scatter(*to_radians(centers[0], centers[1]), color='red', s=5, alpha = 0.5)
+                #polygon = Polygon(corners_rad, closed=True, edgecolor='red', facecolor='red', alpha=0.3, linewidth=0.3)
+                #ax.add_patch(polygon)
+        
+        # Configure the Mollweide projection
+        ax.grid(True, linestyle='--', alpha=0.5)
+        ax.set_xticklabels(
+            ['14h', '16h', '18h', '20h', '22h', '0h', '2h', '4h', '6h', '8h', '10h'], 
+            fontsize=10
+        )
+
+        # Title and show the plot
+        plt.title('Sky Tiles Visualization in Mollweide Projection')
+        plt.show()
+
+        
 
     def _set_constrints(self):
         class constraint: pass

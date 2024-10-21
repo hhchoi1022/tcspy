@@ -54,9 +54,16 @@ list_telescopes = [#SingleTelescope(1),
                         SingleTelescope(7),
                         SingleTelescope(8),
                         SingleTelescope(9),
-                    #    SingleTelescope(10),
+                        SingleTelescope(10),
                         SingleTelescope(11),
                         ]
 # %%
-MultiAction(list_telescopes, dict(position = -3000, is_relative = True), ChangeFocus, Event()).run()
+MultiAction(list_telescopes, dict(position = -6000, is_relative = True), ChangeFocus, Event()).run()
+# %%
+
+#%%
+tel_num = 11
+focus_val = 8900
+tel = SingleTelescope(tel_num)
+ChangeFocus(tel, Event()).run(focus_val)   
 # %%

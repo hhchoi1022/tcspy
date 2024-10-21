@@ -82,7 +82,7 @@ class FlatAcquisition(mainConfig):
         
 # %%
 if __name__ == '__main__':
-    list_telescope = [SingleTelescope(1),
+    list_telescope = [#SingleTelescope(1),
                       SingleTelescope(2),
                       SingleTelescope(3),
                       SingleTelescope(5),

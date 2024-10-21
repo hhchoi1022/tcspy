@@ -83,9 +83,16 @@ class NightObservation(mainConfig):
 
         # Get status of all telescopes
         status_devices = self.multitelescopes.status
+        not_ready_tel = []
         for tel_name, status in status_devices.items():
             if self._is_tel_ready(status):
                 self.tel_queue[tel_name] = self.multitelescopes.devices[tel_name]
+            else:
+                not_ready_tel.append(tel_name)
+        if len(not_ready_tel) > 0:
+            for tel_name in not_ready_tel:
+                print(f'{tel_name} is not ready for observation')
+            raise DeviceNotReadyException(f'{not_ready_tel} is not ready for observation')
         # Initialization is finished
 
     def _is_tel_ready(self, tel_status_dict):
