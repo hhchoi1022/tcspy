@@ -3,17 +3,16 @@
 
 #%%%
 from slack_sdk import WebClient
-from astropy.io import ascii
 
 #%%
 
 class SlackConnector():
     
     def __init__(self,
-                 token_path : str  = '~/.config/slack/slack_token_7dt_obseration_alert.txt',
+                 token_path : str  = '/home/kds/.config/slack/slack_token_7dt_obseration_alert.txt',
                  default_channel_id : str = 'C07SREPTWFM'):
-        self.token = ascii.read(token_path)
-        self.client = WebClient(token = self.token)
+        token = open(token_path, 'r').read()
+        self.client = WebClient(token = token)
         self.channel_id = default_channel_id
     
     def get_channel_id(self, channel_name):

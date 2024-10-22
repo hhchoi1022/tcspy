@@ -379,37 +379,9 @@ class DB_Annual(mainConfig):
 # %%
 if __name__ == '__main__':
     db = DB_Annual()
-    current_obscount = len(db.data[db.data['obs_count']>  1])
+    current_obscount = len(db.data[db.data['obs_count']>  0])
     tot_tilecount = len(db.data)
+    print('Current_obscount = ', current_obscount)
+    print('Total_obscount_sum = ', np.sum(db.data['obs_count']))
     #print(f'{current_obscount}/{tot_tilecount}')
 # %%
-fig, ax = plt.subplots(figsize=(8, 8))
-
-
-# Plotting each tile
-for tile in tiles:
-    center_ra, center_dec = tile["center"]
-    corners = tile["corners"]
-
-    # Extract corner coordinates
-    ra_corners = [corner[0] for corner in corners] + [corners[0][0]]
-    dec_corners = [corner[1] for corner in corners] + [corners[0][1]]
-
-    # Plot the tile's boundary
-    ax.plot(ra_corners, dec_corners, marker='o', linestyle='-', label='Tile Boundary')
-
-    # Plot the center
-    ax.plot(center_ra, center_dec, 'x', markersize=10, label='Center')
-
-# Set axis labels
-ax.set_xlabel('RA (deg)')
-ax.set_ylabel('Dec (deg)')
-ax.invert_xaxis()  # Invert RA axis to match sky coordinates
-
-# Title and legend
-plt.title('Sky Tiles Visualization')
-plt.legend()
-plt.grid(True)
-
-# Show the plot
-plt.show()
