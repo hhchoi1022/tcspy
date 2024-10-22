@@ -10,7 +10,7 @@ from slack_sdk import WebClient
 class SlackConnector():
     
     def __init__(self,
-                 token : str  = 'xoxb-4343183012295-7932430319440-9H7CI53ZaOUZiH41crPW7GlY',
+                 token : str  = '',
                  default_channel_id : str = 'C07SREPTWFM'):
         self.token = token
         self.client = WebClient(token = self.token)
