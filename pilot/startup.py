@@ -11,7 +11,6 @@ from tcspy.devices import SingleTelescope
 from tcspy.devices import MultiTelescopes
 from tcspy.utils.exception import *
 
-
 from tcspy.action.level1 import Cool
 from tcspy.action.level1 import Connect
 from tcspy.action.level1 import Home
