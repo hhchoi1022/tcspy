@@ -3,16 +3,16 @@
 
 #%%%
 from slack_sdk import WebClient
-
+from astropy.io import ascii
 
 #%%
 
 class SlackConnector():
     
     def __init__(self,
-                 token : str  = 'xoxb-4343183012295-7932430319440-9H7CI53ZaOUZiH41crPW7GlY',
+                 token_path : str  = '~/.config/slack/slack_token_7dt_obseration_alert.txt',
                  default_channel_id : str = 'C07SREPTWFM'):
-        self.token = token
+        self.token = ascii.read(token_path)
         self.client = WebClient(token = self.token)
         self.channel_id = default_channel_id
     
@@ -87,6 +87,6 @@ class SlackConnector():
 # %%
 if __name__ == '__main__':
     A = SlackConnector()
-    ts = A.get_message_ts('Test message')
-    A.post_thread_message(A.channel_id, ts, 'Thread message')
+    #ts = A.get_message_ts('Test message')
+    #A.post_thread_message(A.channel_id, ts, 'Thread message')
 # %%
