@@ -62,7 +62,27 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         self.shared_memory['succeeded'] = False
         self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
         self.is_running = False
-    
+
+    def run_threaded(self, filter_ : str = None, use_offset : bool = True):
+        """
+        Starts the autofocus process in a separate thread.
+
+        Parameters
+        ----------
+        filter_ : str
+            The name of the filter to use during autofocus.
+        use_offset : bool
+            Whether or not to use offset during autofocus.
+
+        Returns
+        -------
+        Thread
+            A Thread instance representing the autofocus process.
+        """
+        autofocus_thread = Thread(target=self.run, kwargs=dict(filter_ = filter_, use_offset = use_offset))
+        autofocus_thread.start()
+        return autofocus_thread
+
     def run(self,
             filter_ : str = None,
             use_offset : bool = True,
@@ -121,11 +141,11 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         # Define action
         action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action)
         action_changefilter = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action)
-        focus_history = self.history[filter_]
         
         if filter_ == None:
             info_filterwheel = self.telescope.filterwheel.get_status()
             filter_ = info_filterwheel['filter']
+        focus_history = self.history[filter_]
         
         # Apply focus offset
         if use_offset:
@@ -172,7 +192,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         try:
             # If use_history == False, run Autofocus
             if not use_history:
-                result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
+                result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
             # Else: use focus history value. In this case, do not run Autofocus
             else:    
                 if focus_history['succeeded']:
@@ -187,9 +207,9 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                         self._log.info(f'==========LV2[{type(self).__name__}] is finished')
                         return True
                     else:
-                        result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)                
+                        result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)                
                 else:
-                    result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)                
+                    result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)                
         except AbortionException:
             self.abort()
         except AutofocusFailedException:
@@ -222,7 +242,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             self._log.info(f'[{type(self).__name__}]Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')
             
             try: 
-                result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
+                result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
                 # When succeeded
                 if result_autofocus:
                     self.is_running = False
@@ -258,7 +278,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 
                 # Autofocus
                 try: 
-                    result_autofocus, autofocus_position = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
+                    result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
                     # When succeeded
                     if result_autofocus:
                         self.is_running = False
@@ -331,8 +351,3 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         self.is_running = False
         self._log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
-# %%
-if __name__ == '__main__':
-    from tcspy.devices import SingleTelescope
-    a = AutoFocus(SingleTelescope(2), Event())
-# %%

@@ -240,6 +240,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                 else:
                     self.multitelescopes.log_dict[tel_name].info(f'===============LV3[{type(self).__name__}] is failed')
             raise ActionFailedException(f'[{type(self).__name__}] is failed.')    
+        
         self.shared_memory['succeeded'] = all(self.shared_memory['status'].values())
         self.is_running = False 
         if self.shared_memory['succeeded']:

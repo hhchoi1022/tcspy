@@ -48,11 +48,12 @@ class SlackConnector():
         # 채널 내 메세지 정보 딕셔너리 리스트
         messages = result.data['messages']
         # 채널 내 메세지가 query와 일치하는 메세지 딕셔너리 쿼리
-        message = list(filter(lambda m: match_string in m["text"], messages))[0]
+        matched_messages = list(filter(lambda m: match_string in m["text"], messages))
         # 해당 메세지ts 파싱
-        if len(message) == 0:
-            raise ValueError(f"Message {match_string} not found")   
-        message_ts = message["ts"]
+        if len(matched_messages) == 0:
+            print(f"Message {match_string} not found")   
+            return None
+        message_ts = matched_messages[0]["ts"]
         return message_ts
 
     def post_thread_message(self, message_ts, text):

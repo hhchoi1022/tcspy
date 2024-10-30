@@ -107,7 +107,7 @@ class Shutdown(mainConfig):
 if __name__ == '__main__':
     import time
     start = time.time()
-    list_telescopes = [#SingleTelescope(1),
+    list_telescopes =  [SingleTelescope(1),
                         SingleTelescope(2),
                         SingleTelescope(3),
                         SingleTelescope(4),
@@ -118,6 +118,8 @@ if __name__ == '__main__':
                         SingleTelescope(9),
                         SingleTelescope(10),
                         SingleTelescope(11),
+                        SingleTelescope(13),
+                        SingleTelescope(14)
                         ]
 
     print(time.time() - start)

@@ -137,7 +137,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)  
         
-        self.DB.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = 'scheduled', update_keys = 'status', id_value = target['id'], id_key = 'id')
         action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
@@ -148,11 +148,11 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_value = 'observed', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'observed', update_keys = 'status', id_value = target['id'], id_key = 'id')
         except AbortionException:
-            self.DB.update_target(update_value = 'aborted', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'aborted', update_keys = 'status', id_value = target['id'], id_key = 'id')
         except ActionFailedException:
-            self.DB.update_target(update_value = 'failed', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'failed', update_keys = 'status', id_value = target['id'], id_key = 'id')
         finally:
             # Pop the action and telescope from  the action_queue
             self._pop_action(action_id = action_id)
@@ -180,7 +180,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)  
 
-        self.DB.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = 'scheduled', update_keys = 'status', id_value = target['id'], id_key = 'id')
         action = DeepObservation(multitelescopes= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
@@ -191,11 +191,11 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_value = 'observed', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'observed', update_keys = 'status', id_value = target['id'], id_key = 'id')
         except AbortionException:
-            self.DB.update_target(update_value = 'aborted', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'aborted', update_keys = 'status', id_value = target['id'], id_key = 'id')
         except ActionFailedException:
-            self.DB.update_target(update_value = 'failed', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'failed', update_keys = 'status', id_value = target['id'], id_key = 'id')
         finally:
             # Pop the action and telescope from  the action_queue
             self._pop_action(action_id = action_id)
@@ -225,7 +225,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)    
 
-        self.DB.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = 'scheduled', update_keys = 'status', id_value = target['id'], id_key = 'id')
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
@@ -236,11 +236,11 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_value = 'observed', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'observed', update_keys = 'status', id_value = target['id'], id_key = 'id')
         except AbortionException:
-            self.DB.update_target(update_value = 'aborted', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'aborted', update_keys = 'status', id_value = target['id'], id_key = 'id')
         except ActionFailedException:
-            self.DB.update_target(update_value = 'failed', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'failed', update_keys = 'status', id_value = target['id'], id_key = 'id')
         finally:
             # Pop the action and telescope from  the action_queue
             self._pop_action(action_id = action_id)
@@ -270,7 +270,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)          
 
-        self.DB.update_target(update_value = 'scheduled', update_key = 'status', id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = 'scheduled', update_keys = 'status', id_value = target['id'], id_key = 'id')
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
@@ -281,11 +281,11 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_value = 'observed', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'observed', update_keys = 'status', id_value = target['id'], id_key = 'id')
         except AbortionException:
-            self.DB.update_target(update_value = 'aborted', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'aborted', update_keys = 'status', id_value = target['id'], id_key = 'id')
         except ActionFailedException:
-            self.DB.update_target(update_value = 'failed', update_key = 'status', id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = 'failed', update_keys = 'status', id_value = target['id'], id_key = 'id')
         finally:
             # Pop the action and telescope from  the action_queue
             self._pop_action(action_id = action_id)
@@ -618,7 +618,7 @@ class NightObservation(mainConfig):
                 #    all_tel_status = {tel_name:self._is_tel_ready(tel_status) for tel_name, tel_status in action['telescope'].status.items()}
                 self._pop_action(action_id =action['id'])
                 self._put_telescope(telescope = action['telescope'])
-                self.DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')
+                self.DB.update_target(update_values = 'aborted', update_keys = 'status', id_value = action['target']['id'], id_key = 'id')
 
         # Get status of all telescopes
         return action_history
@@ -632,7 +632,7 @@ class NightObservation(mainConfig):
             ToO_targets_unobserved = targets[targets['objtype'].upper() == 'TOO']
             if len(ToO_targets_unobserved) > 0:
                 for ToO_target in ToO_targets_unobserved:
-                    self.DB.update_target(update_value = 'retracted', update_key = 'status', id_value =  ToO_target['id'], id_key = 'id')
+                    self.DB.update_target(update_values = 'retracted', update_keys = 'status', id_value =  ToO_target['id'], id_key = 'id')
         if len(action_history) > 0:
             for action in action_history:
                 self.multitelescopes.log.warning('Waiting for ordinary observation aborted...')
@@ -640,7 +640,7 @@ class NightObservation(mainConfig):
                     time.sleep(0.2)
                 self._pop_action(action_id =action['id'])
                 self._put_telescope(telescope = action['telescope'])   
-                self.DB.update_target(update_value = 'aborted', update_key = 'status', id_value = action['target']['id'], id_key = 'id')    
+                self.DB.update_target(update_values = 'aborted', update_keys = 'status', id_value = action['target']['id'], id_key = 'id')    
         self.is_ToO_triggered = False
         return action_history
 

@@ -32,7 +32,7 @@ class DataTransferManager(mainConfig):
             current_time = datetime.now()
             
             # Check for ordinary file transfer at 8 AM local time
-            if current_time.hour == 8 and current_time.minute == 0:
+            if current_time.hour == 12 and current_time.minute == 0:
                 self.transfer_ordinary_files(ordinary_file_key = ordinary_file_key, tar = tar, protocol = protocol)
 
             # Check for ToO file transfer based on inactivity (no new files for 30 minutes)

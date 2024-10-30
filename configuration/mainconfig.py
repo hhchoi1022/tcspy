@@ -163,12 +163,9 @@ class mainConfig:
                                     SAFEMONITOR_UPDATETIME=60,
                                     SAFEMONITOR_PATH= f'/data2/obsdata/safetymonitor_history/')
         
-        target_params = dict(TARGET_MINALT=30,
+        target_params = dict(TARGET_MINALT=27,
                              TARGET_MAXALT=90,
                              TARGET_MOONSEP=40,
-                             TARGET_SUNALT_FLAT=0,
-                             TARGET_SUNALT_PREPARE=-5,
-                             TARGET_SUNALT_OBSERVATION=-18,
                              TARGET_WEIGHT_ALT = 0.5,
                              TARGET_WEIGHT_PRIORITY = 0.5)
 
@@ -179,7 +176,8 @@ class mainConfig:
                          DB_PATH= f'/data2/obsdata/DB_history')
         
         autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self.path_global,"filtinfo.data")}',
-                                AUTOFOCUS_FOCUSHISTORY_PATH = self.path_global)
+                                AUTOFOCUS_FOCUSHISTORY_PATH = self.path_global,
+                                AUTOFOCUS_TOLERANCE = 45)
         
         autoflat_params = dict(AUTOFLAT_ALTITUDE = 40,
                                AUTOFLAT_AZIMUTH = 270,
@@ -202,6 +200,11 @@ class mainConfig:
                                SHUTDOWN_AZ = 90,
                                SHUTDOWN_CCDTEMP = 10,
                                SHUTDOWN_CCDTEMP_TOLERANCE = 1)
+        
+        nightsession_params = dict(NIGHTSESSION_SUNALT_AUTOFLAT = -8,
+                                   NIGHTSESSION_SUNALT_STARTUP = -5,
+                                   NIGHTSESSION_SUNALT_OBSERVATION = -15,
+                                   NIGHTSESSION_SUNALT_SHUTDOWN = 0)
         
         nightobs_params = dict(NIGHTOBS_SAFETYPE = 'safetymonitor',)        
         self.make_configfile(mount_params, filename='Mount.config', savepath = savepath_unit)
@@ -228,6 +231,7 @@ class mainConfig:
         self.make_configfile(startup_params, filename = 'startup.config', savepath= self.path_global)
         self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_global)
         self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_global)
+        self.make_configfile(nightsession_params, filename = 'nightsession.config', savepath= self.path_global)
 
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
@@ -242,7 +246,7 @@ class mainConfig:
 
 #%%
 if __name__ == '__main__':
-    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11]
+    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,13,14]
     addresslist = ['10.0.106.6',
                    '10.0.106.7',
                    '10.0.106.8',
@@ -253,7 +257,9 @@ if __name__ == '__main__':
                    '10.0.106.13',
                    '10.0.106.14',
                    '10.0.106.15',
-                   '10.0.106.9']
+                   '10.0.106.9',
+                   '10.0.106.18',
+                   '10.0.106.19']
     for unitnum, address in zip(unitnumlist, addresslist):
         A = mainConfig(unitnum=unitnum)
         A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = True)

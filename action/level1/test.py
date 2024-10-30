@@ -49,6 +49,7 @@ from tcspy.action import MultiAction
 list_telescopes = [#SingleTelescope(1),
                         SingleTelescope(2),
                         SingleTelescope(3),
+                        SingleTelescope(4),
                         SingleTelescope(5),
                         SingleTelescope(6),
                         SingleTelescope(7),
@@ -56,6 +57,7 @@ list_telescopes = [#SingleTelescope(1),
                         SingleTelescope(9),
                         SingleTelescope(10),
                         SingleTelescope(11),
+                        SingleTelescope(13),
                         ]
 # %%
 MultiAction(list_telescopes, dict(position = -6000, is_relative = True), ChangeFocus, Event()).run()

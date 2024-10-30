@@ -159,13 +159,26 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.shared_memory['succeeded'] = False
         # Check condition of the instruments for this Action
         self._log.info(f'Debugging point 0.1')
-        status_filterwheel = self.telescope_status.filterwheel
-        self._log.info(f'Debugging point 0.2')
-        status_camera = self.telescope_status.camera
-        self._log.info(f'Debugging point 0.3')
-        status_mount = self.telescope_status.mount
-        self._log.info(f'Debugging point 0.4')
         trigger_abort_disconnected = False
+        try:        
+            status_mount = self.telescope_status.mount
+        except:
+            trigger_abort_disconnected = True
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: mount status cannot be loaded.')
+        self._log.info(f'Debugging point 0.4')
+        try:
+            status_camera = self.telescope_status.camera
+        except:
+            trigger_abort_disconnected = True
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera status cannot be loaded.')
+        self._log.info(f'Debugging point 0.3')
+        try:
+            status_filterwheel = self.telescope_status.filterwheel
+        except:
+            trigger_abort_disconnected = True
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: filterwheel status cannot be loaded.')
+        self._log.info(f'Debugging point 0.2')
+
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
             self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is disconnected.')

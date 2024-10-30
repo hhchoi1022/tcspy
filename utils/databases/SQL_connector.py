@@ -39,6 +39,11 @@ class SQL_Connector:
         """Get a connection from the pool"""
         return self.pool.get_connection()
 
+    def disconnect(self):
+        """Close all connections in the pool and release resources."""
+        self.pool = None  # Remove reference to the pool to allow for cleanup
+        print("Connection pool has been closed.")
+
     def execute(self, sql_command, params=None, commit=False):
         conn = self.connect()
         cursor = conn.cursor(buffered=True)

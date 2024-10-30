@@ -93,6 +93,12 @@ class DB_Daily(mainConfig):
         """
         self.sql.disconnect()
     '''
+    def disconnect(self):
+        """
+        Disconnects from the MySQL database and update the connection status flag to 
+        """
+        self.sql.disconnect()
+        
     def initialize(self, 
                    initialize_all : bool = False):       
         """
@@ -226,8 +232,8 @@ class DB_Daily(mainConfig):
         return insertion_result
         
     def update_target(self,
-                      update_value,
-                      update_key,
+                      update_values,
+                      update_keys,
                       id_value,
                       id_key = 'id'):
         """
@@ -245,8 +251,8 @@ class DB_Daily(mainConfig):
             The attribute key used to identify the target. 
         """
         self.sql.update_row(tbl_name = self.tblname,
-                            update_value = update_value,
-                            update_key = update_key,
+                            update_value = update_values,
+                            update_key = update_keys,
                             id_value = id_value,
                             id_key = id_key)
     
@@ -260,30 +266,51 @@ class DB_Daily(mainConfig):
         RIS = DB_Annual(tbl_name = 'RIS')
         best_targets = RIS.select_best_targets(utcdate = utcdate, size = size, observable_minimum_hour = observable_minimum_hour, n_time_grid = n_time_grid)
         self.insert(best_targets)
-        print(f'{len(best_targets)} are inserted')
+        print(f'{len(best_targets)} RIS targets are inserted')
+        
+    def from_IMS(self):
+        from tcspy.utils.databases import DB_Annual
+        IMS = DB_Annual(tbl_name = 'IMS')
+        best_targets = IMS.data
+        self.insert(best_targets)
+        print(f'{len(best_targets)} IMS targets are inserted')
     
-    def update_RIS_obscount(self,
-                            remove : bool = True):
+    def update_7DS_obscount(self,
+                            remove : bool = False,
+                            reset_status: bool = True,
+                            update_RIS : bool = True,
+                            update_IMS : bool = True,
+                            update_WFS : bool = False):
         daily_tbl = self.data
         obs_tbl = daily_tbl[daily_tbl['status'] == 'observed']
         from tcspy.utils.databases import DB_Annual
-        RIS = DB_Annual(tbl_name = 'RIS')
-        RIS_data = RIS.data
-        obscount = 0
-        remove_ids = []
-        for target in obs_tbl:
+        DB_annual = DB_Annual()
+        
+        observed_ids = []
+        update_survey_list = [tbl_name for tbl_name, do_update in zip(['RIS', 'IMS', 'WFS'],[update_RIS, update_IMS, update_WFS]) if do_update]
+        for tbl_name in update_survey_list:
             try:
-                count_before = RIS_data[RIS_data['objname'] == target['objname']]['obs_count']
-                if len(count_before) == 1:
-                    RIS.update_targets_count(target_id = target['objname'], count = count_before[0] +1, note = target['note'], id_key = 'objname')
-                    obscount +=1
-                    remove_ids.append(target['id'])
+                DB_annual.change_table(tbl_name)
+                DB_data = DB_annual.data
+                obscount = 0
+                for target in obs_tbl:    
+                    count_before = DB_data[DB_data['objname'] == target['objname']]['obs_count']
+                    if len(count_before) == 1:
+                        today_str = Time.now().isot[:10]
+                        DB_annual.update_target(target_id = target['objname'], update_keys = ['obs_count','note','last_obsdate'], update_values = [count_before[0]+1, target['note'], today_str], id_key = 'objname')
+                        obscount +=1
+                        observed_ids.append(target['id'])
+                print(f'{obscount} {DB_annual.tblname} tiles are updated')
             except:
                 pass
+        if reset_status:
+            for id_ in observed_ids:
+                self.update_target(update_values = ['unscheduled'], update_keys = ['status'], id_value = id_, id_key = 'id')
         if remove:
-            self.sql.remove_rows(tbl_name = self.tblname, ids = remove_ids)
-        print(f'{obscount} RIS tiles are updated')
-    
+            self.sql.remove_rows(tbl_name = self.tblname, ids = observed_ids)
+
+        DB_annual.disconnect()
+        
     def from_GSheet(self,
                     sheet_name : str,
                     update: bool = True
@@ -515,12 +542,15 @@ if __name__ == '__main__':
     D = DB_Daily(Time.now())
     from tcspy.utils.databases import DB_Annual
     #A = DB_Annual()
+    #tbl = A.data[A.data['note'] == 'S241011k']
     #tbl = A.data
     #tbl_insert = tbl[2067:2069]
-    #D.insert(tbl_insert)
-    #D.from_GSheet('240915')
-    D.update_RIS_obscount(remove = False)
+    #D.insert(tbl)
+    #D.from_GSheet('20241010')
+    
     #D.from_RIS(size = 50)
+    D.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True, update_WFS = False)
+    D.from_IMS()
     #D.initialize(True)
     #D.write()
 # %%

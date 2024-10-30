@@ -73,23 +73,22 @@ class DB_Annual(mainConfig):
         self.constraints = self._set_constrints()
         self.nightsession = NightSession()
 
-    '''
-    @property    
-    def connected(self):
-        return self.sql.connected
-    
     def connect(self):
         """
         Establish a connection to the MySQL database and set the cursor and executor.
         """
         self.sql.connect()
-    
+
     def disconnect(self):
         """
-        Disconnect from the MySQL database and update the connection status flag to False.
+        Disconnects from the MySQL database and update the connection status flag to 
         """
         self.sql.disconnect()
-    '''
+
+    def change_table(self, 
+                     tbl_name : str):
+        self.tblname = tbl_name
+    
     def initialize(self, 
                    utcdate : Time = Time.now(),
                    initialize_all : bool = False):
@@ -179,7 +178,7 @@ class DB_Annual(mainConfig):
         Table
         	A table containing the best targets for the night.
         """
-        obsnight = self.nightsession.set_obsnight(utctime = utcdate, horizon_flat = self.config['TARGET_SUNALT_FLAT'], horizon_prepare = self.config['TARGET_SUNALT_PREPARE'], horizon_observation = self.config['TARGET_SUNALT_OBSERVATION'])
+        obsnight = self.nightsession.set_obsnight(utctime = utcdate)
         observable_fraction_criteria = observable_minimum_hour / obsnight.observable_hour 
         
         #if not self.sql.connected:
@@ -257,12 +256,12 @@ class DB_Annual(mainConfig):
         """
         self.sql.insert_rows(tbl_name = 'Daily', data = target_tbl)
     
-    def update_targets_count(self,
-                             target_id : list,
-                             count : list,
-                             note : str = None,
-                             id_key : str = 'id'
-                             ):
+    def update_target(self,
+                     target_id : str,
+                     update_keys : list,
+                     update_values : list,
+                     id_key : str = 'id'
+                     ):
         """
         Update observation counts for target.
 
@@ -273,7 +272,7 @@ class DB_Annual(mainConfig):
         targets_count : int or list or np.array
         	A list containing the count of each target or int to set the all observations to.
         """
-        self.sql.update_row(tbl_name = self.tblname, update_value = [count, note], update_key = ['obs_count','note'], id_value = target_id, id_key = id_key)
+        self.sql.update_row(tbl_name = self.tblname, update_value = update_values, update_key = update_keys, id_value = target_id, id_key = id_key)
     
     @property
     def data(self):
@@ -285,8 +284,6 @@ class DB_Annual(mainConfig):
         Table
         	The table containing the data from the database. 
         """
-        #if not self.sql.connected:
-        #Z    self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
     
     def visualize(self, 
@@ -359,8 +356,19 @@ class DB_Annual(mainConfig):
         # Title and show the plot
         plt.title('Sky Tiles Visualization in Mollweide Projection')
         plt.show()
+    
+    def insert(self,
+               target_tbl : Table):
+        """
+        Inserts a new record into the table.
 
-        
+        Parameters
+        ----------
+        target_tbl : Table
+            An astropy table containing the target data to be inserted.
+        """
+        insertion_result = self.sql.insert_rows(tbl_name = self.tblname, data = target_tbl)
+        return insertion_result
 
     def _set_constrints(self):
         class constraint: pass
@@ -378,10 +386,10 @@ class DB_Annual(mainConfig):
         return constraint  
 # %%
 if __name__ == '__main__':
-    db = DB_Annual()
+    db = DB_Annual(tbl_name = 'RIS')
     current_obscount = len(db.data[db.data['obs_count']>  0])
     tot_tilecount = len(db.data)
     print('Current_obscount = ', current_obscount)
     print('Total_obscount_sum = ', np.sum(db.data['obs_count']))
-    #print(f'{current_obscount}/{tot_tilecount}')
+    print(f'{current_obscount}/{tot_tilecount}')
 # %%

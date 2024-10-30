@@ -1,0 +1,49 @@
+{
+    "7DT14": {
+        "g": {
+            "update_time": "2024-10-29T08:24:03.849",
+            "succeeded": true,
+            "focusval": 10106.0
+        },
+        "r": {
+            "update_time": "2024-10-29T08:29:47.327",
+            "succeeded": true,
+            "focusval": 10102.0
+        },
+        "i": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000
+        },
+        "Slot4": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000
+        },
+        "Slot5": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000
+        },
+        "Slot6": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000
+        },
+        "Slot7": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000
+        },
+        "Slot8": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000
+        },
+        "Slot9": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000
+        }
+    }
+}

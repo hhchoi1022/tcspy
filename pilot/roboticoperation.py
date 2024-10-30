@@ -28,7 +28,7 @@ time_now = Time.now().datetime
 time_now_str = '%.2d:%.2d'%(time_now.hour, time_now.minute)
 
 # Startup
-time_startup =obsnight.sunset_prepare.datetime
+time_startup =obsnight.sunset_startup.datetime
 time_startup_str = '%.2d:%.2d'%(time_startup.hour, time_startup.minute)
 
 # Observation start 
@@ -71,12 +71,13 @@ print('Startobs:', time_startobs_str)
 print('Endobs:', time_endobs_str)
 print('Bias:', time_bias_str)
 print('Flat:', time_flat_str)
-
 print('Dark10:', time_dark10_str)
 print('Dark20:', time_dark20_str)
 print('Dark30:', time_dark30_str)
 print('Dark100:', time_dark100_str)
 print('Shutdown:', time_shutdown_str)
+slack_schedule_str = f'Startup: {time_startup_str}\n Startobs: {time_startobs_str}\n Endobs: {time_endobs_str}\n Bias: {time_bias_str}\n Flat: {time_flat_str}\n Dark10: {time_dark10_str}\n Dark20: {time_dark20_str}\n Dark30: {time_dark30_str}\n Dark100: {time_dark100_str}\n Shutdown: {time_shutdown_str}'
+
 #%%
 # Define the telescopes
 list_telescopes = [#SingleTelescope(1),
@@ -84,21 +85,27 @@ list_telescopes = [#SingleTelescope(1),
                     SingleTelescope(3),
                     SingleTelescope(4),
                     SingleTelescope(5),
-                    SingleTelescope(6),
+                    #SingleTelescope(6),
                     SingleTelescope(7),
                     SingleTelescope(8),
                     SingleTelescope(9),
                     SingleTelescope(10),
                     SingleTelescope(11),
+                    SingleTelescope(13),
+                    SingleTelescope(14)
                     ]
 M = MultiTelescopes(list_telescopes)
 #%%
 alert_sender = SlackConnector()
 id_tonight = uuid.uuid4().hex
-message_today = f'`7DT Observation on {tonight_str}` \n *Involving telescopes*: {", ".join(list(M.devices.keys()))} \n *Observation log*: https://hhchoi1022.notion.site/Observation-log-5af68b0822324167af57468b0852666b \n *ID*: {id_tonight}'
-alert_sender.post_message(message_today)
-time.sleep(10)
-message_ts = alert_sender.get_message_ts(match_string = id_tonight)
+message_ts = alert_sender.get_message_ts(match_string = tonight_str)
+if not message_ts:
+    message_today = f'`7DT Observation on {tonight_str}` \n *Involving telescopes*: {", ".join(list(M.devices.keys()))} \n *Observation log*: https://hhchoi1022.notion.site/Observation-log-5af68b0822324167af57468b0852666b \n *ID*: {id_tonight}'
+    alert_sender.post_message(message_today)
+    time.sleep(3)
+    message_ts = alert_sender.get_message_ts(match_string = tonight_str)
+    alert_sender.post_thread_message(message_ts = message_ts, text = f'*Scheduled applications*: \n {slack_schedule_str}')
+
 #%%
 abort_action = Event()
 # Define a lock to synchronize the processes
