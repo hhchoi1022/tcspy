@@ -328,7 +328,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
     def update_focus_history(self, filter_ : str, focusval : float, is_succeeded : bool):
         if not os.path.isfile(self.focus_history_file):
             print('No focus_hostory file exists. Default format is generated.')
-            self.write_default_focus_history(output_file = self.focus_history_file)
+            self.write_default_focus_history()
         with open(self.focus_history_file, 'r') as f:
             focus_history_data = json.load(f)
         focus_history_data[self.telescope.tel_name][filter_]['update_time'] = Time.now().isot

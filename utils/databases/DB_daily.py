@@ -546,11 +546,10 @@ if __name__ == '__main__':
     #tbl = A.data
     #tbl_insert = tbl[2067:2069]
     #D.insert(tbl)
-    #D.from_GSheet('20241010')
-    
-    #D.from_RIS(size = 50)
-    D.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True, update_WFS = False)
+    #D.from_GSheet('240915')
+    D.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
     D.from_IMS()
+    #D.from_RIS(size = 50)
     #D.initialize(True)
     #D.write()
 # %%

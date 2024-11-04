@@ -22,7 +22,7 @@ import astropy.units as u
 #%%
 obsnight = NightSession(Time.now()).obsnight_ltc
 
-tonight_str = '%4d-%2d-%2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
+tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
 
 time_now = Time.now().datetime
 time_now_str = '%.2d:%.2d'%(time_now.hour, time_now.minute)

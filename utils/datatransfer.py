@@ -32,7 +32,7 @@ class DataTransferManager(mainConfig):
             current_time = datetime.now()
             
             # Check for ordinary file transfer at 8 AM local time
-            if current_time.hour == 12 and current_time.minute == 0:
+            if current_time.hour == 1 and current_time.minute == 0:
                 self.transfer_ordinary_files(ordinary_file_key = ordinary_file_key, tar = tar, protocol = protocol)
 
             # Check for ToO file transfer based on inactivity (no new files for 30 minutes)
@@ -120,6 +120,7 @@ class DataTransferManager(mainConfig):
             source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
         command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir}"
         try:
+            print('GRIDFTP PROTOCOL WITH THE COMMAND:',command)
             self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = self.process.communicate()
             if self.process.returncode == 0:
@@ -187,7 +188,8 @@ class DataTransferManager(mainConfig):
         source_dirs = glob.glob(source_pattern)
         
         for source_dir in tqdm(source_dirs, desc = f'Moving folders...'):
-            # Extract the 7DT?? part of the directory path
+            # Extract the 7DT?? pa
+            # rt of the directory path
             parent_dir = re.findall(r'7DT\d+', source_dir)[0]
             #parent_dir = os.path.basename(os.path.dirname(os.path.dirname(source_dir)))
 
@@ -233,7 +235,7 @@ class DataTransferManager(mainConfig):
         return server()
         
     def _set_gridftp_params(self,
-                            TRANSFER_GRIDFTP_NUMPARALLEL : int = 128, # Number of parallel data connection
+                            TRANSFER_GRIDFTP_NUMPARALLEL : int = 64, # Number of parallel data connection
                             TRANSFER_GRIPFTP_VERBOSE : bool = True, # Verbose?
                             TRANSFER_GRIDFTP_RETRIES : int = 10, # Number of retries
                             TRANSFER_GRIDFTP_RTINTERVAL : int = 60, # Interval in seconds before retry                           
@@ -259,12 +261,15 @@ class DataTransferManager(mainConfig):
 # %%
 if __name__ == '__main__':
     A = DataTransferManager()
-    
-    # Run the monitoring process
-    A.start_monitoring(
-        ordinary_file_key='*/image/*',   # Adjust these parameters as needed
-        ToO_file_key='*/image/*_ToO',
-        inactivity_period=1800,             # 30 minutes of inactivity
-        tar=True,                        # Compress files into tar
-        protocol='gridftp'               # File transfer protocol
-    )
+    A.run(key = '*/image/2024-10-27_gain2750', tar = False, thread = False)
+    #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
+    #Run the monitoring process
+    # A.start_monitoring(
+    #     ordinary_file_key='*/image/*',   # Adjust these parameters as needed
+    #     ToO_file_key='*/image/*_ToO',
+    #     inactivity_period=1800,             # 30 minutes of inactivity
+    #     tar=True,                        # Compress files into tar
+    #     protocol='gridftp'               # File transfer protocol
+    # )
+
+# %%

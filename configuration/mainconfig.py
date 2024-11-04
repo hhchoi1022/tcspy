@@ -134,7 +134,7 @@ class mainConfig:
                                TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/obsdata/obsdata_from_mcs/',
-                               TRANSFER_GRIDFTP_NUMPARALLEL = 128,
+                               TRANSFER_GRIDFTP_NUMPARALLEL = 64,
                                TRANSFER_GRIPFTP_VERBOSE = True,
                                TRANSFER_GRIDFTP_RETRIES = 10,
                                TRANSFER_GRIDFTP_RTINTERVAL = 60
