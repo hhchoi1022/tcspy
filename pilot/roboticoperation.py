@@ -212,6 +212,7 @@ def run_shutdown():
         while action.is_running:
             time.sleep(1)
         end_time = time.strftime("%H:%M:%S", time.localtime())
+        DB().Daily.write(clear = False)
         alert_sender.post_thread_message(message_ts = message_ts, text = f'Shutdown is finished: {end_time}')
 
 def run_threaded(job_func):
@@ -231,4 +232,3 @@ schedule.every().day.at(time_shutdown_str).do(run_threaded, run_shutdown)
 while True:
     schedule.run_pending()
     time.sleep(1)
-# %%

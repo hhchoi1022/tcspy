@@ -14,6 +14,7 @@ import numpy as np
 from astroplan import observability_table
 from astroplan import AltitudeConstraint, MoonSeparationConstraint
 from tqdm import tqdm
+import os
 # %%
 
 class DB_Daily(mainConfig):
