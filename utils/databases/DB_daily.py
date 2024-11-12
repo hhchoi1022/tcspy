@@ -547,10 +547,16 @@ if __name__ == '__main__':
     #tbl = A.data
     #tbl_insert = tbl[2067:2069]
     #D.insert(tbl)
-    #D.from_GSheet('240915')
-    D.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
-    D.from_IMS()
-    #D.from_RIS(size = 50)
+    #D.from_GSheet('241022_GW190814')
+    #D.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
+    #D.from_IMS()
+    D.from_RIS(size = 100)
+    from astropy.io import ascii
+    #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
+    #tbl_input = tbl[tbl['note'] == 'GW190814']
+    #tbl_input['ntelescope'] = 10
+    #D.insert(tbl_input)
+
     #D.initialize(True)
     #D.write()
 # %%

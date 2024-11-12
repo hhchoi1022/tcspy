@@ -112,19 +112,6 @@ class AutofocusInitializer(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
         self.is_running = False
-    #     try:
-    #         action_autofocus.run()
-    #         for filtinfo in self.filtinfo.values():
-    #             filtinfo.remove(initial_filter)
-    #     except AbortionException:
-    #         self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
-    #         self.is_running = False
-    #         raise AbortionException(f'[{type(self).__name__}] is aborted.')
-        
-    #     if specmode:
-    #         # After initial_filter, run Autofocus for other filters
-    #         autofocus_filtinfo = self._get_specmode(specmode)
-    #         #autofocus_filtinfo = self.filtinfo.copy()
 
 #%%  
 if __name__ == '__main__':

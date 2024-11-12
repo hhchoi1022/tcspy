@@ -32,7 +32,7 @@ class DataTransferManager(mainConfig):
             current_time = datetime.now()
             
             # Check for ordinary file transfer at 8 AM local time
-            if current_time.hour == 1 and current_time.minute == 0:
+            if current_time.hour == 12 and current_time.minute == 0:
                 self.transfer_ordinary_files(ordinary_file_key = ordinary_file_key, tar = tar, protocol = protocol)
 
             # Check for ToO file transfer based on inactivity (no new files for 30 minutes)
@@ -261,15 +261,15 @@ class DataTransferManager(mainConfig):
 # %%
 if __name__ == '__main__':
     A = DataTransferManager()
-    A.run(key = '*/image/2024-10-27_gain2750', tar = False, thread = False)
+    #A.run(key = '*/image/2024-11-09_gain2750', tar = False, thread = False)
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     #Run the monitoring process
-    # A.start_monitoring(
-    #     ordinary_file_key='*/image/*',   # Adjust these parameters as needed
-    #     ToO_file_key='*/image/*_ToO',
-    #     inactivity_period=1800,             # 30 minutes of inactivity
-    #     tar=True,                        # Compress files into tar
-    #     protocol='gridftp'               # File transfer protocol
-    # )
+    A.start_monitoring(
+        ordinary_file_key='*/image/*',   # Adjust these parameters as needed
+        ToO_file_key='*/image/*_ToO',
+        inactivity_period=1800,             # 30 minutes of inactivity
+        tar=True,                        # Compress files into tar
+        protocol='gridftp'               # File transfer protocol
+    )
 
 # %%

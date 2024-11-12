@@ -134,7 +134,7 @@ class mainConfig:
                                TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/obsdata/obsdata_from_mcs/',
-                               TRANSFER_GRIDFTP_NUMPARALLEL = 64,
+                               TRANSFER_GRIDFTP_NUMPARALLEL = 16,
                                TRANSFER_GRIPFTP_VERBOSE = True,
                                TRANSFER_GRIDFTP_RETRIES = 10,
                                TRANSFER_GRIDFTP_RTINTERVAL = 60
@@ -206,6 +206,8 @@ class mainConfig:
                                    NIGHTSESSION_SUNALT_OBSERVATION = -15,
                                    NIGHTSESSION_SUNALT_SHUTDOWN = 0)
         
+        devicestatus_params = dict(DEVICESTATUS_FILE = f'{os.path.join(self.path_global,"devicestatus.data")}')
+        
         nightobs_params = dict(NIGHTOBS_SAFETYPE = 'safetymonitor',)        
         self.make_configfile(mount_params, filename='Mount.config', savepath = savepath_unit)
         self.make_configfile(camera_params, filename='Camera.config', savepath = savepath_unit)
@@ -232,7 +234,8 @@ class mainConfig:
         self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_global)
         self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_global)
         self.make_configfile(nightsession_params, filename = 'nightsession.config', savepath= self.path_global)
-
+        self.make_configfile(devicestatus_params, filename = 'devicestatus.config', savepath= self.path_global)
+        
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
         

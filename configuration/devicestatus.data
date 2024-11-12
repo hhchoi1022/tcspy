@@ -17,7 +17,7 @@
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
-            "is_active": true,
+            "is_active": false,
             "name": "7DT01",
             "status": "operational",
             "timestamp": "2024-11-05",
@@ -25,7 +25,7 @@
             "reported_by": "HyeonhoChoi"
         },
         "Camera": {
-            "is_active": true,
+            "is_active": false,
             "name": "31102",
             "status": "maintanance",
             "timestamp": "2024-11-05",
@@ -459,7 +459,7 @@
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
-            "is_active": true,
+            "is_active": false,
             "name": "7DT14",
             "status": "operational",
             "timestamp": "2024-11-05",

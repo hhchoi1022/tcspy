@@ -79,7 +79,7 @@ print('Shutdown:', time_shutdown_str)
 slack_schedule_str = f'Startup: {time_startup_str}\n Startobs: {time_startobs_str}\n Endobs: {time_endobs_str}\n Bias: {time_bias_str}\n Flat: {time_flat_str}\n Dark10: {time_dark10_str}\n Dark20: {time_dark20_str}\n Dark30: {time_dark30_str}\n Dark100: {time_dark100_str}\n Shutdown: {time_shutdown_str}'
 
 #%%
-# Define the telescopes
+#%%
 list_telescopes = [#SingleTelescope(1),
                     SingleTelescope(2),
                     SingleTelescope(3),
@@ -121,7 +121,6 @@ def run_startup():
             time.sleep(1)
         end_time = time.strftime("%H:%M:%S", time.localtime())
         alert_sender.post_thread_message(message_ts = message_ts, text = f'Startup is finished: {end_time}')
-
 
 def run_nightobs():
     with process_lock:
