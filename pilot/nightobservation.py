@@ -138,7 +138,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)  
         
-        self.DB.update_target(update_values = [Time.now().isot, 'scheduled'], update_keys = ['update_time','status'], id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','update_time'], id_value = target['id'], id_key = 'id')
         action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
@@ -182,7 +182,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)  
 
-        self.DB.update_target(update_values = [Time.now().isot, 'scheduled'], update_keys = ['update_time','status'], id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','update_time'], id_value = target['id'], id_key = 'id')
         action = DeepObservation(multitelescopes= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
@@ -228,7 +228,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)    
 
-        self.DB.update_target(update_values = [Time.now().isot, 'scheduled'], update_keys = ['update_time','status'], id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','update_time'], id_value = target['id'], id_key = 'id')
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
