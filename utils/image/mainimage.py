@@ -132,7 +132,7 @@ class mainImage(mainConfig):
         filename = self._format_filename()
         foldername = self._format_foldername()
         
-        if self.hdu.header['OBJTYPE'].upper() == 'TOO':
+        if self.hdu.header['IS_ToO'].upper() == 'TRUE':
             foldername += '_ToO'
         if not os.path.isdir(os.path.join(self._configinfo['IMAGE_PATH'], foldername)):
             os.makedirs(os.path.join(self._configinfo['IMAGE_PATH'], foldername))
@@ -409,6 +409,7 @@ class mainImage(mainConfig):
         info['SPECMODE'] = None
         info['NTELSCOP'] = None
         info['NOTE'] = None
+        info['IS_ToO'] = None
         if self._targetinfo:
             info['OBJECT'] = self._format_header(self._targetinfo['name'], 'Name of the target')            
             info['OBJTYPE'] = self._format_header(self._targetinfo['objtype'], 'Type of the target')
@@ -424,6 +425,8 @@ class mainImage(mainConfig):
             info['SPECMODE'] = self._format_header(self._targetinfo['specmode'], 'Specmode (when OBSMODE == "SPEC")')
             info['NTELSCOP'] = self._format_header(self._targetinfo['ntelescope'], 'Number of telescopes involved in the observation')
             info['NOTE'] = self._format_header(self._targetinfo['note'], 'Note of the target')
+            is_ToO_str = str(True) if self._targetinfo['is_ToO'] else str(False)
+            info['IS_ToO'] = self._format_header(is_ToO_str, 'Is the target a ToO?')
         return info
 
 

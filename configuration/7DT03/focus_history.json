@@ -16,14 +16,14 @@
             "focusval": 10000
         },
         "m500": {
-            "update_time": "2024-11-12T00:30:26.976",
+            "update_time": "2024-11-13T01:47:16.801",
             "succeeded": true,
-            "focusval": 6307.9
+            "focusval": 6301.5
         },
         "m525": {
-            "update_time": "2024-11-12T00:37:30.322",
+            "update_time": "2024-11-13T01:54:24.035",
             "succeeded": true,
-            "focusval": 6471.3
+            "focusval": 6463.2
         },
         "m450": {
             "update_time": "2000-01-01T00:00:00.000",

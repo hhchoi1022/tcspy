@@ -77,6 +77,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             objtype : str = None,
             id_: str = None,
             note : str = None,
+            is_ToO : bool = False,
             
             # Auxiliary parameters
             force_slewing : bool = False,
@@ -205,6 +206,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               objtype= objtype,
                               id_ = id_,
                               note = note,
+                              is_ToO = is_ToO,
                               
                               exptime = exptime,
                               count = count,

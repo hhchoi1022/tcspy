@@ -122,6 +122,7 @@ class SingleTarget(mainConfig):
                  objtype : str = None,
                  id_ : str = None,
                  note : str = None,
+                 is_ToO : bool = False,
                  
                  # Exposure information
                  exptime : float or str = None,
@@ -151,6 +152,7 @@ class SingleTarget(mainConfig):
         self.dec_deg = None
         self._id = id_
         self.note = note
+        self.is_ToO = is_ToO
         
         
         if (not isinstance(alt, type(None))) & (not isinstance(az, type(None))):
@@ -300,6 +302,7 @@ class SingleTarget(mainConfig):
         targetinfo['objtype'] = self.objtype
         targetinfo['id_'] = self._id
         targetinfo['note'] = self.note
+        targetinfo['is_ToO'] = self.is_ToO
         
         if self._coordtype == 'altaz':
             targetinfo['alt'] = self.alt

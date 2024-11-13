@@ -194,8 +194,8 @@ if __name__ =='__main__':
     exptime_new = [f'10,10,10,{exptime},{exptime},{exptime},{exptime}' for exptime in tbl['exptime']]
     tbl['obsmode'] = 'Spec'
     tbl['specmode'] = 'calspec'
-    tbl['group'] = 1
-    tbl['priority'] = 1 
+    tbl['priority'] = 1
+    tbl['weight'] = 1 
     tbl['gain'] = 0
     #tbl['count'] = obscount_new
     tbl['exptime'] = exptime_new

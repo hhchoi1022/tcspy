@@ -16,9 +16,9 @@
             "focusval": 10000
         },
         "m875": {
-            "update_time": "2024-11-12T00:30:27.618",
+            "update_time": "2024-11-13T01:47:16.598",
             "succeeded": true,
-            "focusval": 8513.8
+            "focusval": 8482.9
         },
         "m375w": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -26,9 +26,9 @@
             "focusval": 10000
         },
         "m400": {
-            "update_time": "2024-11-12T00:37:32.394",
+            "update_time": "2024-11-13T01:54:23.890",
             "succeeded": true,
-            "focusval": 8607.1
+            "focusval": 8592.2
         },
         "m425": {
             "update_time": "2000-01-01T00:00:00.000",

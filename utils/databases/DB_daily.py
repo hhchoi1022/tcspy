@@ -147,8 +147,6 @@ class DB_Daily(mainConfig):
         transittime, maxalt, besttime = self._get_transit_besttime(multitargets = multitargets)
         moonsep = self._get_moonsep(multitargets = multitargets)
         targetinfo_listdict = [{'risetime' : rt, 'transittime' : tt, 'settime' : st, 'besttime' : bt, 'maxalt' : mt, 'moonsep': ms} for rt, tt, st, bt, mt, ms in zip(risetime.isot, transittime.isot, settime.isot, besttime.isot, maxalt, moonsep)]
-        #i = -2
-        #SingleTarget(ra = target_tbl_to_update['RA'][i], dec = target_tbl_to_update['De'][i], observer = self.observer).staralt()
 
         # Exposure information
         exposureinfo_listdict = []
@@ -198,7 +196,7 @@ class DB_Daily(mainConfig):
             self.initialize(initialize_all= False)
         
         target_all = self.data
-        idx_ToO = all_targets['objtype'] == 'ToO'
+        idx_ToO = all_targets['is_ToO'] == 1
         target_ToO = target_all[idx_ToO]
         target_ordinary = target_all[~idx_ToO]
         
@@ -212,7 +210,7 @@ class DB_Daily(mainConfig):
         # Else, ordinary targets are scored with the group. First, Observe Group 1 target, seconds, group 2 targets, and so on...
         exist_ordinary = (len(target_ordinary) > 0)
         if exist_ordinary:
-            target_ordinary_by_group = target_ordinary.group_by('group').groups
+            target_ordinary_by_group = target_ordinary.group_by('priority').groups
             for target_ordinary_group in target_ordinary_by_group:
                 target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ordinary_group)        
                 if target_score:
@@ -399,14 +397,14 @@ class DB_Daily(mainConfig):
         if len(target_tbl_for_scoring) == 0:
             return None, None
         
-        obstime_nonspecified_idx = (target_tbl_for_scoring['obstime'] == None) | (target_tbl_for_scoring['obstime'] == "")
+        obstime_nonspecified_idx = (target_tbl_for_scoring['obs_starttime'] == None) | (target_tbl_for_scoring['obs_starttime'] == "")
         obstime_fixed_targets = target_tbl_for_scoring[~obstime_nonspecified_idx]
         obstime_nonfixed_targets = target_tbl_for_scoring[obstime_nonspecified_idx]
          
         # When target observation time is specified       
         urgent_targets = Table()
         if len(obstime_fixed_targets) > 0:
-            obstime = Time([Time(time) for time in obstime_fixed_targets['obstime']])
+            obstime = Time([Time(time) for time in obstime_fixed_targets['obs_starttime']])
             time_left_sec = (obstime - utctime).sec
             urgent_targets = obstime_fixed_targets[(time_left_sec < 0) & (obstime < self.obsnight.sunrise_astro) & (obstime > self.obsnight.sunset_astro)]
             if len(urgent_targets) > 0:
@@ -414,9 +412,9 @@ class DB_Daily(mainConfig):
                 urgent_targets_scored = urgent_targets[score.astype(bool)]
                 # If urgent target observable exists, return the target and score 1
                 if len(urgent_targets_scored) > 0:
-                    urgent_obstime = Time([Time(time) for time in urgent_targets_scored['obstime']])
-                    urgent_targets_scored['obstime'] = urgent_obstime
-                    urgent_targets_scored.sort('obstime')
+                    urgent_obstime = Time([Time(time) for time in urgent_targets_scored['obs_starttime']])
+                    urgent_targets_scored['obs_starttime'] = urgent_obstime
+                    urgent_targets_scored.sort('obs_starttime')
                     return urgent_targets_scored[0], 1
         
         # When target observation time is not specified
@@ -429,7 +427,7 @@ class DB_Daily(mainConfig):
         if np.sum(score) == 0:
             return None, None
         
-        multitarget_priority = obstime_nonfixed_targets['priority'].astype(float)
+        multitarget_priority = obstime_nonfixed_targets['weight'].astype(float)
         weight_sum = self.config['TARGET_WEIGHT_ALT'] + self.config['TARGET_WEIGHT_PRIORITY']
         weight_alt = self.config['TARGET_WEIGHT_ALT'] / weight_sum
         weight_priority = self.config['TARGET_WEIGHT_PRIORITY'] / weight_sum
@@ -540,23 +538,23 @@ class DB_Daily(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    D = DB_Daily(Time.now())
+    Daily = DB_Daily(Time.now())
     from tcspy.utils.databases import DB_Annual
-    #A = DB_Annual()
-    #tbl = A.data[A.data['note'] == 'S241011k']
-    #tbl = A.data
-    #tbl_insert = tbl[2067:2069]
-    #D.insert(tbl)
-    #D.from_GSheet('241022_GW190814')
-    #D.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
-    #D.from_IMS()
-    D.from_RIS(size = 100)
-    from astropy.io import ascii
+    # RIS = DB_Annual('RIS')
+    # IMS = DB_Annual('IMS')
+    # RIS = A.data
+    # IMS.insert(tbl[[138, 139, 174, 175, 176, 215, 216]])
+    # Daily.insert(tbl)
+    #Daily.from_GSheet('241022_GW190814')
+    #Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
+    Daily.from_IMS()
+    Daily.from_RIS(size = 100)
+    #from astropy.io import ascii
     #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
     #tbl_input = tbl[tbl['note'] == 'GW190814']
     #tbl_input['ntelescope'] = 10
-    #D.insert(tbl_input)
+    #Daily.insert(tbl_input)
 
-    #D.initialize(True)
-    #D.write()
+    Daily.initialize(True)
+    #Daily.write()
 # %%

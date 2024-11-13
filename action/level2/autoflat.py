@@ -228,6 +228,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                                           objtype= 'FLAT',
                                           id_ = None,
                                           note = None,
+                                          is_ToO = False,
                                         
                                           exptime = exptime,
                                           count = 1,
