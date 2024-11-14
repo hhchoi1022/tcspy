@@ -540,8 +540,8 @@ class DB_Daily(mainConfig):
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
     from tcspy.utils.databases import DB_Annual
-    #RIS = DB_Annual('RIS').data
-    #Daily.insert(RIS[[3365, 3207, 3208]])
+    RIS = DB_Annual('RIS').data
+    Daily.insert(RIS[[3524, 3525, 3526, 3363, 3364, 3206]])
     # IMS = DB_Annual('IMS')
     # RIS = A.data
     # IMS.insert(tbl[[138, 139, 174, 175, 176, 215, 216]])
@@ -556,6 +556,6 @@ if __name__ == '__main__':
     #tbl_input['ntelescope'] = 10
     #Daily.insert(tbl_input)
 
-  #  Daily.initialize(True)
+    #Daily.initialize(True)
     #Daily.write()
 # %%
