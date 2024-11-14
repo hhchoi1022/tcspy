@@ -118,7 +118,7 @@ if __name__ == '__main__':
                         SingleTelescope(9),
                         SingleTelescope(10),
                         SingleTelescope(11),
-                        #SingleTelescope(13),
+                        SingleTelescope(13),
                         SingleTelescope(14)
                         ]
 

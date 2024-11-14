@@ -122,6 +122,7 @@ class SingleTarget(mainConfig):
                  objtype : str = None,
                  id_ : str = None,
                  note : str = None,
+                 comment : str = None,
                  is_ToO : bool = False,
                  
                  # Exposure information
