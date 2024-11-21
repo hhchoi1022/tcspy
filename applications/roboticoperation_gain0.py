@@ -1,8 +1,8 @@
 
 
 #%%
-from tcspy.pilot import Startup
-from tcspy.pilot import NightObservation
+from tcspy.applications import Startup
+from tcspy.applications import NightObservation
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import MultiTelescopes
@@ -11,8 +11,8 @@ from astropy.time import Time
 import threading
 import schedule
 import time
-from tcspy.pilot import BiasAcquisition, DarkAcquisition, FlatAcquisition
-from tcspy.pilot import Shutdown
+from tcspy.applications import BiasAcquisition, DarkAcquisition, FlatAcquisition
+from tcspy.applications import Shutdown
 from tcspy.utils.databases import DB
 from tcspy.utils import NightSession
 import astropy.units as u

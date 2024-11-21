@@ -1,5 +1,5 @@
 #%%
-from tcspy.pilot import NightObservation
+from tcspy.applications import NightObservation
 from tcspy.devices import SingleTelescope
 from tcspy.devices import MultiTelescopes
 from threading import Event, Thread
@@ -15,8 +15,10 @@ list_telescopes = [#SingleTelescope(1),
                         SingleTelescope(9),
                         SingleTelescope(10),
                         SingleTelescope(11),
+                        SingleTelescope(12),
                         SingleTelescope(13),
-                        SingleTelescope(14)
+                        SingleTelescope(14),
+                        SingleTelescope(15),
                         ]
 M = MultiTelescopes(list_telescopes)
 abort_action = Event()

@@ -2,25 +2,25 @@
     "7DT01": {
         "Mount": {
             "is_active": true,
-            "name": "7DT01",
+            "name": "273",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT01",
+            "name": "004",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": false,
-            "name": "7DT01",
+            "name": "22244179",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -28,7 +28,7 @@
             "is_active": false,
             "name": "31102",
             "status": "maintanance",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -36,25 +36,25 @@
     "7DT02": {
         "Mount": {
             "is_active": true,
-            "name": "7DT02",
+            "name": "267",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT02",
+            "name": "003",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT02",
+            "name": "22243957",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -62,7 +62,7 @@
             "is_active": true,
             "name": "31091",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -70,25 +70,25 @@
     "7DT03": {
         "Mount": {
             "is_active": true,
-            "name": "7DT03",
+            "name": "268",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT03",
+            "name": "006",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT03",
+            "name": "22243956",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -96,7 +96,7 @@
             "is_active": true,
             "name": "31090",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -104,25 +104,25 @@
     "7DT04": {
         "Mount": {
             "is_active": true,
-            "name": "7DT04",
+            "name": "262",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT04",
+            "name": "unknown",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT04",
+            "name": "22446145",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -130,7 +130,7 @@
             "is_active": true,
             "name": "31235",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -138,25 +138,25 @@
     "7DT05": {
         "Mount": {
             "is_active": true,
-            "name": "7DT05",
+            "name": "271",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT05",
+            "name": "010",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT05",
+            "name": "22243954",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -164,7 +164,7 @@
             "is_active": true,
             "name": "31116",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -172,25 +172,25 @@
     "7DT06": {
         "Mount": {
             "is_active": true,
-            "name": "7DT06",
+            "name": "277",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT06",
+            "name": "007",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": false,
-            "name": "7DT06",
+            "name": "22243950",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -198,7 +198,7 @@
             "is_active": false,
             "name": "31092",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -206,25 +206,25 @@
     "7DT07": {
         "Mount": {
             "is_active": true,
-            "name": "7DT07",
+            "name": "276",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT07",
+            "name": "008",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT07",
+            "name": "223444941",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -232,7 +232,7 @@
             "is_active": true,
             "name": "31166",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -240,33 +240,33 @@
     "7DT08": {
         "Mount": {
             "is_active": true,
-            "name": "7DT08",
+            "name": "218",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT08",
+            "name": "012",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT08",
+            "name": "22344939",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Camera": {
             "is_active": true,
-            "name": "31667",
+            "name": "31167",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -274,33 +274,33 @@
     "7DT09": {
         "Mount": {
             "is_active": true,
-            "name": "7DT09",
+            "name": "275",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT09",
+            "name": "011",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT09",
+            "name": "22344943",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Camera": {
             "is_active": true,
-            "name": "31665",
+            "name": "31165",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -308,25 +308,25 @@
     "7DT10": {
         "Mount": {
             "is_active": true,
-            "name": "7DT10",
+            "name": "248",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT10",
+            "name": "009",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT10",
+            "name": "22446323",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -334,7 +334,7 @@
             "is_active": true,
             "name": "31241",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -342,25 +342,25 @@
     "7DT11": {
         "Mount": {
             "is_active": true,
-            "name": "7DT11",
+            "name": "113",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT11",
+            "name": "018",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT11",
+            "name": "222446322",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -368,41 +368,41 @@
             "is_active": true,
             "name": "31232",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
     },
     "7DT12": {
         "Mount": {
-            "is_active": false,
-            "name": "7DT12",
-            "status": "offline",
-            "timestamp": "2024-11-05",
+            "is_active": true,
+            "name": "289",
+            "status": "operational",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
-            "is_active": false,
-            "name": "7DT12",
-            "status": "offline",
-            "timestamp": "2024-11-05",
+            "is_active": true,
+            "name": "002",
+            "status": "operational",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
-            "is_active": false,
-            "name": "7DT12",
-            "status": "offline",
-            "timestamp": "2024-11-05",
+            "is_active": true,
+            "name": "22344940",
+            "status": "operational",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Camera": {
-            "is_active": false,
-            "name": "7DT12",
-            "status": "offline",
-            "timestamp": "2024-11-05",
+            "is_active": true,
+            "name": "31164",
+            "status": "operational",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -410,25 +410,25 @@
     "7DT13": {
         "Mount": {
             "is_active": true,
-            "name": "7DT13",
+            "name": "311",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT13",
+            "name": "028",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
             "is_active": true,
-            "name": "7DT13",
+            "name": "22446325",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -436,7 +436,7 @@
             "is_active": true,
             "name": "31234",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -444,25 +444,25 @@
     "7DT14": {
         "Mount": {
             "is_active": true,
-            "name": "7DT14",
+            "name": "288",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
             "is_active": true,
-            "name": "7DT14",
+            "name": "013",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
-            "is_active": false,
-            "name": "7DT14",
+            "is_active": true,
+            "name": "22446146",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -470,41 +470,41 @@
             "is_active": true,
             "name": "31243",
             "status": "operational",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
     },
     "7DT15": {
         "Mount": {
-            "is_active": false,
-            "name": "7DT15",
-            "status": "offline",
-            "timestamp": "2024-11-05",
+            "is_active": true,
+            "name": "309",
+            "status": "operational",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Focuser": {
-            "is_active": false,
-            "name": "7DT15",
-            "status": "offline",
-            "timestamp": "2024-11-05",
+            "is_active": true,
+            "name": "019",
+            "status": "operational",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Filterwheel": {
-            "is_active": false,
-            "name": "7DT15",
-            "status": "offline",
-            "timestamp": "2024-11-05",
+            "is_active": true,
+            "name": "22243955",
+            "status": "operational",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
         "Camera": {
-            "is_active": false,
+            "is_active": true,
             "name": "31093",
-            "status": "offline",
-            "timestamp": "2024-11-05",
+            "status": "operational",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -514,7 +514,7 @@
             "is_active": false,
             "name": "7DT16",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -522,7 +522,7 @@
             "is_active": false,
             "name": "7DT16",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -530,7 +530,7 @@
             "is_active": false,
             "name": "7DT16",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -538,7 +538,7 @@
             "is_active": false,
             "name": "7DT16",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -548,7 +548,7 @@
             "is_active": false,
             "name": "7DT17",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -556,7 +556,7 @@
             "is_active": false,
             "name": "7DT17",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -564,7 +564,7 @@
             "is_active": false,
             "name": "7DT17",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -572,7 +572,7 @@
             "is_active": false,
             "name": "7DT17",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -582,7 +582,7 @@
             "is_active": false,
             "name": "7DT18",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -590,7 +590,7 @@
             "is_active": false,
             "name": "7DT18",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -598,7 +598,7 @@
             "is_active": false,
             "name": "7DT18",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -606,7 +606,7 @@
             "is_active": false,
             "name": "7DT18",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -616,7 +616,7 @@
             "is_active": false,
             "name": "7DT19",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -624,7 +624,7 @@
             "is_active": false,
             "name": "7DT19",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -632,7 +632,7 @@
             "is_active": false,
             "name": "7DT19",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -640,7 +640,7 @@
             "is_active": false,
             "name": "7DT19",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }
@@ -650,7 +650,7 @@
             "is_active": false,
             "name": "7DT20",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -658,7 +658,7 @@
             "is_active": false,
             "name": "7DT20",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -666,7 +666,7 @@
             "is_active": false,
             "name": "7DT20",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         },
@@ -674,7 +674,7 @@
             "is_active": false,
             "name": "7DT20",
             "status": "offline",
-            "timestamp": "2024-11-05",
+            "timestamp": "2024-11-21",
             "description": "",
             "reported_by": "HyeonhoChoi"
         }

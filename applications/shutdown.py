@@ -108,18 +108,20 @@ if __name__ == '__main__':
     import time
     start = time.time()
     list_telescopes =  [#SingleTelescope(1),
-                        SingleTelescope(2),
-                        SingleTelescope(3),
-                        SingleTelescope(4),
-                        SingleTelescope(5),
-                        #SingleTelescope(6),
-                        SingleTelescope(7),
-                        SingleTelescope(8),
-                        SingleTelescope(9),
-                        SingleTelescope(10),
-                        SingleTelescope(11),
+                        # SingleTelescope(2),
+                        # SingleTelescope(3),
+                        # SingleTelescope(4),
+                        # SingleTelescope(5),
+                        # #SingleTelescope(6),
+                        # SingleTelescope(7),
+                        # SingleTelescope(8),
+                        # SingleTelescope(9),
+                        # SingleTelescope(10),
+                        # SingleTelescope(11),
+                        # SingleTelescope(12),
                         SingleTelescope(13),
-                        SingleTelescope(14)
+                        # SingleTelescope(14),
+                        # SingleTelescope(15)
                         ]
 
     print(time.time() - start)

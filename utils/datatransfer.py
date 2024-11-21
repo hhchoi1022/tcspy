@@ -261,7 +261,12 @@ class DataTransferManager(mainConfig):
 # %%
 if __name__ == '__main__':
     A = DataTransferManager()
-    A.run(key = '*/image/2024-11-11_gain2750', tar = False, thread = False)
+    A.run(key = '*/image/2024-11-16_gain2750', tar = True, thread = False)
+    import time
+    time.sleep(60)
+    A.run(key = '*/image/2024-11-17_gain2750', tar = True, thread = False)
+    time.sleep(60)
+    A.run(key = '*/image/2024-11-18_gain2750', tar = True, thread = False)
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     #Run the monitoring process
     # A.start_monitoring(

@@ -540,13 +540,13 @@ class DB_Daily(mainConfig):
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
     from tcspy.utils.databases import DB_Annual
-    RIS = DB_Annual('RIS').data
-    Daily.insert(RIS[[3524, 3525, 3526, 3363, 3364, 3206]])
+    #RIS = DB_Annual('RIS').data
+    #Daily.insert(RIS[[20348]])
     # IMS = DB_Annual('IMS')
     # RIS = A.data
     # IMS.insert(tbl[[138, 139, 174, 175, 176, 215, 216]])
     # Daily.insert(tbl)
-    #Daily.from_GSheet('241022_GW190814')
+    #Daily.from_GSheet('241118')
     Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
     Daily.from_IMS()
     #Daily.from_RIS(size = 100)
@@ -558,4 +558,6 @@ if __name__ == '__main__':
 
     #Daily.initialize(True)
     #Daily.write()
+
+
 # %%

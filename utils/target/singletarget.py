@@ -299,6 +299,7 @@ class SingleTarget(mainConfig):
         targetinfo['coordtype'] = None
         targetinfo['hourangle'] = None
         targetinfo['is_observable'] = None
+        targetinfo['moonsep'] = None
         targetinfo['name'] = self.name
         targetinfo['objtype'] = self.objtype
         targetinfo['id_'] = self._id
@@ -323,10 +324,39 @@ class SingleTarget(mainConfig):
             targetinfo['coordtype'] = self._coordtype
             targetinfo['hourangle'] = self.hourangle(utctime = targetinfo['update_time']).to_string(sep = " ")
             targetinfo['is_observable'] = self.is_observable(utctime = targetinfo['update_time']) 
+            targetinfo['moonsep'] = self.moon_sep(utctime = targetinfo['update_time'])
         else:
             pass
         return targetinfo
     
+    def moon_sep(self,
+                 utctime : datetime or Time or np.array = None):
+        """
+        Calculate the separation between the Moon and the target.
+
+        Parameters
+        ----------
+        utctime : datetime or Time, optional
+            The time at which to calculate the separation. If not provided, the current time will be used.
+
+        Returns
+        -------
+        moonsep : astropy.coordinates.Angle
+            The separation between the Moon and the target.
+        """
+        if self._coordtype == 'radec':
+            
+            if utctime is None:
+                utctime = Time.now()
+            if not isinstance(utctime, Time):
+                utctime = Time(utctime)
+            moon_coord = self._observer.moon_radec(utctime)
+            target_coord = self.coordinate
+            moonsep = np.round(self.coordinate.separation(moon_coord).value,2)
+            return moonsep
+        else:
+            return None
+        
     def is_observable(self,
                       utctime : datetime or Time or np.array = None) -> bool:
         """
@@ -625,9 +655,11 @@ class SingleTarget(mainConfig):
 # %%
 if __name__ == '__main__':
     unitnum = 21
+    import time
     observer = mainObserver()
     ra = 150.444
     dec = -20.5523
+    start = time.time()
     S = SingleTarget(observer = observer, 
                      ra = ra, 
                      dec = dec, 
@@ -637,34 +669,6 @@ if __name__ == '__main__':
                      binning=  1, 
                      obsmode ='Spec',
                      specmode = 'specall')
-    S = SingleTarget(observer = observer, 
-                     ra = ra, 
-                     dec = dec, 
-                     exptime = 10,
-                     filter_ = None,
-                     count = 5, 
-                     binning=  1, 
-                     obsmode ='Spec',
-                     specmode = 'specall')
-    S = SingleTarget(observer = observer, 
-                     ra = ra, 
-                     dec = dec, 
-                     exptime = 10,
-                     filter_ = None,
-                     count = 5, 
-                     binning=  1, 
-                     obsmode ='Spec',
-                     specmode = 'specall')
-    S = SingleTarget(observer = observer, 
-                     ra = ra, 
-                     dec = dec, 
-                     exptime = 10,
-                     filter_ = None,
-                     count = 5, 
-                     binning=  1, 
-                     obsmode ='Spec',
-                     specmode = None)
-    s = SingleTarget(observer = observer, 
-                     name = 'BIAS', objtype = 'BIAS',
-                     exptime = 0, count = 9, obsmode = ' Single')
-# %%
+    S.status
+    print(time.time() - start)
+#%%

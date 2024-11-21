@@ -126,8 +126,10 @@ if __name__ == '__main__':
                     SingleTelescope(9),
                     SingleTelescope(10),
                     SingleTelescope(11),
+                    SingleTelescope(12),
                     SingleTelescope(13),
-                    SingleTelescope(14)
+                    SingleTelescope(14),
+                    SingleTelescope(15)
                     ]
     mtel = MultiTelescopes(list_telescopes)
     a = AutofocusInitializer(mtel, Event())

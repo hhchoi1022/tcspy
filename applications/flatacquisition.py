@@ -26,8 +26,9 @@ class FlatAcquisition(mainConfig):
         
     def run(self,
             count : int = 9,
-            gain : int = 2750,
-            binning : int = 1):
+            binning : int = 1,
+            gain : int = 2750
+            ):
         """
         Starts the startup process in a separate thread.
         """

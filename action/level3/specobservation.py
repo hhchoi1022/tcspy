@@ -157,8 +157,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         self.is_running = True
         self.shared_memory['succeeded'] = False
         # Check condition of the instruments for this Action
+        """
         status_multitelescope = self.multitelescopes.status
-        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         for telescope_name, telescope_status in status_multitelescope.items():
             is_all_connected = True
             status_filterwheel = telescope_status['filterwheel']
@@ -177,7 +177,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             if status_focuser.lower() == 'dicconnected':
                 is_all_connected = False
                 self.multitelescopes.log_dict[telescope_name].critical(f'{telescope_name} focuser is disconnected.')
-                
+        """    
         # Get target instance
         singletarget = SingleTarget(observer = self.observer,
                                     ra = ra, 

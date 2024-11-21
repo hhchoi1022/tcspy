@@ -83,8 +83,9 @@ class mainLogger(mainConfig):
         streamHandler.setFormatter(formatter)
         logger.addHandler(streamHandler)
         if self.config['LOGGER_SAVE']:
-            sunrise_astro = self.observer.tonight(time = Time.now(), horizon = -18)[1]
-            filename =  (self.observer.tonight(time = Time.now(), horizon = -18)[1] - 12 * u.hour).datetime.strftime('%Y%m%d') + '.log'
+            #sunrise_astro = self.observer.tonight(time = Time.now(), horizon = -18)[1]
+            #filename =  (self.observer.tonight(time = Time.now(), horizon = -18)[1] - 12 * u.hour).datetime.strftime('%Y%m%d') + '.log'
+            filename =  (Time.now() - 12 * u.hour).datetime.strftime('%Y%m%d') + '.log'
             fileHandler = logging.FileHandler(filename = self.config['LOGGER_PATH']+filename)
             fileHandler.setLevel(self.config['LOGGER_LEVEL'])
             fileHandler.setFormatter(formatter)

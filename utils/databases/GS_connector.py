@@ -186,18 +186,18 @@ class GoogleSheet():
             worksheet.update([header])
 # %%
 if __name__ =='__main__':
-    tbl = ascii.read('/home/hhchoi1022/Downloads/calspec_2024-08-08.csv')
-    tbl.rename_column('Star name', 'objname')
-    tbl.rename_column('Decl', 'De')
-    tbl.rename_column('obs_count', 'count')
-    #obscount_new = [obscount//2 for obscount in tbl['count']]
-    exptime_new = [f'10,10,10,{exptime},{exptime},{exptime},{exptime}' for exptime in tbl['exptime']]
-    tbl['obsmode'] = 'Spec'
-    tbl['specmode'] = 'calspec'
-    tbl['priority'] = 1
-    tbl['weight'] = 1 
-    tbl['gain'] = 0
-    #tbl['count'] = obscount_new
-    tbl['exptime'] = exptime_new
-    GoogleSheet().write_sheet_data(sheet_name = '20240809', data  = tbl, append = False)
+    # tbl = ascii.read('/home/hhchoi1022/Downloads/calspec_2024-08-08.csv')
+    # tbl.rename_column('Star name', 'objname')
+    # tbl.rename_column('Decl', 'De')
+    # tbl.rename_column('obs_count', 'count')
+    # #obscount_new = [obscount//2 for obscount in tbl['count']]
+    # exptime_new = [f'10,10,10,{exptime},{exptime},{exptime},{exptime}' for exptime in tbl['exptime']]
+    # tbl['obsmode'] = 'Spec'
+    # tbl['specmode'] = 'calspec'
+    # tbl['priority'] = 1
+    # tbl['weight'] = 1 
+    # tbl['gain'] = 0
+    # #tbl['count'] = obscount_new
+    # tbl['exptime'] = exptime_new
+    gs = GoogleSheet()#.write_sheet_data(sheet_name = '20240809', data  = tbl, append = False)
 # %%

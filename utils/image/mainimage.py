@@ -373,11 +373,13 @@ class mainImage(mainConfig):
         info['SITELAT'] = None
         info['SITELONG'] = None
         info['SITEELEV'] = None
+        info['MOONPHAS'] = None
         if self._obsinfo:
             info['OBSERVER'] = self._format_header(self._obsinfo['name_observer'], 'Name of the observer') 
             info['SITELAT'] = self._format_header(self._obsinfo['latitude'], '[deg] Latitude of the observatory') 
             info['SITELONG'] = self._format_header(self._obsinfo['longitude'], '[deg] Longitude of the observatory') 
             info['SITEELEV'] = self._format_header(self._obsinfo['elevation'], '[m] Elevation of the observatory')
+            info['MOONPHAS'] = self._format_header(self._obsinfo['moonphase'], '[0-1] Illuminated fraction of the moon (0=new, 1=full)')
         return info
     
     def _add_imginfo_to_hdr(self):
@@ -405,6 +407,7 @@ class mainImage(mainConfig):
         info['OBJCTAZ'] = None
         info['OBJCTHA'] = None
         info['OBJCTID'] = None
+        info['MOONSEP'] = None
         info['OBSMODE'] = None
         info['SPECMODE'] = None
         info['NTELSCOP'] = None
@@ -421,6 +424,7 @@ class mainImage(mainConfig):
             info['OBJCTAZ'] = self._format_header(self._targetinfo['az'], '[deg] Azimuth of the target')
             info['OBJCTHA'] = self._format_header(self._targetinfo['hourangle'], '[h m s] Hourangle of the target')
             info['OBJCTID'] = self._format_header(self._targetinfo['id_'], 'ID of the target')
+            info['MOONSEP'] = self._format_header(self._targetinfo['moonsep'], '[deg] Separation angle between the target and the moon')
             info['OBSMODE'] = self._format_header(self._targetinfo['obsmode'], 'Observation mode')
             info['SPECMODE'] = self._format_header(self._targetinfo['specmode'], 'Specmode (when OBSMODE == "SPEC")')
             info['NTELSCOP'] = self._format_header(self._targetinfo['ntelescope'], 'Number of telescopes involved in the observation')

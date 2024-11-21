@@ -94,13 +94,15 @@ class mainObserver(mainConfig):
             - observer: The astropy.coordinates.EarthLocation object representing the observer's location.
         """
         status = dict()
-        status['update_time'] = Time.now().isot
-        status['jd'] = round(Time.now().jd,6)
+        now = Time.now()
+        status['update_time'] = now.isot
+        status['jd'] = round(now.jd,6)
         #status['name_observatory'] = self._observatory
         status['name_observer'] = self._name
         status['latitude'] = round(self._latitude.value,4)
         status['longitude'] = round(self._longitude.value,4)
         status['elevation'] = round(self._elevation.value,2)
+        status['moonphase'] = self.moon_phase(now)
         status['timezone'] = self._timezone
         status['observer'] = self._observer
         status['is_connected'] = True

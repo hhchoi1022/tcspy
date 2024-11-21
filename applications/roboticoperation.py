@@ -1,8 +1,8 @@
 
 
 #%%
-from tcspy.pilot import Startup
-from tcspy.pilot import NightObservation
+from tcspy.applications import Startup
+from tcspy.applications import NightObservation
 from tcspy.utils import SlackConnector
 
 from tcspy.devices import SingleTelescope
@@ -13,8 +13,8 @@ import threading
 import schedule
 import time
 import uuid
-from tcspy.pilot import BiasAcquisition, DarkAcquisition, FlatAcquisition
-from tcspy.pilot import Shutdown
+from tcspy.applications import BiasAcquisition, DarkAcquisition, FlatAcquisition
+from tcspy.applications import Shutdown
 from tcspy.utils.databases import DB
 from tcspy.utils import NightSession
 import astropy.units as u
@@ -91,8 +91,10 @@ list_telescopes = [#SingleTelescope(1),
                     SingleTelescope(9),
                     SingleTelescope(10),
                     SingleTelescope(11),
+                    SingleTelescope(12),
                     SingleTelescope(13),
-                    SingleTelescope(14)
+                    SingleTelescope(14),
+                    SingleTelescope(15),
                     ]
 M = MultiTelescopes(list_telescopes)
 #%%

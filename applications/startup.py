@@ -5,8 +5,6 @@ from multiprocessing import Event
 import time
 from threading import Thread
 
-
-
 from tcspy.configuration import mainConfig
 from tcspy.devices import SingleTelescope
 from tcspy.devices import MultiTelescopes
@@ -211,8 +209,8 @@ class Startup(mainConfig):
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
 
             ## Check result
-            for tel_name, result in result_multi_slew.items():
-                is_succeeded = result_multi_slew[tel_name]['succeeded']
+            for tel_name, result in result_multi_cool.items():
+                is_succeeded = result_multi_cool[tel_name]['succeeded']
                 if not is_succeeded:
                     self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Cooling failure.')
                     self.multitelescopes.remove(tel_name)        
@@ -234,14 +232,16 @@ if __name__ == '__main__':
                          SingleTelescope(3),
                          SingleTelescope(4),
                          SingleTelescope(5),
-                        #  SingleTelescope(6),
-                          SingleTelescope(7),
+                        #SingleTelescope(6),
+                         SingleTelescope(7),
                          SingleTelescope(8),
                          SingleTelescope(9),
                          SingleTelescope(10),  
                          SingleTelescope(11),
+                         SingleTelescope(12),
                         SingleTelescope(13),
-                         SingleTelescope(14)
+                         SingleTelescope(14),
+                        SingleTelescope(15)
                         ]
     
     print(time.time() - start)
@@ -250,30 +250,7 @@ if __name__ == '__main__':
     M = MultiTelescopes(list_telescopes)
     abort_action = Event()
     S = Startup(M, abort_action = abort_action)
-    S.run(home = True, slew = True, cool = True)
-#%%
-if __name__ == '__main__':
-    import schedule
-    M = MultiTelescopes(list_telescopes)
+    S.run(home = False, slew = False, cool = True)
 
-    abort_action = Event()
-    S = Startup(M, abort_action = abort_action)
-    import schedule
-    import time
 
-    def job_that_executes_once():
-        # Do some work that only needs to happen once...
-        S.run()
-        return schedule.CancelJob
-    from tcspy.utils.databases import DB
-    time_prepare = DB().Daily.obsnight.sunset_prepare.datetime
-    time_prepare_str = '%.2d:%.2d'%(time_prepare.hour-3, time_prepare.minute)
-
-    schedule.every().day.at(time_prepare_str).do(job_that_executes_once)
-    
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-#%%
-        
+# %%

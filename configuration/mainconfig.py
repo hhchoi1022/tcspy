@@ -133,7 +133,7 @@ class mainConfig:
                                TRANSFER_SERVER_PORTNUM = '8022',
                                TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
-                               TRANSFER_SERVER_HOMEDIR = '/data/obsdata/obsdata_from_mcs/',
+                               TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 8,
                                TRANSFER_GRIPFTP_VERBOSE = True,
                                TRANSFER_GRIDFTP_RETRIES = 10,
@@ -203,7 +203,7 @@ class mainConfig:
         
         nightsession_params = dict(NIGHTSESSION_SUNALT_AUTOFLAT = -8,
                                    NIGHTSESSION_SUNALT_STARTUP = -5,
-                                   NIGHTSESSION_SUNALT_OBSERVATION = -15,
+                                   NIGHTSESSION_SUNALT_OBSERVATION = -18,
                                    NIGHTSESSION_SUNALT_SHUTDOWN = 0)
         
         devicestatus_params = dict(DEVICESTATUS_FILE = f'{os.path.join(self.path_global,"devicestatus.data")}')
@@ -249,7 +249,7 @@ class mainConfig:
 
 #%%
 if __name__ == '__main__':
-    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,13,14]
+    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
     addresslist = ['10.0.106.6',
                    '10.0.106.7',
                    '10.0.106.8',
@@ -261,8 +261,10 @@ if __name__ == '__main__':
                    '10.0.106.14',
                    '10.0.106.15',
                    '10.0.106.9',
+                   '10.0.106.17',
                    '10.0.106.18',
-                   '10.0.106.19']
+                   '10.0.106.19',
+                   '10.0.106.20']
     for unitnum, address in zip(unitnumlist, addresslist):
         A = mainConfig(unitnum=unitnum)
         A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = True)
