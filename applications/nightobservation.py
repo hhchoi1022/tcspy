@@ -656,26 +656,9 @@ class NightObservation(mainConfig):
         self.is_ToO_triggered = False
         return action_history
 
+
 # %%
 if __name__ == '__main__':
-    list_telescopes = [#SingleTelescope(1),
-                         SingleTelescope(2),
-                         SingleTelescope(3),
-                         SingleTelescope(4),
-                         SingleTelescope(5),
-                         #SingleTelescope(6),
-                         SingleTelescope(7),
-                         SingleTelescope(8),
-                         SingleTelescope(9),
-                         SingleTelescope(10),
-                         SingleTelescope(11),
-                         SingleTelescope(13),
-                         SingleTelescope(14)]
-#%%
-if __name__ == '__main__':
-    M = MultiTelescopes(list_telescopes)
-    abort_action = Event()
-    #Startup(multitelescopes= M , abort_action= abort_action).run()
-    R = NightObservation(M, abort_action= abort_action)
-    #R.run()
-# %%
+    from tcspy.devices import MultiTelescopes
+    M = MultiTelescopes()
+    NightObservation(M, Event()).run()

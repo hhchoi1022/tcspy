@@ -81,22 +81,11 @@ class FlatAcquisition(mainConfig):
         self.is_running = False
 
         
+
 # %%
 if __name__ == '__main__':
-    list_telescope = [#SingleTelescope(1),
-                      SingleTelescope(2),
-                      SingleTelescope(3),
-                      SingleTelescope(5),
-                      SingleTelescope(6),
-                      SingleTelescope(7),
-                      SingleTelescope(8),
-                      SingleTelescope(9),
-                      SingleTelescope(10),
-                      SingleTelescope(11),
-                     ]
-
-    m = MultiTelescopes(list_telescope)
-    b = FlatAcquisition(m, Event())
-    b.run(count = 9, gain = 2750, binning = 1)
-    #b.run(gain = 0, exptime = 30)
-# %%
+    from tcspy.devices import MultiTelescopes
+    M = MultiTelescopes()
+    FlatAcquisition(M, Event()).run(count = 9,
+                                    binning = 1,
+                                    gain = 2750)

@@ -206,7 +206,7 @@ class mainConfig:
                                    NIGHTSESSION_SUNALT_OBSERVATION = -18,
                                    NIGHTSESSION_SUNALT_SHUTDOWN = 0)
         
-        devicestatus_params = dict(DEVICESTATUS_FILE = f'{os.path.join(self.path_global,"devicestatus.data")}')
+        multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_global,"multitelescopes.data")}')
         
         nightobs_params = dict(NIGHTOBS_SAFETYPE = 'safetymonitor',)        
         self.make_configfile(mount_params, filename='Mount.config', savepath = savepath_unit)
@@ -234,7 +234,7 @@ class mainConfig:
         self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_global)
         self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_global)
         self.make_configfile(nightsession_params, filename = 'nightsession.config', savepath= self.path_global)
-        self.make_configfile(devicestatus_params, filename = 'devicestatus.config', savepath= self.path_global)
+        self.make_configfile(multitelescopes_params, filename = 'multitelescopes.config', savepath= self.path_global)
         
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)

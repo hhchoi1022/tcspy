@@ -7,10 +7,13 @@ from tcspy.devices.observer import mainObserver
 from tcspy.utils.logger import mainLogger
 from concurrent.futures import ThreadPoolExecutor
 import time
+from tcspy.configuration import mainConfig
+import json
+import re
 
 #%%
 
-class MultiTelescopes:
+class MultiTelescopes(mainConfig):
     """
     A class representing multiple telescopes.
 
@@ -39,17 +42,44 @@ class MultiTelescopes:
     """
     
     def __init__(self, 
-                 SingleTelescope_list : List[SingleTelescope]):
+                 SingleTelescope_list : List[SingleTelescope] = None):
+        super().__init__()
         self._devices_list = SingleTelescope_list
+        if not self._devices_list:
+            self._load_from_config()
+        self._register()
+    
+    def __repr__(self):
+        txt=  f'MultiTelescopes[{list(self.devices.keys())}]'
+        return txt
+    
+    def _load_from_config(self):
+        print('Loading multitelescopes...')
+        with open(self.config['MULTITELESCOPES_FILE'],'r') as f:
+            device_status_all = json.load(f)
+        
+        def is_telescope_active(telescope_status: dict):
+            device_status = all(device['is_active'] for device in telescope_status.values())
+            return device_status
+        
+        list_telescopes = []
+        for tel_name, tel_status in device_status_all.items():
+            is_tel_active = is_telescope_active(tel_status)
+            tel_num = int(re.search(r"\d{2}$", tel_name).group())
+            if is_tel_active:
+                list_telescopes.append(SingleTelescope(tel_num))
+        
+        self._devices_list = list_telescopes
+        self._register()
+        print('Multitelescopes are loaded.')
+    
+    def _register(self):
         self.devices = self._get_telescopes()
         self.log_dict = self._dict_logs()
         self.log = self._all_logs()
         self.observer = mainObserver()
         self._status_dict = dict()
-        
-    def __repr__(self):
-        txt=  f'MultiTelescopes[{list(self.devices.keys())}]'
-        return txt
+
     
     def add(self,
             singletelescope : SingleTelescope):
@@ -156,4 +186,5 @@ if __name__ == '__main__':
                         SingleTelescope(11),
                         ]
     M = MultiTelescopes(list_telescopes)
+    
 # %%

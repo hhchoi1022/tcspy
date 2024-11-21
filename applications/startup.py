@@ -223,34 +223,9 @@ class Startup(mainConfig):
             self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished.')
         self.is_running = False
 
-# %%
-if __name__ == '__main__':
-    import time
-    start = time.time()
-    list_telescopes = [#SingleTelescope(1),
-                         SingleTelescope(2),
-                         SingleTelescope(3),
-                         SingleTelescope(4),
-                         SingleTelescope(5),
-                        #SingleTelescope(6),
-                         SingleTelescope(7),
-                         SingleTelescope(8),
-                         SingleTelescope(9),
-                         SingleTelescope(10),  
-                         SingleTelescope(11),
-                         SingleTelescope(12),
-                        SingleTelescope(13),
-                         SingleTelescope(14),
-                        SingleTelescope(15)
-                        ]
-    
-    print(time.time() - start)
-#%%
-if __name__ == '__main__':
-    M = MultiTelescopes(list_telescopes)
-    abort_action = Event()
-    S = Startup(M, abort_action = abort_action)
-    S.run(home = False, slew = False, cool = True)
-
 
 # %%
+if __name__ == '__main__':
+    from tcspy.devices import MultiTelescopes
+    M = MultiTelescopes()
+    Startup(M, Event()).run()

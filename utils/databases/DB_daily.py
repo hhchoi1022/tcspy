@@ -547,9 +547,9 @@ if __name__ == '__main__':
     # IMS.insert(tbl[[138, 139, 174, 175, 176, 215, 216]])
     # Daily.insert(tbl)
     #Daily.from_GSheet('241118')
-    Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
+    #Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
     Daily.from_IMS()
-    #Daily.from_RIS(size = 100)
+    Daily.from_RIS(size = 100)
     #from astropy.io import ascii
     #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
     #tbl_input = tbl[tbl['note'] == 'GW190814']

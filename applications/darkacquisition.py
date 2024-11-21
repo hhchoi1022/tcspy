@@ -74,22 +74,12 @@ class DarkAcquisition(mainConfig):
         self.is_running = False
 
         
-# %%
-if __name__ == '__main__':
-    list_telescope = [SingleTelescope(1),
-                      SingleTelescope(2),
-                      SingleTelescope(3),
-                      SingleTelescope(5),
-                      SingleTelescope(6),
-                      SingleTelescope(7),
-                      SingleTelescope(8),
-                      SingleTelescope(9),
-                      SingleTelescope(10),
-                      SingleTelescope(11),
-                     ]
-    m = MultiTelescopes(list_telescope)
-    b = DarkAcquisition(m, Event())
-    b.run(gain = 2750, exptime = 30)
-    #b.run(gain = 0, exptime = 30)
 
 # %%
+if __name__ == '__main__':
+    from tcspy.devices import MultiTelescopes
+    M = MultiTelescopes()
+    DarkAcquisition(M, Event()).run(count = 9, 
+                                    exptime = 100, 
+                                    binning = 1, 
+                                    gain =2750)

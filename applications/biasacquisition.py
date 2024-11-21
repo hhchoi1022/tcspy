@@ -81,21 +81,7 @@ class BiasAcquisition(mainConfig):
         
 # %%
 if __name__ == '__main__':
-    list_telescope = [#SingleTelescope(1),
-                      SingleTelescope(2),
-                      SingleTelescope(3),
-                      SingleTelescope(4),
-                      SingleTelescope(5),
-                      #SingleTelescope(6),
-                      SingleTelescope(7),
-                      SingleTelescope(8),
-                      SingleTelescope(9),
-                      SingleTelescope(10),
-                      SingleTelescope(11),
-                      SingleTelescope(13),
-                      SingleTelescope(14)
-                     ]
-    m = MultiTelescopes(list_telescope)
-    b = BiasAcquisition(m, Event())
-    b.run(gain = 2750,count=1)
+    from tcspy.devices import MultiTelescopes
+    M = MultiTelescopes()
+    BiasAcquisition(M, Event()).run(count = 9, binning = 1, gain =2750)
 # %%

@@ -4,8 +4,17 @@ from tcspy.devices import SingleTelescope
 from tcspy.devices import MultiTelescopes
 from tcspy.utils import NightSession
 from tcspy.utils import SlackConnector
+from tcspy.applications import BiasAcquisition
+from tcspy.applications import DarkAcquisition
+from tcspy.applications import NightObservation
+from tcspy.applications import Startup
+from tcspy.applications import Shutdown
+from tcspy.applications import FlatAcquisition
 
+import astropy.units as u
 from astropy.time import Time
+import uuid
+import time
 import threading
 import schedule
 import json
@@ -13,33 +22,16 @@ import re
 
 class AppScheduler(mainConfig):
     
-    def __init__(self):
+    def __init__(self,
+                 multitelescopes : MultiTelescopes,
+                 ):
         super().__init__()
-        self._load_multitelescopes()
+        self.multitelescopes = multitelescopes
         self._set_obsnight()
         self.slack_alert_sender = None
         self.slack_message_ts = None
         self.schedule = schedule
         self.thread_lock = threading.Lock()
-    
-    def _load_multitelescopes(self):
-        print('Loading multitelescopes...')
-        with open(self.config['DEVICESTATUS_FILE'],'r') as f:
-            self.device_status = json.load(f)
-        
-        def is_telescope_active(telescope_status: dict):
-            device_status = all(device['is_active'] for device in telescope_status.values())
-            return device_status
-        
-        list_telescopes = []
-        for tel_name, tel_status in self.device_status.items():
-            is_tel_active = is_telescope_active(tel_status)
-            tel_num = int(re.search(r"\d{2}$", tel_name).group())
-            if is_tel_active:
-                list_telescopes.append(SingleTelescope(tel_num))
-        
-        self.multitelescopes = MultiTelescopes(list_telescopes)
-        print('Multitelescopes are loaded.')
 
     def _set_obsnight(self):
         obsnight = NightSession(Time.now()).obsnight_ltc
@@ -49,10 +41,10 @@ class AppScheduler(mainConfig):
         """
         Set the slack_alert_sender and slack_message_ts
         """
-        tonight_str = '%.4d-%.2d-%.2d'%(self.obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, self.obsnight.sunrise_civil.datetime.day)
+        tonight_str = '%.4d-%.2d-%.2d'%(self.obsnight.sunrise_civil.datetime.year, self.obsnight.sunrise_civil.datetime.month, self.obsnight.sunrise_civil.datetime.day)
         self.slack_alert_sender = SlackConnector()
         id_tonight = uuid.uuid4().hex
-        self.slack_message_ts = alert_sender.get_message_ts(match_string = tonight_str)
+        self.slack_message_ts = self.slack_alert_sender.get_message_ts(match_string = tonight_str)
         if not self.slack_message_ts:
             message_today = f'`7DT Observation on {tonight_str}` \n *Involving telescopes*: {", ".join(list(self.multitelescopes.devices.keys()))} \n *Observation log*: https://hhchoi1022.notion.site/Observation-log-5af68b0822324167af57468b0852666b \n *ID*: {id_tonight}'
             self.slack_alert_sender.post_message(message_today)
@@ -88,7 +80,7 @@ class AppScheduler(mainConfig):
         with self.thread_lock:
             start_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'NightObservation is triggered: {start_time}', alert_slack = alert_slack)
-            action = NightObservation(M, abort_action = abort_action)
+            action = NightObservation(self.multitelescopes, abort_action = abort_action)
             action.run()
             while action.is_running:
                 time.sleep(1)
@@ -103,7 +95,7 @@ class AppScheduler(mainConfig):
         with self.thread_lock:
             start_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'BiasAcquisition is triggered: {start_time}', alert_slack = alert_slack)
-            action = BiasAcquisition(M, abort_action = abort_action)
+            action = BiasAcquisition(self.multitelescopes, abort_action = abort_action)
             action.run(count = count, binning = binning, gain = gain)
             while action.is_running:
                 time.sleep(1)
@@ -119,7 +111,7 @@ class AppScheduler(mainConfig):
         with self.thread_lock:
             start_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'DarkAcquisition is triggered: {start_time}', alert_slack = alert_slack)
-            action = DarkAcquisition(M, abort_action = abort_action)
+            action = DarkAcquisition(self.multitelescopes, abort_action = abort_action)
             action.run(count = count, exptime = exptime, binning = binning, gain = gain)
             while action.is_running:
                 time.sleep(1)
@@ -134,7 +126,7 @@ class AppScheduler(mainConfig):
         with self.thread_lock:
             start_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'FlatAcquisition is triggered: {start_time}', alert_slack = alert_slack)
-            action = FlatAcquisition(M, abort_action = abort_action)
+            action = FlatAcquisition(self.multitelescopes, abort_action = abort_action)
             action.run(count = count, binning = binning, gain = gain)
             while action.is_running:
                 time.sleep(1)
@@ -148,31 +140,65 @@ class AppScheduler(mainConfig):
             with self.thread_lock:
                 start_time = time.strftime("%H:%M:%S", time.localtime())
                 self.post_slack_thread(message = f'Shutdown is triggered: {start_time}', alert_slack = alert_slack)
-                action = Shutdown(M, abort_action = abort_action)
+                action = Shutdown(self.multitelescopes, abort_action = abort_action)
                 action.run(slew = slew, warm = warm)
                 while action.is_running:
                     time.sleep(1)
                 end_time = time.strftime("%H:%M:%S", time.localtime())
                 self.post_slack_thread(message = f'Shutdown is finished: {end_time}', alert_slack = alert_slack)
   
-    def show_schedule(self):
+    def show_schedule(self,
+                      alert_slack : bool = True):
         if not self.schedule.jobs:
             print("No scheduled jobs.")
             return
 
+        slack_schedule_str = 'Today Schedule\n' 
         print("Current Schedule:")
         for job in self.schedule.jobs:
             next_run = job.next_run.strftime("%Y-%m-%d %H:%M:%S")
-            interval = str(job).split('at')[0].strip()  # Extracting the schedule type and time
-            job_func_name = job.job_func.__name__  # Get the name of the job function
-            print(f"{interval} | Next run: {next_run} | Job: {job_func_name}")
-            
-    def schedule_app(self, application, start_time : str, *application_args):
-        def run_threaded(job_func, *args):
-            job_thread = threading.Thread(target=job_func, args=args)
-            job_thread.start()
-        self.schedule.every().day.at(start_time).do(run_threaded, application, *application_args)
+            job_str = str(job)
+            func_match = re.search(r"<bound method .*?\.([\w_]+) of", job_str)
+            function_name = func_match.group(1) if func_match else "Unknown"
+            # Extract kwargs using regex
+            kwargs_match = re.search(r"kwargs=({.*?})", job_str)
+            kwargs = kwargs_match.group(1) if kwargs_match else "{}"
+            slack_schedule_str += f'{function_name}: {next_run}\n'
+            print(f"{function_name} | Next run: {next_run} | Job: {function_name} | kwargs: {kwargs}")
+        if alert_slack:
+            self.post_slack_thread(message = slack_schedule_str, alert_slack = alert_slack)
     
+    def clear_schedule(self):
+        self.schedule.clear()
+             
+    def schedule_app(self, application, start_time : Time, **application_kwargs):
+        def run_threaded(job_func, **kwargs):
+            job_thread = threading.Thread(target=job_func, kwargs=kwargs)
+            job_thread.start()
+        start_time_str = '%.2d:%.2d'%(start_time.datetime.hour, start_time.datetime.minute)
+        self.schedule.every().day.at(start_time_str).do(run_threaded, application, **application_kwargs)
+
+    def run_schedule(self):
+        while True:
+            self.schedule.run_pending()
+            time.sleep(1)
 # %%
-A = AppScheduler()
+if __name__ == '__main__':
+    M = MultiTelescopes()
+    A = AppScheduler(M)
+    A.clear_schedule()
+    alert_slack = True
+    # Startup
+    A.schedule_app(A.run_startup, A.obsnight.sunset_startup, home = True, slew = True, cool = True, alert_slack = alert_slack)
+    # NightObservation
+    A.schedule_app(A.run_nightobs, A.obsnight.sunset_observation, home = True, slew = True, cool = True, alert_slack = alert_slack)
+    # Bias
+    A.schedule_app(A.run_bias, A.obsnight.sunrise_observation + 15 * u.minute, count = 9, binning = 1, gain = 2750, alert_slack = alert_slack)
+    # Flat
+    A.schedule_app(A.run_flat, A.obsnight.sunrise_flat, count = 9, binning = 1, gain = 2750, alert_slack = alert_slack)
+    # Dark
+    A.schedule_app(A.run_dark, A.obsnight.sunrise_flat + 40 * u.minute, count = 9, exptime = 100, binning = 1, gain = 2750, alert_slack = alert_slack)
+    # Shutdown
+    A.schedule_app(A.run_shutdown, A.obsnight.sunrise_flat + 1 * u.hour, slew = True, warm = True, alert_slack = alert_slack)
+    A.show_schedule()
 # %%

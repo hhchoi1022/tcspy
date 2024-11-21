@@ -23,13 +23,13 @@ class AutofocusInitializer(mainConfig):
         self.is_running = False
     
     def run(self,
-                 filter_ : str = 'r',
-                 use_offset : bool = True,
-                 use_history : bool = False, 
-                 history_duration : float = 60,
-                 search_focus_when_failed : bool = True, 
-                 search_focus_range : int = 3000,
-                 slew : bool = True):
+            filter_ : str = 'r',
+            use_offset : bool = True,
+            use_history : bool = False, 
+            history_duration : float = 60,
+            search_focus_when_failed : bool = True, 
+            search_focus_range : int = 3000,
+            slew : bool = True):
         startup_thread = Thread(target=self._process, kwargs = dict(filter_ = filter_, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range, slew = slew))
         startup_thread.start()
     
@@ -115,24 +115,12 @@ class AutofocusInitializer(mainConfig):
 
 #%%  
 if __name__ == '__main__':
-    list_telescopes = [#SingleTelescope(1),
-                    SingleTelescope(2),
-                    SingleTelescope(3),
-                    SingleTelescope(4),
-                    SingleTelescope(5),
-                    #SingleTelescope(6),
-                    SingleTelescope(7),
-                    SingleTelescope(8),
-                    SingleTelescope(9),
-                    SingleTelescope(10),
-                    SingleTelescope(11),
-                    SingleTelescope(12),
-                    SingleTelescope(13),
-                    SingleTelescope(14),
-                    SingleTelescope(15)
-                    ]
-    mtel = MultiTelescopes(list_telescopes)
-    a = AutofocusInitializer(mtel, Event())
-    a.run(slew = True, filter_ = 'specall')
-#%%
-# %%
+    from tcspy.devices import MultiTelescopes
+    M = MultiTelescopes()
+    AutofocusInitializer(M, Event()).run(filter_ = 'specall',
+                                         use_offset = False,
+                                         use_history = False, 
+                                         history_duration = 60,
+                                         search_focus_when_failed = False, 
+                                         search_focus_range = 200,
+                                         slew = True) 
