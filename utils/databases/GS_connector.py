@@ -186,7 +186,7 @@ class GoogleSheet():
             worksheet.update([header])
 # %%
 if __name__ =='__main__':
-    # tbl = ascii.read('/home/hhchoi1022/Downloads/calspec_2024-08-08.csv')
+    tbl = ascii.read('/home/hhchoi1022/Downloads/calspec_2024-08-08.csv')
     # tbl.rename_column('Star name', 'objname')
     # tbl.rename_column('Decl', 'De')
     # tbl.rename_column('obs_count', 'count')
