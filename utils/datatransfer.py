@@ -118,7 +118,7 @@ class DataTransferManager(mainConfig):
             source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.archive_homedir, output_file_name)}', compress = False)
         else:
             source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
-        command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir}"
+        command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} -rst-retries 10 -rst-interval 60 file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir}"
         try:
             print('GRIDFTP PROTOCOL WITH THE COMMAND:',command)
             self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -261,12 +261,14 @@ class DataTransferManager(mainConfig):
 # %%
 if __name__ == '__main__':
     A = DataTransferManager()
-    A.run(key = '*/image/2024-11-16_gain2750', tar = True, thread = False)
     import time
-    time.sleep(60)
-    A.run(key = '*/image/2024-11-17_gain2750', tar = True, thread = False)
-    time.sleep(60)
     A.run(key = '*/image/2024-11-18_gain2750', tar = True, thread = False)
+    time.sleep(600)
+    A.run(key = '*/image/2024-11-21_gain2750', tar = True, thread = False)
+    time.sleep(600)
+
+
+    
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     #Run the monitoring process
     # A.start_monitoring(

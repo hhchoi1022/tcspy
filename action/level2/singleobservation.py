@@ -160,26 +160,26 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.is_running = True
         self.shared_memory['succeeded'] = False
         # Check condition of the instruments for this Action
-        self._log.info(f'Debugging point 0.1')
         trigger_abort_disconnected = False
         try:        
             status_mount = self.telescope_status.mount
         except:
             trigger_abort_disconnected = True
             self._log.critical(f'==========LV2[{type(self).__name__}] is failed: mount status cannot be loaded.')
-        self._log.info(f'Debugging point 0.4')
         try:
+            self._log.info(f'[Debug] Camera status query start: {Time.now().isot}.')
             status_camera = self.telescope_status.camera
-        except:
+            self._log.info(f'Debug] Camera status query finish: {Time.now().isot}.')
+        except Exception as e:
             trigger_abort_disconnected = True
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera status cannot be loaded.')
-        self._log.info(f'Debugging point 0.3')
+            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera status cannot be loaded. Exception: {e}')
         try:
+            self._log.info(f'Debug] Filterwheel status query start: {Time.now().isot}.')
             status_filterwheel = self.telescope_status.filterwheel
-        except:
+            self._log.info(f'Debug] Filterwheel status query finish: {Time.now().isot}.')
+        except Exception as e:
             trigger_abort_disconnected = True
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: filterwheel status cannot be loaded.')
-        self._log.info(f'Debugging point 0.2')
+            self._log.info(f'==========LV2[{type(self).__name__}] is failed: filterwheel status cannot be loaded. Exception: {e}')
 
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -194,7 +194,6 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self.is_running = False
             raise ConnectionException(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
-        self._log.info(f'Debugging point 1')
 
         
         # Set target

@@ -326,8 +326,17 @@ class DB_Daily(mainConfig):
             tbl_sheet['is_inputted'] = insertion_result
             print('Updating GoogleSheet data...')
             gsheet.write_sheet_data(sheet_name = sheet_name, data = tbl_sheet, append = False, clear_header = False)        
+    
+    def clear(self, clear_only_7ds : bool = True):
+        data = self.data 
+        if clear_only_7ds:
+            data_7ds = data[(data['objtype'] == 'RIS') | (data['objtype'] == 'IMS') | (data['objtype'] == 'WFS')]
+            all_ids = data_7ds['id']
+        else:
+            all_ids = data['id']
+        self.sql.remove_rows(tbl_name = self.tblname, ids = all_ids)
 
-        
+    
     @property
     def data(self):
         """
@@ -541,13 +550,14 @@ if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
     from tcspy.utils.databases import DB_Annual
     #RIS = DB_Annual('RIS').data
-    #Daily.insert(RIS[[20348]])
+    #Daily.insert(RIS[[10014]])
     # IMS = DB_Annual('IMS')
     # RIS = A.data
     # IMS.insert(tbl[[138, 139, 174, 175, 176, 215, 216]])
     # Daily.insert(tbl)
-    #Daily.from_GSheet('241118')
-    #Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
+    #Daily.from_GSheet('241122_1')
+    Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
+    Daily.clear(clear_only_7ds= True)
     Daily.from_IMS()
     Daily.from_RIS(size = 100)
     #from astropy.io import ascii
@@ -556,7 +566,7 @@ if __name__ == '__main__':
     #tbl_input['ntelescope'] = 10
     #Daily.insert(tbl_input)
 
-    #Daily.initialize(True)
+    Daily.initialize(True)
     #Daily.write()
 
 
