@@ -141,7 +141,7 @@ def find_overlapping_tiles(tbl1, tbl2,
     ax.set_title('Sky Tiles: Black = All tiles, Red = Overlapping tiles')
 
     plt.grid(True)
-    plt.show()
+    plt.show() 
     if find_non_overlap:
         return non_overlap_tbl
     else:
@@ -153,36 +153,42 @@ if __name__ == "__main__":
     from astropy.io import ascii
     from astropy.table import Table
     tbl1 = Table()
-    tbl1['id'] = ['Abell3677']
-    target_ra = 303.1403333
-    target_dec = -56.8406389
-    ra_cut = 10
-    dec_cut = 10
+    tbl1['id'] = ['WDFS0122-30']
+    target_ra = 20.5
+    target_dec = -30.0 
     tbl1['ra'] = [target_ra]
     tbl1['dec']  = [target_dec]
-    tbl1['ra3'] = [303.64]
-    tbl1['dec3']  = [-57.14]
-    tbl1['ra1'] = [302.42]
-    tbl1['dec1']  = [-56.33]
-    tbl1['ra2'] = [303.64]
-    tbl1['dec2']  = [-56.33]
-    tbl1['ra4'] = [302.42]
-    tbl1['dec4']  = [-57.14]
-    tbl2 = ascii.read('./databases/sky-grid and tiling/7-DT/final_tiles.txt')
-    tbl2_idx = (tbl2['ra'] > target_ra-ra_cut) & (tbl2['ra'] < target_ra+ra_cut) & (tbl2['dec'] > target_dec-dec_cut) & (tbl2['dec'] < target_dec+dec_cut)
-    tbl2 = tbl2[tbl2_idx]
+    tbl1 = ascii.read('~/Downloads/Subset_White_Dwarfs_with_Matched_Tiles.csv')
+    tbl1.rename_column('name', 'id')
+
+
+    tbl2_original = ascii.read('./databases/sky-grid and tiling/7-DT/final_tiles.txt')
+    ra_cut = 2
+    dec_cut = 2
+    tbl2_idx = (tbl2_original['ra'] > target_ra-ra_cut) & (tbl2_original['ra'] < target_ra+ra_cut) & (tbl2_original['dec'] > target_dec-dec_cut) & (tbl2_original['dec'] < target_dec+dec_cut)
+    tbl2 = tbl2_original[tbl2_idx]
     #tbl2.remove_columns(['ra1', 'dec1', 'ra2', 'dec2', 'ra3', 'dec3', 'ra4', 'dec4'])
 
     # Specify FOV values for the two telescopes (in degrees)
-    FOV_RA_tbl1 = 1  # Example FOV_RA for tbl1
-    FOV_Dec_tbl1 = 1  # Example FOV_Dec for
+    FOV_RA_tbl1 = 0.01  # Example FOV_RA for tbl1
+    FOV_Dec_tbl1 = 0.01  # Example FOV_Dec for
 
-    # Filter tiles from tbl2 based on overlap with tbl1
-    filtered_tbl2 = find_overlapping_tiles(tbl1 = tbl1, tbl2 = tbl2,
-                                           overlap_threshold = 0,
-                                           find_non_overlap=False,
-                                           plot_tile_id=True,
-                                           tile_id_fontsize= 7)
+    tilelist = []
+    for tbl_1 in tbl1:
+        target_ra = tbl_1['ra']
+        target_dec = tbl_1['dec']
+        tbl2_idx = (tbl2_original['ra'] > target_ra-ra_cut) & (tbl2_original['ra'] < target_ra+ra_cut) & (tbl2_original['dec'] > target_dec-dec_cut) & (tbl2_original['dec'] < target_dec+dec_cut)
+        tbl2 = tbl2_original[tbl2_idx]
+        # Filter tiles from tbl2 based on overlap with tbl1
+        filtered_tbl2 = find_overlapping_tiles(tbl1 = Table(tbl_1), tbl2 = tbl2,
+                                                FOV_RA_tbl1 = FOV_RA_tbl1,
+                                                FOV_Dec_tbl1 = FOV_Dec_tbl1,
+                                                    
+                                            overlap_threshold = 0,
+                                            find_non_overlap=False,
+                                            plot_tile_id=True,
+                                            tile_id_fontsize= 10)
+        tilelist.append(filtered_tbl2[0]['id'])
 
 
 # %%
