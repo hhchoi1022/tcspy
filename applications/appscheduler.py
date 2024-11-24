@@ -20,7 +20,7 @@ import threading
 import schedule
 import json
 import re
-
+#%%
 class AppScheduler(mainConfig):
     
     def __init__(self,
@@ -54,24 +54,24 @@ class AppScheduler(mainConfig):
             time.sleep(3)
             self.slack_message_ts = self.slack_alert_sender.get_message_ts(match_string = tonight_str)
 
-        if post_schedule:
-            # Obsnight information
-            obsnight_info_str = "*Tonight information*\n" +str(self.obsnight).split('Attributes:\n')[1].split('time_inputted')[0]
-            self.post_slack_thread(message = obsnight_info_str, alert_slack = alert_slack)
-            time.sleep(3)
-            if self.schedule.jobs:
-                schedule_str = '*Tonight scheduled TCSpy applications*\n' 
-                for job in self.schedule.jobs:
-                    next_run = job.next_run.strftime("%Y-%m-%d %H:%M:%S")
-                    job_str = str(job)
-                    func_match = re.search(r"<bound method .*?\.([\w_]+) of", job_str)
-                    function_name = func_match.group(1) if func_match else "Unknown"
-                    # Extract kwargs using regex
-                    kwargs_match = re.search(r"kwargs=({.*?})", job_str)
-                    kwargs = kwargs_match.group(1) if kwargs_match else "{}"
-                    schedule_str += f"`{function_name}`: {next_run} \nKwargs: {kwargs}\n\n"
-                self.post_slack_thread(message = schedule_str, alert_slack = alert_slack)
-        
+            if post_schedule:
+                # Obsnight information
+                obsnight_info_str = "*Tonight information*\n" +str(self.obsnight).split('Attributes:\n')[1].split('time_inputted')[0]
+                self.post_slack_thread(message = obsnight_info_str, alert_slack = alert_slack)
+                time.sleep(3)
+                if self.schedule.jobs:
+                    schedule_str = '*Tonight scheduled TCSpy applications*\n' 
+                    for job in self.schedule.jobs:
+                        next_run = job.next_run.strftime("%Y-%m-%d %H:%M:%S")
+                        job_str = str(job)
+                        func_match = re.search(r"<bound method .*?\.([\w_]+) of", job_str)
+                        function_name = func_match.group(1) if func_match else "Unknown"
+                        # Extract kwargs using regex
+                        kwargs_match = re.search(r"kwargs=({.*?})", job_str)
+                        kwargs = kwargs_match.group(1) if kwargs_match else "{}"
+                        schedule_str += f"`{function_name}`: {next_run} \nKwargs: {kwargs}\n\n"
+                    self.post_slack_thread(message = schedule_str, alert_slack = alert_slack)
+            
     
     def post_slack_thread(self, message, alert_slack: bool = True):
         if alert_slack:
@@ -218,6 +218,7 @@ if __name__ == '__main__':
     A.schedule_app(A.run_dark, A.obsnight.sunrise_flat + 40 * u.minute, count = 9, exptime = 100, binning = 1, gain = 2750, alert_slack = alert_slack)
     # Shutdown
     A.schedule_app(A.run_shutdown, A.obsnight.sunrise_flat + 1 * u.hour, slew = True, warm = True, alert_slack = alert_slack)
+    A.set_alert_sender(post_schedule= True)
     A.show_schedule()
     A.run_schedule()
 # %%
