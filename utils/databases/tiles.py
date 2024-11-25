@@ -254,7 +254,7 @@ class Tiles:
 # %%
 
 T = Tiles()
-list_ra = [10]
-list_dec = [-45]
+list_ra = [10,20,30,40,50,50,50]
+list_dec = [-45,-40,-50,-40,-60,-60,-60]
 T.find_overlapping_tiles(list_ra, list_dec)
 # %%
