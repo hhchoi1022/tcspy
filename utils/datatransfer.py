@@ -262,11 +262,10 @@ class DataTransferManager(mainConfig):
 if __name__ == '__main__':
     A = DataTransferManager()
     import time
-    A.run(key = '*/image/2024-11-18_gain2750', tar = True, thread = False)
     time.sleep(600)
-    A.run(key = '*/image/2024-11-22_gain2750', tar = True, thread = False)
+    A.run(key = '*/image/2024-11-23_gain2750', tar = False, thread = False)
     time.sleep(600)
-    A.run(key = '*/image/2024-11-23_gain2750', tar = True, thread = False)
+    A.run(key = '*/image/2024-11-24_gain2750', tar = True, thread = False)
 
 
 
