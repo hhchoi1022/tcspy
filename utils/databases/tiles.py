@@ -30,18 +30,16 @@ class Tiles:
                                visualize_ncols : int = 5,
                                ):
         """
-        Filters tiles from the second table that overlap more than a threshold percentage 
-        with any tiles from the first table, using spherical geometry for accurate corner calculation.
+        Find the tiles that overlap with the given coordinates.
         
         Parameters:
-        - tbl1: astropy.Table containing ra1, ra2, ra3, ra4, dec1, dec2, dec3, dec4 or central ra, dec for telescope 1
-        - tbl2: astropy.Table containing ra1, ra2, ra3, ra4, dec1, dec2, dec3, dec4 or central ra, dec for telescope 2
-        - FOV_RA_tbl1, FOV_Dec_tbl1: Field of View (RA, Dec) for telescope 1 if corners are not present
-        - FOV_RA_tbl2, FOV_Dec_tbl2: Field of View (RA, Dec) for telescope 2 if corners are not present
-        - overlap_threshold: float, overlap percentage threshold (default is 0.5 for 50%)
-        
+        - list_ra: list of RA coordinates
+        - list_dec: list of Dec coordinates
+        - visualize (bool): Whether to visualize the overlapping tiles
+        - visualize_ncols (int): Number of columns in the visualization grid
+
         Returns:
-        - filtered_tbl2: astropy.Table containing the filtered tiles from tbl2
+        -  A table containing the innermost tiles for each coordinate
         """
 
         def split_wrapping_polygon(polygon):
@@ -183,7 +181,7 @@ class Tiles:
             cols = visualize_ncols  # Number of columns in the subplot grid
             rows = (n_coords + cols - 1) // cols  # Calculate the required number of rows
 
-            fig, axes = plt.subplots(rows, cols, figsize=(15, rows * 5), subplot_kw={'aspect': 'equal'})
+            fig, axes = plt.subplots(rows, cols, figsize=(15, rows * 3), subplot_kw={'aspect': 'equal'})
             axes = axes.flatten()
 
             # Plot each coordinate and surrounding polygons
@@ -251,10 +249,3 @@ class Tiles:
             plt.show()
 
         return self.tbl_RIS[innermost_indices]
-# %%
-
-T = Tiles()
-list_ra = [10,20,30,40,50,50,50]
-list_dec = [-45,-40,-50,-40,-60,-60,-60]
-T.find_overlapping_tiles(list_ra, list_dec)
-# %%
