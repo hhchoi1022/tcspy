@@ -1,22 +1,41 @@
 
-
+#%%
+from astropy.io import ascii
 from astropy.table import Table
-from tcspy.utils import GoogleSheet
-
+from tcspy.utils.databases.tiles import Tiles
+#from tcspy.utils import GoogleSheet
+#%%
 
 class AlertDecoder:
     
     def __init__(self):
+        self.filepath = None
         self.formatted_data = None
         self.alert_data = None
         self.alert_type = None
         self.is_decoded = False
+        self.config = self._default_config
     
-    def default_configuration(self):
-        
-        class configuration:
-            pass
-        pass
+    def __repr__(self):
+        txt = (f'ALERT (type = {self.alert_type}, decoded = {self.is_decoded}, path = {self.filepath})')
+        return txt   
+    
+    @property
+    def _default_config(self):
+        default_config = dict()
+        default_config['exptime'] = 100
+        default_config['count'] = 3
+        default_config['obsmode'] = 'Spec'
+        default_config['filter'] = 'g'
+        default_config['specmode'] = 'specall'
+        default_config['ntelescope'] = 10
+        default_config['priority'] = 50
+        default_config['weight'] = 1
+        default_config['binning'] = 1
+        default_config['gain'] = 1
+        default_config['objtype'] = 'Request'
+        default_config['is_ToO'] = 0
+        return default_config
     
     def _decode_gwalert(self, file_path : str):
         """
@@ -33,23 +52,33 @@ class AlertDecoder:
             gw_table = ascii.read(file_path)
         except:
             raise ValueError(f'Error reading the alert file at {file_path}')
+        self.filepath = file_path
         self.alert_data = gw_table
         self.alert_type = 'GW'
-        format_colnamelist = ['#id', 'ra', 'dec', 'obj', 'rank']
+        format_colnamelist = ['id', 'ra', 'dec', 'obj', 'rank']
         # Check if the alert data contains the required columns
         if not all(col in gw_table.colnames for col in format_colnamelist):
             raise ValueError('Alert data does not contain the required columns.')
-        # Rename the columns to the standard format
+        # Set/Modify the columns to the standard format
         formatted_tbl = Table()
-        formatted_tbl['objname'] = ['%.5d'%id_ for id_ in gw_table['#id']]
-        formatted_tbl['ra'] = gw_table['ra']
-        formatted_tbl['dec'] = gw_table['dec']
+        for key, value in self.config.items():
+            formatted_tbl[key] = [value] * len(gw_table)
+        formatted_tbl['objname'] = ['T%.5d'%id_ for id_ in gw_table['id']]
+        formatted_tbl['RA'] = gw_table['ra']
+        formatted_tbl['De'] = gw_table['dec']
         formatted_tbl['obj'] = gw_table['obj']
-        formatted_tbl['rank'] = gw_table['rank']
-        
+        formatted_tbl['priority'] = gw_table['rank']
+        formatted_tbl['note'] = gw_table['obj']
+        formatted_tbl['objtype'] = 'GECKO'
+        self.is_decoded = True
+        self.formatted_data = formatted_tbl
+    
 
-        
-        return alert_data
     
-        
-    
+# %%
+A = AlertDecoder()
+A._decode_gwalert('/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv')
+# %%
+A = Tiles()
+A.find_overlapping_tiles(list_ra = [10.01], list_dec = [-45])
+# %%
