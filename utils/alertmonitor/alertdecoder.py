@@ -14,6 +14,7 @@ class AlertDecoder:
         self.alert_data = None
         self.alert_type = None
         self.is_decoded = False
+        self.tiles = Tiles()
         self.config = self._default_config
     
     def __repr__(self):
@@ -78,7 +79,6 @@ class AlertDecoder:
 # %%
 A = AlertDecoder()
 A._decode_gwalert('/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv')
-# %%
-A = Tiles()
-A.find_overlapping_tiles(list_ra = [10.01], list_dec = [-45])
+
+
 # %%

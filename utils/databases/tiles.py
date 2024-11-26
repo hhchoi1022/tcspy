@@ -150,17 +150,18 @@ class Tiles:
         # Lists to store the results
         overlap_indices = []  # Indices of polygons that overlap
         innermost_indices = []  # Indices of the innermost polygons for each coordinate
+        matched_coord_indices = []
         
         # Iterate through the target coordinates (list_ra and list_dec)
-        for ra, dec in zip(list_ra, list_dec):
+        for i, (ra, dec) in enumerate(zip(list_ra, list_dec)):
             target_point = Point(ra, dec)  # Create a Point object for the current coordinate
             max_distance = -float('inf')  # Initialize the maximum distance to the boundary as negative infinity
             innermost_index = None  # To track the index of the innermost polygon
 
-            for i, ris_poly in enumerate(RIS_polygons):
+            for j, ris_poly in enumerate(RIS_polygons):
                 # Check if the target point is within the current polygon
                 if ris_poly.contains(target_point):
-                    overlap_indices.append(i)
+                    overlap_indices.append(j)
 
                     # Calculate the distance from the point to the polygon boundary
                     distance_to_boundary = target_point.distance(ris_poly.boundary)
@@ -168,13 +169,17 @@ class Tiles:
                     # Update the maximum distance and innermost tile index
                     if distance_to_boundary > max_distance:
                         max_distance = distance_to_boundary
-                        innermost_index = i
+                        innermost_index = j
 
             # Add the innermost polygon index for this point
             if innermost_index is not None:
+                matched_coord_indices.append(i)
                 innermost_indices.append(innermost_index)
-
+        
         if visualize:
+            list_ra = [list_ra[i] for i in matched_coord_indices]
+            list_dec = [list_dec[i] for i in matched_coord_indices]
+            #list_ra, list_dec = list_ra[matched_coord_indices], list_dec[matched_coord_indices]
             RIS_tilenames = self.tbl_RIS['id']
             # Create subplots
             n_coords = len(list_ra)  # Number of coordinates
@@ -249,3 +254,5 @@ class Tiles:
             plt.show()
 
         return self.tbl_RIS[innermost_indices]
+
+# %%
