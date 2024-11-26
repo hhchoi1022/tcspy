@@ -51,7 +51,7 @@ class DataTransferManager(mainConfig):
             for folder in folder_list:
                 key = os.path.join(os.path.dirname(ordinary_file_key), folder)
                 print('Transferring folder:', key)
-                self.run(key = key, tar = tar, protocol = protocol, thread = False)
+                self.run(key = key, tar = tar, transfer = True, move_and_clean = True, protocol = protocol, thread = False)
         
     def transfer_ToO_files(self, inactivity_period, ToO_file_key = '*/image/*_ToO', tar = True, protocol = 'gridftp'):
         """Transfer ToO files after 30 minutes of inactivity."""
@@ -76,19 +76,21 @@ class DataTransferManager(mainConfig):
             key: str = '*/image/20240515', 
             output_file_name: str = None, 
             tar : bool = True,
+            transfer : bool = True,
+            move_and_clean : bool = True,
             protocol = 'gridftp', 
             thread = True):
         if thread:
             if protocol == 'hpnscp':
-                self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name, tar = tar))
+                self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name, tar = tar, transfer = transfer, move_and_clean = move_and_clean))
             else:            
-                self.transfer_thread = Thread(target=self.hpnscp_transfer, kwargs=dict(key = key, output_file_name = output_file_name, tar = tar))
+                self.transfer_thread = Thread(target=self.hpnscp_transfer, kwargs=dict(key = key, output_file_name = output_file_name, tar = tar, transfer = transfer, move_and_clean = move_and_clean))
             self.transfer_thread.start()
         else:
             if protocol == 'hpnscp':
-                self.hpnscp_transfer(key = key, output_file_name= output_file_name, tar = tar)
+                self.hpnscp_transfer(key = key, output_file_name= output_file_name, tar = tar, transfer = transfer, move_and_clean = move_and_clean)
             else:
-                self.gridFTP_transfer(key = key, output_file_name= output_file_name, tar = tar)
+                self.gridFTP_transfer(key = key, output_file_name= output_file_name, tar = tar, transfer = transfer, move_and_clean = move_and_clean)
         
     def abort(self):
         if self.process and self.process.poll() is None:
@@ -107,7 +109,9 @@ class DataTransferManager(mainConfig):
     def gridFTP_transfer(self,
                          key : str = '*/image/20240515',
                          output_file_name : str =  None,
-                         tar : bool = True):
+                         tar : bool = True,
+                         transfer : bool = True,
+                         move_and_clean : bool = True):
         self.is_running = True
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
@@ -120,24 +124,30 @@ class DataTransferManager(mainConfig):
             source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
         command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} -rst-retries 10 -rst-interval 60 file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir}"
         try:
-            print('GRIDFTP PROTOCOL WITH THE COMMAND:',command)
-            self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = self.process.communicate()
-            if self.process.returncode == 0:
-                print(f"Transfer successful: {stdout.decode()}")
-                self.move_to_archive_and_cleanup(key, source_path)
-            else:
-                print(f"Error during transfer: {stderr.decode()}")
+            if transfer:
+                print('GRIDFTP PROTOCOL WITH THE COMMAND:',command)
+                self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, stderr = self.process.communicate()
+                if self.process.returncode == 0:
+                    print(f"Transfer successful: {stdout.decode()}")
+                else:
+                    print(f"Error during transfer: {stderr.decode()}")
+            pass
         except subprocess.CalledProcessError as e:
             print(f"Error during transfer: {e.stderr.decode()}")
         finally:
+            if move_and_clean:
+                self.move_to_archive_and_cleanup(key, source_path)
             self.process = None
             self.is_running = False
 
     def hpnscp_transfer(self,
                         key : str = '*/image/20240503',
                         output_file_name : str = None,
-                        tar : bool = True):
+                        tar : bool = True,
+                        transfer : bool = True,
+                        move_and_clean : bool = True
+                        ):
         self.is_running = True
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
@@ -147,16 +157,20 @@ class DataTransferManager(mainConfig):
             source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
         command = f"hpnscp -P {self.server.portnum} {source_path} {self.server.username}@{self.server.ip}:{self.server_homedir}"
         try:
-            self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = self.process.communicate()
-            if self.process.returncode == 0:
-                print(f"Transfer successful: {stdout.decode()}")
-                self.move_to_archive_and_cleanup(key, source_path)
-            else:
-                print(f"Error during transfer: {stderr.decode()}")
+            if transfer:
+                print('HPNSSH PROTOCOL WITH THE COMMAND:',command)
+                self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, stderr = self.process.communicate()
+                if self.process.returncode == 0:
+                    print(f"Transfer successful: {stdout.decode()}")
+                else:
+                    print(f"Error during transfer: {stderr.decode()}")
+            pass
         except subprocess.CalledProcessError as e:
             print(f"Error during transfer: {e.stderr.decode()}")
         finally:
+            if move_and_clean:
+                self.move_to_archive_and_cleanup(key, source_path)
             self.process = None
             self.is_running = False
 
@@ -262,10 +276,9 @@ class DataTransferManager(mainConfig):
 if __name__ == '__main__':
     A = DataTransferManager()
     import time
+    A.run(key = '*/image/2024-11-23_gain2750', tar = False, transfer = False, move_and_clean = True, thread = False)
     time.sleep(600)
-    A.run(key = '*/image/2024-11-23_gain2750', tar = False, thread = False)
-    time.sleep(600)
-    A.run(key = '*/image/2024-11-24_gain2750', tar = True, thread = False)
+    A.run(key = '*/image/2024-11-24_gain2750', tar = False, transfer = False, move_and_clean = True, thread = False)
 
 
 

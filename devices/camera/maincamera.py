@@ -310,7 +310,7 @@ class mainCamera(mainConfig):
              abort_action : Event,
              settemperature: float,
              tolerance: float = 1,
-             max_consecutive_stable_iterations: int = 10,
+             max_consecutive_stable_iterations: int = 50,
              ):
         """
         Control the cooling process of the camera.
