@@ -657,12 +657,14 @@ if __name__ == '__main__':
     unitnum = 21
     import time
     observer = mainObserver()
-    ra = 150.444
-    dec = -20.5523
+    ra = 327.88467
+    dec = -56.66531
+    objname = 'GRB 241127A'
     start = time.time()
     S = SingleTarget(observer = observer, 
                      ra = ra, 
                      dec = dec, 
+                     name = objname,
                      exptime = 10,
                      filter_ = 'g',
                      count = 5, 
@@ -670,5 +672,6 @@ if __name__ == '__main__':
                      obsmode ='Spec',
                      specmode = 'specall')
     S.status
+    S.staralt()
     print(time.time() - start)
 #%%

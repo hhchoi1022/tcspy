@@ -550,7 +550,7 @@ if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
     from tcspy.utils.databases import DB_Annual
     #RIS = DB_Annual('RIS').data
-    #Daily.insert(RIS[[10014]])
+    #Daily.insert(RIS[[3218]])
     # IMS = DB_Annual('IMS')
     # RIS = A.data
     # IMS.insert(tbl[[138, 139, 174, 175, 176, 215, 216]])
@@ -560,11 +560,11 @@ if __name__ == '__main__':
     Daily.clear(clear_only_7ds= True)
     Daily.from_IMS()
     Daily.from_RIS(size = 100)
-    #from astropy.io import ascii
-    #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
-    #tbl_input = tbl[tbl['note'] == 'GW190814']
-    #tbl_input['ntelescope'] = 10
-    #Daily.insert(tbl_input)
+    # #from astropy.io import ascii
+    # #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
+    # #tbl_input = tbl[tbl['note'] == 'GW190814']
+    # #tbl_input['ntelescope'] = 10
+    # #Daily.insert(tbl_input)
 
     Daily.initialize(True)
     #Daily.write()
