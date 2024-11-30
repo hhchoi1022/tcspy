@@ -1,14 +1,14 @@
 {
     "7DT15": {
         "g": {
-            "update_time": "2024-11-28T07:28:49.829",
+            "update_time": "2024-11-30T07:33:42.235",
             "succeeded": true,
-            "focusval": 8256.7
+            "focusval": 8259.1
         },
         "r": {
-            "update_time": "2024-11-28T07:36:00.023",
+            "update_time": "2024-11-30T07:40:54.489",
             "succeeded": true,
-            "focusval": 8244.3
+            "focusval": 8253.9
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",
