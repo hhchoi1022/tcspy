@@ -13,22 +13,21 @@ class SlackConnector():
         token = open(token_path, 'r').read()
         self.client = WebClient(token = token)
         self.channel_id = default_channel_id
-        self.workspace_name = self._get_workspace_name()
 
     def __repr__(self):
-        channel_info = f"Channel ID: {self.channel_id}" if self.channel_id else "No channel selected"
-        return f"<SlackConnector(workspace='{self.workspace_name}', {channel_info})>"
+        channel_info = f"Channel: {self.channel_name or 'No channel selected'}"
+        return f"<SlackConnector({channel_info})>"
 
-    def _get_workspace_name(self):
+    def _get_channel_name(self, channel_id):
         """
-        Retrieve the workspace (team) name using the Slack API.
+        Retrieve the channel name using the channel ID.
         """
         try:
-            result = self.client.team_info()
-            return result['team']['name']
+            result = self.client.conversations_info(channel=channel_id)
+            return result['channel']['name']
         except Exception as e:
-            print(f"Failed to fetch workspace name: {e}")
-            return "Unknown Workspace"
+            print(f"Failed to fetch channel name for ID {channel_id}: {e}")
+            return "Unknown Channel"
     
     def get_channel_id(self, channel_name):
         """
