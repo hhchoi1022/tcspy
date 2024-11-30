@@ -1,7 +1,7 @@
 #%%
 from tcspy.utils.target import MultiTargets
 from tcspy.configuration import mainConfig
-from tcspy.utils.databases import SQL_Connector
+from tcspy.utils.connector import SQLConnector
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.nightsession import NightSession
 
@@ -35,7 +35,7 @@ class DB_Annual(mainConfig):
         The station observing the night sky.
     tblname : str
         The name of the table used to track the observing information.
-    sql : SQL_Connector
+    sql : SQLConnector
         A connection to the SQL database.
     constraints : constraint
         The observer's constraints.
@@ -69,7 +69,7 @@ class DB_Annual(mainConfig):
         super().__init__()       
         self.observer = mainObserver()
         self.tblname = tbl_name
-        self.sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
+        self.sql = SQLConnector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
         self.constraints = self._set_constrints()
         self.nightsession = NightSession()
 

@@ -12,7 +12,6 @@ from tcspy.utils import Timeout
 from tcspy.utils.logger import mainLogger
 from tcspy.devices.observer import mainObserver
 from tcspy.configuration import mainConfig
-from tcspy.utils import to_SkyCoord
 
 from tcspy.utils.exception import *
 
@@ -423,26 +422,3 @@ class mainMount_Alpaca(mainConfig):
         Aborts the movement of the telescope.
         """
         self.device.AbortSlew()
-        
-#%% Test  
-            
-if __name__ == '__main__':
-    Tel = mainMount_Alpaca(unitnum = 1)
-    Tel.connect()
-    ra = '15:35:28'
-    dec = '40:39:32'
-    coordinate_radec = to_SkyCoord(ra, dec)
-
-    #Tel.slew_radec(coordinate_radec, tracking = True)
-    alt = 20
-    az = 230
-
-    Tel.park()
-    Tel.unpark()
-    coordinate_altaz = SkyCoord(az, alt, frame = 'altaz', unit = 'deg')
-    #Tel.slew_radec(coordinate_radec, tracking = True)
-    Tel.slew_altaz(alt = alt, az = az)
-    #Tel.tracking_on()
-    #Tel.tracking_off()
-    #Tel.park()
-    #Tel.disconnect()

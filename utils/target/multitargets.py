@@ -401,19 +401,3 @@ class MultiTargets(mainConfig):
             constraint_all.append(constraint_altitude)
         return constraint_all
     
-    
-
-# %%
-
-if __name__ == '__main__':
-    import time
-    S = SQL_Connector()
-    target_tbl = S.get_data(tbl_name = 'Daily', select_key = '*')
-    observer = mainObserver()
-    idx = np.random.randint(0, len(target_tbl), size = 100)
-    m = AstroObject(observer = observer, targets_ra = target_tbl['RA'][idx], targets_dec = target_tbl['De'][idx], targets_name = target_tbl['objname'][idx])
-    start = time.perf_counter()
-    rsb = m.risetime()
-    print(time.perf_counter() - start)
-    
-#%%

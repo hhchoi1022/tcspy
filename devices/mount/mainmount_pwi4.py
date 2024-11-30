@@ -10,7 +10,6 @@ from tcspy.devices import PWI4 # PWI4 API
 from tcspy.configuration import mainConfig
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.logger import mainLogger
-from tcspy.utils import to_SkyCoord
 from tcspy.utils import Timeout
 from tcspy.utils.exception import *
 #%%

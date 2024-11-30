@@ -3,7 +3,7 @@ from tcspy.configuration import mainConfig
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.target import MultiTargets
 from tcspy.utils.target import SingleTarget
-from tcspy.utils.databases import SQL_Connector
+from tcspy.utils.connector import SQLConnector
 from tcspy.utils.nightsession import NightSession
 
 from astropy.table import Table 
@@ -34,7 +34,7 @@ class DB_Daily(mainConfig):
         The station observing the night sky.
     tblname : str
         The name of the table used to track the observing information.
-    sql : SQL_Connector
+    sql : SQLConnector
         A connection to the SQL database.
     constraints : constraint
         The observer's constraints.
@@ -72,7 +72,7 @@ class DB_Daily(mainConfig):
         super().__init__()       
         self.observer = mainObserver()
         self.tblname = tbl_name
-        self.sql = SQL_Connector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
+        self.sql = SQLConnector(id_user = self.config['DB_ID'], pwd_user= self.config['DB_PWD'], host_user = self.config['DB_HOSTIP'], db_name = self.config['DB_NAME'])
         self.constraints = self._set_constrints()
         self.utctime = utctime
         self.obsinfo = self._set_obs_info(utctime = utctime)
@@ -314,9 +314,9 @@ class DB_Daily(mainConfig):
                     sheet_name : str,
                     update: bool = True
                     ):
-        from tcspy.utils.databases import GoogleSheet
+        from tcspy.utils.connector import GoogleSheetConnector
         print('Connecting to DB...')
-        gsheet = GoogleSheet()
+        gsheet = GoogleSheetConnector()
         tbl_sheet = gsheet.get_sheet_data(sheet_name = sheet_name, format_ = 'Table')
         # Insert data
         print('Inserting GoogleSheet data to DB...')
