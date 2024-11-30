@@ -15,7 +15,7 @@ class GmailConnector:
         if not user_token:
             token_path = f'{os.path.expanduser("~")}/.config/gmail/python/token_{self.user_account}.txt'
             try:
-                self.user_token = open(token_path, 'r').read()
+                self.user_token = open(token_path, 'r').read().strip()
             except:
                 raise ValueError(f'Error reading the token file at {token_path} or token is not provided')
         self.smtp_server = 'smtp.gmail.com'
@@ -150,7 +150,7 @@ class GmailConnector:
                     # Decode bytes using the specified encoding
                     decoded_subject += part.decode(encoding or 'utf-8', errors='ignore')
                 else:
-                    # If it's already a string, just append it
+                    # If iti's already a string, just append it
                     decoded_subject += part
             return decoded_subject.strip()
         return "No Subject"
