@@ -8,7 +8,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from astropy.table import Table
 from astropy.io import ascii
 import numpy as np
-from pathlib import Path
+import os
 #%%
 class GoogleSheetConnector():
     """
@@ -37,7 +37,7 @@ class GoogleSheetConnector():
     
     def __init__(self,
                  spreadsheet_url : str = 'https://docs.google.com/spreadsheets/d/1UorU7P_UMr22Luw6q6GLQYk4-YicGRATwCePRxkx2Ms/edit#gid=0',
-                 authorize_json_file : str = f'{str(Path.home())}/.config/googlesheet/targetdb-423908-ee7bb8c14ff3.json',
+                 authorize_json_file : str = f'{os.path.expanduser("~")}/.config/googlesheet/targetdb-423908-ee7bb8c14ff3.json',
                  scope = [
                  'https://spreadsheets.google.com/feeds',
                  'https://www.googleapis.com/auth/drive',
@@ -61,7 +61,7 @@ class GoogleSheetConnector():
         self.doc = gc.open_by_url(self._url)
     
     def __repr__(self):
-        return f'GoogleSpreadSheet(Sheetlist={self._get_sheet_list()})'
+        return f'GoogleSheet(Sheetlist={self._get_sheet_list()})'
         
     def _get_sheet_list(self):
         sheet_list = [sheet.title for sheet in self.doc.worksheets()]
@@ -185,7 +185,7 @@ class GoogleSheetConnector():
             worksheet.update([header])
 # %%
 if __name__ =='__main__':
-    tbl = ascii.read('/home/hhchoi1022/Downloads/calspec_2024-08-08.csv')
+    #tbl = ascii.read('/home/hhchoi1022/Downloads/calspec_2024-08-08.csv')
     # tbl.rename_column('Star name', 'objname')
     # tbl.rename_column('Decl', 'De')
     # tbl.rename_column('obs_count', 'count')

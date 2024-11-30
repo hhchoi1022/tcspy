@@ -3,17 +3,32 @@
 
 #%%%
 from slack_sdk import WebClient
-
+import os
 #%%
-
 class SlackConnector():
     
     def __init__(self,
-                 token_path : str  = '/home/kds/.config/slack/slack_token_7dt_obseration_alert.txt',
+                 token_path : str = f'{os.path.expanduser("~")}/.config/slack/slack_token_7dt_obseration_alert.txt',
                  default_channel_id : str = 'C07SREPTWFM'):
         token = open(token_path, 'r').read()
         self.client = WebClient(token = token)
         self.channel_id = default_channel_id
+        self.workspace_name = self._get_workspace_name()
+
+    def __repr__(self):
+        channel_info = f"Channel ID: {self.channel_id}" if self.channel_id else "No channel selected"
+        return f"<SlackConnector(workspace='{self.workspace_name}', {channel_info})>"
+
+    def _get_workspace_name(self):
+        """
+        Retrieve the workspace (team) name using the Slack API.
+        """
+        try:
+            result = self.client.team_info()
+            return result['team']['name']
+        except Exception as e:
+            print(f"Failed to fetch workspace name: {e}")
+            return "Unknown Workspace"
     
     def get_channel_id(self, channel_name):
         """

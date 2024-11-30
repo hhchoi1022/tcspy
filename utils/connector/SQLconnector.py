@@ -30,7 +30,6 @@ class SQLConnector:
             password=self.pwd_user,
             database=self.db_name
         )
-        
 
     def __repr__(self):
         return f"MySQL(DB = {self.db_name}, Address = {self.id_user}@{self.host_user})"
