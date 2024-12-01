@@ -222,7 +222,7 @@ class Tiles:
             fig.delaxes(axes[j])
 
         plt.tight_layout()
-        plt.show()
+        plt.show() 
 
 
 
