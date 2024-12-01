@@ -99,6 +99,7 @@ class AppScheduler(mainConfig):
     def run_nightobs(self,
                      alert_slack : bool = True):
         with self.thread_lock:
+            from tcspy.utils.databases import DB
             start_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'NightObservation is triggered: {start_time}', alert_slack = alert_slack)
             action = NightObservation(self.multitelescopes, abort_action = self.abort_action)
@@ -107,7 +108,8 @@ class AppScheduler(mainConfig):
                 time.sleep(1)
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'NightObservation is finished: {end_time}', alert_slack = alert_slack)
-    
+            DB().Daily.write(clear = False)
+            
     def run_bias(self,
                  count : int = 9,
                  binning : int = 1,

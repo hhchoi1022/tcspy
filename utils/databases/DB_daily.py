@@ -548,13 +548,6 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
-    from tcspy.utils.databases import DB_Annual
-    #RIS = DB_Annual('RIS').data
-    #Daily.insert(RIS[[3218]])
-    # IMS = DB_Annual('IMS')
-    # RIS = A.data
-    # IMS.insert(tbl[[138, 139, 174, 175, 176, 215, 216]])
-    # Daily.insert(tbl)
     #Daily.from_GSheet('241122_1')
     Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
     Daily.clear(clear_only_7ds= True)
@@ -566,6 +559,11 @@ if __name__ == '__main__':
     # #tbl_input['ntelescope'] = 10
     # #Daily.insert(tbl_input)
 
+    from tcspy.utils.databases import DB_Annual
+    RIS = DB_Annual('RIS').data
+    tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
+    tbl_to_insert['note'] = 'Faint White Dwarf'
+    Daily.insert(tbl_to_insert)
     Daily.initialize(True)
     #Daily.write()
 
