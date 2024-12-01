@@ -158,11 +158,11 @@ if __name__ == "__main__":
     target_dec = -56.66531
     tbl1['ra'] = [target_ra]
     tbl1['dec']  = [target_dec]
-    #tbl1 = ascii.read('~/Downloads/Subset_White_Dwarfs_with_Matched_Tiles.csv')
-    #tbl1.rename_column('name', 'id')
+    tbl1 = ascii.read('~/Downloads/Subset_White_Dwarfs_with_Matched_Tiles.csv')
+    tbl1.rename_column('name', 'id')
 
 
-    tbl2_original = ascii.read('./databases/sky-grid and tiling/7-DT/final_tiles.txt')
+    tbl2_original = ascii.read('./sky-grid and tiling/7-DT/final_tiles.txt')
     ra_cut = 2
     dec_cut = 2
     tbl2_idx = (tbl2_original['ra'] > target_ra-ra_cut) & (tbl2_original['ra'] < target_ra+ra_cut) & (tbl2_original['dec'] > target_dec-dec_cut) & (tbl2_original['dec'] < target_dec+dec_cut)
