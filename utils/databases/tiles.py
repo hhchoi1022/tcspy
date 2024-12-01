@@ -235,4 +235,4 @@ if __name__ == "__main__":
 
     list_ra = tbl1['ra']
     list_dec = tbl1['dec']
-    tbl_filter =T.find_overlapping_tiles(list_ra, list_dec, visualize=True, visualize_ncols=5) 
+    tbl_filter =T.find_overlapping_tiles(list_ra, list_dec, visualize=True, visualize_ncols=5)  
