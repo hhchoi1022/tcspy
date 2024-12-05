@@ -7,7 +7,7 @@ from tcspy.devices import SingleTelescope, MultiTelescopes
 from multiprocessing import Event
 from threading import Thread
 from tcspy.utils.exception import *
-import json
+import json, os
 #%%
 
 class AutofocusInitializer(mainConfig):
@@ -117,7 +117,7 @@ class AutofocusInitializer(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    AutofocusInitializer(M, Event()).run(filter_ = 'specall',
+    AutofocusInitializer(M, Event()).run(filter_ = 'allfilter',
                                          use_offset = False,
                                          use_history = False, 
                                          history_duration = 60,

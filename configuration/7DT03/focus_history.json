@@ -1,39 +1,39 @@
 {
     "7DT03": {
         "g": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:29:07.800",
+            "succeeded": true,
+            "focusval": 6230.5
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:17:01.805",
+            "succeeded": true,
+            "focusval": 6216.5
         },
         "i": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:19:01.020",
+            "succeeded": true,
+            "focusval": 6202.7
         },
         "m500": {
-            "update_time": "2024-11-30T07:33:32.073",
+            "update_time": "2024-12-05T04:41:20.234",
             "succeeded": true,
-            "focusval": 6350.4
+            "focusval": 6345.8
         },
         "m525": {
-            "update_time": "2024-11-30T07:40:35.673",
+            "update_time": "2024-12-05T04:48:25.265",
             "succeeded": true,
-            "focusval": 6527.7
+            "focusval": 6519.0
         },
         "m450": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:25:02.627",
+            "succeeded": true,
+            "focusval": 6352.4
         },
         "m725": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:27:04.437",
+            "succeeded": true,
+            "focusval": 6315.5
         },
         "Slot8": {
             "update_time": "2000-01-01T00:00:00.000",

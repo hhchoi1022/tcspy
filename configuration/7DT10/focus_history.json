@@ -1,39 +1,39 @@
 {
     "7DT10": {
         "g": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:15:11.991",
+            "succeeded": true,
+            "focusval": 6724.5
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:17:12.367",
+            "succeeded": true,
+            "focusval": 6693.9
         },
         "i": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:19:11.372",
+            "succeeded": true,
+            "focusval": 6662.5
         },
         "z": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:21:11.616",
+            "succeeded": true,
+            "focusval": 6651.6
         },
         "m800": {
-            "update_time": "2024-11-30T07:33:46.645",
+            "update_time": "2024-12-05T04:41:30.505",
             "succeeded": true,
-            "focusval": 6699.6
+            "focusval": 6699.5
         },
         "m825": {
-            "update_time": "2024-11-30T07:41:07.501",
+            "update_time": "2024-12-05T04:48:48.786",
             "succeeded": true,
-            "focusval": 6693.8
+            "focusval": 6691.8
         },
         "m600": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:27:18.204",
+            "succeeded": true,
+            "focusval": 6818.9
         },
         "Slot8": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -41,9 +41,9 @@
             "focusval": 10000
         },
         "m425w": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2024-12-05T03:29:16.719",
+            "succeeded": true,
+            "focusval": 6833.9
         }
     }
 }
