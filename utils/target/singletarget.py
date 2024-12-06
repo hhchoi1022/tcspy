@@ -554,9 +554,10 @@ class SingleTarget(mainConfig):
             plt.figure(dpi = 300, figsize = (10, 4))
             if (now.datetime < time_range_end + datetime.timedelta(hours = 3)) & (now.datetime > time_range_start - datetime.timedelta(hours = 3)):
                 plt.axvline(now.datetime, linestyle = '--', c='r', label = 'Now')
-            plt.scatter(moon_altaz.obstime.datetime, moon_altaz.alt.value, c = moon_altaz.az.value, cmap = 'viridis', s = 10, marker = '.', label ='Moon')
-            plt.scatter(sun_altaz.obstime.datetime, sun_altaz.alt.value, c = 'k', cmap = 'viridis', s = 15, marker = '.', label = 'Sun')
-            plt.scatter(target_altaz.obstime.datetime, target_altaz.alt.value, c = target_altaz.az.value, cmap = 'viridis', s = 30, marker = '*', label = 'Target')
+            color_target = ['k' if alt > self.config['TARGET_MINALT'] else 'b' for alt in target_altaz.alt.value]
+            plt.scatter(moon_altaz.obstime.datetime, moon_altaz.alt.value, c = 'b', cmap = 'viridis', s = 10, marker = '.', label ='Moon')
+            plt.scatter(sun_altaz.obstime.datetime, sun_altaz.alt.value, c = 'r', cmap = 'viridis', s = 15, marker = '.', label = 'Sun')
+            plt.scatter(target_altaz.obstime.datetime, target_altaz.alt.value, c = color_target, s = 30, marker = '*', label = 'Target')
             plt.fill_betweenx([10,90], astro_sunsettime.datetime, astro_sunrisetime.datetime, alpha = 0.1)
             plt.fill_betweenx([10,90], sunsettime.datetime, sunrisetime.datetime, alpha = 0.1)
             plt.axvline(x=astro_sunrisetime.datetime, linestyle = '-', c='k', linewidth = 0.5)
