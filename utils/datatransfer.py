@@ -275,18 +275,18 @@ class DataTransferManager(mainConfig):
 # %%
 if __name__ == '__main__':
     A = DataTransferManager()
-    import time
-    A.run(key = '*/image/2024-12-02_gain2750', tar = True, transfer = True, move_and_clean = True, thread = False)
-    time.sleep(600)
-    A.run(key = '*/image/2024-12-03_gain2750', tar = True, transfer = True, move_and_clean = True, thread = False)
+    # import time
+    # A.run(key = '*/image/2024-12-02_gain2750', tar = True, transfer = True, move_and_clean = True, thread = False)
+    # time.sleep(600)
+    # A.run(key = '*/image/2024-12-03_gain2750', tar = True, transfer = True, move_and_clean = True, thread = False)
 
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
-    # A.start_monitoring(
-    #     ordinary_file_key='*/image/*',   # Adjust these parameters as needed
-    #     ToO_file_key='*/image/*_ToO',
-    #     inactivity_period=1800,             # 30 minutes of inactivity
-    #     tar=True,                        # Compress files into tar
-    #     protocol='gridftp'               # File transfer protocol
-    # )
+    A.start_monitoring(
+        ordinary_file_key='*/image/*',   # Adjust these parameters as needed
+        ToO_file_key='*/image/*_ToO',
+        inactivity_period=1800,             # 30 minutes of inactivity
+        tar=True,                        # Compress files into tar
+        protocol='gridftp'               # File transfer protocol
+    )
 
 # %%

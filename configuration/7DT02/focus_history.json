@@ -16,14 +16,14 @@
             "focusval": 7508.1
         },
         "m450": {
-            "update_time": "2024-12-05T04:41:17.878",
+            "update_time": "2024-12-06T04:22:17.331",
             "succeeded": true,
-            "focusval": 7600.8
+            "focusval": 7622.7
         },
         "m475": {
-            "update_time": "2024-12-05T04:48:23.700",
+            "update_time": "2024-12-05T06:53:50.856",
             "succeeded": true,
-            "focusval": 7770.9
+            "focusval": 7796.1
         },
         "Slot6": {
             "update_time": "2000-01-01T00:00:00.000",
