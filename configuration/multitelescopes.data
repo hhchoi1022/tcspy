@@ -239,9 +239,9 @@
     },
     "7DT08": {
         "Mount": {
-            "is_active": false,
+            "is_active": true,
             "name": "218",
-            "status": "maintenance",
+            "status": "operational",
             "timestamp": "2024-12-06",
             "description": "Mount tracking issue",
             "reported_by": "HyeonhoChoi"

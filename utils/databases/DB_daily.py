@@ -564,7 +564,7 @@ if __name__ == '__main__':
     tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
     tbl_to_insert['note'] = 'Faint White Dwarf'
     tbl_to_insert['status'] = 'pending'
-    tbl_to_insert['specmode'] = 'specall_ugriz'
+    tbl_to_insert['specmode'] = ['specall_ugriz']*len(tbl_to_insert)
     tbl_to_insert['priority'] = 50
     Daily.insert(tbl_to_insert)
     Daily.initialize(True)
