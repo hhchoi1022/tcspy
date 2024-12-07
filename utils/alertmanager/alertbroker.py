@@ -1,7 +1,8 @@
 
 #%%
 from alertdecoder import AlertDecoder
-from GS_connector import GoogleSheetConnector
+from GSconnector import GoogleSheetConnector
+from gmailconnector import GmailConnector
 import datetime
 import os
 #%%
@@ -10,17 +11,9 @@ class AlertBroker(AlertDecoder):
     def __init__(self):
         super().__init__()
         self.is_sent = False
-        self.connector = dict()
-        self.connector.googlesheet = None
-
-    def write_gwalert(self):
-        """
-        Reads a GW alert from the broker.
-        
-        Returns:
-        - alert_data: astropy.Table containing the alert data
-        """
-        pass
+        self.googlesheet = None
+        self.gmail = None
+        self.DB = None
     
     def _set_googlesheet(self):
         if not self.connector.googlesheet:
@@ -29,6 +22,11 @@ class AlertBroker(AlertDecoder):
             print('GoogleSheetConnector is ready.')
         else:
             pass
+    
+    def _set_gmail(self):
+        if not self.connector.gmail:
+            print('Setting up GmailConnector...')
+            self.connector.gmail = GmailConnector(user_account = '7dt.observation.alert@gmail.com')
     
     def send_gwalert(self,
                      file_path : str,
@@ -69,10 +67,27 @@ class AlertBroker(AlertDecoder):
             print(f'Saved: {filepath}')
             return True
         
+    def write_gwalert(self):
+        """
+        Reads a GW alert from the broker.
+        
+        Returns:
+        - alert_data: astropy.Table containing the alert data
+        """
+        pass
+    
+    def send_mailalert(self):
+        
+        pass
+    
+    def write_mailalert(self):
+        pass
+        
         
 # %%
 file_path = '/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv'
 # %%
 A = AlertBroker()
+#%%
 A.send_gwalert(file_path, send_type = 'googlesheet')
 # %%
