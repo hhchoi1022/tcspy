@@ -169,47 +169,71 @@ class Alert:
         # Read the alert data from the body
         def parse_mail_string(mail_string):
             # Define key variants
-            key_variants = {
+            required_key_variants_lower = {
                 'objname': ['target', 'object', 'objname'],
                 'RA': ['ra', 'r.a.', 'right ascension'],
                 'De': ['dec', 'dec.', 'declination'],
                 'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time'],
                 'count': ['count', 'imagecount', 'numbercount', 'image count', 'number count'],
-                'obsmode': ['obsmode', 'observationmode', 'mode'],
+                'filter_': ['filter', 'filters'],
                 'specmode': ['specmode', 'spectralmode', 'spectral mode'],
-                'priority': ['priority'],
+                'obsmode': ['obsmode', 'observationmode', 'mode'],
+                'ntelescopes': ['ntelescopes', 'ntelescope', 'numberoftelescopes', 'number of telescopes'],
+                'binning': ['binning'],
                 'gain': ['gain'],
+                'priority': ['priority'],
+                'weight': ['weight'],
+                'objtype': ['objtype', 'objecttype'],
                 'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
+                'is_ToO': ['is_too', 'is too'],
+                'comments': ['comment', 'comments']
             }
 
-            # Normalize key names
-            def normalize_key(key):
-                for canonical_key, variants in key_variants.items():
-                    if key.strip().lower() in variants:
-                        return canonical_key
-                return key.strip()
+            def check_and_normalize_required_keys(line_string, required_key_variants_lower):
+                """
+                Check if the line contains any required keys and return the canonical key if a match is found.
+                :param line_string: str, the input line to check
+                :param required_key_variants_lower: dict, dictionary of canonical keys to their variants
+                :return: str, canonical key if a match is found; None otherwise
+                """
+                # Iterate through the dictionary to find a match
+                for canonical_key, variants in required_key_variants_lower.items():
+                    # Create a regex pattern for each variant followed by ':' or '=' or a space
+                    #pattern = r'(' + '|'.join(re.escape(variant) for variant in variants) + r')\s*[:= ]\s*(.+)'
+                    pattern = r'^\s*(' + '|'.join(re.escape(variant) for variant in variants) + r')\s*[:= ]\s*(.+)$'
+
+                    
+                    # Search for the pattern in the line string
+                    match = re.search(pattern, line_string.lower())
+                    if match:
+                        # Extract the matched key variant and the value
+                        key_variant = match.group(1)  # The matched key (variant)
+                        value = match.group(2).strip()  # The value after ':' or '=' or space
+                        print(canonical_key,': ', value)
+                        return canonical_key, value
+                
+                # If no match is found, return None
+                return None, None
 
             # Initialize the dictionary
             parsed_dict = {}
 
             # Process the string line by line
-            for line in mail_string.splitlines():
+            for line in mail_body.splitlines():
                 # Skip empty lines or lines that don't have delimiters
-                if not line.strip() or ':' not in line:
-                    continue
 
                 # Split the line using possible delimiters
-                key, value = re.split(r'\s*[:=]\s*', line.strip(), maxsplit=1)
+                key, value = check_and_normalize_required_keys(line, required_key_variants_lower)
 
                 # Normalize the key and clean up the value
-                key = normalize_key(key)
-                value = value.strip()
+                if not key:
+                    continue
 
                 # Convert numeric values if applicable
-                if re.match(r'^-?\d+(\.\d+)?$', value):  # Float or int
-                    value = float(value) if '.' in value else int(value)
-                elif value.lower() in ['true', 'false']:  # Boolean
-                    value = value.lower() == 'true'
+                #if re.match(r'^-?\d+(\.\d+)?$', value):  # Float or int
+                #    value = float(value) if '.' in value else int(value)
+                #elif value.lower() in ['true', 'false']:  # Boolean
+                #    value = value.lower() == 'true'
 
                 # Add to the dictionary
                 parsed_dict[key] = value
