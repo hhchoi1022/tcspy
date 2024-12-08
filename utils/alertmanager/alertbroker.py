@@ -84,10 +84,3 @@ class AlertBroker(AlertDecoder):
         pass
         
         
-# %%
-file_path = '/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv'
-# %%
-A = AlertBroker()
-#%%
-A.send_gwalert(file_path, send_type = 'googlesheet')
-# %%

@@ -244,16 +244,12 @@ class Alert:
     
 
 # %%
-Gmail = GmailConnector('7dt.observation.alert@gmail.com')
-# %%
-Gmail.login()
-# %%
-maillist = Gmail.readmail()
-# %%
-mail_str = maillist[-1]
-# %%
-
-B = Alert()
+if __name__ == '__main__':
+    Gmail = GmailConnector('7dt.observation.alert@gmail.com')
+    Gmail.login()
+    maillist = Gmail.readmail()
+    mail_str = maillist[-1]
+    B = Alert()
 # %%
 B.decode_gwalert('/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv')
 # %%
