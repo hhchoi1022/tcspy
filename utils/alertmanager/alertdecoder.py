@@ -239,9 +239,34 @@ class Alert:
                 parsed_dict[key] = value
 
             return parsed_dict
+        
+        self.alert_type = 'mail_user'
+        formatted_dict = parse_mail_string(mail_body)
 
-        pass
-    
+        # Match the RA, Dec to the RIS tiles
+        if match_to_tiles:
+            tile_info = self._match_RIS_tile(formatted_dict['RA'], formatted_dict['De'])
+            if len(tile_info) == 0:
+                raise ValueError(f'No matching tile found for RA = {formatted_dict["RA"]}, Dec = {formatted_dict["De"]}')
+            objname = formatted_dict['objname']
+            # Update values from alert_data if the key exists
+            columns_match = {
+                'objname': 'id',
+                'RA': 'ra',
+                'De': 'dec'
+            }            
+            for key, value in columns_match.items():
+                if value in tile_info.keys():
+                    formatted_dict[key] = tile_info[value][0]
+            # Note become the target name 
+            formatted_dict['note'] = objname
+        
+        formatted_tbl = Table()
+        for key, value in formatted_dict.items():
+            formatted_tbl[key] = [value]
+        self.is_decoded = True
+        self.formatted_data = formatted_tbl
+
 
 # %%
 if __name__ == '__main__':
