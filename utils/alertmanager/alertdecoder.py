@@ -70,90 +70,81 @@ class Alert:
         formatted_tbl = Table()
         for key, value in self.config.items():
             formatted_tbl[key] = [value] * len(self.alert_data)
-        # Update values from alert_data if the key exists
-        columns_match = {
-            'objname': 'id',
-            'RA': 'ra',
-            'De': 'dec',
-            'exptime': 'exptime',
-            'count': 'count',
-            'obsmode': 'obsmode',
-            'specmode': 'specmode',
-            'filter': 'filter',
-            'ntelescopes': 'ntelescopes',
-            'gain': 'gain',
-            'priority': 'rank',
-            'note': 'obj',
-        }            
-        for key, value in columns_match.items():
-            if value in self.alert_data.keys():
-                formatted_tbl[key] = self.alert_data[value]
-                
-        formatted_tbl['objname'] = ['T%.5d'%int(objname) if str(objname) !=6 else objname for objname in formatted_tbl['objname']]
+        
+        # Update values from alert_data if the key exists         
+        for key in gw_table.keys():
+            noramlized_key = self._normalize_required_keys(key)
+            if noramlized_key:
+                formatted_tbl[noramlized_key] = gw_table[key]
+            else:
+                print('The key is not found in the key variants: ', key)
+
+                            
+        formatted_tbl['objname'] = ['T%.5d'%int(objname) if not str(objname).startswith('T') else objname for objname in formatted_tbl['objname']]
         formatted_tbl['objtype'] = 'GECKO'
+        formatted_tbl['note'] = gw_table['obj'] # Tile observation -> objname is stored in "Note"
+        formatted_tbl['is_ToO'] = [1 if confidence <= 0.95 else 0 for confidence in gw_table['confidence']]
         self.is_decoded = True
         self.formatted_data = formatted_tbl
     
-    def decode_ToOalert_mailbroker(self, mail_str, match_to_tiles = True):
+    def decode_brokermail(self, mail_str, match_to_tiles = True):
         # Read the alert data from the attachment
         mail_dict = dict(mail_str)
         # If Attachment is not present, read the body
-        if 'Attachments' in mail_dict.keys():
+        if len(mail_dict['Attachments']) > 0:
             try:
+                alert_dict = json.load(open(mail_dict['Attachments'][0]))
                 self.filepath = mail_dict['Attachments'][0]
-                self.alert_data = json.load(open(mail_dict['Attachments'][0]))
             except:
                 raise ValueError(f'Error reading the alert data')
         else:
             try:
-                self.alert_data = read_mail_body(mail_dict['Body'])  # TODO: Implement read_mail_body
+                alert_dict = self._parse_mail_string(mail_dict['Body']) 
+                self.filepath = None
             except:
                 raise ValueError(f'Error reading the alert data')
+        self.alert_data = alert_dict
         self.alert_type = 'mail_broker'
         
         # Set/Modify the columns to the standard format
         formatted_dict = dict()
         for key, value in self.config.items():
             formatted_dict[key] = value
+            
         # Update values from alert_data if the key exists
-        columns_match = {
-            'objname': 'target',
-            'RA': 'ra',
-            'De': 'dec',
-            'exptime': 'singleFrameExposure',
-            'count': 'imageCount',
-            'obsmode': 'observationMode',
-            'specmode': 'specmode',
-            'filter': 'selectedFilters',
-            'ntelescopes': 'selectedTelNumber',
-            'gain': 'gain',
-            'priority': 'priority',
-            'obs_starttime': 'obsStartTime',
-        }            
-        for key, value in columns_match.items():
-            if value in self.alert_data.keys():
-                formatted_dict[key] = self.alert_data[value]
+        for key in alert_dict.keys():
+            normalized_key = self._normalize_required_keys(key)
+            if normalized_key:
+                formatted_dict[normalized_key] = alert_dict[key]
+            else:
+                print('The key is not found in the key variants: ', key)
         
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
             tile_info = self._match_RIS_tile(formatted_dict['RA'], formatted_dict['De'])
+            if len(tile_info) == 0:
+                raise ValueError(f'No matching tile found for RA = {formatted_dict["RA"]}, Dec = {formatted_dict["De"]}')
             objname = formatted_dict['objname']
-            # Update values from alert_data if the key exists
-            columns_match = {
-                'objname': 'id',
-                'RA': 'ra',
-                'De': 'dec'
-            }            
-            for key, value in columns_match.items():
-                if value in tile_info.keys():
-                    formatted_dict[key] = tile_info[value][0]
-            # Note become the target name 
+            formatted_dict['objname'] = tile_info['id'][0]
+            formatted_dict['RA'] = tile_info['ra'][0]
+            formatted_dict['De'] = tile_info['dec'][0]
             formatted_dict['note'] = objname
         
         # If the value of the dict is list, convert it to comma-separated string
         for key, value in formatted_dict.items():
             if isinstance(value, list):
-                formatted_dict[key] = ','.join(value)
+                formatted_dict[key] = ','.join(value).replace(" ", "")
+                
+        # if space in the value, remove it
+        for key, value in formatted_dict.items():
+            if isinstance(value, str):
+                formatted_dict[key] = value.replace(" ", "")
+                
+        # If is_ToO is not defined, set it to 0
+        if str(formatted_dict['is_ToO']).upper() == 'TRUE':
+            formatted_dict['is_ToO'] = 1
+        else:
+            formatted_dict['is_ToO'] = 0
 
         # Convert the dict to astropy.Table
         formatted_tbl = Table()
@@ -162,127 +153,134 @@ class Alert:
         self.is_decoded = True
         self.formatted_data = formatted_tbl
     
-    def decode_ToOalert_mailuser(self, mail_str, match_to_tiles = True):
+    def decode_usermail(self, mail_str, match_to_tiles = True):
         # Read the alert data from the attachment
         mail_dict = dict(mail_str)
         mail_body = mail_dict['Body']
-        # Read the alert data from the body
-        def parse_mail_string(mail_string):
-            # Define key variants
-            required_key_variants_lower = {
-                'objname': ['target', 'object', 'objname'],
-                'RA': ['ra', 'r.a.', 'right ascension'],
-                'De': ['dec', 'dec.', 'declination'],
-                'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time'],
-                'count': ['count', 'imagecount', 'numbercount', 'image count', 'number count'],
-                'filter_': ['filter', 'filters'],
-                'specmode': ['specmode', 'spectralmode', 'spectral mode'],
-                'obsmode': ['obsmode', 'observationmode', 'mode'],
-                'ntelescopes': ['ntelescopes', 'ntelescope', 'numberoftelescopes', 'number of telescopes'],
-                'binning': ['binning'],
-                'gain': ['gain'],
-                'priority': ['priority'],
-                'weight': ['weight'],
-                'objtype': ['objtype', 'objecttype'],
-                'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
-                'is_ToO': ['is_too', 'is too'],
-                'comments': ['comment', 'comments']
-            }
 
-            def check_and_normalize_required_keys(line_string, required_key_variants_lower):
-                """
-                Check if the line contains any required keys and return the canonical key if a match is found.
-                :param line_string: str, the input line to check
-                :param required_key_variants_lower: dict, dictionary of canonical keys to their variants
-                :return: str, canonical key if a match is found; None otherwise
-                """
-                # Iterate through the dictionary to find a match
-                for canonical_key, variants in required_key_variants_lower.items():
-                    # Create a regex pattern for each variant followed by ':' or '=' or a space
-                    #pattern = r'(' + '|'.join(re.escape(variant) for variant in variants) + r')\s*[:= ]\s*(.+)'
-                    pattern = r'^\s*(' + '|'.join(re.escape(variant) for variant in variants) + r')\s*[:= ]\s*(.+)$'
-
-                    
-                    # Search for the pattern in the line string
-                    match = re.search(pattern, line_string.lower())
-                    if match:
-                        # Extract the matched key variant and the value
-                        key_variant = match.group(1)  # The matched key (variant)
-                        value = match.group(2).strip()  # The value after ':' or '=' or space
-                        print(canonical_key,': ', value)
-                        return canonical_key, value
-                
-                # If no match is found, return None
-                return None, None
-
-            # Initialize the dictionary
-            parsed_dict = {}
-
-            # Process the string line by line
-            for line in mail_body.splitlines():
-                # Skip empty lines or lines that don't have delimiters
-
-                # Split the line using possible delimiters
-                key, value = check_and_normalize_required_keys(line, required_key_variants_lower)
-
-                # Normalize the key and clean up the value
-                if not key:
-                    continue
-
-                # Convert numeric values if applicable
-                #if re.match(r'^-?\d+(\.\d+)?$', value):  # Float or int
-                #    value = float(value) if '.' in value else int(value)
-                #elif value.lower() in ['true', 'false']:  # Boolean
-                #    value = value.lower() == 'true'
-
-                # Add to the dictionary
-                parsed_dict[key] = value
-
-            return parsed_dict
-        
         self.alert_type = 'mail_user'
-        formatted_dict = parse_mail_string(mail_body)
+        alert_dict_normalized = self._parse_mail_string(mail_body)
+
+        # Set/Modify the columns to the standard format
+        formatted_dict = dict()
+        for key, value in self.config.items():
+            formatted_dict[key] = value
 
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
-            tile_info = self._match_RIS_tile(formatted_dict['RA'], formatted_dict['De'])
+            tile_info = self._match_RIS_tile(alert_dict_normalized['RA'], alert_dict_normalized['De'])
             if len(tile_info) == 0:
-                raise ValueError(f'No matching tile found for RA = {formatted_dict["RA"]}, Dec = {formatted_dict["De"]}')
-            objname = formatted_dict['objname']
-            # Update values from alert_data if the key exists
-            columns_match = {
-                'objname': 'id',
-                'RA': 'ra',
-                'De': 'dec'
-            }            
-            for key, value in columns_match.items():
-                if value in tile_info.keys():
-                    formatted_dict[key] = tile_info[value][0]
-            # Note become the target name 
-            formatted_dict['note'] = objname
+                raise ValueError(f'No matching tile found for RA = {alert_dict_normalized["RA"]}, Dec = {alert_dict_normalized["De"]}')
+            objname = alert_dict_normalized['objname']
+            alert_dict_normalized['objname'] = tile_info['id'][0]
+            alert_dict_normalized['RA'] = tile_info['ra'][0]
+            alert_dict_normalized['De'] = tile_info['dec'][0]
+            alert_dict_normalized['note'] = objname
         
+        # If number of exposure is not defined, divide the total exposure time by the default single exposure time (60s)
+        if 'count' not in alert_dict_normalized.keys():
+            alert_dict_normalized['count'] = int(alert_dict_normalized['exptime']) // self.config['exptime']
+            
+        # If the value of the dict is list, convert it to comma-separated string
+        for key, value in alert_dict_normalized.items():
+            if isinstance(value, list):
+                alert_dict_normalized[key] = ','.join(value)
+                
+        # if space in the value, remove it
+        for key, value in formatted_dict.items():
+            if isinstance(value, str):
+                formatted_dict[key] = value.replace(" ", "")
+            
+        # Update values of formatted_dict from alert_dict if the key exists
+        for key in alert_dict_normalized.keys():
+            formatted_dict[key] = alert_dict_normalized[key]
+        
+        # If is_ToO is not defined, set it to 0
+        if str(formatted_dict['is_ToO']).upper() == 'TRUE':
+            formatted_dict['is_ToO'] = 1
+        else:
+            formatted_dict['is_ToO'] = 0
+        
+        # Convert the dict to astropy.Table
         formatted_tbl = Table()
         for key, value in formatted_dict.items():
             formatted_tbl[key] = [value]
+        
         self.is_decoded = True
         self.formatted_data = formatted_tbl
 
+    # Read the alert data from the body
+    def _parse_mail_string(self, mail_string):
+        # Initialize the dictionary
+        parsed_dict = {}
 
-# %%
-if __name__ == '__main__':
-    Gmail = GmailConnector('7dt.observation.alert@gmail.com')
-    Gmail.login()
-    maillist = Gmail.readmail()
-    mail_str = maillist[-1]
-    B = Alert()
-# %%
-B.decode_gwalert('/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv')
-# %%
-B
-# %%
-B.formatted_data
-# %%
-B.decode_ToOalert_mailbroker(mail_str)
-# %%
-B
-# %%
+        # Process the string line by line
+        for line in mail_string.splitlines():
+            # Normalize the key and clean up the value
+            key, value = self._check_required_keys_in_string(line)
+
+            if not key:
+                continue
+            
+            # Add to the dictionary
+            normalized_key = self._normalize_required_keys(key)
+            if not noramlized_key:
+                raise ValueError(f'Key {key} is not found in the key variants')
+            parsed_dict[normalized_key] = value
+
+        return parsed_dict
+    
+    def _check_required_keys_in_string(self, line_string: str):
+        """
+        Check if the line contains any required keys and return the canonical key if a match is found.
+        :param line_string: str, the input line to check
+        :return: str, canonical key and value if a match is found; None and None otherwise
+        """
+        # Iterate through the dictionary to find a match
+        for canonical_key, variants in self.required_key_variants.items():
+            # Create a regex pattern for each variant followed by ':' or '=' or a space
+            pattern = r'^\s*(' + '|'.join(re.escape(variant) for variant in variants) + r')\s*[:= ]\s*(.+)$'
+            
+            # Search for the pattern in the line string
+            match = re.search(pattern, line_string.lower())
+            if match:
+                # Extract the matched key variant and the value
+                key_variant = match.group(1)  # The matched key (variant)
+                value = match.group(2).strip()  # The value after ':' or '=' or space
+                return key_variant, value
+        
+        # If no match is found, return None
+        return None, None
+    
+    def _normalize_required_keys(self, key: str):
+
+        # Iterate through the dictionary to find a match
+        for canonical_key, variants in self.required_key_variants.items():
+            if key.lower() in variants:
+                print(canonical_key)
+                return canonical_key
+        return None
+    
+    @property
+    def required_key_variants(self):
+        # Define key variants
+        required_key_variants_lower = {
+            'objname': ['target', 'object', 'objname', 'id'],
+            'RA': ['ra', 'r.a.', 'right ascension'],
+            'De': ['de', 'dec', 'dec.', 'declination'],
+            'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleframeexposure'],
+            'count': ['count', 'imagecount', 'numbercount', 'image count', 'number count'],
+            'obsmode': ['obsmode', 'observationmode', 'mode'],
+            'binning': ['binning'],
+            'gain': ['gain'],
+            'priority': ['priority', 'rank'],
+            'weight': ['weight'],
+            'objtype': ['objtype', 'objecttype'],
+            'specmode': ['specmode', 'spectralmode', 'spectral mode'],
+            'filter': ['filter', 'filters', 'selectedfilters'],
+            'ntelescopes': ['ntelescopes', 'ntelescope', 'numberoftelescopes', 'number of telescopes', 'selectedtelnumber'],
+            'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
+            'is_ToO': ['is_too', 'is too', 'abortobservation'],
+            'comments': ['comment', 'comments']
+        }
+        return required_key_variants_lower
