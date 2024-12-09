@@ -133,13 +133,15 @@ class DataTransferManager(mainConfig):
                 else:
                     print(f"Error during transfer: {stderr.decode()}")
             pass
-        except subprocess.CalledProcessError as e:
-            print(f"Error during transfer: {e.stderr.decode()}")
-        finally:
-            if move_and_clean:
-                self.move_to_archive_and_cleanup(key, source_path)
+        except:
+            print(f"Error during transfer")
             self.process = None
             self.is_running = False
+
+        if move_and_clean:
+            self.move_to_archive_and_cleanup(key, source_path)
+        self.process = None
+        self.is_running = False
 
     def hpnscp_transfer(self,
                         key : str = '*/image/20240503',
@@ -166,13 +168,15 @@ class DataTransferManager(mainConfig):
                 else:
                     print(f"Error during transfer: {stderr.decode()}")
             pass
-        except subprocess.CalledProcessError as e:
-            print(f"Error during transfer: {e.stderr.decode()}")
-        finally:
-            if move_and_clean:
-                self.move_to_archive_and_cleanup(key, source_path)
+        except:
+            print(f"Error during transfer")
             self.process = None
             self.is_running = False
+            return
+        if move_and_clean:
+            self.move_to_archive_and_cleanup(key, source_path)
+        self.process = None
+        self.is_running = False
 
     def tar(self,
             source_file_key : str,
