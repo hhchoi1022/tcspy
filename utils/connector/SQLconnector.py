@@ -6,7 +6,6 @@ from astropy.table import Table
 import uuid
 import numpy as np
 
-
 class SQLConnector:
     def __init__(self,
                  id_user: str = 'hhchoi',

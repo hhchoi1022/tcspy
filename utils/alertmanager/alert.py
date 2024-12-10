@@ -2,30 +2,31 @@
 #%%
 from astropy.io import ascii
 from astropy.table import Table
-from GSconnector import GoogleSheetConnector
-from gmailconnector import GmailConnector
+from astropy.time import Time
 import json
+import re
+import math
+
 from tcspy.utils.databases.tiles import Tiles
-#from tcspy.utils.connector import GoogleSheetConnector
 #%%
 
 class Alert:
     
     def __init__(self):
-        self.filepath = None
-        self.formatted_data = None
-        self.alert_data = None
-        self.alert_type = None
-        self.is_decoded = False
-        self.config = self._default_config
+        self.alert_data = None # raw data of the alert
+        self.alert_type = None # mail_broker, mail_user, googlesheet, GW
+        self.formatted_data = None # formatted data of the alert
         self.tiles = None
+        self.received_time = None # Time when the alert is received
+        self.is_decoded = False # after decoding the alert data, set it to True
+        self.is_inputted = False # after inputting the alert data to the scheduler, set it to True
     
     def __repr__(self):
-        txt = (f'ALERT (type = {self.alert_type}, decoded = {self.is_decoded}, path = {self.filepath})')
+        txt = (f'ALERT (type = {self.alert_type}, decoded = {self.is_decoded}, inputted = {self.is_inputted})')
         return txt   
     
     @property
-    def _default_config(self):
+    def default_config(self):
         default_config = dict()
         default_config['exptime'] = 100
         default_config['count'] = 3
@@ -47,77 +48,115 @@ class Alert:
         tile, _ = self.tiles.find_overlapping_tiles([ra], [dec], visualize = False)
         return tile
     
-    def decode_gwalert(self, file_path : str):
+    def decode_gsheet(self, tbl : Table):
         """
-        Decodes a GW alert file and returns the alert data as an astropy.Table.
+        Decodes a Google Sheet and register the alert data as an astropy.Table.
         
         Parameters:
-        - file_path: str, path to the alert file
+        - tbl: astropy.Table, the Google Sheet table
         
-        Returns:
-        - alert_data: astropy.Table containing the alert data
         """
-        # Read the alert data from the file
-        try:
-            gw_table = ascii.read(file_path)
-        except:
-            raise ValueError(f'Error reading the alert file at {file_path}')
-        self.filepath = file_path
-        self.alert_data = gw_table
-        self.alert_type = 'GW'
+        self.alert_data = tbl
+        self.alert_type = 'googlesheet'
+        self.received_time = Time.now().isot
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
-        for key, value in self.config.items():
-            formatted_tbl[key] = [value] * len(self.alert_data)
+        for key, value in self.default_config.items():
+            formatted_tbl[key] = [value] * len(tbl)
         
-        # Update values from alert_data if the key exists         
-        for key in gw_table.keys():
+        # Update values from alert_data if the key exists
+        for key in tbl.keys():
             noramlized_key = self._normalize_required_keys(key)
             if noramlized_key:
-                formatted_tbl[noramlized_key] = gw_table[key]
+                formatted_tbl[noramlized_key] = tbl[key]
+            else:
+                print('The key is not found in the key variants: ', key)
+                
+        self.is_decoded = True
+        self.formatted_data = formatted_tbl
+
+    def decode_gwalert(self, tbl : Table):
+        """
+        Decodes a GW alert file and register the alert data as an astropy.Table.
+        
+        Parameters:
+        - tbl: astropy.Table, the GW alert table
+        
+        """
+        # Read the alert data from the file
+        self.alert_data = tbl
+        self.alert_type = 'GW'
+        self.received_time = Time.now().isot
+        
+        # Set/Modify the columns to the standard format
+        formatted_tbl = Table()
+        for key, value in self.default_config.items():
+            formatted_tbl[key] = [value] * len(tbl)
+        
+        # Update values from alert_data if the key exists         
+        for key in tbl.keys():
+            noramlized_key = self._normalize_required_keys(key)
+            if noramlized_key:
+                formatted_tbl[noramlized_key] = tbl[key]
             else:
                 print('The key is not found in the key variants: ', key)
 
                             
         formatted_tbl['objname'] = ['T%.5d'%int(objname) if not str(objname).startswith('T') else objname for objname in formatted_tbl['objname']]
         formatted_tbl['objtype'] = 'GECKO'
-        formatted_tbl['note'] = gw_table['obj'] # Tile observation -> objname is stored in "Note"
-        formatted_tbl['is_ToO'] = [1 if confidence <= 0.95 else 0 for confidence in gw_table['confidence']]
+        formatted_tbl['note'] = tbl['obj'] # Tile observation -> objname is stored in "Note"
+        formatted_tbl['is_ToO'] = [1 if confidence <= 0.95 else 0 for confidence in tbl['confidence']]
         self.is_decoded = True
         self.formatted_data = formatted_tbl
     
-    def decode_brokermail(self, mail_str, match_to_tiles = True):
+    def decode_mail(self, mail_dict, match_to_tiles = True, alert_type = 'broker'):
+        """
+        Decodes a mail alert and register the alert data as an astropy.Table.
+        
+        Parameters:
+        - mail_dict: dict, the mail dictionary
+        - match_to_tiles: bool, whether to match the RA, Dec to the RIS tiles
+        - alert_type: str, the alert type (broker or user)
+        
+        """
         # Read the alert data from the attachment
-        mail_dict = dict(mail_str)
+        date_str = mail_dict['Date']
+        parsed_date = datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
+        self.received_time = Time(parsed_date, format= 'datetime').isot
+
         # If Attachment is not present, read the body
+        alert_dict_normalized = dict()
         if len(mail_dict['Attachments']) > 0:
             try:
-                alert_dict = json.load(open(mail_dict['Attachments'][0]))
-                self.filepath = mail_dict['Attachments'][0]
+                alert_data = json.load(open(mail_dict['Attachments'][0]))
+                for key, value in alert_data.items():
+                    normalized_key = self._normalize_required_keys(key)
+                    if normalized_key:
+                        alert_dict_normalized[normalized_key] = value
+                    else:
+                        print('The key is not found in the key variants: ', key)
+                file_path = mail_dict['Attachments'][0]
             except:
-                raise ValueError(f'Error reading the alert data')
-        else:
+                print('Error reading the alert data. Try reading the mail body')
+                pass
+        if not alert_dict_normalized:
             try:
-                alert_dict = self._parse_mail_string(mail_dict['Body']) 
-                self.filepath = None
+                alert_dict_normalized = self._parse_mail_string(mail_dict['Body']) 
+                file_path = None
             except:
                 raise ValueError(f'Error reading the alert data')
-        self.alert_data = alert_dict
-        self.alert_type = 'mail_broker'
+        self.alert_data = alert_dict_normalized
+        self.alert_type = 'mail_' + alert_type
         
         # Set/Modify the columns to the standard format
         formatted_dict = dict()
-        for key, value in self.config.items():
+        for key, value in self.default_config.items():
             formatted_dict[key] = value
             
         # Update values from alert_data if the key exists
-        for key in alert_dict.keys():
-            normalized_key = self._normalize_required_keys(key)
-            if normalized_key:
-                formatted_dict[normalized_key] = alert_dict[key]
-            else:
-                print('The key is not found in the key variants: ', key)
+        for key in alert_dict_normalized.keys():
+            formatted_dict[key] = alert_dict_normalized[key]
         
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
@@ -140,11 +179,16 @@ class Alert:
             if isinstance(value, str):
                 formatted_dict[key] = value.replace(" ", "")
                 
+                
         # If is_ToO is not defined, set it to 0
         if str(formatted_dict['is_ToO']).upper() == 'TRUE':
             formatted_dict['is_ToO'] = 1
         else:
             formatted_dict['is_ToO'] = 0
+            
+        # If specmode is defined, remove the extension
+        if 'specmode' in alert_dict_normalized.keys():
+            formatted_dict['specmode'] = alert_dict_normalized['specmode'].split('.')[0]        
 
         # Convert the dict to astropy.Table
         formatted_tbl = Table()
@@ -153,9 +197,8 @@ class Alert:
         self.is_decoded = True
         self.formatted_data = formatted_tbl
     
-    def decode_usermail(self, mail_str, match_to_tiles = True):
+    def decode_usermail(self, mail_dict: dict, match_to_tiles: bool = True):
         # Read the alert data from the attachment
-        mail_dict = dict(mail_str)
         mail_body = mail_dict['Body']
 
         self.alert_type = 'mail_user'
@@ -163,7 +206,7 @@ class Alert:
 
         # Set/Modify the columns to the standard format
         formatted_dict = dict()
-        for key, value in self.config.items():
+        for key, value in self.default_config.items():
             formatted_dict[key] = value
 
         # Match the RA, Dec to the RIS tiles
@@ -179,7 +222,7 @@ class Alert:
         
         # If number of exposure is not defined, divide the total exposure time by the default single exposure time (60s)
         if 'count' not in alert_dict_normalized.keys():
-            alert_dict_normalized['count'] = int(alert_dict_normalized['exptime']) // self.config['exptime']
+            alert_dict_normalized['count'] = math.ceil(int(alert_dict_normalized['exptime']) / self.default_config['exptime'])
             
         # If the value of the dict is list, convert it to comma-separated string
         for key, value in alert_dict_normalized.items():
@@ -200,6 +243,10 @@ class Alert:
             formatted_dict['is_ToO'] = 1
         else:
             formatted_dict['is_ToO'] = 0
+        
+        # If specmode is defined, remove the extension
+        if 'specmode' in alert_dict_normalized.keys():
+            formatted_dict['specmode'] = alert_dict_normalized['specmode'].split('.')[0]
         
         # Convert the dict to astropy.Table
         formatted_tbl = Table()
@@ -224,7 +271,7 @@ class Alert:
             
             # Add to the dictionary
             normalized_key = self._normalize_required_keys(key)
-            if not noramlized_key:
+            if not normalized_key:
                 raise ValueError(f'Key {key} is not found in the key variants')
             parsed_dict[normalized_key] = value
 
@@ -239,7 +286,7 @@ class Alert:
         # Iterate through the dictionary to find a match
         for canonical_key, variants in self.required_key_variants.items():
             # Create a regex pattern for each variant followed by ':' or '=' or a space
-            pattern = r'^\s*(' + '|'.join(re.escape(variant) for variant in variants) + r')\s*[:= ]\s*(.+)$'
+            pattern = r'(?<!\w)[ \W]*(' + '|'.join(re.escape(variant) for variant in variants) + r')\s*[:= ]\s*(.*)$'
             
             # Search for the pattern in the line string
             match = re.search(pattern, line_string.lower())
@@ -263,12 +310,12 @@ class Alert:
     
     @property
     def required_key_variants(self):
-        # Define key variants
+        # Define key variants, if a word is duplicated in the same variant, posit the word with the highest priority first
         required_key_variants_lower = {
-            'objname': ['target', 'object', 'objname', 'id'],
-            'RA': ['ra', 'r.a.', 'right ascension'],
-            'De': ['de', 'dec', 'dec.', 'declination'],
-            'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleframeexposure'],
+            'objname': ['target name', 'target', 'object', 'objname', 'id'],
+            'RA': ['right ascension (ra)', 'right ascension (r.a.)', 'ra', 'r.a.'],
+            'De': ['de', 'dec', 'dec.', 'declination', 'declination (dec)', 'declination (dec.)'],
+            'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleframeexposure', 'single frame exposure'],
             'count': ['count', 'imagecount', 'numbercount', 'image count', 'number count'],
             'obsmode': ['obsmode', 'observationmode', 'mode'],
             'binning': ['binning'],
@@ -276,11 +323,24 @@ class Alert:
             'priority': ['priority', 'rank'],
             'weight': ['weight'],
             'objtype': ['objtype', 'objecttype'],
-            'specmode': ['specmode', 'spectralmode', 'spectral mode'],
+            'specmode': ['specmode', 'spectralmode', 'spectral mode', 'selectedspecfile'],
             'filter': ['filter', 'filters', 'selectedfilters'],
             'ntelescopes': ['ntelescopes', 'ntelescope', 'numberoftelescopes', 'number of telescopes', 'selectedtelnumber'],
             'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
-            'is_ToO': ['is_too', 'is too', 'abortobservation'],
+            'is_ToO': ['is_too', 'is too', 'abortobservation', 'abort current observation'],
             'comments': ['comment', 'comments']
         }
-        return required_key_variants_lower
+        # Sort each list in the dictionary by string length (descending order)
+        sorted_required_key_variants = {
+            key: sorted(variants, key=len, reverse=True)
+            for key, variants in required_key_variants_lower.items()
+        }
+        return sorted_required_key_variants
+
+#%%
+if __name__ == '__main__':
+    from tcspy.utils.connector import GmailConnector
+    G = GmailConnector('7dt.observation.alert@gmail.com')
+    #G.login()
+    mail_str = G.readmail()
+# %%

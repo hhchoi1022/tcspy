@@ -1,14 +1,14 @@
 
 #%%
-from utils.alertbroker.alertbroker import AlertBroker
-from utils.connector.slackconnector import SlackConnector
+from tcspy.utils.alertmanager import Alert
+from tcspy.utils.connector import SlackConnector
 #%%
 
 class AlertMonitor():
     
     
     def __init__(self):
-        self.alertbroker = AlertBroker()
+        self.alertbroker = Alert()
         self.slackconnector = SlackConnector()
         self.is_sent = False
         self.is_posted = False

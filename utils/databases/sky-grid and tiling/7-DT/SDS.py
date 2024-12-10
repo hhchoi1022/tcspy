@@ -22,7 +22,7 @@ def path_set():
     import sys
     from pathlib import Path
 
-    path_thisfile = Path(__file__).resolve()
+    path_thisfile = Path().resolve()
     path_src = path_thisfile.parent  # absolute path of dhutil
     path_root = path_src.parent  # parent of dhutil
     if path_root not in map(Path, sys.path):

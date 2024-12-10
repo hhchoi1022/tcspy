@@ -8,13 +8,14 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = '/home/kds/tcspy/configuration',
+                 configpath : str = f'{os.path.dirname(os.path.abspath(__file__))}',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
                 
         # global config params
         self.path_global = configpath
+        self.path_home = os.path.expanduser('~')
         self._configfilekey_global = os.path.join(self.path_global, '*.config')
         self._configfiles_global = glob.glob(self._configfilekey_global)
             
@@ -175,6 +176,19 @@ class mainConfig:
                          DB_NAME='target',
                          DB_PATH= f'/data2/obsdata/DB_history')
         
+        gmail_params = dict(GMAIL_USERNAME= '7dt.observation.alert@gmail.com',
+                            GMAIL_TOKEN = os.path.join(self.path_home, f'.config/gmail/python/token_7dt.observation.alert@gmail.com.txt'),
+                            GMAIL_PATH = '/data2/obsdata/alert_history/gmail')
+        
+        slack_params = dict(SLACK_TOKEN = os.path.join(self.path_home, f'.config/slack/slack_token_7dt_obseration_alert.txt'),
+                            SLACK_DEFAULT_CHANNEL = 'C07SREPTWFM')
+        
+        googlesheet_params = dict(GOOGLESHEET_URL = 'https://docs.google.com/spreadsheets/d/1UorU7P_UMr22Luw6q6GLQYk4-YicGRATwCePRxkx2Ms/edit#gid=0',
+                                  GOOGLESHEET_AUTH = os.path.join(self.path_home, f'.config/googlesheet/targetdb-423908-ee7bb8c14ff3.json'),
+                                  GOOGLESHEET_SCOPE = ['https://spreadsheets.google.com/feeds',
+                                                       'https://www.googleapis.com/auth/drive',
+                                                       'https://www.googleapis.com/auth/spreadsheets'])
+        
         autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self.path_global,"filtinfo.data")}',
                                 AUTOFOCUS_FOCUSHISTORY_PATH = self.path_global,
                                 AUTOFOCUS_TOLERANCE = 45)
@@ -217,6 +231,9 @@ class mainConfig:
         self.make_configfile(image_params, filename='Image.config', savepath = savepath_unit)
 
         # Global params
+        self.make_configfile(gmail_params, filename='Gmail.config', savepath= self.path_global)
+        self.make_configfile(slack_params, filename='Slack.config', savepath= self.path_global)
+        self.make_configfile(googlesheet_params, filename='GoogleSheet.config', savepath= self.path_global)
         self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_global)
         self.make_configfile(observer_params, filename='Observer.config', savepath= self.path_global)
         self.make_configfile(target_params, filename='Target.config', savepath= self.path_global)

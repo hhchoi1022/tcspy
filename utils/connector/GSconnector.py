@@ -10,7 +10,7 @@ from astropy.io import ascii
 import numpy as np
 import os
 #%%
-class GoogleSheetConnector():
+class GoogleSheetConnector:
     """
     [History]
     =========
@@ -69,7 +69,7 @@ class GoogleSheetConnector():
     
     def get_sheet_data(self,
                        sheet_name : str,
-                       format_ = 'pandas' # or Table, Dict
+                       format_ = 'Table' # Table, Dict or pandas
                        ):
         """
         Returns the data in the specified sheet in the specified format.
