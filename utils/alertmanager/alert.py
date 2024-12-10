@@ -6,6 +6,7 @@ from astropy.time import Time
 import json
 import re
 import math
+from datetime import datetime
 
 from tcspy.utils.databases.tiles import Tiles
 #%%

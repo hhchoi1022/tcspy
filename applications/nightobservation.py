@@ -662,3 +662,4 @@ if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
     NightObservation(M, Event()).run()
+# %%

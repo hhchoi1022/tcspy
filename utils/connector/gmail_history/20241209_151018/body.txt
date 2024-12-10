@@ -1,0 +1,7 @@
+{
+    "From": "Hyeonho Choi <hhchoi1022@gmail.com>",
+    "Subject": "No Subject",
+    "Date": "Mon, 9 Dec 2024 15:10:18 +0900",
+    "Body": "Hello! we\u2019d like to request the GRB target. This is ToO target. \r\nTarget: GRB241208A\r\nra = 120.53\r\ndec = 50.425\r\nexptime = 120\r\ncount = 10\r\nobsmode = Deep\r\nfilter = g, r, i\r\nntelescopes = 10\r\npriority = 30\r\nis_ToO: true",
+    "Attachments": []
+}

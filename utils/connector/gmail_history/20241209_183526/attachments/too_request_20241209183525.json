@@ -1,0 +1,19 @@
+{
+    "target": "080818945",
+    "ra": 109.45999908447266,
+    "dec": 15,
+    "exposure": "300",
+    "obsmode": "Deep",
+    "comments": "test",
+    "abortObservation": false,
+    "singleFrameExposure": 60,
+    "imageCount": 5,
+    "priority": 50,
+    "gain": 2750,
+    "binning": 1,
+    "obsStartTime": "",
+    "selectedFilters": [
+        "g"
+    ],
+    "selectedTelNumber": 10
+}

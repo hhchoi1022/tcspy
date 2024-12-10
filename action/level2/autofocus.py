@@ -323,7 +323,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             focus_history_telescope[filt_name] = default_focus_history_filter
         focus_history_default[tel_name] = focus_history_telescope
         with open(self.focus_history_file, 'w') as f:
-            (focus_history_default, f, indent=4)
+            json.dump(focus_history_default, f, indent=4)
 
     def update_focus_history(self, filter_ : str, focusval : float, is_succeeded : bool):
         if not os.path.isfile(self.focus_history_file):

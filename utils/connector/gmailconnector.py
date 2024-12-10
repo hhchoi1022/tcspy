@@ -9,19 +9,22 @@ from email.mime.multipart import MIMEMultipart
 from email.header import decode_header
 from typing import List, Dict
 import os
+from datetime import datetime
+import json
 
 class GmailConnector:
-    def __init__(self, user_account: str, user_token: str = None):
+    def __init__(self, user_account: str, user_token_path: str = None):
         self.user_account = user_account
-        self.user_token = user_token
-        if not user_token:
-            token_path = f'{os.path.expanduser("~")}/.config/gmail/python/token_{self.user_account}.txt'
-            try:
-                self.user_token = open(token_path, 'r').read().strip()
-                if '\xa0' in self.user_token:
-                    self.user_token = self.user_token.replace('\xa0', ' ')
-            except:
-                raise ValueError(f'Error reading the token file at {token_path} or token is not provided')
+        self.user_token_path = user_token_path
+        self.user_token = None
+        if not user_token_path:
+            self.user_token_path = f'{os.path.expanduser("~")}/.config/gmail/python/token_{self.user_account}.txt'
+        try:
+            self.user_token = open(self.user_token_path, 'r').read().strip()
+            if '\xa0' in self.user_token:
+                self.user_token = self.user_token.replace('\xa0', ' ')
+        except:
+            raise ValueError(f'Error reading the token file at {token_path} or token is not provided')
         self.smtp_server = 'smtp.gmail.com'
         self.smtp_port = 587
         self.imap_server = 'imap.gmail.com'
@@ -264,7 +267,5 @@ class GmailConnector:
             return decoded_subject.strip()
         return "No Subject"
 # %%
-gm = GmailConnector('7dt.observation.alert@gmail.com')
-# %%
-self = gm
+A = GmailConnector('7dt.observation.alert@gmail.com', '/home/kds/.config/gmail/python/token_7dt.observation.alert@gmail.com.txt')
 # %%

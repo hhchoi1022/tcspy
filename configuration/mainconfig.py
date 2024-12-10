@@ -177,7 +177,7 @@ class mainConfig:
                          DB_PATH= f'/data2/obsdata/DB_history')
         
         gmail_params = dict(GMAIL_USERNAME= '7dt.observation.alert@gmail.com',
-                            GMAIL_TOKEN = os.path.join(self.path_home, f'.config/gmail/python/token_7dt.observation.alert@gmail.com.txt'),
+                            GMAIL_TOKENPATH = os.path.join(self.path_home, f'.config/gmail/python/token_7dt.observation.alert@gmail.com.txt'),
                             GMAIL_PATH = '/data2/obsdata/alert_history/gmail')
         
         slack_params = dict(SLACK_TOKEN = os.path.join(self.path_home, f'.config/slack/slack_token_7dt_obseration_alert.txt'),

@@ -31,10 +31,10 @@ class AlertBroker(mainConfig):
         if not self.gmail:
             print('Setting up GmailConnector...')
             self.gmail = GmailConnector(user_account = self.config['GMAIL_USERNAME'], 
-                                        user_token = self.config['GMAIL_TOKEN'])
+                                        user_token_path = self.config['GMAIL_TOKENPATH'])
             
     def _set_DB(self):
-        if not self.DB:
+        if not self.DB_Daily:
             print('Setting up DatabaseConnector...')
             self.DB_Daily = DB().Daily   
     
@@ -95,13 +95,14 @@ class AlertBroker(mainConfig):
 
     def read_tbl(self,
                  path_tbl : str):
+        pass
         
 
     def read_mail(self, 
-                  path : str, # sheet name or abspath of the file
-                  mailbox : str = 'ToO',
-                  max_emails : int = 3,
-                  alert_type : str = 'user' #user or broker
+                  mailbox : str = 'inbox',
+                  max_emails : int = 1,
+                  alert_type : str = 'user', #user or broker
+                  match_to_tiles : bool = False
                   ):
         alert = Alert()
         print('Reading the alert from GmailConnector...')
@@ -109,10 +110,12 @@ class AlertBroker(mainConfig):
         try:
             if alert_type.upper() == 'USER':
                 maillist = self.gmail.readmail(mailbox = mailbox, max_emails = max_emails)
-                alert.decode_gwalert(alert_tbl)
+                recent_mail_dict = maillist[-1]
+                alert.decode_mail(recent_mail_dict, match_to_tiles = match_to_tiles, alert_type= alert_type )
             elif alert_type.upper() == 'BROKER':
-                alert_tbl = self.gmail.readmail(path)
-                alert.decode_gsheet(tbl = alert_tbl)
+                maillist = self.gmail.readmail(mailbox = mailbox, max_emails = max_emails)
+                recent_mail_dict = maillist[-1]
+                alert.decode_mail(recent_mail_dict, match_to_tiles = match_to_tiles, alert_type= alert_type )
             else:
                 raise ValueError(f'Invalid alert_type: {alert_type}')
         except:
@@ -145,7 +148,7 @@ class AlertBroker(mainConfig):
         formatted_data.sort('priority')
         self._set_DB()  
         self.DB_Daily.insert(target_tbl = formatted_data)
-        alert.is_sent = True
+        alert.is_inputted = True
         print(f'Targets are inserted to the database.')
         return alert
       
