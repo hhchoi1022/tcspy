@@ -317,7 +317,7 @@ class DB_Daily(mainConfig):
         from tcspy.utils.connector import GoogleSheetConnector
         print('Connecting to DB...')
         gsheet = GoogleSheetConnector()
-        tbl_sheet = gsheet.get_sheet_data(sheet_name = sheet_name, format_ = 'Table')
+        tbl_sheet = gsheet.read_sheet(sheet_name = sheet_name, format_ = 'Table')
         # Insert data
         print('Inserting GoogleSheet data to DB...')
         insertion_result = self.insert(tbl_sheet)
@@ -325,7 +325,7 @@ class DB_Daily(mainConfig):
         if update:
             tbl_sheet['is_inputted'] = insertion_result
             print('Updating GoogleSheet data...')
-            gsheet.write_sheet_data(sheet_name = sheet_name, data = tbl_sheet, append = False, clear_header = False)        
+            gsheet.write_sheet(sheet_name = sheet_name, data = tbl_sheet, append = False, clear_header = False)        
     
     def clear(self, clear_only_7ds : bool = True):
         data = self.data 

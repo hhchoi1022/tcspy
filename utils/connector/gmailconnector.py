@@ -9,7 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from email.header import decode_header
 from typing import List, Dict
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import json
 
 class GmailConnector:
@@ -24,7 +24,7 @@ class GmailConnector:
             if '\xa0' in self.user_token:
                 self.user_token = self.user_token.replace('\xa0', ' ')
         except:
-            raise ValueError(f'Error reading the token file at {token_path} or token is not provided')
+            raise ValueError(f'Error reading the token file at {self.user_token_path} or token is not provided')
         self.smtp_server = 'smtp.gmail.com'
         self.smtp_port = 587
         self.imap_server = 'imap.gmail.com'
@@ -52,7 +52,7 @@ class GmailConnector:
                 self.logged_in = False
 
         if not self.logged_in:
-            print("Reconnecting due to lost connections...")
+            print("The account is not logged in. Try login...")
             self.login()
         return True
             
@@ -90,7 +90,7 @@ class GmailConnector:
 
         self.logged_in = False
     
-    def sendmail(self, to_email: str, subject: str, body: str, attachments: list or str = None):
+    def send_mail(self, to_email: str, subject: str, body: str, attachments: list or str = None):
         """
         Send an email with optional attachments.
         
@@ -135,7 +135,7 @@ class GmailConnector:
         except Exception as e:
             print(f"Failed to send email: {e}")
     
-    def readmail(self, mailbox: str = 'inbox', max_emails: int = 10, save : bool = True, save_dir : str = './gmail_history') -> List[Dict]:
+    def read_mail(self, mailbox: str = 'inbox', max_emails: int = 10, since_days : float = 5, save : bool = True, save_dir : str = '../alert/gmail') -> List[Dict]:
         """
         Read emails and save attachments.
         
@@ -155,7 +155,13 @@ class GmailConnector:
             self.server_imap.select(mailbox)
             
             # Search for all emails
-            status, data = self.server_imap.search(None, 'ALL')
+            search_criteria = 'ALL'
+            if since_days:
+                since_time = datetime.utcnow() - timedelta(days=since_days)
+                since_date = since_time.strftime('%d-%b-%Y')
+                search_criteria = f'(SINCE "{since_date}")'
+
+            status, data = self.server_imap.search(None, search_criteria)
             email_ids = data[0].split()
             for email_id in email_ids[-max_emails:]:
                 # Fetch each email
@@ -173,7 +179,8 @@ class GmailConnector:
                 }
                 
                 parsed_date = datetime.strptime(email_data['Date'], '%a, %d %b %Y %H:%M:%S %z')
-                date_str = parsed_date.strftime('%Y%m%d_%H%M%S')
+                utc_date = parsed_date.astimezone(timezone.utc)
+                date_str = utc_date.strftime('%Y%m%d_%H%M%S')
                 
                 # Check for attachments
                 if msg.is_multipart():
@@ -214,7 +221,7 @@ class GmailConnector:
         
         return emails
     
-    def deletemail(self, mailbox: str = 'inbox', subject: str = None):
+    def delete_mail(self, mailbox: str = 'inbox', subject: str = None):
         """Delete emails based on subject."""
         self.ensure_logged_in()
         try:
@@ -224,10 +231,10 @@ class GmailConnector:
             status, data = self.server_imap.search(None, f'SUBJECT "{subject}"')
             email_ids = data[0].split()
             for email_id in email_ids:
-                mail.store(email_id, '+FLAGS', '\\Deleted')
+                self.server_imap.store(email_id, '+FLAGS', '\\Deleted')
             
-            mail.expunge()
-            mail.logout()
+            self.server_imap.expunge()
+            self.server_imap.logout()
             print(f"Emails with subject '{subject}' deleted successfully.")
         except Exception as e:
             print(f"Failed to delete emails: {e}")
@@ -267,5 +274,5 @@ class GmailConnector:
             return decoded_subject.strip()
         return "No Subject"
 # %%
-A = GmailConnector('7dt.observation.alert@gmail.com', '/home/kds/.config/gmail/python/token_7dt.observation.alert@gmail.com.txt')
+A = GmailConnector('7dt.observation.alert@gmail.com', '/Users/hhchoi1022/.config/gmail/python/token_7dt.observation.alert@gmail.com.txt')
 # %%

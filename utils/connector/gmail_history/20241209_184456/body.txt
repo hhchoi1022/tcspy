@@ -1,9 +1,0 @@
-{
-    "From": "=?utf-8?q?7DT_Observation_Alert?= <7dt.observation.broker@gmail.com>",
-    "Subject": "[Automated] 7DT ToO Observation Request",
-    "Date": "Mon, 09 Dec 2024 18:44:56 +0900",
-    "Body": "\r\n        ================================\r\n        New ToO Request Submitted\r\n        ================================\r\n\r\n        **Observation Information**\r\n        ----------------------\r\n        - Target Name: 080916009\r\n        - Right Ascension (R.A.): 119.88999938964844\r\n        - Declination (Dec.): -56.70000076293945\r\n        - Total Exposure Time: 300 seconds\r\n        - Obsmode: Spec\r\n            - Specmode: specall.specmode\r\n            \r\n\r\n        **Detailed Settings**\r\n        --------------------\r\n        - Abort Current Observation: False\r\n        - Priority: 50\r\n        - Single Frame Exposure: 60 seconds\r\n        - Number of Images: 5 counts\r\n        - Gain: 2750\r\n        - Binning: 1\r\n        - Observation Start Time: \r\n        - Comments: \r\n\r\n        ================================\r\n        Please take necessary actions.\r\n        ================================\r\n        ",
-    "Attachments": [
-        "./gmail_history/20241209_184456/attachments/too_request_20241209184454.json"
-    ]
-}

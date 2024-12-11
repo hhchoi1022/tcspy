@@ -1,0 +1,2 @@
+| exptime | count | obsmode | filter | specmode | ntelescope | priority | weight | binning | gain | objtype | is_ToO | objname |                RA |                  De | comments | obs_starttime | ntelescopes |      note |
+|      30 |    10 |    Deep |  g,r,i |  specall |         10 |       50 |      1 |       1 | 2750 | Request |      1 |  T13822 | 239.5539033457249 | -16.132075471698105 |    test2 |               |           5 | 101227406 |

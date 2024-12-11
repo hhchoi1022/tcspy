@@ -6,6 +6,7 @@ from astropy.time import Time
 import json
 import re
 import math
+import os
 from datetime import datetime
 
 from tcspy.utils.databases.tiles import Tiles
@@ -17,10 +18,11 @@ class Alert:
         self.alert_data = None # raw data of the alert
         self.alert_type = None # mail_broker, mail_user, googlesheet, GW
         self.formatted_data = None # formatted data of the alert
-        self.tiles = None
         self.received_time = None # Time when the alert is received
         self.is_decoded = False # after decoding the alert data, set it to True
         self.is_inputted = False # after inputting the alert data to the scheduler, set it to True
+        self.is_matched_to_tiles = False
+        self.tiles = None
     
     def __repr__(self):
         txt = (f'ALERT (type = {self.alert_type}, decoded = {self.is_decoded}, inputted = {self.is_inputted})')
@@ -43,13 +45,51 @@ class Alert:
         default_config['is_ToO'] = 0
         return default_config
     
-    def _match_RIS_tile(self, ra, dec):
+    def _match_RIS_tile(self, ra : list or str, dec : list or str):
         if not self.tiles:
             self.tiles = Tiles(tile_path = None)
-        tile, _ = self.tiles.find_overlapping_tiles([ra], [dec], visualize = False)
-        return tile
+        if not isinstance(ra, list):
+            ra = [ra]
+        if not isinstance(dec, list):
+            dec = [dec]
+        tile, matched_indices, _ = self.tiles.find_overlapping_tiles(ra, dec, visualize = False)
+        return tile, matched_indices
     
-    def decode_gsheet(self, tbl : Table):
+    def save_history(self, save_dir : str):
+        if not self.alert_data or not self.received_time:
+            raise ValueError('The alert data is not read or received yet')
+        
+        receive_dt = Time(self.received_time)
+        date_str = receive_dt.strftime('%Y%m%d_%H%M%S')
+        dirname = os.path.join(save_dir, date_str)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        # Save alert_data
+        if self.alert_data:
+            alert_data_tbl = Table()
+            # If the value of the dict is list, convert it to comma-separated string
+            for key, value in self.alert_data.items():
+                if isinstance(value, list):
+                    value = ','.join(value).replace(" ", "")
+                alert_data_tbl[key] = [value]
+            alert_data_tbl.write(os.path.join(dirname, 'alert_raw.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
+        
+        # Save formatted_data
+        if self.formatted_data:
+            self.formatted_data.write(os.path.join(dirname, 'alert_formatted.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
+        
+        # Save the alert status as json
+        alert_status = dict()
+        alert_status['saved_time'] = Time.now().isot
+        alert_status['received_time'] = self.received_time
+        alert_status['is_decoded'] = self.is_decoded
+        alert_status['is_inputted'] = self.is_inputted
+        alert_status['is_matched_to_tiles'] = self.is_matched_to_tiles
+        with open(os.path.join(dirname, 'alert_status.json'), 'w') as f:
+            json.dump(alert_status, f, indent = 4)
+        
+    def decode_gsheet(self, tbl : Table, match_to_tiles : bool = False):
         """
         Decodes a Google Sheet and register the alert data as an astropy.Table.
         
@@ -74,8 +114,66 @@ class Alert:
             else:
                 print('The key is not found in the key variants: ', key)
                 
+        # Match the RA, Dec to the RIS tiles
+        if match_to_tiles:
+            self.is_matched_to_tiles = True
+            tile_info, matched_indices = self._match_RIS_tile(list(formatted_tbl['RA']), list(formatted_tbl['De']))
+            if len(tile_info) == 0:
+                raise ValueError(f'No matching tile found for RA = {formatted_tbl["RA"]}, Dec = {formatted_tbl["De"]}')
+            # Sort the formatted_tbl by the matched_indices
+            formatted_tbl = formatted_tbl[matched_indices]
+            objname = formatted_tbl['objname']
+            formatted_tbl['objname'] = tile_info['id']
+            formatted_tbl['RA'] = tile_info['ra']
+            formatted_tbl['De'] = tile_info['dec']
+            formatted_tbl['note'] = objname
+        
+        existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
-        self.formatted_data = formatted_tbl
+        self.formatted_data = formatted_tbl[existing_columns]
+
+    def decode_tbl(self, tbl : Table, match_to_tiles : bool = False):
+        """
+        Decodes a Google Sheet and register the alert data as an astropy.Table.
+        
+        Parameters:
+        - tbl: astropy.Table, the Google Sheet table
+        
+        """
+        self.alert_data = tbl
+        self.alert_type = 'table'
+        self.received_time = Time.now().isot
+        
+        # Set/Modify the columns to the standard format
+        formatted_tbl = Table()
+        for key, value in self.default_config.items():
+            formatted_tbl[key] = [value] * len(tbl)
+        
+        # Update values from alert_data if the key exists
+        for key in tbl.keys():
+            noramlized_key = self._normalize_required_keys(key)
+            if noramlized_key:
+                formatted_tbl[noramlized_key] = tbl[key]
+            else:
+                print('The key is not found in the key variants: ', key)
+                
+        # Match the RA, Dec to the RIS tiles
+        if match_to_tiles:
+            self.is_matched_to_tiles = True
+            tile_info, matched_indices = self._match_RIS_tile(list(formatted_tbl['RA']), list(formatted_tbl['De']))
+            if len(tile_info) == 0:
+                raise ValueError(f'No matching tile found for RA = {formatted_tbl["RA"]}, Dec = {formatted_tbl["De"]}')
+            # Sort the formatted_tbl by the matched_indices
+            formatted_tbl = formatted_tbl[matched_indices]
+            objname = formatted_tbl['objname']
+            formatted_tbl['objname'] = tile_info['id']
+            formatted_tbl['RA'] = tile_info['ra']
+            formatted_tbl['De'] = tile_info['dec']
+            formatted_tbl['note'] = objname
+        
+        existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
+        self.is_decoded = True
+        self.formatted_data = formatted_tbl[existing_columns]
 
     def decode_gwalert(self, tbl : Table):
         """
@@ -108,8 +206,10 @@ class Alert:
         formatted_tbl['objtype'] = 'GECKO'
         formatted_tbl['note'] = tbl['obj'] # Tile observation -> objname is stored in "Note"
         formatted_tbl['is_ToO'] = [1 if confidence <= 0.95 else 0 for confidence in tbl['confidence']]
+        
+        existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
-        self.formatted_data = formatted_tbl
+        self.formatted_data = formatted_tbl[existing_columns]
     
     def decode_mail(self, mail_dict, match_to_tiles = True, alert_type = 'broker'):
         """
@@ -161,7 +261,8 @@ class Alert:
         
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
-            tile_info = self._match_RIS_tile(formatted_dict['RA'], formatted_dict['De'])
+            self.is_matched_to_tiles = True
+            tile_info, matched_indices = self._match_RIS_tile(formatted_dict['RA'], formatted_dict['De'])
             if len(tile_info) == 0:
                 raise ValueError(f'No matching tile found for RA = {formatted_dict["RA"]}, Dec = {formatted_dict["De"]}')
             objname = formatted_dict['objname']
@@ -180,7 +281,6 @@ class Alert:
             if isinstance(value, str):
                 formatted_dict[key] = value.replace(" ", "")
                 
-                
         # If is_ToO is not defined, set it to 0
         if str(formatted_dict['is_ToO']).upper() == 'TRUE':
             formatted_dict['is_ToO'] = 1
@@ -195,67 +295,10 @@ class Alert:
         formatted_tbl = Table()
         for key, value in formatted_dict.items():
             formatted_tbl[key] = [value]
-        self.is_decoded = True
-        self.formatted_data = formatted_tbl
-    
-    def decode_usermail(self, mail_dict: dict, match_to_tiles: bool = True):
-        # Read the alert data from the attachment
-        mail_body = mail_dict['Body']
-
-        self.alert_type = 'mail_user'
-        alert_dict_normalized = self._parse_mail_string(mail_body)
-
-        # Set/Modify the columns to the standard format
-        formatted_dict = dict()
-        for key, value in self.default_config.items():
-            formatted_dict[key] = value
-
-        # Match the RA, Dec to the RIS tiles
-        if match_to_tiles:
-            tile_info = self._match_RIS_tile(alert_dict_normalized['RA'], alert_dict_normalized['De'])
-            if len(tile_info) == 0:
-                raise ValueError(f'No matching tile found for RA = {alert_dict_normalized["RA"]}, Dec = {alert_dict_normalized["De"]}')
-            objname = alert_dict_normalized['objname']
-            alert_dict_normalized['objname'] = tile_info['id'][0]
-            alert_dict_normalized['RA'] = tile_info['ra'][0]
-            alert_dict_normalized['De'] = tile_info['dec'][0]
-            alert_dict_normalized['note'] = objname
-        
-        # If number of exposure is not defined, divide the total exposure time by the default single exposure time (60s)
-        if 'count' not in alert_dict_normalized.keys():
-            alert_dict_normalized['count'] = math.ceil(int(alert_dict_normalized['exptime']) / self.default_config['exptime'])
             
-        # If the value of the dict is list, convert it to comma-separated string
-        for key, value in alert_dict_normalized.items():
-            if isinstance(value, list):
-                alert_dict_normalized[key] = ','.join(value)
-                
-        # if space in the value, remove it
-        for key, value in formatted_dict.items():
-            if isinstance(value, str):
-                formatted_dict[key] = value.replace(" ", "")
-            
-        # Update values of formatted_dict from alert_dict if the key exists
-        for key in alert_dict_normalized.keys():
-            formatted_dict[key] = alert_dict_normalized[key]
-        
-        # If is_ToO is not defined, set it to 0
-        if str(formatted_dict['is_ToO']).upper() == 'TRUE':
-            formatted_dict['is_ToO'] = 1
-        else:
-            formatted_dict['is_ToO'] = 0
-        
-        # If specmode is defined, remove the extension
-        if 'specmode' in alert_dict_normalized.keys():
-            formatted_dict['specmode'] = alert_dict_normalized['specmode'].split('.')[0]
-        
-        # Convert the dict to astropy.Table
-        formatted_tbl = Table()
-        for key, value in formatted_dict.items():
-            formatted_tbl[key] = [value]
-        
+        existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
-        self.formatted_data = formatted_tbl
+        self.formatted_data = formatted_tbl[existing_columns]
 
     # Read the alert data from the body
     def _parse_mail_string(self, mail_string):
@@ -319,17 +362,18 @@ class Alert:
             'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleframeexposure', 'single frame exposure'],
             'count': ['count', 'imagecount', 'numbercount', 'image count', 'number count'],
             'obsmode': ['obsmode', 'observationmode', 'mode'],
+            'specmode': ['specmode', 'spectralmode', 'spectral mode', 'selectedspecfile'],
+            'filter': ['filter', 'filters', 'selectedfilters'],
+            'ntelescopes': ['ntelescopes', 'ntelescope', 'numberoftelescopes', 'number of telescopes', 'selectedtelnumber'],
             'binning': ['binning'],
             'gain': ['gain'],
             'priority': ['priority', 'rank'],
             'weight': ['weight'],
             'objtype': ['objtype', 'objecttype'],
-            'specmode': ['specmode', 'spectralmode', 'spectral mode', 'selectedspecfile'],
-            'filter': ['filter', 'filters', 'selectedfilters'],
-            'ntelescopes': ['ntelescopes', 'ntelescope', 'numberoftelescopes', 'number of telescopes', 'selectedtelnumber'],
-            'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
+            'note': ['note', 'notes'],
+            'comments': ['comment', 'comments'],
             'is_ToO': ['is_too', 'is too', 'abortobservation', 'abort current observation'],
-            'comments': ['comment', 'comments']
+            'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
         }
         # Sort each list in the dictionary by string length (descending order)
         sorted_required_key_variants = {
@@ -337,11 +381,19 @@ class Alert:
             for key, variants in required_key_variants_lower.items()
         }
         return sorted_required_key_variants
-
 #%%
 if __name__ == '__main__':
     from tcspy.utils.connector import GmailConnector
     G = GmailConnector('7dt.observation.alert@gmail.com')
     #G.login()
-    mail_str = G.readmail()
+    mail_str = G.read_mail()
 # %%
+if __name__ == '__main__':
+    alert = Alert()
+    alert.decode_mail(mail_str[0], match_to_tiles = True, alert_type = 'broker')
+    print(alert.formatted_data)
+
+# %%
+if __name__ == '__main__':
+    tbl = ascii.read('/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv')
+#%%

@@ -31,8 +31,8 @@ class GoogleSheetConnector:
 
     Methods
     =======
-    get_sheet_data(sheet_name, format_): Returns the data in the specified sheet in the specified format.
-    write_sheet_data(sheet_name, data, append): Writes the data to the specified sheet, either by appending or overwriting the existing data.
+    read_sheet(sheet_name, format_): Returns the data in the specified sheet in the specified format.
+    write_sheet(sheet_name, data, append): Writes the data to the specified sheet, either by appending or overwriting the existing data.
     """
     
     def __init__(self,
@@ -67,10 +67,12 @@ class GoogleSheetConnector:
         sheet_list = [sheet.title for sheet in self.doc.worksheets()]
         return sheet_list
     
-    def get_sheet_data(self,
-                       sheet_name : str,
-                       format_ = 'Table' # Table, Dict or pandas
-                       ):
+    def read_sheet(self,
+                   sheet_name : str,
+                   format_ = 'Table', # Table, Dict or pandas
+                   save : bool = False,
+                   save_dir : str = './gsheet_history'
+                   ):
         """
         Returns the data in the specified sheet in the specified format.
 
@@ -117,11 +119,11 @@ class GoogleSheetConnector:
                 
             return values
         
-    def write_sheet_data(self,
-                         sheet_name : str,
-                         data,
-                         append : bool = True,
-                         clear_header : bool = False):
+    def write_sheet(self,
+                    sheet_name : str,
+                    data,
+                    append : bool = True,
+                    clear_header : bool = False):
         """
         Writes the data to the specified sheet, either by appending or overwriting the existing data.
 
@@ -156,7 +158,7 @@ class GoogleSheetConnector:
                 self.clear_sheet(sheet_name = sheet_name, clear_header = True)
             else:
                 self.clear_sheet(sheet_name = sheet_name, clear_header = False)
-            original_data = self.get_sheet_data(sheet_name, format_ = 'pandas')
+            original_data = self.read_sheet(sheet_name, format_ = 'pandas')
             appended_data = pd.concat([original_data, add_data], ignore_index=True, sort=False)
             appended_data = appended_data.replace(np.nan, '', regex=True)
             header_appended = appended_data.columns.values.tolist()
@@ -164,7 +166,7 @@ class GoogleSheetConnector:
             worksheet = self.doc.worksheet(sheet_name)
             worksheet.update([header_appended] + rows_appended)
         else:
-            original_data = self.get_sheet_data(sheet_name, format_ = 'pandas')
+            original_data = self.read_sheet(sheet_name, format_ = 'pandas')
             appended_data = pd.concat([original_data, add_data], ignore_index=True, sort=False)
             appended_data = appended_data.replace(np.nan, '', regex=True)
             header_appended = appended_data.columns.values.tolist()
@@ -179,7 +181,7 @@ class GoogleSheetConnector:
         if clear_header:
             worksheet.clear()
         else:
-            original_data = self.get_sheet_data(sheet_name, format_ = 'pandas')
+            original_data = self.read_sheet(sheet_name, format_ = 'pandas')
             header = original_data.columns.values.tolist()
             worksheet.clear()
             worksheet.update([header])
@@ -198,5 +200,5 @@ if __name__ =='__main__':
     # tbl['gain'] = 0
     # #tbl['count'] = obscount_new
     # tbl['exptime'] = exptime_new
-    gs = GoogleSheetConnector()#.write_sheet_data(sheet_name = '20240809', data  = tbl, append = False)
+    gs = GoogleSheetConnector()#.write_sheet(sheet_name = '20240809', data  = tbl, append = False)
 # %%

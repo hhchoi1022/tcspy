@@ -1,0 +1,2 @@
+|   objname |                RA |                  De | exptime | obsmode | comments | is_ToO | count | priority | gain | binning | obs_starttime | filter | ntelescopes |
+| 101227406 | 240.2100067138672 | -15.930000305175781 |      30 |    Deep |   test 2 |   True |    10 |       50 | 2750 |       1 |               |  g,r,i |           5 |
