@@ -3,7 +3,7 @@ from tcspy.configuration import mainConfig
 from tcspy.devices import SingleTelescope
 from tcspy.devices import MultiTelescopes
 from tcspy.utils import NightSession
-from tcspy.utils import SlackConnector
+from tcspy.utils.connector import SlackConnector
 from tcspy.applications import BiasAcquisition
 from tcspy.applications import DarkAcquisition
 from tcspy.applications import NightObservation

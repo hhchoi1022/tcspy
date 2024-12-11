@@ -167,13 +167,3 @@ class AlertBroker(mainConfig):
         print(f'Targets are inserted to the database.')
         return alert
       
-# %%
-ab = AlertBroker()
-# %%
-self = ab
-alert_key = '241210'
-read_type = 'googlesheet'
-alert_type = 'user'
-max_emails = 1
-mailbox = 'inbox'
-# %%

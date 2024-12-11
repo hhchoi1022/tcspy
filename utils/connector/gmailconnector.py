@@ -273,6 +273,3 @@ class GmailConnector:
                     decoded_subject += part
             return decoded_subject.strip()
         return "No Subject"
-# %%
-A = GmailConnector('7dt.observation.alert@gmail.com', '/Users/hhchoi1022/.config/gmail/python/token_7dt.observation.alert@gmail.com.txt')
-# %%

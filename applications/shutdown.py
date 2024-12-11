@@ -104,10 +104,9 @@ class Shutdown(mainConfig):
         self.is_running = False
 
 # %%
-
-# %%
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
     Shutdown(M, Event()).run(slew = True, 
                              warm = True)
+# %%
