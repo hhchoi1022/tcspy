@@ -71,7 +71,7 @@ class GoogleSheetConnector:
                    sheet_name : str,
                    format_ = 'Table', # Table, Dict or pandas
                    save : bool = False,
-                   save_dir : str = './gsheet_history'
+                   save_dir : str = '../alert_history/googlesheet'
                    ):
         """
         Returns the data in the specified sheet in the specified format.
@@ -92,23 +92,26 @@ class GoogleSheetConnector:
             raise AttributeError(f'{sheet_name} does not exist. Existing sheets are {self._get_sheet_list()}')
         values = worksheet.get_all_values()
         if len(values) > 0:
+            header, rows = values[0], values[1:]
             if format_.upper() == 'PANDAS':
-                header, rows = values[0], values[1:]
-                dataframe = pd.DataFrame(rows, columns = header)
-                return dataframe
+                output = pd.DataFrame(rows, columns = header)
             elif format_.upper() == 'TABLE':
                 header, rows = values[0], values[1:]
-                dataframe = pd.DataFrame(rows, columns = header)
-                tbl = Table.from_pandas(dataframe)
-                return tbl
+                output = Table(np.array(rows), names = header)
             elif format_.upper() == 'DICT':
                 header, rows = values[0], values[1:]
-                dict_value = dict()
-                dict_value['header'] = header
-                dict_value['value'] = rows
-                return dict_value
+                output = dict()
+                output['header'] = header
+                output['value'] = rows
             else:
                 raise AttributeError('Format is not matched(one among ["Pandas","Table","Dict"])')
+            if save:
+                save_dir_for_sheet = os.path.join(save_dir, sheet_name)
+                if not os.path.exists(save_dir_for_sheet):
+                    os.makedirs(save_dir_for_sheet)
+                Table(np.array(rows), names = header).write(f'{os.path.join(save_dir, sheet_name)}.ascii.fixed_width', format = 'ascii.fixed_width', overwrite = True)
+            return output
+            
         else:
             if format_.upper() == 'PANDAS':
                 return pd.DataFrame()

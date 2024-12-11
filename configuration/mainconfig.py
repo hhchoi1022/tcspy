@@ -117,7 +117,7 @@ class mainConfig:
         
         image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
                             FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$",
-                            IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/',
+                            IMAGE_PATH=f'/Users/hhchoi1022/code/obsdata/{self.tel_name}/image/',
                             IMAGE_SAVEHEADER = True,
                             IMAGE_FORMAT = 'FITS'
                             )
@@ -125,14 +125,14 @@ class mainConfig:
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT=f'[%(levelname)s,{self.tel_name}]%(asctime)-15s |%(message)s',
-                             LOGGER_PATH= f'/data2/obsdata/{self.tel_name}/log/')
+                             LOGGER_PATH= f'/Users/hhchoi1022/code/obsdata/{self.tel_name}/log/')
         
         # Share configuration
 
         transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022', 
                                TRANSFER_SERVER_PORTNUM = '8022',
-                               TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
+                               TRANSFER_SOURCE_HOMEDIR = '/Users/hhchoi1022/code/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 8,
@@ -145,7 +145,7 @@ class mainConfig:
                               WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
                               WEATHER_UPDATETIME=60,
-                              WEATHER_PATH= f'/data2/obsdata/weather_history/',
+                              WEATHER_PATH= f'/Users/hhchoi1022/code/obsdata/weather_history/',
                               WEATHER_HUMIDITY=85,
                               WEATHER_RAINRATE=80,
                               WEATHER_SKYMAG=10,
@@ -162,7 +162,7 @@ class mainConfig:
                                     SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_UPDATETIME=60,
-                                    SAFEMONITOR_PATH= f'/data2/obsdata/safetymonitor_history/')
+                                    SAFEMONITOR_PATH= f'/Users/hhchoi1022/code/obsdata/safetymonitor_history/')
         
         target_params = dict(TARGET_MINALT=27,
                              TARGET_MAXALT=90,
@@ -174,11 +174,11 @@ class mainConfig:
                          DB_ID='hhchoi',
                          DB_PWD='gusgh1020!', # gusgh1020! for MCS, lksdf1020 for Lnx
                          DB_NAME='target',
-                         DB_PATH= f'/data2/obsdata/DB_history')
+                         DB_PATH= f'/Users/hhchoi1022/code/obsdata/DB_history')
         
         gmail_params = dict(GMAIL_USERNAME= '7dt.observation.alert@gmail.com',
-                            GMAIL_TOKENPATH = os.path.join(self.path_home, f'.config/gmail/python/token_7dt.observation.alert@gmail.com.txt'),
-                            GMAIL_PATH = '/data2/obsdata/alert_history/gmail')
+                            GMAIL_TOKENPATH = os.path.join(self.path_home, f'.config/gmail/python/token_7dt.observation.alert@gmail.com.txt')
+                            )
         
         slack_params = dict(SLACK_TOKEN = os.path.join(self.path_home, f'.config/slack/slack_token_7dt_obseration_alert.txt'),
                             SLACK_DEFAULT_CHANNEL = 'C07SREPTWFM')
@@ -188,6 +188,19 @@ class mainConfig:
                                   GOOGLESHEET_SCOPE = ['https://spreadsheets.google.com/feeds',
                                                        'https://www.googleapis.com/auth/drive',
                                                        'https://www.googleapis.com/auth/spreadsheets'])
+        
+        alertbroker_params = dict(ALERTBROKER_AUTHUSERS = ['hhchoi1022@gmail.com', # Hyeonho Choi
+                                                           'hhchoi1022@snu.ac.kr', # Hyeonho Choi (2)
+                                                           '7dt.observation.broker@gmail.com', # 7DT ToO web
+                                                           'jhkim.astrosnu@gmail.com', # Ji hoon Kim
+                                                           'myungshin.im@gmail.com',  # Myungshin Im
+                                                           ],
+                                  ALERTBROKER_NORMUSERS = ['hhchoi1022@gmail.com', # Hyeonho Choi
+                                                           'hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
+                                                           'jhkim.astrosnu@gmail.com', # Ji hoon Kim
+                                                           'myungshin.im@gmail.com', # Myungshin Im
+                                                           ],
+                                  ALERTBROKER_PATH = f'/Users/hhchoi1022/code/obsdata/alert_history',)
         
         autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self.path_global,"filtinfo.data")}',
                                 AUTOFOCUS_FOCUSHISTORY_PATH = self.path_global,
@@ -234,6 +247,7 @@ class mainConfig:
         self.make_configfile(gmail_params, filename='Gmail.config', savepath= self.path_global)
         self.make_configfile(slack_params, filename='Slack.config', savepath= self.path_global)
         self.make_configfile(googlesheet_params, filename='GoogleSheet.config', savepath= self.path_global)
+        self.make_configfile(alertbroker_params, filename='AlertBroker.config', savepath= self.path_global)
         self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_global)
         self.make_configfile(observer_params, filename='Observer.config', savepath= self.path_global)
         self.make_configfile(target_params, filename='Target.config', savepath= self.path_global)

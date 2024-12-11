@@ -78,6 +78,9 @@ class Tiles:
         if visualize:
             fig_path = self.visualize_tiles(list_ra, list_dec, matched_coord_indices, innermost_indices, visualize_ncols, visualize_savepath)
             
+        if len(matched_coord_indices) == 0:
+            return Table(), matched_coord_indices, fig_path
+        
         # Reorder based on the order of 'innermost_indices'
         matched_tbl = self.tbl_RIS[np.isin(self.tbl_RIS['id'], innermost_indices)]
         order = {id_: i for i, id_ in enumerate(innermost_indices)}
@@ -225,8 +228,8 @@ if __name__ == "__main__":
     tbl1 = ascii.read('~/Downloads/Subset_White_Dwarfs_with_Matched_Tiles.csv')
     tbl1 = ascii.read('/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv')
 
-    list_ra = tbl1['ra']
-    list_dec = tbl1['dec']
+    list_ra = [tbl1[0]['ra']]#tbl1['ra'][0]
+    list_dec = [tbl1[0]['dec']]#tbl1['dec'][0]
     #list_ra = [30]
     #list_dec = [-40]
     tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, visualize=False, visualize_ncols=5)  

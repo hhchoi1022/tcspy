@@ -135,13 +135,13 @@ class GmailConnector:
         except Exception as e:
             print(f"Failed to send email: {e}")
     
-    def read_mail(self, mailbox: str = 'inbox', max_emails: int = 10, since_days : float = 5, save : bool = True, save_dir : str = '../alert/gmail') -> List[Dict]:
+    def read_mail(self, mailbox: str = 'inbox', max_numbers: int = 10, since_days : float = 5, save : bool = True, save_dir : str = '../alert_history/gmail') -> List[Dict]:
         """
         Read emails and save attachments.
         
         Args:
             mailbox (str): The mailbox to read from.
-            max_emails (int): The maximum number of emails to fetch.
+            max_numbers (int): The maximum number of emails to fetch.
             save_dir (str): Directory to save attachments.
 
         Returns:
@@ -163,7 +163,7 @@ class GmailConnector:
 
             status, data = self.server_imap.search(None, search_criteria)
             email_ids = data[0].split()
-            for email_id in email_ids[-max_emails:]:
+            for email_id in email_ids[-max_numbers:]:
                 # Fetch each email
                 status, data = self.server_imap.fetch(email_id, '(RFC822)')
                 raw_email = data[0][1]

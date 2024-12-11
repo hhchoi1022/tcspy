@@ -16,9 +16,8 @@ class Alert:
     
     def __init__(self):
         self.alert_data = None # raw data of the alert
-        self.alert_type = None # mail_broker, mail_user, googlesheet, GW
+        self.alert_type = None # mail_broker, mail_user, googlesheet, gw, table
         self.formatted_data = None # formatted data of the alert
-        self.received_time = None # Time when the alert is received
         self.is_decoded = False # after decoding the alert data, set it to True
         self.is_inputted = False # after inputting the alert data to the scheduler, set it to True
         self.is_matched_to_tiles = False
@@ -54,40 +53,6 @@ class Alert:
             dec = [dec]
         tile, matched_indices, _ = self.tiles.find_overlapping_tiles(ra, dec, visualize = False)
         return tile, matched_indices
-    
-    def save_history(self, save_dir : str):
-        if not self.alert_data or not self.received_time:
-            raise ValueError('The alert data is not read or received yet')
-        
-        receive_dt = Time(self.received_time)
-        date_str = receive_dt.strftime('%Y%m%d_%H%M%S')
-        dirname = os.path.join(save_dir, date_str)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-        # Save alert_data
-        if self.alert_data:
-            alert_data_tbl = Table()
-            # If the value of the dict is list, convert it to comma-separated string
-            for key, value in self.alert_data.items():
-                if isinstance(value, list):
-                    value = ','.join(value).replace(" ", "")
-                alert_data_tbl[key] = [value]
-            alert_data_tbl.write(os.path.join(dirname, 'alert_raw.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
-        
-        # Save formatted_data
-        if self.formatted_data:
-            self.formatted_data.write(os.path.join(dirname, 'alert_formatted.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
-        
-        # Save the alert status as json
-        alert_status = dict()
-        alert_status['saved_time'] = Time.now().isot
-        alert_status['received_time'] = self.received_time
-        alert_status['is_decoded'] = self.is_decoded
-        alert_status['is_inputted'] = self.is_inputted
-        alert_status['is_matched_to_tiles'] = self.is_matched_to_tiles
-        with open(os.path.join(dirname, 'alert_status.json'), 'w') as f:
-            json.dump(alert_status, f, indent = 4)
         
     def decode_gsheet(self, tbl : Table, match_to_tiles : bool = False):
         """
@@ -97,9 +62,8 @@ class Alert:
         - tbl: astropy.Table, the Google Sheet table
         
         """
-        self.alert_data = tbl
+        self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'googlesheet'
-        self.received_time = Time.now().isot
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -140,9 +104,8 @@ class Alert:
         - tbl: astropy.Table, the Google Sheet table
         
         """
-        self.alert_data = tbl
+        self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'table'
-        self.received_time = Time.now().isot
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -184,9 +147,8 @@ class Alert:
         
         """
         # Read the alert data from the file
-        self.alert_data = tbl
-        self.alert_type = 'GW'
-        self.received_time = Time.now().isot
+        self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
+        self.alert_type = 'gw'
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -222,9 +184,9 @@ class Alert:
         
         """
         # Read the alert data from the attachment
-        date_str = mail_dict['Date']
-        parsed_date = datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
-        self.received_time = Time(parsed_date, format= 'datetime').isot
+        #date_str = mail_dict['Date']
+        #parsed_date = datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
+        #self.received_time = Time(parsed_date, format= 'datetime').isot
 
         # If Attachment is not present, read the body
         alert_dict_normalized = dict()
@@ -248,7 +210,7 @@ class Alert:
             except:
                 raise ValueError(f'Error reading the alert data')
         self.alert_data = alert_dict_normalized
-        self.alert_type = 'mail_' + alert_type
+        self.alert_type = 'gmail'
         
         # Set/Modify the columns to the standard format
         formatted_dict = dict()

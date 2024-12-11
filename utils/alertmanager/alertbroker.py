@@ -5,8 +5,11 @@ from tcspy.utils.alertmanager import Alert
 from tcspy.utils.connector import GmailConnector
 from tcspy.utils.connector import GoogleSheetConnector
 from tcspy.utils.databases import DB
-import datetime
-import os
+from astropy.table import Table
+from astropy.time import Time
+from datetime import datetime, timezone
+import os, json
+from typing import List
 #%%
 class AlertBroker(mainConfig):
     
@@ -47,6 +50,35 @@ class AlertBroker(mainConfig):
             print('Setting up DatabaseConnector...')
             self.DB_Daily = DB().Daily   
     
+    def save_alert_info(self, 
+                        alert : Alert,
+                        alert_key : str = None):
+        if not alert.alert_data:
+            raise ValueError('The alert data is not read or received yet')
+        
+        dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, alert_key)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        # Save alert_data
+        if alert.alert_data:
+            with open(os.path.join(dirname, 'alert_data.json'), 'w') as f:
+                json.dump(alert.alert_data, f, indent = 4)
+
+        # Save formatted_data
+        if alert.formatted_data:
+            alert.formatted_data.write(os.path.join(dirname, 'alert_formatted.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
+        
+        # Save the alert status as json
+        alert_status = dict()
+        alert_status['update_time'] = Time.now().isot
+        alert_status['is_decoded'] = alert.is_decoded
+        alert_status['is_inputted'] = alert.is_inputted
+        alert_status['is_matched_to_tiles'] = alert.is_matched_to_tiles
+        with open(os.path.join(dirname, 'alert_status.json'), 'w') as f:
+            json.dump(alert_status, f, indent = 4)
+        
+        
     def write_gwalert(self,
                       file_path : str, # Path of the alert file (Astropy Table readable)
                       write_type : str = 'googlesheet', # googlesheet or table
@@ -75,7 +107,7 @@ class AlertBroker(mainConfig):
         formatted_data.sort('priority')
         if max_size:
             formatted_data = formatted_data[:max_size]
-        today_str = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        today_str = datetime.now().strftime('%Y%m%d_%H%M%S')
         sheet_name = f'{today_str}_{suffix_sheet_name}'
         
         if write_type.upper() == 'GOOGLESHEET':
@@ -102,58 +134,102 @@ class AlertBroker(mainConfig):
         else:
             raise ValueError(f'Invalid send_type: {write_type}')
 
+    def read_gwalert(self,
+                     path_alert : str):
+        def get_received_time():
+            now = Time.now()
+            now_str = now.datetime.strftime('%Y%m%d_%H%M%S')
+            return now_str
+        
+        # Read the alert file
+        alert = Alert()
+        print('Reading the alert from GW localization Table...')
+        try:
+            alert_tbl = ascii.read(path_alert)
+            alert.decode_gwalert(alert_tbl)
+        except:
+            raise RuntimeError(f'Failed to read and decode the alert')
+        finally:
+            self.save_alert_info(alert = alert, alert_key = get_received_time())
+        pass
+    
     def read_tbl(self,
-                 path_tbl : str):
+                 path_tbl : str,
+                 match_to_tiles : bool = False):
+        
+        def get_received_time():
+            now = Time.now()
+            now_str = now.datetime.strftime('%Y%m%d_%H%M%S')
+            return now_str
+        
+        # Read the alert file
+        alert = Alert()
+        print('Reading the alert from Astropy Table...')
+        try:
+            alert_tbl = ascii.read(path_tbl)
+            alert.decode_tbl(alert_tbl, match_to_tiles = match_to_tiles)
+        except:
+            raise RuntimeError(f'Failed to read and decode the alert')
+        finally:
+            self.save_alert_info(alert = alert, alert_key = get_received_time())
         pass
 
     def read_mail(self, 
                   mailbox : str = 'inbox',
                   since_days : int = 1,
-                  alert_type : str = 'user', #user or broker
+                  max_numbers : int = 10,
                   match_to_tiles : bool = False
-                  ):
-        alert = Alert()
+                  ) -> List[Alert]:
+        
+        def get_received_time(mail_dict):
+            parsed_date = datetime.strptime(mail_dict['Date'], '%a, %d %b %Y %H:%M:%S %z')
+            utc_date = parsed_date.astimezone(timezone.utc)
+            date_str = utc_date.strftime('%Y%m%d_%H%M%S')
+            return date_str
+        
         print('Reading the alert from GmailConnector...')
         self._set_gmail()
         try:
-            if alert_type.upper() == 'USER':
-                maillist = self.gmail.read_mail(mailbox = mailbox, max_emails = 10, since_days = since_days, save = True, save_dir = self.config['GMAIL_PATH'])
-                if len(maillist) == 0:
-                    raise ValueError('No new mail is found.')
-                recent_mail_dict = maillist[-1]
-                alert.decode_mail(recent_mail_dict, match_to_tiles = match_to_tiles, alert_type= alert_type )
-                alert.save_history(save_dir = self.config['GMAIL_PATH'])
-            elif alert_type.upper() == 'BROKER':
-                maillist = self.gmail.read_mail(mailbox = mailbox, max_emails = 10, since_days = since_days, save = True, save_dir = self.config['GMAIL_PATH'])
-                if len(maillist) == 0:
-                    raise ValueError('No new mail is found.')
-
-                recent_mail_dict = maillist[-1]
-                alert.decode_mail(recent_mail_dict, match_to_tiles = match_to_tiles, alert_type= alert_type )
-                alert.save_history(save_dir = self.config['GMAIL_SAVEPATH'])
+            alertlist = []
+            maillist = self.gmail.read_mail(mailbox = mailbox, max_numbers = max_numbers, since_days = since_days, save = True, save_dir = os.path.join(self.config['ALERTBROKER_PATH'], 'gmail'))
+            if len(maillist) == 0:
+                raise ValueError('No new mail is found.')
             else:
-                raise ValueError(f'Invalid alert_type: {alert_type}')
+                for mail_dict in maillist:
+                    alert = Alert()
+                    try:
+                        alert.decode_mail(mail_dict, match_to_tiles = match_to_tiles)
+                        alertlist.append(alert)
+                    except:
+                        pass
+                    finally:
+                        self.save_alert_info(alert = alert, alert_key = get_received_time(mail_dict))
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
-        return alert
+        print('Alert is read from GmailConnector.')
+        return alertlist
     
     def read_sheet(self,
                    sheet_name : str, # Sheet name
-                   ):
+                   match_to_tiles : bool = False
+                   )-> List[Alert]:
         # Read the alert file
         alert = Alert()
         print('Reading the alert from GoogleSheetConnector...')
         self._set_googlesheet()
         try:
-            alert_tbl = self.googlesheet.read_sheet(sheet_name = sheet_name)
-            alert.decode_gsheet(tbl = alert_tbl)
+            alert_tbl = self.googlesheet.read_sheet(sheet_name = sheet_name, format_ = 'Table', save = True, save_dir = os.path.join(self.config['ALERTBROKER_PATH'], 'googlesheet'))
+            alert.decode_gsheet(tbl = alert_tbl, match_to_tiles = match_to_tiles)
         except:
-            raise RuntimeError(f'Failed to read and decode the alert: {alert_key}')
+            pass
+        finally:
+            self.save_alert_info(alert = alert, alert_key = sheet_name)
         print('Alert is read from GoogleSheetConnector.')
         return alert
     
     def to_DB(self,
-              alert : Alert):
+              alert : List[Alert],
+              do_alert_to_users : bool = False):
         """
         Send the alert to the database.
         
@@ -166,4 +242,20 @@ class AlertBroker(mainConfig):
         alert.is_inputted = True
         print(f'Targets are inserted to the database.')
         return alert
+    
+    @property
+    def users(self):
+        users_dict = dict()
+        users_dict['authorized'] = self.config['AUTHORIZED_USERS']
+        users_dict['brok'] = self.config['BLOCKED_USERS']
+        
+        return self.config['AUTHORIZED_USERS']
       
+# %%
+if __name__ == '__main__':
+    self = AlertBroker()
+    since_days = 3
+    max_numbers = 5
+    match_to_tiles = True
+    
+# %%
