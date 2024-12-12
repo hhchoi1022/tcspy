@@ -157,6 +157,7 @@ class AppScheduler(mainConfig):
             self.post_slack_thread(message = f'FlatAcquisition is finished: {end_time}', alert_slack = alert_slack)
 
     def run_shutdown(self,
+                     fanoff : bool = True,
                      slew : bool = True,
                      warm : bool = True,
                      alert_slack : bool = True):
@@ -164,7 +165,7 @@ class AppScheduler(mainConfig):
                 start_time = time.strftime("%H:%M:%S", time.localtime())
                 self.post_slack_thread(message = f'Shutdown is triggered: {start_time}', alert_slack = alert_slack)
                 action = Shutdown(self.multitelescopes, abort_action = self.abort_action)
-                action.run(slew = slew, warm = warm)
+                action.run(fanoff = fanoff, slew = slew, warm = warm)
                 while action.is_running:
                     time.sleep(1)
                 end_time = time.strftime("%H:%M:%S", time.localtime())
@@ -219,7 +220,7 @@ if __name__ == '__main__':
     # Dark
     A.schedule_app(A.run_dark, A.obsnight.sunrise_flat + 40 * u.minute, count = 9, exptime = 100, binning = 1, gain = 2750, alert_slack = alert_slack)
     # Shutdown
-    A.schedule_app(A.run_shutdown, A.obsnight.sunrise_flat + 1 * u.hour, slew = True, warm = True, alert_slack = alert_slack)
+    A.schedule_app(A.run_shutdown, A.obsnight.sunrise_flat + 1 * u.hour, fanoff = fanoff, slew = True, warm = True, alert_slack = alert_slack)
     A.set_alert_sender(post_schedule= True)
     A.show_schedule()
     A.run_schedule()

@@ -29,15 +29,51 @@ class Shutdown(mainConfig):
         self.abort_action = abort_action
         self.is_running = False
     
-    def run(self, slew = True, warm = True):
-        startup_thread = Thread(target=self._process, kwargs = dict(slew = slew, warm = warm))
+    def run(self, fanoff = True, slew = True, warm = True):
+        startup_thread = Thread(target=self._process, kwargs = dict(fanoff = fanoff, slew = slew, warm = warm))
         startup_thread.start()
     
     def abort(self):
         self.abort_action.set()
 
-    def _process(self, slew, warm):
+    def _process(self, fanoff = True, slew = True, warm = True):
         self.is_running = True
+        
+        if fanoff:
+            # Focuser fans on
+            params_fanson = []
+            for telescope_name, telescope in self.multitelescopes.devices.items():
+                params_fanson.append(dict())
+            
+            multi_fanson = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_fanson, function = FansOff, abort_action = self.abort_action)
+            result_multi_fanson = multi_fanson.shared_memory
+            
+            ## Run
+            try:
+                multi_fanson.run()
+            except AbortionException:
+                self.is_running = False
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+
+            ## Check result
+            for tel_name, result in result_multi_fanson.items():
+                is_succeeded = result_multi_fanson[tel_name]['succeeded']
+                if not is_succeeded:
+                    self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Fans operation failure.')
+                    self.multitelescopes.remove(tel_name)        
+
+            ## Check len(devices) > 0
+            if len(self.multitelescopes.devices) == 0:
+                self.is_running = False
+                raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
+            
+            ## Check abort_action
+            if self.abort_action.is_set():
+                self.is_running = False
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        
+        
         if slew:
             # Telescope slewing
             params_slew = []
@@ -107,6 +143,7 @@ class Shutdown(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    Shutdown(M, Event()).run(slew = True, 
+    Shutdown(M, Event()).run(fanoff =True,
+                             slew = True, 
                              warm = True)
 # %%

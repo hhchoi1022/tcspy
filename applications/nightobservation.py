@@ -439,7 +439,7 @@ class NightObservation(mainConfig):
                 self._ToO_abort = Event()
                 #self.is_ToO_triggered = True
                 if not self.is_shutdown_triggered:
-                    Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
+                    Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
                     self.is_shutdown_triggered = True
             time.sleep(0.5)
         while len(self.action_queue) > 0:
@@ -539,7 +539,7 @@ class NightObservation(mainConfig):
                 time.sleep(200)
                 self._observation_abort = Event()
                 if not self.is_shutdown_triggered:
-                    Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
+                    Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
                     self.is_shutdown_triggered = True
             time.sleep(0.5)
         if len(self.action_queue) > 0:

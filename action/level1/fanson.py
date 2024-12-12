@@ -94,6 +94,3 @@ class FansOn(Interface_Runnable, Interface_Abortable):
         self.is_running = False
         self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
-
-# %%
-

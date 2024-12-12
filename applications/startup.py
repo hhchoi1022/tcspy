@@ -58,13 +58,15 @@ class Startup(mainConfig):
         self.is_running = False
     
     def run(self, 
+            connect: bool = False,
+            fanon : bool = True,
             home : bool = True, 
             slew : bool = True,    
             cool : bool = True):
         """
         Starts the startup process in a separate thread.
         """
-        startup_thread = Thread(target=self._process, kwargs = dict(home = home, slew = slew, cool = cool))
+        startup_thread = Thread(target=self._process, kwargs = dict(connect = connect, fanon = fanon, home = home, slew = slew, cool = cool))
         startup_thread.start()
 
     def abort(self):
@@ -74,7 +76,7 @@ class Startup(mainConfig):
         self.abort_action.set()
         self.is_running = False
     
-    def _process(self, connect = False, home = True, slew = True, cool = True):
+    def _process(self, connect = False, fanon = True, home = True, slew = True, cool = True):
         """
         Performs the necessary steps to startup the telescopes.
 
@@ -109,6 +111,40 @@ class Startup(mainConfig):
                     self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Connection failure.')
                     self.multitelescopes.remove(tel_name)        
             
+            ## Check len(devices) > 0
+            if len(self.multitelescopes.devices) == 0:
+                self.is_running = False
+                raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
+            
+            ## Check abort_action
+            if self.abort_action.is_set():
+                self.is_running = False
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        
+        if fanon:
+            # Focuser fans on
+            params_fanson = []
+            for telescope_name, telescope in self.multitelescopes.devices.items():
+                params_fanson.append(dict())
+            
+            multi_fanson = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_fanson, function = FansOn, abort_action = self.abort_action)
+            result_multi_fanson = multi_fanson.shared_memory
+            
+            ## Run
+            try:
+                multi_fanson.run()
+            except AbortionException:
+                self.is_running = False
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+
+            ## Check result
+            for tel_name, result in result_multi_fanson.items():
+                is_succeeded = result_multi_fanson[tel_name]['succeeded']
+                if not is_succeeded:
+                    self.multitelescopes.log_dict[tel_name].critical(f'[{type(self).__name__}] is failed: Fans operation failure.')
+                    self.multitelescopes.remove(tel_name)        
+
             ## Check len(devices) > 0
             if len(self.multitelescopes.devices) == 0:
                 self.is_running = False
