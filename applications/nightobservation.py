@@ -547,7 +547,7 @@ class NightObservation(mainConfig):
         time.sleep(10)
         self.is_running = False
         print('observation finished', Time.now())        
-        Shutdown(self.multitelescopes, self.abort_action).run(slew = True, warm = False)
+        Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished')
         
     def _put_action(self, target, action, telescopes, action_id):

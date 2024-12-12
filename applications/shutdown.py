@@ -14,6 +14,7 @@ from tcspy.utils.exception import *
 
 from tcspy.action.level1 import Warm
 from tcspy.action.level1 import SlewAltAz
+from tcspy.action.level1 import FansOff
 from tcspy.action import MultiAction
 
 #%%

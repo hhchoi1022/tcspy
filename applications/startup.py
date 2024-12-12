@@ -14,6 +14,7 @@ from tcspy.action.level1 import Cool
 from tcspy.action.level1 import Connect
 from tcspy.action.level1 import Home
 from tcspy.action.level1 import SlewAltAz
+from tcspy.action.level1 import FansOn
 from tcspy.action import MultiAction
 
 #%%
@@ -264,4 +265,8 @@ class Startup(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    Startup(M, Event()).run()
+    Startup(M, Event()).run(connect = False,
+                            fanon = True,                    
+                            home = True,
+                            slew = True,
+                            cool = True)
