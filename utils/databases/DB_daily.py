@@ -363,6 +363,33 @@ class DB_Daily(mainConfig):
         file_abspath = os.path.join(self.config['DB_PATH'], f'Daily_%.4d%.2d%.2d.ascii_fixed_width' % (dt_ut.year, dt_ut.month, dt_ut.day))
         tbl.write(file_abspath, format = 'ascii.fixed_width', overwrite = True)
         print(f'Saved: {file_abspath}')
+        
+    def export_to_csv(self, save_type : str = 'status' #status or history
+                      ):
+        """
+
+        """
+        try:
+            tbl = self.data
+            if save_type.lower() == 'history':
+                dt_ut = Time.now().datetime     
+                if not os.path.exists(self.config['DB_HISTORYPATH']):
+                    os.makedirs(self.config['DB_HISTORYPATH'], exist_ok = True) 
+                file_abspath =  os.path.join(self.config['DB_HISTORYPATH'], f'Daily_%.4d%.2d%.2d.{self.config["DB_HISTORYFORMAT"]}' % (dt_ut.year, dt_ut.month, dt_ut.day))
+                tbl.write(file_abspath, format = self.config['DB_HISTORYFORMAT'], overwrite = True)
+                print(f"Exported Daily table to {file_abspath}")
+
+            elif save_type.lower() == 'status':
+                if not os.path.exists(self.config['DB_STATUSPATH']):
+                    os.makedirs(self.config['DB_STATUSPATH'], exist_ok = True)
+                file_abspath = os.path.join(self.config['DB_STATUSPATH'], f'DB_Daily.{self.config["DB_STATUSFORMAT"]}')
+                tbl.write(file_abspath, format= self.config['DB_STATUSFORMAT'], overwrite=True)
+                print(f"Exported Daily table to {file_abspath}")
+            
+            else:
+                raise ValueError(f"Invalid save_type: {save_type}")
+        except Exception as e:
+            print(f"Failed to export data: {e}")
     
     def _scorer(self,
                 utctime : Time,

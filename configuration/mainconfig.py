@@ -174,7 +174,10 @@ class mainConfig:
                          DB_ID='hhchoi',
                          DB_PWD='gusgh1020!', # gusgh1020! for MCS, lksdf1020 for Lnx
                          DB_NAME='target',
-                         DB_PATH= f'/data2/obsdata/DB_history')
+                         DB_HISTORYPATH= f'/data2/obsdata/DB_history',
+                         DB_HISTORYFORMAT = 'ascii.fixed_width',
+                         DB_STATUSPATH = f'{os.path.join(self.path_home,".tcspy")}',
+                         DB_STATUSFORMAT = 'ascii')
         
         gmail_params = dict(GMAIL_USERNAME= '7dt.observation.alert@gmail.com',
                             GMAIL_TOKENPATH = os.path.join(self.path_home, f'.config/gmail/python/token_7dt.observation.alert@gmail.com.txt')
