@@ -25,7 +25,7 @@ class DataTransferManager(mainConfig):
         self.is_running = False
         self.too_last_seen = None
         
-    def start_monitoring(self, ordinary_file_key = '*/image/*', ToO_file_key = '*/image/*_ToO', inactivity_period = 1800, tar = True, protocol = 'gridftp'):
+    def start_monitoring(self, ordinary_file_key = '*/image/*', ToO_file_key = '*/image/*_ToO', inactivity_period = 1800, save_hash = True, tar = True, transfer = True, move_and_clean = True, protocol = 'gridftp'):
         """Monitor files and initiate transfers."""
         print(f'Monitoring started since {Time.now().isot}')
         while True:
@@ -36,12 +36,12 @@ class DataTransferManager(mainConfig):
                 self.transfer_ordinary_files(ordinary_file_key = ordinary_file_key, tar = tar, protocol = protocol)
 
             # Check for ToO file transfer based on inactivity (no new files for 30 minutes)
-            self.transfer_ToO_files(inactivity_period = inactivity_period, ToO_file_key = ToO_file_key, tar = tar, protocol = protocol)
+            self.transfer_ToO_files(inactivity_period = inactivity_period, ToO_file_key = ToO_file_key, save_hash= save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean, protocol = protocol)
 
             # Sleep for a minute before checking again
             time.sleep(60)
 
-    def transfer_ordinary_files(self, ordinary_file_key = '*/image/*', tar = True, protocol = 'gridftp'):
+    def transfer_ordinary_files(self, ordinary_file_key = '*/image/*', save_hash = True, tar = True, transfer = True, move_and_clean = True, protocol = 'gridftp'):
         """Transfer ordinary files at 8 AM."""
         # Transfer all files with ordinary criteria
         print(f"Ordinary file transfer triggered at {Time.now().isot}")
@@ -51,9 +51,9 @@ class DataTransferManager(mainConfig):
             for folder in folder_list:
                 key = os.path.join(os.path.dirname(ordinary_file_key), folder)
                 print('Transferring folder:', key)
-                self.run(key = key, tar = tar, transfer = True, move_and_clean = True, protocol = protocol, thread = False)
+                self.run(key = key, save_hash = save_hash, tar = tar, transfer = True, move_and_clean = True, protocol = protocol, thread = False)
         
-    def transfer_ToO_files(self, inactivity_period, ToO_file_key = '*/image/*_ToO', tar = True, protocol = 'gridftp'):
+    def transfer_ToO_files(self, inactivity_period, ToO_file_key = '*/image/*_ToO', save_hash = True, tar = True, transfer = True, move_and_clean = True, protocol = 'gridftp'):
         """Transfer ToO files after 30 minutes of inactivity."""
         too_files = glob.glob(os.path.join(self.source_homedir, ToO_file_key, '*'))
         folder_list = set([os.path.basename(os.path.dirname(file_)) for file_ in too_files])
@@ -69,12 +69,13 @@ class DataTransferManager(mainConfig):
                 for folder in folder_list:
                     key = os.path.join(os.path.dirname(ToO_file_key), folder)
                     print(f"Transferring ToO folder: {key}")
-                    self.run(key=key, tar = tar, protocol = protocol, thread=False)
+                    self.run(key=key, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean, protocol = protocol, thread=False)
                     self.too_last_seen = None
         
     def run(self, 
             key: str = '*/image/20240515', 
             output_file_name: str = None, 
+            save_hash : bool = True,
             tar : bool = True,
             transfer : bool = True,
             move_and_clean : bool = True,
@@ -82,15 +83,15 @@ class DataTransferManager(mainConfig):
             thread = True):
         if thread:
             if protocol == 'hpnscp':
-                self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name, tar = tar, transfer = transfer, move_and_clean = move_and_clean))
+                self.transfer_thread = Thread(target=self.gridFTP_transfer, kwargs=dict(key = key, output_file_name = output_file_name, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean))
             else:            
-                self.transfer_thread = Thread(target=self.hpnscp_transfer, kwargs=dict(key = key, output_file_name = output_file_name, tar = tar, transfer = transfer, move_and_clean = move_and_clean))
+                self.transfer_thread = Thread(target=self.hpnscp_transfer, kwargs=dict(key = key, output_file_name = output_file_name, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean))
             self.transfer_thread.start()
         else:
             if protocol == 'hpnscp':
-                self.hpnscp_transfer(key = key, output_file_name= output_file_name, tar = tar, transfer = transfer, move_and_clean = move_and_clean)
+                self.hpnscp_transfer(key = key, output_file_name= output_file_name, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean)
             else:
-                self.gridFTP_transfer(key = key, output_file_name= output_file_name, tar = tar, transfer = transfer, move_and_clean = move_and_clean)
+                self.gridFTP_transfer(key = key, output_file_name= output_file_name, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean)
         
     def abort(self):
         if self.process and self.process.poll() is None:
@@ -109,10 +110,13 @@ class DataTransferManager(mainConfig):
     def gridFTP_transfer(self,
                          key : str = '*/image/20240515',
                          output_file_name : str =  None,
+                         save_hash: bool = True,
                          tar : bool = True,
                          transfer : bool = True,
                          move_and_clean : bool = True):
         self.is_running = True
+        if save_hash:
+            self.generate_and_save_hash(source_file_key=key)
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
         verbose_command = ''
@@ -146,11 +150,14 @@ class DataTransferManager(mainConfig):
     def hpnscp_transfer(self,
                         key : str = '*/image/20240503',
                         output_file_name : str = None,
+                        save_hash: bool = True,
                         tar : bool = True,
                         transfer : bool = True,
                         move_and_clean : bool = True
                         ):
         self.is_running = True
+        if save_hash:
+            self.generate_and_save_hash(source_file_key=key)
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
         if tar:
@@ -177,6 +184,46 @@ class DataTransferManager(mainConfig):
             self.move_to_archive_and_cleanup(key, source_path)
         self.process = None
         self.is_running = False
+
+    def generate_and_save_hash(self, source_file_key: str) -> None:
+        """
+        Generates SHA-256 hashes for all files matching the given pattern
+        and saves each hash as a separate file in the same directory.
+
+        Parameters:
+        source_file_key (str): Glob pattern to match source files (e.g., '7DT/*.fits').
+
+        Returns:
+        None
+        """
+        import hashlib
+
+        try:
+            # Match all files using the provided pattern
+            source_keys = os.path.join(self.source_homedir, source_file_key)
+            file_paths = glob.glob(source_keys)
+            if not file_paths:
+                raise ValueError(f"No files matched the pattern: {source_file_key}")
+
+            for file_path in file_paths:
+                hasher = hashlib.sha256()
+                with open(file_path, 'rb') as file:
+                    # Read the file in chunks to handle large files efficiently
+                    for chunk in iter(lambda: file.read(4096), b""):
+                        hasher.update(chunk)
+                
+                # Generate the hash
+                file_hash = hasher.hexdigest()
+                
+                # Save the hash to a file in the same directory
+                hash_file_path = f"{file_path}.hash"
+                with open(hash_file_path, 'w') as hash_file:
+                    hash_file.write(file_hash)
+                
+                print(f"Hash generated and saved for: {file_path} -> {hash_file_path}")
+
+        except Exception as e:
+            raise RuntimeError(f"An error occurred while generating and saving hashes: {str(e)}")
 
     def tar(self,
             source_file_key : str,
