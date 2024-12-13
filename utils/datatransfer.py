@@ -11,6 +11,8 @@ from tqdm import tqdm
 import re
 from datetime import datetime
 import time
+from collections import defaultdict
+
 #%%
 class DataTransferManager(mainConfig):
     
@@ -200,27 +202,41 @@ class DataTransferManager(mainConfig):
 
         try:
             # Match all files using the provided pattern
-            source_keys = os.path.join(self.source_homedir, source_file_key)
+            source_keys = os.path.join(self.source_homedir, source_file_key, '*')
             file_paths = glob.glob(source_keys)
             if not file_paths:
                 raise ValueError(f"No files matched the pattern: {source_file_key}")
+            telescope_path_dict = defaultdict(list)  # Initialize a dictionary with lists as default values
+            pattern = r'7DT\d{2}'  # Regex to match telescope names like 7DT12, 7DT01
 
-            for file_path in file_paths:
-                hasher = hashlib.sha256()
-                with open(file_path, 'rb') as file:
-                    # Read the file in chunks to handle large files efficiently
-                    for chunk in iter(lambda: file.read(4096), b""):
-                        hasher.update(chunk)
+            # Divide the files into lists based on the telescope name
+            for path in file_paths:
+                match = re.search(pattern, path)
+                if match:
+                    telescope_name = match.group()
+                    telescope_path_dict[telescope_name].append(path)  
+                              
+            for tel_name, file_paths in telescope_path_dict.items():
+                hashlist = []
+                filenamelist = []
+                for file_path in tqdm(file_paths, desc = f'Generating hashs of {tel_name} files...'):
+                    hasher = hashlib.sha256()
+                    with open(file_path, 'rb') as file:
+                        # Read the file in chunks to handle large files efficiently
+                        for chunk in iter(lambda: file.read(4096), b""):
+                            hasher.update(chunk)
                 
-                # Generate the hash
-                file_hash = hasher.hexdigest()
-                
+                    # Generate the hash
+                    file_hash = hasher.hexdigest()
+                    hashlist.append(file_hash)
+                    filenamelist.append(os.path.basename(file_path))
+
                 # Save the hash to a file in the same directory
-                hash_file_path = f"{file_path}.hash"
+                hash_file_path = f"{os.path.join(os.path.dirname(file_path),'allfiles.hash')}"
                 with open(hash_file_path, 'w') as hash_file:
-                    hash_file.write(file_hash)
-                
-                print(f"Hash generated and saved for: {file_path} -> {hash_file_path}")
+                    for hash_, filename in zip(hashlist, filenamelist):
+                        hash_file.write(f"{hash_} {filename}\n")
+                    print(f"Hash generated and saved for: {hash_file_path} -> {hash_file_path}")
 
         except Exception as e:
             raise RuntimeError(f"An error occurred while generating and saving hashes: {str(e)}")
@@ -326,18 +342,18 @@ class DataTransferManager(mainConfig):
 # %%
 if __name__ == '__main__':
     A = DataTransferManager()
-    # import time
-    # A.run(key = '*/image/2024-12-02_gain2750', tar = True, transfer = True, move_and_clean = True, thread = False)
+    import time
+    A.run(key = '*/image/2024-12-12_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
     # time.sleep(600)
     # A.run(key = '*/image/2024-12-03_gain2750', tar = True, transfer = True, move_and_clean = True, thread = False)
 
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
-    A.start_monitoring(
-        ordinary_file_key='*/image/*',   # Adjust these parameters as needed
-        ToO_file_key='*/image/*_ToO',
-        inactivity_period=1800,             # 30 minutes of inactivity
-        tar=True,                        # Compress files into tar
-        protocol='gridftp'               # File transfer protocol
-    )
+    # A.start_monitoring(
+    #     ordinary_file_key='*/image/*',   # Adjust these parameters as needed
+    #     ToO_file_key='*/image/*_ToO',
+    #     inactivity_period=1800,             # 30 minutes of inactivity
+    #     tar=True,                        # Compress files into tar
+    #     protocol='gridftp'               # File transfer protocol
+    # )
 
 # %%
