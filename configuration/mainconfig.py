@@ -176,7 +176,7 @@ class mainConfig:
                          DB_NAME='target',
                          DB_HISTORYPATH= f'/data2/obsdata/DB_history',
                          DB_HISTORYFORMAT = 'ascii.fixed_width',
-                         DB_STATUSPATH = f'{os.path.join(self.path_home,".tcspy")}',
+                         DB_STATUSPATH = f'{os.path.join(self.path_home,".tcspy", "sync")}',
                          DB_STATUSFORMAT = 'ascii')
         
         gmail_params = dict(GMAIL_USERNAME= '7dt.observation.alert@gmail.com',
@@ -203,9 +203,11 @@ class mainConfig:
                                                            'jhkim.astrosnu@gmail.com', # Ji hoon Kim
                                                            'myungshin.im@gmail.com', # Myungshin Im
                                                            ],
-                                  ALERTBROKER_PATH = f'/data2/obsdata/alert_history',)
+                                  ALERTBROKER_PATH = f'/data2/obsdata/alert_history',
+                                  ALERTBROKER_STATUSPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "alert")}'
+                                )
         
-        autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self.path_home, ".tcspy", "filtinfo.data")}',
+        autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self.path_home, ".tcspy", "sync", "filtinfo.dict")}',
                                 AUTOFOCUS_FOCUSHISTORY_PATH = self.path_global,
                                 AUTOFOCUS_TOLERANCE = 45)
         
@@ -219,7 +221,7 @@ class mainConfig:
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "specmode/u10/")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/u10/")}')
         
         startup_params = dict(STARTUP_ALT = 30,
                               STARTUP_AZ = 90,
@@ -236,7 +238,7 @@ class mainConfig:
                                    NIGHTSESSION_SUNALT_OBSERVATION = -18,
                                    NIGHTSESSION_SUNALT_SHUTDOWN = 0)
         
-        multitelescopes_params = dict(MULTITELESCOPES_FILE = f"{os.path.join(self.path_home, '.tcspy', 'multitelescopes.data')}")
+        multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_home, ".tcspy", "sync", "multitelescopes.dict")}')
         
         nightobs_params = dict(NIGHTOBS_SAFETYPE = 'safetymonitor',)        
         self.make_configfile(mount_params, filename='Mount.config', savepath = savepath_unit)
@@ -275,7 +277,7 @@ class mainConfig:
         
         if update_focusmodel:
             from tcspy.configuration import FocusModel
-            F = FocusModel(unitnum = self.unitnum, configpath = self.path_global, filtinfo_file = './filtinfo.data', offset_file = 'filter.offset')
+            F = FocusModel(unitnum = self.unitnum, configpath = self.path_global, filtinfo_file = f'{os.path.join(self.path_home, ".tcspy", "sync", "filtinfo.dict")}', offset_file = "filter.offset")
             F.update_params()
         
 
