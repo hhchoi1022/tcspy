@@ -9,7 +9,7 @@ class AlertMonitor():
     
     def __init__(self):
         self.alertbroker = Alert()
-        self.slackconnector = SlackConnector()
+        #self.slackconnector = SlackConnector()
         self.is_sent = False
         self.is_posted = False
         self.is_alerted = False

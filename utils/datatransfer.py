@@ -1,18 +1,18 @@
 
 #%%
+import time
 import os
-from tcspy.configuration import mainConfig
 import subprocess
+import glob
+import re
+import hashlib
+from tqdm import tqdm
 from astropy.time import Time
 from typing import Optional
 from threading import Thread
-import glob
-from tqdm import tqdm
-import re
 from datetime import datetime
-import time
 from collections import defaultdict
-
+from tcspy.configuration import mainConfig
 #%%
 class DataTransferManager(mainConfig):
     
@@ -194,45 +194,46 @@ class DataTransferManager(mainConfig):
         Returns:
         None
         """
-        import hashlib
-
         try:
             # Match all files using the provided pattern
             source_keys = os.path.join(self.source_homedir, source_file_key, '*')
             file_paths = glob.glob(source_keys)
             if not file_paths:
                 raise ValueError(f"No files matched the pattern: {source_file_key}")
+
             telescope_path_dict = defaultdict(list)  # Initialize a dictionary with lists as default values
             pattern = r'7DT\d{2}'  # Regex to match telescope names like 7DT12, 7DT01
 
             # Divide the files into lists based on the telescope name
             for path in file_paths:
-                match = re.search(pattern, path)
-                if match:
-                    telescope_name = match.group()
-                    telescope_path_dict[telescope_name].append(path)  
-                              
+                if os.path.isfile(path):  # Ensure it's a file, not a directory
+                    match = re.search(pattern, path)
+                    if match:
+                        telescope_name = match.group()
+                        telescope_path_dict[telescope_name].append(path)
+
             for tel_name, file_paths in telescope_path_dict.items():
                 hashlist = []
                 filenamelist = []
-                for file_path in tqdm(file_paths, desc = f'Generating hashs of {tel_name} files...'):
+                for file_path in tqdm(file_paths, desc=f'Generating hashes of {tel_name} files...'):
                     hasher = hashlib.sha256()
                     with open(file_path, 'rb') as file:
                         # Read the file in chunks to handle large files efficiently
                         for chunk in iter(lambda: file.read(4096), b""):
                             hasher.update(chunk)
-                
+
                     # Generate the hash
                     file_hash = hasher.hexdigest()
                     hashlist.append(file_hash)
                     filenamelist.append(os.path.basename(file_path))
 
-                # Save the hash to a file in the same directory
-                hash_file_path = f"{os.path.join(os.path.dirname(file_path),'allfiles.hash')}"
+                # Save the hash to a file in the telescope directory
+                tel_directory = os.path.dirname(file_paths[0])  # Get the directory of the first file for this telescope
+                hash_file_path = os.path.join(tel_directory, 'allfiles.hash')
                 with open(hash_file_path, 'w') as hash_file:
                     for hash_, filename in zip(hashlist, filenamelist):
                         hash_file.write(f"{hash_} {filename}\n")
-                    print(f"Hash generated and saved for: {hash_file_path} -> {hash_file_path}")
+                print(f"Hash generated and saved for: {tel_name} -> {hash_file_path}")
 
         except Exception as e:
             raise RuntimeError(f"An error occurred while generating and saving hashes: {str(e)}")
@@ -339,8 +340,6 @@ class DataTransferManager(mainConfig):
 if __name__ == '__main__':
     A = DataTransferManager()
     import time
-    A.run(key = '*/2024-12-09_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
-    time.sleep(600)
     A.run(key = '*/2024-12-11_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
     time.sleep(600)
     A.run(key = '*/2024-12-12_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)

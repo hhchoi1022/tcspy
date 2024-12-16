@@ -316,7 +316,9 @@ class DB_Daily(mainConfig):
                     ):
         from tcspy.utils.connector import GoogleSheetConnector
         print('Connecting to DB...')
-        gsheet = GoogleSheetConnector()
+        gsheet = GoogleSheetConnector(spreadsheet_url = self.config['GOOGLESHEET_URL'], 
+                                      authorize_json_file = self.config['GOOGLESHEET_AUTH'],
+                                      scope = self.config['GOOGLESHEET_SCOPE'])  
         tbl_sheet = gsheet.read_sheet(sheet_name = sheet_name, format_ = 'Table')
         # Insert data
         print('Inserting GoogleSheet data to DB...')

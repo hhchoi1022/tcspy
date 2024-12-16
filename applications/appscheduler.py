@@ -45,7 +45,7 @@ class AppScheduler(mainConfig):
         Set the slack_alert_sender and slack_message_ts
         """
         tonight_str = '%.4d-%.2d-%.2d'%(self.obsnight.sunrise_civil.datetime.year, self.obsnight.sunrise_civil.datetime.month, self.obsnight.sunrise_civil.datetime.day)
-        self.slack_alert_sender = SlackConnector()
+        self.slack_alert_sender = SlackConnector(token_path = self.config['SLACK_TOKEN'], default_channel_id = self.config['SLACK_DEFAULT_CHANNEL'])
         id_tonight = uuid.uuid4().hex
         self.slack_message_ts = self.slack_alert_sender.get_message_ts(match_string = tonight_str)
         if not self.slack_message_ts:
