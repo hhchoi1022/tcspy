@@ -48,9 +48,11 @@ class BiasAcquisition(mainConfig):
                  count, 
                  binning : int = 1, 
                  gain : int = 2750):
+        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.is_running = True
-        id_ = uuid.uuid4().hex
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
+
+        id_ = uuid.uuid4().hex
         for i in range(count):
             params_exposure_all = []
             for telescope_name, telescope in self.multitelescopes.devices.items():
@@ -77,6 +79,8 @@ class BiasAcquisition(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')  
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
         self.is_running = False
+        self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
+
 
         
 # %%

@@ -10,6 +10,8 @@ from tcspy.devices.safetymonitor import mainSafetyMonitor
 from tcspy.utils.error import *
 from tcspy.devices.mount import mainMount_Alpaca
 from tcspy.devices.mount import mainMount_pwi4
+import json
+from astropy.time import Time
 #%%
 
 class SingleTelescope(mainConfig):
@@ -79,7 +81,7 @@ class SingleTelescope(mainConfig):
         dict
             A dictionary containing the status of all devices.
         """
-        self._update_status()
+        self._get_status()
         status = dict()
         status['camera'] = self.camera.status
         status['mount'] = self.mount.status
@@ -108,9 +110,30 @@ class SingleTelescope(mainConfig):
         devices['weather'] = self.weather
         devices['safetymonitor'] = self.safetymonitor
         return devices
-
     
-    def _update_status(self):
+    def update_statusfile(self, 
+                          status : str, #idle or busy
+                          do_trigger : bool = True
+                          ):
+        if do_trigger:
+            if status.lower() not in ['idle', 'busy']:
+                raise ValueError('Status must be either "idle" or "busy".')
+            status_file = self.config['MULTITELESCOPES_FILE']
+            # Load the JSON file
+            with open(status_file, 'r') as f:
+                status_dict = json.load(f)
+
+            # Update the status for each telescope
+            status_dict[self.name]['Status'] = status.lower()
+            status_dict[self.name]['Status_update_time'] = Time.now().isot
+
+            # Write back the modified data to the file
+            with open(status_file, 'w') as f:
+                json.dump(status_dict, f, indent=4)       
+        else:
+            return None
+        
+    def _get_status(self):
         self.camera.status = self.camera.get_status()
         self.mount.status = self.mount.get_status()
         self.focuser.status = self.focuser.get_status()
@@ -156,5 +179,3 @@ class SingleTelescope(mainConfig):
     
     def _get_safetymonitor(self):
         return mainSafetyMonitor()
-    
-# %%

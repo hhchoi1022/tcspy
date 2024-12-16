@@ -86,12 +86,13 @@ class Startup(mainConfig):
         AbortionException
             If the abortion event is triggered during the startup process.
         """
+        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.is_running = True
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         # Connect
         
         if connect:
             params_connect = []
-            self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
             for telescope_name, telescope in self.multitelescopes.devices.items():
                 params_connect.append(dict())
             
@@ -256,9 +257,9 @@ class Startup(mainConfig):
                 self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
             
-        for tel_name, telescope in self.multitelescopes.devices.items():
-            self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished.')
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
         self.is_running = False
+        self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
 
 
 # %%

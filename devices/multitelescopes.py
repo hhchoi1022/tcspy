@@ -6,6 +6,7 @@ from tcspy.devices import TelescopeStatus
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.logger import mainLogger
 from concurrent.futures import ThreadPoolExecutor
+from astropy.time import Time
 import time
 from tcspy.configuration import mainConfig
 import json
@@ -52,34 +53,30 @@ class MultiTelescopes(mainConfig):
     def __repr__(self):
         txt=  f'MultiTelescopes[{list(self.devices.keys())}]'
         return txt
-    
-    def _load_from_config(self):
-        print('Loading multitelescopes...')
-        with open(self.config['MULTITELESCOPES_FILE'],'r') as f:
-            device_status_all = json.load(f)
         
-        def is_telescope_active(telescope_status: dict):
-            device_status = all(device['is_active'] for device in telescope_status.values())
-            return device_status
-        
-        list_telescopes = []
-        for tel_name, tel_status in device_status_all.items():
-            is_tel_active = is_telescope_active(tel_status)
-            tel_num = int(re.search(r"\d{2}$", tel_name).group())
-            if is_tel_active:
-                list_telescopes.append(SingleTelescope(tel_num))
-        
-        self._devices_list = list_telescopes
-        self._register()
-        print('Multitelescopes are loaded.')
-    
-    def _register(self):
-        self.devices = self._get_telescopes()
-        self.log_dict = self._dict_logs()
-        self.log = self._all_logs()
-        self.observer = mainObserver()
-        self._status_dict = dict()
-
+    def update_statusfile(self, 
+                          status : str, #idle or busy
+                          do_trigger : bool = True
+                          ):
+        if do_trigger:
+            if status.lower() not in ['idle', 'busy']:
+                raise ValueError('Status must be either "idle" or "busy".')
+            status_file = self.config['MULTITELESCOPES_FILE']
+            # Load the JSON file
+            with open(status_file, 'r') as f:
+                status_dict = json.load(f)
+            
+            # Update the status for each telescope
+            for tel_name in self.devices.keys():
+                if tel_name in status_dict:
+                    status_dict[tel_name]['Status'] = status.lower()
+                    status_dict[tel_name]['Status_update_time'] = Time.now().isot
+            
+            # Write back the modified data to the file
+            with open(status_file, 'w') as f:
+                json.dump(status_dict, f, indent=4)
+        else:
+            return None
     
     def add(self,
             singletelescope : SingleTelescope):
@@ -140,6 +137,38 @@ class MultiTelescopes(mainConfig):
                 filters_dict[telescope.name] = None
         return filters_dict
     
+    def _load_from_config(self):
+        print('Loading multitelescopes...')
+        with open(self.config['MULTITELESCOPES_FILE'],'r') as f:
+            device_status_all = json.load(f)
+        
+        def is_telescope_active(telescope_status: dict):
+            tel_status = telescope_status
+            alldevices_status = []
+            for device_name in ['Mount', 'Focuser', 'Camera', 'Filterwheel']:
+                device_status = tel_status[device_name]['is_active']
+                alldevices_status.append(device_status)
+            telescope_status = all(alldevices_status)
+            return telescope_status
+        
+        list_telescopes = []
+        for tel_name, tel_status in device_status_all.items():
+            is_tel_active = is_telescope_active(tel_status)
+            tel_num = int(re.search(r"\d{2}$", tel_name).group())
+            if is_tel_active:
+                list_telescopes.append(SingleTelescope(tel_num))
+        
+        self._devices_list = list_telescopes
+        self._register()
+        print('Multitelescopes are loaded.')
+    
+    def _register(self):
+        self.devices = self._get_telescopes()
+        self.log_dict = self._dict_logs()
+        self.log = self._all_logs()
+        self.observer = mainObserver()
+        self._status_dict = dict()
+        
     def _get_device_status(self, telescope):
         self._status_dict[telescope. name] = TelescopeStatus(telescope).dict
     
@@ -173,18 +202,6 @@ class MultiTelescopes(mainConfig):
 # %%
 
 if __name__ == '__main__':
-    list_telescopes = [#SingleTelescope(1),
-                        SingleTelescope(2),
-                        SingleTelescope(3),
-                        SingleTelescope(4),
-                        SingleTelescope(5),
-                        SingleTelescope(6),
-                        SingleTelescope(7),
-                        SingleTelescope(8),
-                        SingleTelescope(9),
-                        SingleTelescope(10),
-                        SingleTelescope(11),
-                        ]
-    M = MultiTelescopes(list_telescopes)
+    M = MultiTelescopes()
     
 # %%

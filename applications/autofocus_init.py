@@ -61,8 +61,10 @@ class AutofocusInitializer(mainConfig):
                  search_focus_range : int = 3000,
                  slew : bool = True):
         
-        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         self.is_running = True
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
+        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
+
         # Slew 
         if slew:
             alt = 50
@@ -112,6 +114,8 @@ class AutofocusInitializer(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
         self.is_running = False
+        self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
+
 
 #%%  
 if __name__ == '__main__':

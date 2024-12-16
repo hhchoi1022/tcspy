@@ -137,10 +137,8 @@ class DataTransferManager(mainConfig):
                 if self.process.returncode == 0:
                     print(f"Transfer successful: {stdout.decode()}")
                 else:
-                    print(f"Error during transfer: {stderr.decode()}")
-            pass
+                    raise RuntimeError(f"Error during transfer: {stderr.decode()}")
         except:
-            print(f"Error during transfer")
             self.process = None
             self.is_running = False
 
@@ -175,10 +173,8 @@ class DataTransferManager(mainConfig):
                 if self.process.returncode == 0:
                     print(f"Transfer successful: {stdout.decode()}")
                 else:
-                    print(f"Error during transfer: {stderr.decode()}")
-            pass
+                    raise RuntimeError(f"Error during transfer: {stderr.decode()}")
         except:
-            print(f"Error during transfer")
             self.process = None
             self.is_running = False
             return
@@ -343,9 +339,11 @@ class DataTransferManager(mainConfig):
 if __name__ == '__main__':
     A = DataTransferManager()
     import time
-    A.run(key = '*/image/2024-12-12_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
-    # time.sleep(600)
-    # A.run(key = '*/image/2024-12-03_gain2750', tar = True, transfer = True, move_and_clean = True, thread = False)
+    A.run(key = '*/2024-12-09_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
+    time.sleep(600)
+    A.run(key = '*/2024-12-11_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
+    time.sleep(600)
+    A.run(key = '*/2024-12-12_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
 
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     # A.start_monitoring(
