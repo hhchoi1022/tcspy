@@ -90,25 +90,36 @@ class GmailConnector:
 
         self.logged_in = False
     
-    def send_mail(self, to_email: str, subject: str, body: str, attachments: list or str = None):
+    def send_mail(self, to_users: str or list, cc_users : str or list, subject: str, body: str, attachments: list or str = None, text_type = 'plain'):
         """
         Send an email with optional attachments.
         
         Args:
-            to_email (str): Recipient's email address.
+            to_users (str or list): Recipient's email address.
+            cc_users (str or list): CC recipient's email address.
             subject (str): Subject of the email.
             body (str): Body of the email.
             attachments (list or str): List of file paths to attach to the email.
         """
+        if text_type not in ['plain', 'html']:
+            raise ValueError("Invalid text_type. Must be 'plain' or 'html'.")
         self.ensure_logged_in()
         try:
+            # Convert to_users and cc_users to lists if they are strings
+            if isinstance(to_users, str):
+                to_users = [to_users]
+            if isinstance(cc_users, str):
+                cc_users = [cc_users]
+
             # Compose the email
             msg = MIMEMultipart()
             msg['From'] = self.user_account
-            msg['To'] = to_email
+            msg['To'] = ", ".join(to_users)  # Display multiple recipients
             msg['Subject'] = subject
-            msg.attach(MIMEText(body, 'plain'))
-            
+            if cc_users:
+                msg['CC'] = ", ".join(cc_users)
+            msg.attach(MIMEText(body, text_type))
+
             # Attach files if any
             if attachments:
                 if isinstance(attachments, str):
@@ -116,11 +127,9 @@ class GmailConnector:
                 for file_path in attachments:
                     try:
                         with open(file_path, "rb") as attachment:
-                            # Add the attachment to the email
                             part = MIMEBase('application', 'octet-stream')
                             part.set_payload(attachment.read())
-                            encoders.encode_base64(part)  # Encode the attachment in base64
-                            # Add header info
+                            encoders.encode_base64(part)
                             part.add_header(
                                 'Content-Disposition',
                                 f'attachment; filename={os.path.basename(file_path)}'
@@ -128,9 +137,14 @@ class GmailConnector:
                             msg.attach(part)
                     except Exception as e:
                         print(f"Failed to attach file {file_path}: {e}")
-            
+
+            # Combine all recipients (To + CC)
+            all_recipients = to_users
+            if cc_users:
+                all_recipients += cc_users
+
             # Send the email
-            self.server_smtp.sendmail(self.user_account, to_email, msg.as_string())
+            self.server_smtp.sendmail(self.user_account, all_recipients, msg.as_string())
             print("Email sent successfully.")
         except Exception as e:
             print(f"Failed to send email: {e}")
@@ -147,6 +161,23 @@ class GmailConnector:
         Returns:
             List[Dict]: A list of dictionaries containing email details and attachment info.
         """
+        
+        # Function to extract and decode the 'From' field
+        def get_sender_email(mail_from):
+            # Parse the 'From' field
+            if '<' in mail_from and '>' in mail_from:
+                # Separate name and email
+                name, email_address = mail_from.split('<')
+                email_address = email_address.strip('>')
+                
+                # Decode the name part if it's encoded
+                decoded_name, encoding = decode_header(name.strip())[0]
+                if isinstance(decoded_name, bytes):  # Decode bytes if necessary
+                    decoded_name = decoded_name.decode(encoding or 'utf-8')
+                return decoded_name, email_address
+            else:
+                return None, mail_from
+        
         self.ensure_logged_in()
         emails = []
         
@@ -171,7 +202,7 @@ class GmailConnector:
                 
                 # Parse the email
                 email_data = {
-                    'From': msg['From'],
+                    'From': get_sender_email(msg['From']),
                     'Subject': self._get_email_subject(msg),
                     'Date': msg['Date'],
                     'Body': self._get_email_body(msg),

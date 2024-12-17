@@ -227,6 +227,98 @@ class AlertBroker(mainConfig):
         print('Alert is read from GoogleSheetConnector.')
         return alert
     
+    def send_alert_to_users(self, 
+                            alert : Alert,
+                            users : List[str],
+                            scheduled_time : str = None,
+                            attachment : str = None):
+        
+        def format_mail_body(alert : Alert, scheduled_time : str = None):
+            target_info = alert.formatted_data
+            if len(target_info) == 1:
+                single_target_info = target_info[0]
+                single_target_head =  "<p>Dear 7DT users, </p>"
+                single_target_head += "<p>Single alert is received from the user: %s.</p>" %alert.alert_sender
+                if scheduled_time:
+                    single_target_head += "<p>The observation is scheduled at(on) <b><code>%s</code></b>.</p>" %scheduled_time
+                single_target_head += "<p>Please check below observation information.</p>"
+                
+                single_target_targetinfo_body = "<p><strong>===== Target Information =====</strong></p>"
+                single_target_targetinfo_body += "<p><b>Name:</b> %s </p>" %single_target_info['objname']
+                single_target_targetinfo_body += "<p><b>RA:</b> %.5f </p>" %single_target_info['RA']
+                single_target_targetinfo_body += "<p><b>Dec:</b> %.5f </p>" %single_target_info['De']
+                single_target_targetinfo_body += "<p><b>Priority:</b> %d </p>" %single_target_info['priority']  
+                single_target_targetinfo_body += "<p><b>Immediate start?:</b> %s </p>" %str(bool(single_target_info['is_ToO']))
+                single_target_targetinfo_body += "<p><b>ID:</b> %d </p>" %single_target_info['id']  
+                if single_target_info['note']:
+                    single_target_targetinfo_body += "<p><b>Note:</b> %s </p>" %single_target_info['note']
+                if single_target_info['comments']:
+                    single_target_targetinfo_body += "<p><b>Comments:</b> %s </p>" %single_target_info['comments']
+                if single_target_info['obs_starttime']:
+                    single_target_targetinfo_body += "<p><b>Requested obstime:</b> %s </p>" %single_target_info['obs_starttime']
+                if alert.is_matched_to_tiles:
+                    single_target_targetinfo_body += "<span style='color: red;'><p><b>[This target is matched to the 7DS RIS tiles. The target name is stored in 'Note'] </p></b></span>"
+                single_target_targetinfo_box = f"""
+                <div style="
+                    border: 3px solid red;
+                    padding: 15px;
+                    margin: 10px;
+                    background-color: #FFFAF0;
+                    border-radius: 10px;
+                    width: 500px;
+                    text-align: left;
+                ">
+                    <p>{single_target_targetinfo_body}</p>
+                </div>
+                """
+                
+                single_target_expinfo_body = "<p><strong>===== Exposure Information =====</p></strong>"
+                single_target_expinfo_body += "<p><b>Exposure time:</b> %.1fs x %d </p>" %(single_target_info['exptime'], single_target_info['count'])
+                single_target_expinfo_body += "<p><b>Obsmode:</b> %s </p>" %single_target_info['obsmode']
+                if single_target_info['obsmode'].lower() == 'spec':
+                    single_target_expinfo_body += "<p><b>Specmode:</b> %s </p>" %single_target_info['specmode']
+                elif single_target_info['obsmode'].lower() == 'deep':
+                    single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter']
+                    single_target_expinfo_body += "<p><b>Number of telescope:</b> %d </p>" %single_target_info['ntelescope']
+                else:
+                    single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter']
+                single_target_expinfo_body += "<p><b>Gain:</b> %s </p>" %single_target_info['gain']
+                single_target_expinfo_body += "<p><b>Binning:</b> %s </p>" %single_target_info['binning']
+                
+                single_target_expinfo_box = f"""
+                <div style="
+                    border: 3px solid blue;
+                    padding: 15px;
+                    margin: 10px;
+                    background-color: #FFFAF0;
+                    border-radius: 10px;
+                    width: 500px;
+                    text-align: left;
+                ">
+                    <p>{single_target_expinfo_body}</p>
+                </div>
+                """
+                
+                single_target_tail = "<p> Best regards, </p>"
+                single_target_tail += "Hyeonho Choi"
+                single_target_text = single_target_head + single_target_targetinfo_box + single_target_expinfo_box + single_target_tail
+                return single_target_text
+            else:
+                multi_target_info = target_info
+                multi_target_head =  "<p>Dear 7DT users, </p>"
+                multi_target_head += f"<p>Multiple alerts are received from the user: %s.</p>" %alert.alert_sender
+                if scheduled_time:
+                    multi_target_head += "<p>The observation is scheduled at(on) <b><code>%s</code></b>.</p>" %scheduled_time
+                multi_target_head += "<p>Please check below observation information.</p>"
+                
+                multi_target_targetinfo_body = "<p><strong>===== Target Information =====</strong></p>"
+                multi_target_targetinfo_body += "<p><b>Number of targets:</b> %s </p>" %len(multi_target_info)
+                multi_target_targetinfo_body += "<p><b>Filters:</b> %s </p>" %list(set(multi_target_info['filter']))  
+                multi_target_targetinfo_body += "<p><b>Immediate start?:</b> %s </p>" %str(bool(multi_target_info['is_ToO']))
+                # Attachment 
+                
+                
+    
     def to_DB(self,
               alert : List[Alert],
               do_alert_to_users : bool = False):
@@ -246,10 +338,9 @@ class AlertBroker(mainConfig):
     @property
     def users(self):
         users_dict = dict()
-        users_dict['authorized'] = self.config['AUTHORIZED_USERS']
-        users_dict['brok'] = self.config['BLOCKED_USERS']
-        
-        return self.config['AUTHORIZED_USERS']
+        users_dict['authorized'] = self.config['ALERTBROKER_AUTHUSERS']
+        users_dict['normal'] = self.config['ALERTBROKER_NORMUSERS']
+        return users_dict
       
 # %%
 if __name__ == '__main__':
@@ -257,5 +348,13 @@ if __name__ == '__main__':
     since_days = 3
     max_numbers = 5
     match_to_tiles = True
-    
+    from tcspy.utils.connector import GmailConnector
+    G = GmailConnector('7dt.observation.alert@gmail.com')
+    #G.login()
+    mail_str = G.read_mail()
+#%%
+if __name__ == '__main__':
+    alert = Alert()
+    alert.decode_mail(mail_str[0], match_to_tiles = True)
+    print(alert.formatted_data)
 # %%

@@ -8,6 +8,7 @@ import re
 import math
 import os
 from datetime import datetime
+import uuid
 
 from tcspy.utils.databases.tiles import Tiles
 #%%
@@ -17,6 +18,7 @@ class Alert:
     def __init__(self):
         self.alert_data = None # raw data of the alert
         self.alert_type = None # mail_broker, mail_user, googlesheet, gw, table
+        self.alert_sender = 'Undefined' # sender of the alert
         self.formatted_data = None # formatted data of the alert
         self.is_decoded = False # after decoding the alert data, set it to True
         self.is_inputted = False # after inputting the alert data to the scheduler, set it to True
@@ -42,6 +44,7 @@ class Alert:
         default_config['gain'] = 1
         default_config['objtype'] = 'Request'
         default_config['is_ToO'] = 0
+        default_config['id'] = uuid.uuid4().hex
         return default_config
     
     def _match_RIS_tile(self, ra : list or str, dec : list or str):
@@ -64,6 +67,7 @@ class Alert:
         """
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'googlesheet'
+        self.alert_sender = 'Undefined'
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -106,6 +110,7 @@ class Alert:
         """
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'table'
+        self.alert_sender = 'Undefined'
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -149,6 +154,7 @@ class Alert:
         # Read the alert data from the file
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'gw'
+        self.alert_sender = 'GECKO'
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -173,7 +179,7 @@ class Alert:
         self.is_decoded = True
         self.formatted_data = formatted_tbl[existing_columns]
     
-    def decode_mail(self, mail_dict, match_to_tiles = True, alert_type = 'broker'):
+    def decode_mail(self, mail_dict, match_to_tiles = True):
         """
         Decodes a mail alert and register the alert data as an astropy.Table.
         
@@ -211,6 +217,10 @@ class Alert:
                 raise ValueError(f'Error reading the alert data')
         self.alert_data = alert_dict_normalized
         self.alert_type = 'gmail'
+        self.alert_sender = mail_dict['From'][1]
+        # If the requester is defined, set it as the alert sender, otherwise set it as the mail sender   
+        if 'requester' in alert_dict_normalized.keys():
+            self.alert_sender = alert_dict_normalized['requester']
         
         # Set/Modify the columns to the standard format
         formatted_dict = dict()
@@ -318,6 +328,7 @@ class Alert:
     def required_key_variants(self):
         # Define key variants, if a word is duplicated in the same variant, posit the word with the highest priority first
         required_key_variants_lower = {
+            'requester': ['requester', 'requestor', 'requestinguser', 'requesting user', 'requesting user name'],
             'objname': ['target name', 'target', 'object', 'objname', 'id'],
             'RA': ['right ascension (ra)', 'right ascension (r.a.)', 'ra', 'r.a.'],
             'De': ['de', 'dec', 'dec.', 'declination', 'declination (dec)', 'declination (dec.)'],
@@ -336,6 +347,7 @@ class Alert:
             'comments': ['comment', 'comments'],
             'is_ToO': ['is_too', 'is too', 'abortobservation', 'abort current observation'],
             'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
+            'id': ['id', 'uuid', 'uniqueid', 'unique id', 'unique identifier']
         }
         # Sort each list in the dictionary by string length (descending order)
         sorted_required_key_variants = {
