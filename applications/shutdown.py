@@ -38,8 +38,8 @@ class Shutdown(mainConfig):
         self.abort_action.set()
 
     def _process(self, fanoff = True, slew = True, warm = True):
-        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.is_running = True
+        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         
         if fanoff:
@@ -55,8 +55,8 @@ class Shutdown(mainConfig):
             try:
                 multi_fanson.run()
             except AbortionException:
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
 
             ## Check result
             for tel_name, result in result_multi_fanson.items():
@@ -72,8 +72,8 @@ class Shutdown(mainConfig):
             
             ## Check abort_action
             if self.abort_action.is_set():
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         
@@ -91,8 +91,8 @@ class Shutdown(mainConfig):
             try:
                 multi_slew.run()
             except AbortionException:
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
             
             ## Check result
             for tel_name, result in result_multi_slew.items():
@@ -138,8 +138,8 @@ class Shutdown(mainConfig):
                 raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
             
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
-        self.is_running = False
         self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
+        self.is_running = False
 
 # %%
 if __name__ == '__main__':

@@ -43,8 +43,8 @@ class DarkAcquisition(mainConfig):
         self.abort_action.set()
         
     def _process(self, count, exptime, binning, gain):
-        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.is_running = True
+        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         
         id_ = uuid.uuid4().hex
@@ -69,14 +69,12 @@ class DarkAcquisition(mainConfig):
             try:
                 multi_exposure.run()
             except AbortionException:
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')  
+                self.is_running = False
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')  
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
-        self.is_running = False
         self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
-
-
+        self.is_running = False
         
 
 # %%

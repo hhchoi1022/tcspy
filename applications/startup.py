@@ -86,8 +86,8 @@ class Startup(mainConfig):
         AbortionException
             If the abortion event is triggered during the startup process.
         """
-        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.is_running = True
+        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         # Connect
         
@@ -103,8 +103,8 @@ class Startup(mainConfig):
             try:
                 multi_connect.run()
             except AbortionException:
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
             
             ## Check result
             for tel_name, result in result_multi_connect.items():
@@ -120,8 +120,8 @@ class Startup(mainConfig):
             
             ## Check abort_action
             if self.abort_action.is_set():
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         if fanon:
@@ -137,8 +137,8 @@ class Startup(mainConfig):
             try:
                 multi_fanson.run()
             except AbortionException:
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
 
             ## Check result
             for tel_name, result in result_multi_fanson.items():
@@ -154,8 +154,8 @@ class Startup(mainConfig):
             
             ## Check abort_action
             if self.abort_action.is_set():
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         if home:
@@ -172,8 +172,8 @@ class Startup(mainConfig):
                 multi_home.run()
                 time.sleep(10)
             except AbortionException:
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
 
             ## Check result
             for tel_name, result in result_multi_home.items():
@@ -189,8 +189,8 @@ class Startup(mainConfig):
             
             ## Check abort_action
             if self.abort_action.is_set():
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             
             
@@ -208,8 +208,8 @@ class Startup(mainConfig):
             try:
                 multi_slew.run()
             except AbortionException:
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
 
             ## Check result
             for tel_name, result in result_multi_slew.items():
@@ -225,8 +225,8 @@ class Startup(mainConfig):
             
             ## Check abort_action
             if self.abort_action.is_set():
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
         if cool:
@@ -243,8 +243,8 @@ class Startup(mainConfig):
             try:
                 multi_cool.run()
             except AbortionException:
-                self.is_running = False
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                self.is_running = False
 
             ## Check result
             for tel_name, result in result_multi_cool.items():
@@ -258,8 +258,8 @@ class Startup(mainConfig):
                 raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
             
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
-        self.is_running = False
         self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
+        self.is_running = False
 
 
 # %%
