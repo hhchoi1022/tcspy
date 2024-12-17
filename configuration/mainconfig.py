@@ -117,7 +117,7 @@ class mainConfig:
         
         image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
                             FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$",
-                            IMAGE_PATH=f'/Users/hhchoi1022/code/obsdata/{self.tel_name}/image/',
+                            IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/',
                             IMAGE_SAVEHEADER = True,
                             IMAGE_FORMAT = 'FITS'
                             )
@@ -125,7 +125,7 @@ class mainConfig:
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT=f'[%(levelname)s,{self.tel_name}]%(asctime)-15s |%(message)s',
-                             LOGGER_PATH= f'/Users/hhchoi1022/code/obsdata/{self.tel_name}/log/')
+                             LOGGER_PATH= f'/data2/obsdata/{self.tel_name}/log/')
         
         # Share configuration
 
@@ -145,7 +145,7 @@ class mainConfig:
                               WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
                               WEATHER_UPDATETIME=60,
-                              WEATHER_PATH= f'/Users/hhchoi1022/code/obsdata/weather_history/',
+                              WEATHER_PATH= f'/data2/obsdata/weather_history/',
                               WEATHER_HUMIDITY=85,
                               WEATHER_RAINRATE=80,
                               WEATHER_SKYMAG=10,
@@ -162,7 +162,7 @@ class mainConfig:
                                     SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_UPDATETIME=60,
-                                    SAFEMONITOR_PATH= f'/Users/hhchoi1022/code/obsdata/safetymonitor_history/')
+                                    SAFEMONITOR_PATH= f'/data2/obsdata/safetymonitor_history/')
         
         target_params = dict(TARGET_MINALT=27,
                              TARGET_MAXALT=90,
@@ -174,7 +174,7 @@ class mainConfig:
                          DB_ID='hhchoi',
                          DB_PWD='gusgh1020!', # gusgh1020! for MCS, lksdf1020 for Lnx
                          DB_NAME='target',
-                         DB_HISTORYPATH= f'/Users/hhchoi1022/code/obsdata/DB_history',
+                         DB_HISTORYPATH= f'/data2/obsdata/DB_history',
                          DB_HISTORYFORMAT = 'ascii.fixed_width',
                          DB_STATUSPATH = f'{os.path.join(self.path_home,".tcspy", "sync")}',
                          DB_STATUSFORMAT = 'ascii')
@@ -203,7 +203,7 @@ class mainConfig:
                                                            #'jhkim.astrosnu@gmail.com', # Ji hoon Kim
                                                            #'myungshin.im@gmail.com', # Myungshin Im
                                                            ],
-                                  ALERTBROKER_PATH = f'/Users/hhchoi1022/code/obsdata/alert_history',
+                                  ALERTBROKER_PATH = f'/data2/obsdata/alert_history',
                                   ALERTBROKER_STATUSPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "alert")}'
                                 )
         
