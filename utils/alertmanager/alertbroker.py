@@ -249,7 +249,7 @@ class AlertBroker(mainConfig):
                 single_target_targetinfo_body += "<p><b>Dec:</b> %.5f </p>" %single_target_info['De']
                 single_target_targetinfo_body += "<p><b>Priority:</b> %d </p>" %single_target_info['priority']  
                 single_target_targetinfo_body += "<p><b>Immediate start?:</b> %s </p>" %str(bool(single_target_info['is_ToO']))
-                single_target_targetinfo_body += "<p><b>ID:</b> %d </p>" %single_target_info['id']  
+                single_target_targetinfo_body += "<p><b>ID:</b> %s </p>" %single_target_info['id']  
                 if single_target_info['note']:
                     single_target_targetinfo_body += "<p><b>Note:</b> %s </p>" %single_target_info['note']
                 if single_target_info['comments']:
