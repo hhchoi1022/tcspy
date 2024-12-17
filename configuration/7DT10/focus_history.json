@@ -21,14 +21,14 @@
             "focusval": 6651.6
         },
         "m800": {
-            "update_time": "2024-12-16T07:38:41.829",
+            "update_time": "2024-12-17T04:36:39.122",
             "succeeded": true,
-            "focusval": 7161.6
+            "focusval": 7240.0
         },
         "m825": {
-            "update_time": "2024-12-16T07:45:58.998",
+            "update_time": "2024-12-17T05:59:11.053",
             "succeeded": true,
-            "focusval": 7154.0
+            "focusval": 7143.6
         },
         "m600": {
             "update_time": "2024-12-05T03:27:18.204",
