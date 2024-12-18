@@ -78,7 +78,6 @@ class AlertBroker(mainConfig):
         with open(os.path.join(dirname, 'alert_status.json'), 'w') as f:
             json.dump(alert_status, f, indent = 4)
         
-        
     def write_gwalert(self,
                       file_path : str, # Path of the alert file (Astropy Table readable)
                       write_type : str = 'googlesheet', # googlesheet or table
