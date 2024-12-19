@@ -114,7 +114,7 @@ class AlertBroker(mainConfig):
             print('Sending the alert to GoogleSheetConnector...')
             self._set_googlesheet()
             self.googlesheet.write_sheet(sheet_name = sheet_name, data = formatted_data)
-            alert.is_sent = True
+            alert.is_inputted = True
             print(f'Googlesheet saved: {sheet_name}')
             return alert
         
@@ -226,17 +226,60 @@ class AlertBroker(mainConfig):
         print('Alert is read from GoogleSheetConnector.')
         return alert
     
-    def send_alert_to_users(self, 
-                            alert : Alert,
-                            users : List[str],
-                            scheduled_time : str = None,
-                            attachment : str = None):
+    def send_mail_to_requester(self,
+                               alert : Alert,
+                               users : List[str],
+                               observed_time :str,
+                               attachment : str = None):
+        def format_mail_body(alert : Alert, observed_time : str = None):
+            target_info = alert.formatted_data
+            if len(target_info) == 1:
+                single_target_info = target_info[0]
+                single_target_head =  "<p>Dear ToO requester, </p>"
+                single_target_head += "<br>"
+                single_target_head += "<p>Thank you for submitting your ToO request! We are pleased to inform you that your ToO target (%s) has been successfully observed.</p>" %(single_target_info['objname'])
+                single_target_head += "<p>The observation was completed on <b><code>%s</code></b>.</p>" %(observed_time)
+                single_target_head += "<p>Your data will be shortly being processed and be available. Please check processing status on the following webpage: [Insert Link].</p>"
+                single_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
+                single_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"
+                
+                single_target_tail += "<br>"
+                single_target_tail = "<p> Best regards, </p>"
+                single_target_tail += "Hyeonho Choi"
+                single_target_text = single_target_head + single_target_tail
+                return single_target_text
+            else:
+                multi_target_info = target_info
+                multi_target_head =  "<p>Dear ToO requester, </p>"
+                multi_target_head += "<br>"
+                multi_target_head += "<p>Thank you for submitting your ToO request! We are pleased to inform you that your ToO targets (%s targets) have been successfully observed.</p>" %(len(multi_target_info))
+                multi_target_head += "<p>The observation was completed on <b><code>%s</code></b>.</p>" %(observed_time)
+                multi_target_head += "<p>Your data will be shortly being processed and will be available. Please check processing status on the following webpage: [Insert Link].</p>"
+                multi_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
+                multi_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"                                
+                
+                multi_target_tail = "<br>"
+                multi_target_tail = "<p> Best regards, </p>"
+                multi_target_tail += "Hyeonho Choi"
+                multi_target_text = multi_target_head + multi_target_tail
+                return multi_target_text
+                
+        mail_body = format_mail_body(alert = alert, observed_time = observed_time)
+        self.gmail.send_mail(to_users = users, cc_users = None, subject = '[7DT ToO Alert] Your ToO target(s) are observed', body = mail_body, attachments= attachment, text_type = 'html')
+        print('Mail is sent to the users.')            
+        
+    def send_mail_to_users(self, 
+                           alert : Alert,
+                           users : List[str],
+                           scheduled_time : str = None,
+                           attachment : str = None):
         
         def format_mail_body(alert : Alert, scheduled_time : str = None):
             target_info = alert.formatted_data
             if len(target_info) == 1:
                 single_target_info = target_info[0]
                 single_target_head =  "<p>Dear 7DT users, </p>"
+                single_target_head += "<br>"
                 single_target_head += "<p>Single alert is received from the user: %s.</p>" %alert.alert_sender
                 if scheduled_time:
                     single_target_head += "<p>The observation is scheduled at(on) <b><code>%s</code></b>.</p>" %scheduled_time
@@ -310,13 +353,35 @@ class AlertBroker(mainConfig):
                     multi_target_head += "<p>The observation is scheduled at(on) <b><code>%s</code></b>.</p>" %scheduled_time
                 multi_target_head += "<p>Please check below observation information.</p>"
                 
-                multi_target_targetinfo_body = "<p><strong>===== Target Information =====</strong></p>"
-                multi_target_targetinfo_body += "<p><b>Number of targets:</b> %s </p>" %len(multi_target_info)
-                multi_target_targetinfo_body += "<p><b>Filters:</b> %s </p>" %list(set(multi_target_info['filter']))  
-                multi_target_targetinfo_body += "<p><b>Immediate start?:</b> %s </p>" %str(bool(multi_target_info['is_ToO']))
-                # Attachment 
+                multi_targetinfo_body = "<p><strong>===== Target Information =====</strong></p>"
+                multi_targetinfo_body += "<p><b>Number of targets:</b> %s </p>" %len(multi_target_info)
+                multi_targetinfo_body += "<p><b>Obsmode:</b> %s </p>" %list(set(multi_target_info['obsmode']))
+                multi_targetinfo_body += "<p><b>Note:</b> %s </p>" %list(set(multi_target_info['note']))  
+                multi_targetinfo_body += "<span style='color: red;'><p><b>Please check the detailed target information in the attachment</p></b></span>"
+                if alert.is_matched_to_tiles:
+                    multi_targetinfo_body += "<span style='color: red;'><p><b>[These targets are matched to the 7DS RIS tiles. The target name is stored in 'Note'] </p></b></span>"
+                multi_targetinfo_box = f"""
+                <div style="
+                    border: 3px solid blue;
+                    padding: 15px;
+                    margin: 10px;
+                    background-color: #FFFAF0;
+                    border-radius: 10px;
+                    width: 500px;
+                    text-align: left;
+                ">
+                    <p>{multi_targetinfo_body}</p>
+                </div>
+                """
                 
-                
+                multi_targetinfo_tail = "<p> Best regards, </p>"
+                multi_targetinfo_tail += "Hyeonho Choi"
+                multi_target_text = multi_target_head + multi_targetinfo_box + multi_targetinfo_tail
+                return multi_target_text
+        
+        mail_body = format_mail_body(alert = alert, scheduled_time = scheduled_time)
+        self.gmail.send_mail(to_users = users, cc_users = None, subject = '[7DT ToO Alert] New ToO target(s) are received', body = mail_body, attachments= attachment, text_type = 'html')
+        print('Mail is sent to the users.')
     
     def to_DB(self,
               alert : List[Alert],
@@ -350,10 +415,10 @@ if __name__ == '__main__':
     from tcspy.utils.connector import GmailConnector
     G = GmailConnector('7dt.observation.alert@gmail.com')
     #G.login()
-    mail_str = G.read_mail()
+    mail_str = G.read_mail(since_days = 10)
 #%%
 if __name__ == '__main__':
     alert = Alert()
-    alert.decode_mail(mail_str[0], match_to_tiles = True)
+    alert.decode_mail(mail_str[3], match_to_tiles = True)
     print(alert.formatted_data)
 # %%

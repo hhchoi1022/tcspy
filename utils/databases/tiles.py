@@ -24,7 +24,13 @@ class Tiles:
         self.tbl_RIS = None
         self.coords_RIS = None
 
-    def find_overlapping_tiles(self, list_ra, list_dec, visualize: bool = True, visualize_ncols: int = 5, visualize_savepath: str = './tiles'):
+    def find_overlapping_tiles(self, 
+                               list_ra, 
+                               list_dec, 
+                               visualize: bool = True, 
+                               visualize_ncols: int = 5, 
+                               visualize_savepath: str = './tiles',
+                               match_tolerance_minutes = 4):
         """
         Find the tiles that overlap with the given coordinates.
 
@@ -43,7 +49,7 @@ class Tiles:
             Determine the innermost tile for a given target point.
             """
             max_distance = -float('inf')
-            innermost_tile_id = None
+            closest_tile_id = None
 
             for tile_id, polygons in polygons_by_id.items():
                 for poly in polygons:
@@ -51,8 +57,8 @@ class Tiles:
                         distance_to_boundary = target_point.distance(poly.boundary)
                         if distance_to_boundary > max_distance:
                             max_distance = distance_to_boundary
-                            innermost_tile_id = tile_id
-            return innermost_tile_id
+                            closest_tile_id = tile_id
+            return closest_tile_id, max_distance
 
         # Load the tile data
         if not self.tbl_RIS:
@@ -61,33 +67,35 @@ class Tiles:
             self.coords_RIS = SkyCoord(ra=self.tbl_RIS['ra'], dec=self.tbl_RIS['dec'], unit=(u.deg, u.deg))
             
         # Find innermost tiles
-        innermost_indices = []
+        closest_indices = []
         matched_coord_indices = []
+        distances_to_boundary = []
+        is_within_boundary = []
         
         for i, (ra, dec) in enumerate(zip(list_ra, list_dec)):
             target_point = Point(ra, dec)
             coord_targets = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg))
             nearby_tiles_idx = coord_targets.separation(self.coords_RIS) < 5*u.deg
             RIS_polygons_nearby = self._create_polygons(self.tbl_RIS[nearby_tiles_idx])
-            innermost_tile_id = calculate_innermost_tile(RIS_polygons_nearby, target_point)
-            if innermost_tile_id is not None:
-                innermost_indices.append(innermost_tile_id)
+            closest_tile_id, distance_to_boundary = calculate_innermost_tile(RIS_polygons_nearby, target_point)
+            if closest_tile_id is not None:
+                closest_indices.append(closest_tile_id)
                 matched_coord_indices.append(i)
+                distances_to_boundary.append(distance_to_boundary)
+                is_within_boundary.append(distance_to_boundary > match_tolerance_minutes/60) # Minute 
 
         fig_path = None
         if visualize:
-            fig_path = self.visualize_tiles(list_ra, list_dec, matched_coord_indices, innermost_indices, visualize_ncols, visualize_savepath)
+            fig_path = self.visualize_tiles(list_ra, list_dec, matched_coord_indices, closest_indices, visualize_ncols, visualize_savepath)
             
         if len(matched_coord_indices) == 0:
             return Table(), matched_coord_indices, fig_path
         
         # Reorder based on the order of 'innermost_indices'
-        matched_tbl = self.tbl_RIS[np.isin(self.tbl_RIS['id'], innermost_indices)]
-        order = {id_: i for i, id_ in enumerate(innermost_indices)}
-        sorted_rows = sorted(matched_tbl, key=lambda row: order[row['id']])
-        ordered_table = Table(rows=sorted_rows, names=matched_tbl.colnames)
-
-        return ordered_table, matched_coord_indices, fig_path
+        matched_tbl = self.tbl_RIS[np.isin(self.tbl_RIS['id'], closest_indices)]
+        matched_tbl['distance_to_boundary'] = distances_to_boundary
+        matched_tbl['is_within_boundary'] = is_within_boundary
+        return matched_tbl, matched_coord_indices, fig_path
     
     def visualize_tiles(self, list_ra, list_dec, matched_coord_indices, innermost_indices, visualize_ncols, visualize_savepath):
         """
@@ -225,12 +233,34 @@ class Tiles:
 if __name__ == "__main__":
     T = Tiles()
     #tbl_filter = T.find_overlapping_tiles([40, 20, 30], [-85.15, -40, -50], visualize=True, visualize_ncols=5)
-    tbl1 = ascii.read('~/Downloads/Subset_White_Dwarfs_with_Matched_Tiles.csv')
-    tbl1 = ascii.read('/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv')
+    #tbl1 = ascii.read('~/Downloads/Subset_White_Dwarfs_with_Matched_Tiles.csv')
+    #tbl1 = ascii.read('/Users/hhchoi1022/code/GECKO/S240925n/SkyGridCatalog_7DT_90.csv')
 
-    list_ra = [tbl1[0]['ra']]#tbl1['ra'][0]
-    list_dec = [tbl1[0]['dec']]#tbl1['dec'][0]
-    #list_ra = [30]
-    #list_dec = [-40]
-    tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, visualize=False, visualize_ncols=5)  
+    #list_ra = [tbl1[0]['ra']]#tbl1['ra'][0]
+    #list_dec = [tbl1[0]['dec']]#tbl1['dec'][0]
+    
+    list_ra = np.array(['117.553',
+    '117.5',
+    '118.4',
+    '119',
+    '120.23',
+    '120.45',
+    '122.1',
+    '123.22',
+    '123.1',
+    '123',
+    '124.55']).astype(float)
+    list_dec = np.array(['-34.811',
+    '-36.509',
+    '-34.811',
+    '-18.679',
+    '-35.66',
+    '-39.906',
+    '-38.208',
+    '-39.057',
+    '-40.755',
+    '-38.208',
+    '-36.509']).astype(float)
+    tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, visualize=True, visualize_ncols=5, match_tolerance_minutes= 11)  
+    print(tbl_filtered['distance_to_boundary'])
 # %%

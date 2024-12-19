@@ -9,6 +9,8 @@ import math
 import os
 from datetime import datetime
 import uuid
+import numpy as np
+from astropy.coordinates import Angle
 
 from tcspy.utils.databases.tiles import Tiles
 #%%
@@ -23,7 +25,9 @@ class Alert:
         self.is_decoded = False # after decoding the alert data, set it to True
         self.is_inputted = False # after inputting the alert data to the scheduler, set it to True
         self.is_matched_to_tiles = False
-        self.tiles = None
+        self.distance_to_tile_boundary = None
+        self.update_time = None
+        self._tiles = None
     
     def __repr__(self):
         txt = (f'ALERT (type = {self.alert_type}, decoded = {self.is_decoded}, inputted = {self.is_inputted})')
@@ -47,17 +51,17 @@ class Alert:
         default_config['id'] = uuid.uuid4().hex
         return default_config
     
-    def _match_RIS_tile(self, ra : list or str, dec : list or str):
-        if not self.tiles:
-            self.tiles = Tiles(tile_path = None)
+    def _match_RIS_tile(self, ra : list or str, dec : list or str, match_tolerance_minutes = 3):
+        if not self._tiles:
+            self._tiles = Tiles(tile_path = None)
         if not isinstance(ra, list):
             ra = [ra]
         if not isinstance(dec, list):
             dec = [dec]
-        tile, matched_indices, _ = self.tiles.find_overlapping_tiles(ra, dec, visualize = False)
+        tile, matched_indices, _ = self._tiles.find_overlapping_tiles(ra, dec, visualize = True, match_tolerance_minutes= match_tolerance_minutes)
         return tile, matched_indices
         
-    def decode_gsheet(self, tbl : Table, match_to_tiles : bool = False):
+    def decode_gsheet(self, tbl : Table, match_to_tiles : bool = False, match_tolerance_minutes : float = 3):
         """
         Decodes a Google Sheet and register the alert data as an astropy.Table.
         
@@ -81,26 +85,36 @@ class Alert:
                 formatted_tbl[noramlized_key] = tbl[key]
             else:
                 print('The key is not found in the key variants: ', key)
+        
+        # Convert the RA, Dec to degrees
+        formatted_tbl['RA'], formatted_tbl['De'] = self._convert_to_deg(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
                 
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
             self.is_matched_to_tiles = True
-            tile_info, matched_indices = self._match_RIS_tile(list(formatted_tbl['RA']), list(formatted_tbl['De']))
+            tile_info, matched_indices = self._match_RIS_tile(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist(), match_tolerance_minutes = match_tolerance_minutes)
             if len(tile_info) == 0:
                 raise ValueError(f'No matching tile found for RA = {formatted_tbl["RA"]}, Dec = {formatted_tbl["De"]}')
             # Sort the formatted_tbl by the matched_indices
             formatted_tbl = formatted_tbl[matched_indices]
-            objname = formatted_tbl['objname']
-            formatted_tbl['objname'] = tile_info['id']
-            formatted_tbl['RA'] = tile_info['ra']
-            formatted_tbl['De'] = tile_info['dec']
-            formatted_tbl['note'] = objname
+            
+            # Update only rows where is_within_boundary is True
+            within_boundary_mask = tile_info['is_within_boundary']
+            if np.any(within_boundary_mask):  # Ensure there are rows within boundary to update
+                within_boundary_indices = np.where(within_boundary_mask)[0]
+                objname = formatted_tbl['objname'][within_boundary_indices]
+                formatted_tbl['objname'][within_boundary_indices] = tile_info['id'][within_boundary_indices]
+                formatted_tbl['RA'][within_boundary_indices] = tile_info['ra'][within_boundary_indices]
+                formatted_tbl['De'][within_boundary_indices] = tile_info['dec'][within_boundary_indices]
+                formatted_tbl['note'][within_boundary_indices] = objname
+            self.distance_to_tile_boundary = list(tile_info['distance_to_boundary'])
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
+        self.update_time = Time(datetime.now()).isot
         self.formatted_data = formatted_tbl[existing_columns]
 
-    def decode_tbl(self, tbl : Table, match_to_tiles : bool = False):
+    def decode_tbl(self, tbl : Table, match_to_tiles : bool = False, match_tolerance_minutes = 3):
         """
         Decodes a Google Sheet and register the alert data as an astropy.Table.
         
@@ -125,22 +139,32 @@ class Alert:
             else:
                 print('The key is not found in the key variants: ', key)
                 
+        # Convert the RA, Dec to degrees
+        formatted_tbl['RA'], formatted_tbl['De'] = self._convert_to_deg(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
+                
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
             self.is_matched_to_tiles = True
-            tile_info, matched_indices = self._match_RIS_tile(list(formatted_tbl['RA']), list(formatted_tbl['De']))
+            tile_info, matched_indices = self._match_RIS_tile(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist(), match_tolerance_minutes = match_tolerance_minutes)
             if len(tile_info) == 0:
                 raise ValueError(f'No matching tile found for RA = {formatted_tbl["RA"]}, Dec = {formatted_tbl["De"]}')
             # Sort the formatted_tbl by the matched_indices
             formatted_tbl = formatted_tbl[matched_indices]
-            objname = formatted_tbl['objname']
-            formatted_tbl['objname'] = tile_info['id']
-            formatted_tbl['RA'] = tile_info['ra']
-            formatted_tbl['De'] = tile_info['dec']
-            formatted_tbl['note'] = objname
+            
+            # Update only rows where is_within_boundary is True
+            within_boundary_mask = tile_info['is_within_boundary']
+            if np.any(within_boundary_mask):  # Ensure there are rows within boundary to update
+                within_boundary_indices = np.where(within_boundary_mask)[0]
+                objname = formatted_tbl['objname'][within_boundary_indices]
+                formatted_tbl['objname'][within_boundary_indices] = tile_info['id'][within_boundary_indices]
+                formatted_tbl['RA'][within_boundary_indices] = tile_info['ra'][within_boundary_indices]
+                formatted_tbl['De'][within_boundary_indices] = tile_info['dec'][within_boundary_indices]
+                formatted_tbl['note'][within_boundary_indices] = objname
+            self.distance_to_tile_boundary = list(tile_info['distance_to_boundary'])
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
+        self.update_time = Time(datetime.now()).isot
         self.formatted_data = formatted_tbl[existing_columns]
 
     def decode_gwalert(self, tbl : Table):
@@ -169,7 +193,10 @@ class Alert:
             else:
                 print('The key is not found in the key variants: ', key)
 
-                            
+        # Convert the RA, Dec to degrees
+        formatted_tbl['RA'], formatted_tbl['De'] = self._convert_to_deg(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
+        
+        # Modify the objname to the standard format                    
         formatted_tbl['objname'] = ['T%.5d'%int(objname) if not str(objname).startswith('T') else objname for objname in formatted_tbl['objname']]
         formatted_tbl['objtype'] = 'GECKO'
         formatted_tbl['note'] = tbl['obj'] # Tile observation -> objname is stored in "Note"
@@ -177,9 +204,10 @@ class Alert:
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
+        self.update_time = Time(datetime.now()).isot
         self.formatted_data = formatted_tbl[existing_columns]
     
-    def decode_mail(self, mail_dict, match_to_tiles = True):
+    def decode_mail(self, mail_dict, match_to_tiles = True, match_tolerance_minutes = 3):
         """
         Decodes a mail alert and register the alert data as an astropy.Table.
         
@@ -189,11 +217,6 @@ class Alert:
         - alert_type: str, the alert type (broker or user)
         
         """
-        # Read the alert data from the attachment
-        #date_str = mail_dict['Date']
-        #parsed_date = datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
-        #self.received_time = Time(parsed_date, format= 'datetime').isot
-
         # If Attachment is not present, read the body
         alert_dict_normalized = dict()
         if len(mail_dict['Attachments']) > 0:
@@ -231,17 +254,25 @@ class Alert:
         for key in alert_dict_normalized.keys():
             formatted_dict[key] = alert_dict_normalized[key]
         
+        # Convert the RA, Dec to degrees
+        formatted_dict['RA'], formatted_dict['De'] = self._convert_to_deg(formatted_dict['RA'], formatted_dict['De'])
+        
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
-            self.is_matched_to_tiles = True
-            tile_info, matched_indices = self._match_RIS_tile(formatted_dict['RA'], formatted_dict['De'])
+            tile_info, matched_indices = self._match_RIS_tile(formatted_dict['RA'], formatted_dict['De'], match_tolerance_minutes = match_tolerance_minutes)
             if len(tile_info) == 0:
                 raise ValueError(f'No matching tile found for RA = {formatted_dict["RA"]}, Dec = {formatted_dict["De"]}')
-            objname = formatted_dict['objname']
-            formatted_dict['objname'] = tile_info['id'][0]
-            formatted_dict['RA'] = tile_info['ra'][0]
-            formatted_dict['De'] = tile_info['dec'][0]
-            formatted_dict['note'] = objname
+
+            is_within_boundary = tile_info['is_within_boundary'][0]
+            if is_within_boundary:
+                objname = formatted_dict['objname']
+                formatted_dict['objname'] = tile_info['id'][0]
+                formatted_dict['RA'] = tile_info['ra'][0]
+                formatted_dict['De'] = tile_info['dec'][0]
+                formatted_dict['note'] = objname
+                self.is_matched_to_tiles = True
+
+            self.distance_to_tile_boundary = list(tile_info['distance_to_boundary'])
         
         # If the value of the dict is list, convert it to comma-separated string
         for key, value in formatted_dict.items():
@@ -270,7 +301,37 @@ class Alert:
             
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
+        self.update_time = Time(datetime.now()).isot
         self.formatted_data = formatted_tbl[existing_columns]
+        
+    def _convert_to_deg(self, ra, dec):
+        def parse_coord(coord):
+            """Convert a coordinate or list of coordinates to degrees."""
+            if isinstance(coord, (str, float, int)):
+                # Handle single coordinate (str, float, or int)
+                return Angle(coord, unit='hourangle' if 'h' in str(coord) or ':' in str(coord) else 'deg').degree
+            elif isinstance(coord, list):
+                # Handle list of coordinates
+                return [
+                    Angle(c, unit='hourangle' if 'h' in str(c) or ':' in str(c) else 'deg').degree
+                    for c in coord
+                ]
+            else:
+                raise ValueError(f"Unsupported coordinate format: {coord}")
+
+        # Parse RA and Dec separately
+        ra_deg = parse_coord(ra)
+        dec_deg = parse_coord(dec)
+
+        # Ensure RA and Dec are in consistent formats (list or single value)
+        if isinstance(ra_deg, list) and isinstance(dec_deg, list):
+            if len(ra_deg) != len(dec_deg):
+                raise ValueError("RA and Dec lists must have the same length.")
+        elif isinstance(ra_deg, list) or isinstance(dec_deg, list):
+            raise ValueError("Both RA and Dec must be lists or single values.")
+
+        return ra_deg, dec_deg
+            
 
     # Read the alert data from the body
     def _parse_mail_string(self, mail_string):
@@ -333,7 +394,7 @@ class Alert:
             'RA': ['right ascension (ra)', 'right ascension (r.a.)', 'ra', 'r.a.'],
             'De': ['de', 'dec', 'dec.', 'declination', 'declination (dec)', 'declination (dec.)'],
             'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleframeexposure', 'single frame exposure'],
-            'count': ['count', 'imagecount', 'numbercount', 'image count', 'number count'],
+            'count': ['count', 'counts', 'imagecount', 'numbercount', 'image count', 'number count'],
             'obsmode': ['obsmode', 'observationmode', 'mode'],
             'specmode': ['specmode', 'spectralmode', 'spectral mode', 'selectedspecfile'],
             'filter': ['filter', 'filters', 'selectedfilters'],
@@ -358,13 +419,17 @@ class Alert:
 #%%
 if __name__ == '__main__':
     from tcspy.utils.connector import GmailConnector
+    from tcspy.utils.connector import GoogleSheetConnector
     G = GmailConnector('7dt.observation.alert@gmail.com')
+    Gsheet = GoogleSheetConnector()
     #G.login()
-    mail_str = G.read_mail()
+    mail_str = G.read_mail(since_days = 10)
 # %%
 if __name__ == '__main__':
     alert = Alert()
-    alert.decode_mail(mail_str[0], match_to_tiles = True, alert_type = 'broker')
+    ABC = Gsheet.read_sheet(sheet_name = '241219')
+    #alert.decode_gsheet(tbl= ABC, match_to_tiles = True, match_tolerance_minutes= 10)
+    alert.decode_mail(mail_str[3], match_to_tiles = True)
     print(alert.formatted_data)
 
 # %%

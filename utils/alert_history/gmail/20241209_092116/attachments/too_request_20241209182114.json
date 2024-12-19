@@ -1,0 +1,16 @@
+{
+    "target": "081009140",
+    "ra": 251.57000732421875,
+    "dec": 18.920000076293945,
+    "exposure": "555555555555555555555555555555555555555555555555555555555555",
+    "obsmode": "Spec",
+    "comments": "test",
+    "abortObservation": false,
+    "singleFrameExposure": 60,
+    "imageCount": 5,
+    "priority": 50,
+    "gain": 2750,
+    "binning": 1,
+    "obsStartTime": "",
+    "selectedSpecFile": "specall.specmode"
+}
