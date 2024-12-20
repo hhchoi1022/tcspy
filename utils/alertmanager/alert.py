@@ -27,6 +27,7 @@ class Alert:
         self.is_matched_to_tiles = False
         self.distance_to_tile_boundary = None
         self.update_time = None
+        self.key = datetime.now().strftime('%Y%m%d_%H%M%S')
         self._tiles = None
     
     def __repr__(self):
@@ -305,23 +306,26 @@ class Alert:
         self.formatted_data = formatted_tbl[existing_columns]
         
     def _convert_to_deg(self, ra, dec):
-        def parse_coord(coord):
+        def parse_coord(coord, is_ra=False):
             """Convert a coordinate or list of coordinates to degrees."""
             if isinstance(coord, (str, float, int)):
                 # Handle single coordinate (str, float, or int)
-                return Angle(coord, unit='hourangle' if 'h' in str(coord) or ':' in str(coord) else 'deg').degree
+                if is_ra:
+                    return Angle(coord, unit='hourangle' if 'h' in str(coord) or ':' in str(coord) else 'deg').degree
+                else:
+                    return Angle(coord, unit='deg').degree
             elif isinstance(coord, list):
                 # Handle list of coordinates
                 return [
-                    Angle(c, unit='hourangle' if 'h' in str(c) or ':' in str(c) else 'deg').degree
+                    Angle(c, unit='hourangle' if is_ra and ('h' in str(c) or ':' in str(c)) else 'deg').degree
                     for c in coord
                 ]
             else:
                 raise ValueError(f"Unsupported coordinate format: {coord}")
 
         # Parse RA and Dec separately
-        ra_deg = parse_coord(ra)
-        dec_deg = parse_coord(dec)
+        ra_deg = parse_coord(ra, is_ra=True)
+        dec_deg = parse_coord(dec, is_ra=False)
 
         # Ensure RA and Dec are in consistent formats (list or single value)
         if isinstance(ra_deg, list) and isinstance(dec_deg, list):

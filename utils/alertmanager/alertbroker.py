@@ -5,7 +5,6 @@ from tcspy.utils.alertmanager import Alert
 from tcspy.utils.connector import GmailConnector
 from tcspy.utils.connector import GoogleSheetConnector
 from tcspy.utils.databases import DB
-from astropy.table import Table
 from astropy.time import Time
 from datetime import datetime, timezone
 import os, json
@@ -51,18 +50,17 @@ class AlertBroker(mainConfig):
             self.DB_Daily = DB().Daily   
     
     def save_alert_info(self, 
-                        alert : Alert,
-                        alert_key : str = None):
+                        alert : Alert):
         if not alert.alert_data:
             raise ValueError('The alert data is not read or received yet')
         
-        dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, alert_key)
+        dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, alert.key)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
         # Save alert_data
         if alert.alert_data:
-            with open(os.path.join(dirname, 'alert_data.json'), 'w') as f:
+            with open(os.path.join(dirname, 'alert_rawdata.json'), 'w') as f:
                 json.dump(alert.alert_data, f, indent = 4)
 
         # Save formatted_data
@@ -71,12 +69,46 @@ class AlertBroker(mainConfig):
         
         # Save the alert status as json
         alert_status = dict()
-        alert_status['update_time'] = Time.now().isot
+        alert_status['alert_type'] = alert.alert_type
+        alert_status['alert_sender'] = alert.alert_sender
         alert_status['is_decoded'] = alert.is_decoded
         alert_status['is_inputted'] = alert.is_inputted
         alert_status['is_matched_to_tiles'] = alert.is_matched_to_tiles
+        alert_status['distance_to_tile_boundary'] = alert.distance_to_tile_boundary
+        alert_status['update_time'] = Time.now().isot
+        alert_status['key'] = alert.key
         with open(os.path.join(dirname, 'alert_status.json'), 'w') as f:
             json.dump(alert_status, f, indent = 4)
+            
+            
+    def load_alert_from_folder(self, 
+                               alert_path : str) -> Alert:
+        alert = Alert()        
+        if not os.path.exists(alert_path):
+            raise FileNotFoundError(f'Folder not found: {alert_path}')
+        
+        # Set folder path
+        alert_rawdata_path = os.path.join(alert_path, 'alert_rawdata.json')
+        alert_formatted_path = os.path.join(alert_path, 'alert_formatted.ascii_fixed_width')
+        alert_status_path = os.path.join(alert_path, 'alert_status.json')
+        
+        if os.path.exists(alert_rawdata_path):
+            with open(alert_rawdata_path, 'r') as f:
+                alert.alert_data = json.load(f)
+        if os.path.exists(alert_formatted_path):
+            alert.formatted_data = ascii.read(alert_formatted_path)
+        if os.path.exists(alert_status_path):
+            with open(alert_status_path, 'r') as f:
+                alert_status = json.load(f)
+                alert.alert_type = alert_status['alert_type']
+                alert.alert_sender = alert_status['alert_sender']
+                alert.is_decoded = alert_status['is_decoded']
+                alert.is_inputted = alert_status['is_inputted']
+                alert.is_matched_to_tiles = alert_status['is_matched_to_tiles']
+                alert.distance_to_tile_boundary = alert_status['distance_to_tile_boundary']
+                alert.update_time = alert_status['update_time']
+                alert.key = alert_status['key']
+        return alert
         
     def write_gwalert(self,
                       file_path : str, # Path of the alert file (Astropy Table readable)
@@ -384,8 +416,7 @@ class AlertBroker(mainConfig):
         print('Mail is sent to the users.')
     
     def to_DB(self,
-              alert : List[Alert],
-              do_alert_to_users : bool = False):
+              alert : List[Alert]):
         """
         Send the alert to the database.
         
@@ -394,7 +425,10 @@ class AlertBroker(mainConfig):
         formatted_data = alert.formatted_data.copy()
         formatted_data.sort('priority')
         self._set_DB()  
-        self.DB_Daily.insert(target_tbl = formatted_data)
+        try:
+            self.DB_Daily.insert(target_tbl = formatted_data)
+        except:
+            raise RuntimeError(f'Failed to insert the alert to the database')
         alert.is_inputted = True
         print(f'Targets are inserted to the database.')
         return alert

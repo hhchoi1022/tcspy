@@ -141,16 +141,24 @@ class mainWeather(mainConfig):
     def update_info_file(self, return_status : bool = False):
         current_status = self._status
         dt_ut = datetime.strptime(current_status['update_time'], '%Y-%m-%dT%H:%M:%S.%f')
-        str_date = dt_ut.strftime('%y%m%d')
-        str_time = dt_ut.strftime('%H%M%S')
+        str_datetime = dt_ut.strftime('%y%m%d_%H%M%S')
         str_date_for_dir = datetime.strptime((Time.now() - 12*u.hour).isot, '%Y-%m-%dT%H:%M:%S.%f').strftime('%y%m%d')
-        filename = f'weatherinfo_{str_date}_{str_time}.txt'
+        filename = f'weatherinfo_{str_datetime}.txt'
         directory = os.path.join(self.config['WEATHER_PATH'], str_date_for_dir)
         if not os.path.exists(directory):
             os.makedirs(name = directory)
         abspath_file = os.path.join(directory, filename)
         with open(abspath_file, 'w') as f:
             json.dump(current_status, f, indent=4)
+        # [241220] Added for synching 7DT weather status to the SNU server (proton) 
+        filename_status = f'weatherinfo.dict'
+        foldername_status = self.config['WEATHER_STATUSPATH']
+        abspath_file_status = os.path.join(foldername_status, filename_status)
+        if not os.path.exists(foldername_status):
+            os.makedirs(name = foldername_status)
+        with open(abspath_file_status, 'w') as f:
+            json.dump(current_status, f, indent=4)
+        # Done [241220]
         if return_status:
             return current_status
     
