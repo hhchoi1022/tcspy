@@ -340,8 +340,12 @@ class DataTransferManager(mainConfig):
 if __name__ == '__main__':
     A = DataTransferManager()
     import time
-    A.run(key = '*/2024-12-13_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
+    A.run(key = '*/image/2024-12-14_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
     time.sleep(600)
+    A.run(key = '*/image/2024-12-15_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
+    time.sleep(600)
+    A.run(key = '*/image/2024-12-16_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
+
     #A.run(key = '*/2024-12-12_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
 
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
