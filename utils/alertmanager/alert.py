@@ -31,7 +31,7 @@ class Alert:
         self._tiles = None
     
     def __repr__(self):
-        txt = (f'ALERT (type = {self.alert_type}, decoded = {self.is_decoded}, inputted = {self.is_inputted})')
+        txt = (f'ALERT (type = {self.alert_type}, sender = {self.alert_sender}, decoded = {self.is_decoded}, inputted = {self.is_inputted}, key = {self.key})')
         return txt   
     
     @property
@@ -59,7 +59,7 @@ class Alert:
             ra = [ra]
         if not isinstance(dec, list):
             dec = [dec]
-        tile, matched_indices, _ = self._tiles.find_overlapping_tiles(ra, dec, visualize = True, match_tolerance_minutes= match_tolerance_minutes)
+        tile, matched_indices, _ = self._tiles.find_overlapping_tiles(ra, dec, visualize = False, match_tolerance_minutes= match_tolerance_minutes)
         return tile, matched_indices
         
     def decode_gsheet(self, tbl : Table, match_to_tiles : bool = False, match_tolerance_minutes : float = 3):
@@ -201,7 +201,6 @@ class Alert:
         formatted_tbl['objname'] = ['T%.5d'%int(objname) if not str(objname).startswith('T') else objname for objname in formatted_tbl['objname']]
         formatted_tbl['objtype'] = 'GECKO'
         formatted_tbl['note'] = tbl['obj'] # Tile observation -> objname is stored in "Note"
-        formatted_tbl['is_ToO'] = [1 if confidence <= 0.95 else 0 for confidence in tbl['confidence']]
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True

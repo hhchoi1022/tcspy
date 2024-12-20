@@ -9,6 +9,7 @@ from astropy.time import Time
 from datetime import datetime, timezone
 import os, json
 from typing import List
+from astropy.io import ascii
 #%%
 class AlertBroker(mainConfig):
     
@@ -96,7 +97,7 @@ class AlertBroker(mainConfig):
             with open(alert_rawdata_path, 'r') as f:
                 alert.alert_data = json.load(f)
         if os.path.exists(alert_formatted_path):
-            alert.formatted_data = ascii.read(alert_formatted_path)
+            alert.formatted_data = ascii.read(alert_formatted_path, format = 'fixed_width')
         if os.path.exists(alert_status_path):
             with open(alert_status_path, 'r') as f:
                 alert_status = json.load(f)
@@ -166,43 +167,57 @@ class AlertBroker(mainConfig):
             raise ValueError(f'Invalid send_type: {write_type}')
 
     def read_gwalert(self,
-                     path_alert : str):
-        def get_received_time():
-            now = Time.now()
-            now_str = now.datetime.strftime('%Y%m%d_%H%M%S')
-            return now_str
+                     path_alert : str,
+                     format_alert : str = 'fixed_width'):
+        def get_file_generated_time(filepath):
+            # Get the file's creation time (or modification time as a fallback on some systems)
+            stat_info = os.stat(filepath)
+            creation_time = getattr(stat_info, 'st_birthtime', stat_info.st_mtime)
+            
+            # Convert the timestamp to a formatted string
+            formatted_time = datetime.fromtimestamp(creation_time).strftime('%Y%m%d_%H%M%S')
+            return formatted_time
         
         # Read the alert file
         alert = Alert()
         print('Reading the alert from GW localization Table...')
         try:
-            alert_tbl = ascii.read(path_alert)
+            alert_tbl = ascii.read(path_alert, format = format_alert)
             alert.decode_gwalert(alert_tbl)
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
         finally:
-            self.save_alert_info(alert = alert, alert_key = get_received_time())
+            # Set alert key as file generated time
+            alert.key = get_file_generated_time(path_alert)
+            self.save_alert_info(alert = alert)
         pass
     
     def read_tbl(self,
-                 path_tbl : str,
+                 path_alert : str,
+                 format_alert : str = 'fixed_width',
                  match_to_tiles : bool = False):
         
-        def get_received_time():
-            now = Time.now()
-            now_str = now.datetime.strftime('%Y%m%d_%H%M%S')
-            return now_str
+        def get_file_generated_time(filepath):
+            # Get the file's creation time (or modification time as a fallback on some systems)
+            stat_info = os.stat(filepath)
+            creation_time = getattr(stat_info, 'st_birthtime', stat_info.st_mtime)
+            
+            # Convert the timestamp to a formatted string
+            formatted_time = datetime.fromtimestamp(creation_time).strftime('%Y%m%d_%H%M%S')
+            return formatted_time
         
         # Read the alert file
         alert = Alert()
         print('Reading the alert from Astropy Table...')
         try:
-            alert_tbl = ascii.read(path_tbl)
+            alert_tbl = ascii.read(path_alert, format = format_alert)
             alert.decode_tbl(alert_tbl, match_to_tiles = match_to_tiles)
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
         finally:
-            self.save_alert_info(alert = alert, alert_key = get_received_time())
+            # Set alert key as file generated time
+            alert.key = get_file_generated_time(path_alert)
+            self.save_alert_info(alert = alert)
         pass
 
     def read_mail(self, 
@@ -234,7 +249,9 @@ class AlertBroker(mainConfig):
                     except:
                         pass
                     finally:
-                        self.save_alert_info(alert = alert, alert_key = get_received_time(mail_dict))
+                        # Set alert key as received time
+                        alert.key = get_received_time(mail_dict)
+                        self.save_alert_info(alert = alert)
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
         print('Alert is read from GmailConnector.')
@@ -254,7 +271,9 @@ class AlertBroker(mainConfig):
         except:
             pass
         finally:
-            self.save_alert_info(alert = alert, alert_key = sheet_name)
+            # Set alert key as sheet name (Sheet name is not duplicated)
+            alert.key = sheet_name
+            self.save_alert_info(alert = alert)
         print('Alert is read from GoogleSheetConnector.')
         return alert
     
@@ -453,6 +472,10 @@ if __name__ == '__main__':
 #%%
 if __name__ == '__main__':
     alert = Alert()
-    alert.decode_mail(mail_str[3], match_to_tiles = True)
+    #alert.decode_mail(mail_str[3], match_to_tiles = True)
     print(alert.formatted_data)
+    ab = AlertBroker()
+
+    file_path  = '/Users/hhchoi1022/code/tcspy/utils/alertmanager/20241128_164230_GECKO.ascii_fixed_width'
+    #ab.read_gwalert(path_tbl = file_path, match_to_tiles = True)
 # %%
