@@ -137,6 +137,10 @@ class MultiTelescopes(mainConfig):
                 filters_dict[telescope.name] = None
         return filters_dict
     
+    def update_logfile(self):
+        self.log_dict = self._dict_logs()
+        self.log = self._all_logs()
+    
     def _load_from_config(self):
         print('Loading multitelescopes...')
         with open(self.config['MULTITELESCOPES_FILE'],'r') as f:
@@ -164,10 +168,9 @@ class MultiTelescopes(mainConfig):
     
     def _register(self):
         self.devices = self._get_telescopes()
-        self.log_dict = self._dict_logs()
-        self.log = self._all_logs()
         self.observer = mainObserver()
         self._status_dict = dict()
+        self.update_logfile()
         
     def _get_device_status(self, telescope):
         self._status_dict[telescope. name] = TelescopeStatus(telescope).dict

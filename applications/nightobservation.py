@@ -500,8 +500,9 @@ class NightObservation(mainConfig):
             self.multitelescopes.log.critical(f'[{type(self).__name__}] cannot be run twice.')
             
     def _process(self):
-        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         self.is_running = True
+        self.multitelescopes.update_logfile()
+        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         self._observation_abort = Event()
         self._ToO_abort = Event()
         obs_start_time = self.obsnight.sunset_observation

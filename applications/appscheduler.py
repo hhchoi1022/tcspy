@@ -108,7 +108,7 @@ class AppScheduler(mainConfig):
                 time.sleep(1)
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'NightObservation is finished: {end_time}', alert_slack = alert_slack)
-            DB().Daily.write(clear = False)
+            DB().Daily.export_to_csv(save_type= 'history')
             
     def run_bias(self,
                  count : int = 9,

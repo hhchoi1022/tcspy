@@ -62,6 +62,7 @@ class AutofocusInitializer(mainConfig):
                  slew : bool = True):
         
         self.is_running = True
+        self.multitelescopes.update_logfile()
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
 

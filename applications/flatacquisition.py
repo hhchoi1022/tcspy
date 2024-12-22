@@ -47,6 +47,7 @@ class FlatAcquisition(mainConfig):
     
     def _process(self, count, gain, binning):
         self.is_running = True
+        self.multitelescopes.update_logfile()
         self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         

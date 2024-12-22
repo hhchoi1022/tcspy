@@ -49,6 +49,7 @@ class BiasAcquisition(mainConfig):
                  binning : int = 1, 
                  gain : int = 2750):
         self.is_running = True
+        self.multitelescopes.update_logfile()
         self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
 
@@ -86,5 +87,5 @@ class BiasAcquisition(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    BiasAcquisition(M, Event()).run(count = 1, binning = 1, gain =2750)
+    BiasAcquisition(M, Event()).run(count = 3, binning = 1, gain =2750)
 # %%

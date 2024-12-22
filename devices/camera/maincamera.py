@@ -510,14 +510,12 @@ class mainCamera(mainConfig):
                     self.cam_lock.release()
                     self.abort()
                 time.sleep(float(self.config['CAMERA_CHECKTIME']))
-                
             imginfo, status = self.get_imginfo()
 
             # Modify image information if camera returns too detailed exposure time
             imginfo['exptime'] = round(float(imginfo['exptime']),1)
             self._log.info('Exposure finished')
             return imginfo 
-        
         finally:
             self.cam_lock.release()
 
@@ -557,3 +555,9 @@ class mainCamera(mainConfig):
         self.device.NumX = self.device.CameraXSize // self.device.BinX
         self.device.NumY = self.device.CameraYSize // self.device.BinY
         #self.status = self.get_status()
+# %%
+# # Test
+if __name__ == '__main__':
+    cam = mainCamera(unitnum = 1)
+    cam.exposure(abort_action = Event(), exptime = 0, imgtype = 'bias', binning = 1, is_light = False, gain = 2750)
+# %%

@@ -356,15 +356,6 @@ class DB_Daily(mainConfig):
         #if not self.sql.connected:
         #    self.connect()
         return self.sql.get_data(tbl_name = self.tblname, select_key= '*')
-    
-    def write(self, clear : bool = True):
-        tbl = self.data
-        dt_ut = Time.now().datetime
-        if not os.path.exists(self.config['DB_PATH']):
-            os.makedirs(self.config['DB_PATH'], exist_ok = True)
-        file_abspath = os.path.join(self.config['DB_PATH'], f'Daily_%.4d%.2d%.2d.ascii_fixed_width' % (dt_ut.year, dt_ut.month, dt_ut.day))
-        tbl.write(file_abspath, format = 'ascii.fixed_width', overwrite = True)
-        print(f'Saved: {file_abspath}')
         
     def export_to_csv(self, save_type : str = 'status' #status or history
                       ):
