@@ -50,6 +50,7 @@ class Alert:
         default_config['objtype'] = 'Request'
         default_config['is_ToO'] = 0
         default_config['id'] = uuid.uuid4().hex
+        
         return default_config
     
     def _match_RIS_tile(self, ra : list or str, dec : list or str, match_tolerance_minutes = 3):
@@ -112,7 +113,7 @@ class Alert:
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
-        self.update_time = Time(datetime.now()).isot
+        self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
 
     def decode_tbl(self, tbl : Table, match_to_tiles : bool = False, match_tolerance_minutes = 3):
@@ -165,7 +166,7 @@ class Alert:
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
-        self.update_time = Time(datetime.now()).isot
+        self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
 
     def decode_gwalert(self, tbl : Table):
@@ -204,7 +205,7 @@ class Alert:
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
-        self.update_time = Time(datetime.now()).isot
+        self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
     
     def decode_mail(self, mail_dict, match_to_tiles = True, match_tolerance_minutes = 3):
@@ -301,7 +302,7 @@ class Alert:
             
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.is_decoded = True
-        self.update_time = Time(datetime.now()).isot
+        self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
         
     def _convert_to_deg(self, ra, dec):

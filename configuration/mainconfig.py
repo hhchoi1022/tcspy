@@ -185,7 +185,8 @@ class mainConfig:
                             )
         
         slack_params = dict(SLACK_TOKEN = os.path.join(self.path_home, '.tcspy', f'slack/slack_token_7dt_obseration_alert.txt'),
-                            SLACK_DEFAULT_CHANNEL = 'C07SREPTWFM')
+                            SLACK_DEFAULT_CHANNEL = 'C07SREPTWFM',
+                            SLACK_ALERT_CHANNEL = 'C07SREPTWFM')
         
         googlesheet_params = dict(GOOGLESHEET_URL = 'https://docs.google.com/spreadsheets/d/1UorU7P_UMr22Luw6q6GLQYk4-YicGRATwCePRxkx2Ms/edit#gid=0',
                                   GOOGLESHEET_AUTH = os.path.join(self.path_home, '.tcspy', f'googlesheet/targetdb-423908-ee7bb8c14ff3.json'),
