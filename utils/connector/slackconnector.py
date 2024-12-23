@@ -80,7 +80,7 @@ class SlackConnector:
         print(f'Thread message posted: text = {text}')
         return result
 
-    def post_message(self, text):
+    def post_message(self, text = None, blocks = None):
         """
         Post a message to the selected Slack channel.
         """
@@ -88,7 +88,8 @@ class SlackConnector:
             raise ValueError("Channel is not selected")
         result = self.client.chat_postMessage(
             channel=self.channel_id,
-            text=text
+            text=text,
+            blocks = blocks
         )
-        print(f'Message posted: text = {text}')
+        print(f'Message posted: text = {text}, blocks = {blocks}')
         return result

@@ -4,12 +4,14 @@ from tcspy.configuration import mainConfig
 from tcspy.utils.alertmanager import Alert
 from tcspy.utils.connector import GmailConnector
 from tcspy.utils.connector import GoogleSheetConnector
+from tcspy.utils.connector import SlackConnector
 from tcspy.utils.databases import DB
 from astropy.time import Time
 from datetime import datetime, timezone
 import os, json
 from typing import List
 from astropy.io import ascii
+import time
 #%%
 class AlertBroker(mainConfig):
     
@@ -18,7 +20,7 @@ class AlertBroker(mainConfig):
         self.googlesheet = None
         self.gmail = None
         self.DB_Daily = None
-        self.alert = Alert()
+        self.slack = None
     
     # Setting up the connectors
     # ==========================
@@ -29,6 +31,12 @@ class AlertBroker(mainConfig):
     # In telescope operating system, the alert is read from the Gmail, Google Sheet, or Astropy Table
     # In the broker, the alert is written to the Google Sheet, Astropy Table, or Database
     
+    def _set_slack(self):
+        if not self.slack:
+            print('Setting up SlackConnector...')
+            self.slack = SlackConnector(token_path = self.config['SLACK_TOKEN'], default_channel_id = self.config['SLACK_DEFAULT_CHANNEL'])
+            print('SlackConnector is ready.')
+    
     def _set_googlesheet(self):
         if not self.googlesheet:
             print('Setting up GoogleSheetConnector...')
@@ -36,8 +44,6 @@ class AlertBroker(mainConfig):
                                                     authorize_json_file = self.config['GOOGLESHEET_AUTH'],
                                                     scope = self.config['GOOGLESHEET_SCOPE'])            
             print('GoogleSheetConnector is ready.')
-        else:
-            pass
     
     def _set_gmail(self):
         if not self.gmail:
@@ -184,13 +190,12 @@ class AlertBroker(mainConfig):
         try:
             alert_tbl = ascii.read(path_alert, format = format_alert)
             alert.decode_gwalert(alert_tbl)
-        except:
-            raise RuntimeError(f'Failed to read and decode the alert')
-        finally:
             # Set alert key as file generated time
             alert.key = get_file_generated_time(path_alert)
             self.save_alert_info(alert = alert)
-        pass
+        except:
+            raise RuntimeError(f'Failed to read and decode the alert')
+        return alert
     
     def read_tbl(self,
                  path_alert : str,
@@ -212,13 +217,12 @@ class AlertBroker(mainConfig):
         try:
             alert_tbl = ascii.read(path_alert, format = format_alert)
             alert.decode_tbl(alert_tbl, match_to_tiles = match_to_tiles)
-        except:
-            raise RuntimeError(f'Failed to read and decode the alert')
-        finally:
             # Set alert key as file generated time
             alert.key = get_file_generated_time(path_alert)
             self.save_alert_info(alert = alert)
-        pass
+        except:
+            raise RuntimeError(f'Failed to read and decode the alert')
+        return alert
 
     def read_mail(self, 
                   mailbox : str = 'inbox',
@@ -246,15 +250,13 @@ class AlertBroker(mainConfig):
                     try:
                         alert.decode_mail(mail_dict, match_to_tiles = match_to_tiles)
                         alertlist.append(alert)
-                    except:
-                        pass
-                    finally:
                         # Set alert key as received time
                         alert.key = get_received_time(mail_dict)
                         self.save_alert_info(alert = alert)
+                    except:
+                        pass
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
-        print('Alert is read from GmailConnector.')
         return alertlist
     
     def read_sheet(self,
@@ -268,20 +270,18 @@ class AlertBroker(mainConfig):
         try:
             alert_tbl = self.googlesheet.read_sheet(sheet_name = sheet_name, format_ = 'Table', save = True, save_dir = os.path.join(self.config['ALERTBROKER_PATH'], 'googlesheet'))
             alert.decode_gsheet(tbl = alert_tbl, match_to_tiles = match_to_tiles)
-        except:
-            pass
-        finally:
-            # Set alert key as sheet name (Sheet name is not duplicated)
             alert.key = sheet_name
             self.save_alert_info(alert = alert)
+        except Exception as e:
+            raise RuntimeError(f'Failed to read and decode the alert : {e}')
         print('Alert is read from GoogleSheetConnector.')
         return alert
     
-    def send_mail_to_requester(self,
-                               alert : Alert,
-                               users : List[str],
-                               observed_time :str,
-                               attachment : str = None):
+    def send_resultmail(self,
+                        alert : Alert,
+                        users : List[str],
+                        observed_time :str,
+                        attachment : str = None):
         def format_mail_body(alert : Alert, observed_time : str = None):
             target_info = alert.formatted_data
             if len(target_info) == 1:
@@ -314,16 +314,24 @@ class AlertBroker(mainConfig):
                 multi_target_tail += "Hyeonho Choi"
                 multi_target_text = multi_target_head + multi_target_tail
                 return multi_target_text
-                
-        mail_body = format_mail_body(alert = alert, observed_time = observed_time)
-        self.gmail.send_mail(to_users = users, cc_users = None, subject = '[7DT ToO Alert] Your ToO target(s) are observed', body = mail_body, attachments= attachment, text_type = 'html')
-        print('Mail is sent to the users.')            
+        if not alert.is_decoded:
+            raise ValueError('The alert is not formatted yet')
         
-    def send_mail_to_users(self, 
-                           alert : Alert,
-                           users : List[str],
-                           scheduled_time : str = None,
-                           attachment : str = None):
+        print('Sending the result mail to the users...')
+        self._set_gmail()
+        try:  
+            mail_body = format_mail_body(alert = alert, observed_time = observed_time)
+            self.gmail.send_mail(to_users = users, cc_users = None, subject = '[7DT ToO Alert] Your ToO target(s) are observed', body = mail_body, attachments= attachment, text_type = 'html')
+            print('Mail is sent to the users.')            
+        except:
+            raise RuntimeError(f'Failed to send the result mail to the users')
+        
+        
+    def send_alertmail(self, 
+                       alert : Alert,
+                       users : List[str],
+                       scheduled_time : str = None,
+                       attachment : str = None):
         
         def format_mail_body(alert : Alert, scheduled_time : str = None):
             target_info = alert.formatted_data
@@ -343,12 +351,13 @@ class AlertBroker(mainConfig):
                 single_target_targetinfo_body += "<p><b>Priority:</b> %d </p>" %single_target_info['priority']  
                 single_target_targetinfo_body += "<p><b>Immediate start?:</b> %s </p>" %str(bool(single_target_info['is_ToO']))
                 single_target_targetinfo_body += "<p><b>ID:</b> %s </p>" %single_target_info['id']  
-                if single_target_info['note']:
+                if 'note' in single_target_info.keys() and single_target_info['note']:
                     single_target_targetinfo_body += "<p><b>Note:</b> %s </p>" %single_target_info['note']
-                if single_target_info['comments']:
+                if 'comments' in single_target_info.keys() and single_target_info['comments']:
                     single_target_targetinfo_body += "<p><b>Comments:</b> %s </p>" %single_target_info['comments']
-                if single_target_info['obs_starttime']:
-                    single_target_targetinfo_body += "<p><b>Requested obstime:</b> %s </p>" %single_target_info['obs_starttime']
+                if 'obs_starttime' in single_target_info and single_target_info['obs_starttime']:
+                    single_target_targetinfo_body += "*Requested obstime:* %s\n" % single_target_info['obs_starttime']
+
                 if alert.is_matched_to_tiles:
                     single_target_targetinfo_body += "<span style='color: red;'><p><b>[This target is matched to the 7DS RIS tiles. The target name is stored in 'Note'] </p></b></span>"
                 single_target_targetinfo_box = f"""
@@ -372,7 +381,7 @@ class AlertBroker(mainConfig):
                     single_target_expinfo_body += "<p><b>Specmode:</b> %s </p>" %single_target_info['specmode']
                 elif single_target_info['obsmode'].lower() == 'deep':
                     single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter']
-                    single_target_expinfo_body += "<p><b>Number of telescope:</b> %d </p>" %single_target_info['ntelescope']
+                    single_target_expinfo_body += "<p><b>Number of telescope:</b> %d </p>" %single_target_info['ntelescopes']
                 else:
                     single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter']
                 single_target_expinfo_body += "<p><b>Gain:</b> %s </p>" %single_target_info['gain']
@@ -429,10 +438,146 @@ class AlertBroker(mainConfig):
                 multi_targetinfo_tail += "Hyeonho Choi"
                 multi_target_text = multi_target_head + multi_targetinfo_box + multi_targetinfo_tail
                 return multi_target_text
+        if not alert.is_decoded:
+            raise ValueError('The alert is not formatted yet')
         
-        mail_body = format_mail_body(alert = alert, scheduled_time = scheduled_time)
-        self.gmail.send_mail(to_users = users, cc_users = None, subject = '[7DT ToO Alert] New ToO target(s) are received', body = mail_body, attachments= attachment, text_type = 'html')
-        print('Mail is sent to the users.')
+        print('Sending the alert mail to the users...')
+        self._set_gmail()
+        try:  
+            mail_body = format_mail_body(alert = alert, scheduled_time = scheduled_time)
+            self.gmail.send_mail(to_users = users, cc_users = None, subject = '[7DT ToO Alert] New ToO target(s) are received', body = mail_body, attachments= attachment, text_type = 'html')
+            print('Mail is sent to the users.')
+        except:
+            raise RuntimeError(f'Failed to send the alert mail to the users')
+    
+    def send_alertslack(self,
+                        alert : Alert,
+                        scheduled_time : str = None,
+                        ):
+        def format_slack_body(alert: Alert, scheduled_time: str = None):
+            target_info = alert.formatted_data
+            if len(target_info) == 1:
+                single_target_info = target_info[0]
+                # Initial blocks
+                blocks = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                f":red_circle: *NEW ToO Alert Request* [{alert.alert_type.upper()}]\n"
+                                f"Single alert is received from the user: *{alert.alert_sender}*\n"
+                                + f"at `{alert.update_time}`\n"
+                                + (f"The observation is scheduled at(on): `{scheduled_time}`\n" if scheduled_time else "")
+                                + f"Alert ID: {single_target_info['id']}\n\n"
+                                "Please check observation information below."
+                            ),
+                        },
+                    },
+                    {"type": "divider"},
+                ]
+
+                # Observation details
+                details_text = (
+                    f"*Target Name:* {single_target_info['objname']}\n"
+                    f"*RA:* {single_target_info['RA']:.5f}\n"
+                    f"*Dec:* {single_target_info['De']:.5f}\n"
+                    f"*Priority:* {single_target_info['priority']}\n"
+                    f"*Immediate start?* {'Yes' if single_target_info['is_ToO'] else 'No'}\n"
+                    f"*Note:* {single_target_info['note'] if 'note' in single_target_info.keys() and single_target_info['note'] else 'N/A'}\n"
+                    f"*Comments:* {single_target_info['comments'] if 'comments' in single_target_info.keys() and single_target_info['comments'] else 'N/A'}\n"
+                    f"*Requested obstime:* {single_target_info['obs_starttime'] if 'obs_starttime' in single_target_info.keys() and single_target_info['obs_starttime'] else 'N/A'}\n"
+                    f"*Obsmode:* {single_target_info['obsmode']}\n"
+                    f"*Exposure time:* {single_target_info['exptime']:.1f}s x {single_target_info['count']}\n"
+                )
+
+                # Add a warning if the target is matched to the tiles
+                if alert.is_matched_to_tiles:
+                    details_text += (
+                        f"`*[This target is matched to the 7DS RIS tiles. The target name is stored in 'Note']*`\n"
+                    )
+                    
+                # Add additional fields based on obsmode
+                if single_target_info['obsmode'].lower() == 'spec':
+                    details_text += f"*Specmode:* {single_target_info['specmode']}\n"
+                elif single_target_info['obsmode'].lower() == 'deep':
+                    details_text += (
+                        f"*Filter:* {single_target_info['filter']}\n"
+                        f"*Number of telescopes:* {single_target_info['ntelescopes']}\n"
+                    )
+                else:
+                    details_text += f"*Filter:* {single_target_info['filter']}\n"
+
+                # Add telescope info
+                details_text += (
+                    f"*Gain:* {single_target_info['gain']}\n"
+                    f"*Binning:* {single_target_info['binning']}"
+                )
+
+                # Append details as a section block
+                blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": details_text,
+                    },
+                })
+
+            else:
+                multi_target_info = target_info
+                blocks = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                f":red_circle: *NEW ToO Alert Request* [{alert.alert_type.upper()}]\n"
+                                f"Multiple alerts are received from the user: *{alert.alert_sender}* \n"
+                                + f"at `{alert.update_time}`\n"
+                                + (f"The observation is scheduled on: `{scheduled_time}`\n" if scheduled_time else "")
+                                + "Please check observation information in the thread."
+                            ),
+                        },
+                    },
+                    {"type": "divider"},
+                ]
+
+                # Observation details
+                details_text = (
+                    f"*Number of targets:* {len(multi_target_info)}\n"
+                    f"*Notes:* {list(set(multi_target_info['note'])) if 'note' in multi_target_info.keys() else 'N/A'}\n"
+                    f"*Obsmode:* {list(set(multi_target_info['obsmode']))}\n"
+                )
+                
+                # Add a warning if the target is matched to the tiles
+                if alert.is_matched_to_tiles:
+                    details_text += (
+                        f"`*[This target is matched to the 7DS RIS tiles. The target name is stored in 'Note']*`\n"
+                    )
+
+                blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": details_text,
+                    },
+                })
+            return blocks
+        
+        if not alert.is_decoded:
+            raise ValueError('The alert is not formatted yet')
+
+        print('Sending the alert to SlackConnector...')
+        self._set_slack()
+        try:
+            slack_message = format_slack_body(alert = alert, scheduled_time = scheduled_time)
+            self.slack.post_message(blocks = slack_message)            
+            time.sleep(5)
+            message_ts = self.slack.get_message_ts(match_string = alert.formatted_data['id'][0])
+            print('Slack message is sent.')
+            return message_ts
+        except:
+            raise RuntimeError(f'Failed to send the alert to SlackConnector')            
     
     def to_DB(self,
               alert : List[Alert]):
@@ -446,36 +591,24 @@ class AlertBroker(mainConfig):
         self._set_DB()  
         try:
             self.DB_Daily.insert(target_tbl = formatted_data)
+            alert.is_inputted = True
+            alert.update_time = Time.now().isot
+            self.save_alert_info(alert = alert)
+            print(f'Targets are inserted to the database.')
         except:
             raise RuntimeError(f'Failed to insert the alert to the database')
-        alert.is_inputted = True
-        print(f'Targets are inserted to the database.')
+        
         return alert
     
-    @property
-    def users(self):
-        users_dict = dict()
-        users_dict['authorized'] = self.config['ALERTBROKER_AUTHUSERS']
-        users_dict['normal'] = self.config['ALERTBROKER_NORMUSERS']
-        return users_dict
+
       
 # %%
-if __name__ == '__main__':
-    self = AlertBroker()
-    since_days = 3
-    max_numbers = 5
-    match_to_tiles = True
-    from tcspy.utils.connector import GmailConnector
-    G = GmailConnector('7dt.observation.alert@gmail.com')
-    #G.login()
-    mail_str = G.read_mail(since_days = 10)
 #%%
 if __name__ == '__main__':
-    alert = Alert()
-    #alert.decode_mail(mail_str[3], match_to_tiles = True)
-    print(alert.formatted_data)
     ab = AlertBroker()
-
     file_path  = '/Users/hhchoi1022/code/tcspy/utils/alertmanager/20241128_164230_GECKO.ascii_fixed_width'
-    #ab.read_gwalert(path_tbl = file_path, match_to_tiles = True)
+    #alert = ab.read_gwalert(path_alert = file_path)
+    alert = ab.read_sheet(sheet_name = '241219', match_to_tiles= True)
+    message_ts = ab.send_alertslack(alert = alert)
+    #ab.read_gwalert(path_alert = file_path)#, match_to_tiles = True)
 # %%
