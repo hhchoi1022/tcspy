@@ -2,6 +2,8 @@
 #%%
 from tcspy.utils.alertmanager import AlertBroker
 from tcspy.utils.connector import SlackConnector
+from tcspy.utils.connector import GoogleSheetConnector
+import queue
 #%%
 
 class AlertMonitor():
@@ -9,6 +11,8 @@ class AlertMonitor():
     def __init__(self):
         self.alertbroker = AlertBroker()
         self.slack = SlackConnector()
+        self.googlesheet = GoogleSheetConnector()
+        self.alert_queue = queue.Queue()
     
     def check_new_mail(self,
                        since_days : int = 3,
@@ -21,25 +25,25 @@ class AlertMonitor():
             print("No new mail found")
             return None
         
-        new_alertlist = []
         for alert in alertlist:
+            # If any new alert received, put it in the queue
             if alert.is_inputted == False:
-                new_alertlist.append(alert)
-                alert.is_inputted = True
-                
+                self.alert_queue.put(alert)                
                 self.alertbroker.save_alert_info(alert = alert, save_dir = self.alertbroker.get_mail_generated_time())
-            
-        
-        alerts = self.alertbroker.get_alerts()
-        for alert in alerts:
-            self.slack.send_message(alert)
-        return alerts
-    
+                
     def monitor_sheet(self):
-        alerts = self.alertbroker.get_alerts()
-        for alert in alerts:
-            self.slack.send_message(alert)
-        return alerts
+        sheetlist = self.googlesheet._get_sheet_list()
+        if len(sheetlist) < 0:
+            print("No new sheet found")
+            return None
+        
+        for sheet_name in sheetlist:
+            # If any new alert received, put it in the queue
+            if not os.path.exists(os.path.join(self.config['ALERTBROKER_PATH'], 'googlesheet', sheet_name)):
+                alert = self.alertbroker.read_sheet(sheet_name = sheet_name)
+                if alert.is_inputted == False:
+                    self.alert_queue.put(alert)                
+                    self.alertbroker.save_alert_info(alert = alert, save_dir = self.alertbroker.get_sheet_generated_time())
     
     @property
     def users(self):
