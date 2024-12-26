@@ -132,7 +132,7 @@ class mainConfig:
         transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022', 
                                TRANSFER_SERVER_PORTNUM = '8022',
-                               TRANSFER_SOURCE_HOMEDIR = '/data1/obsdata_archive/',
+                               TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 8,
