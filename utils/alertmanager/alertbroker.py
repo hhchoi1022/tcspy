@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import os, json
 from typing import List
 from astropy.io import ascii
+#%%
 import time
 #%%
 class AlertBroker(mainConfig):
@@ -57,11 +58,15 @@ class AlertBroker(mainConfig):
             self.DB_Daily = DB().Daily   
     
     def save_alert_info(self, 
-                        alert : Alert):
+                        alert : Alert,
+                        save_dir : str = None):
         if not alert.alert_data:
             raise ValueError('The alert data is not read or received yet')
         
-        dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, alert.key)
+        if not save_dir:
+            save_dir = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, save_dir)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
@@ -86,7 +91,8 @@ class AlertBroker(mainConfig):
         alert_status['key'] = alert.key
         with open(os.path.join(dirname, 'alert_status.json'), 'w') as f:
             json.dump(alert_status, f, indent = 4)
-            
+        
+        print(f'Alert is saved: {dirname}')
             
     def load_alert_from_folder(self, 
                                alert_path : str) -> Alert:
@@ -116,6 +122,21 @@ class AlertBroker(mainConfig):
                 alert.update_time = alert_status['update_time']
                 alert.key = alert_status['key']
         return alert
+    
+    def get_file_generated_time(self, filepath):
+        # Get the file's creation time (or modification time as a fallback on some systems)
+        stat_info = os.stat(filepath)
+        creation_time = getattr(stat_info, 'st_birthtime', stat_info.st_mtime)
+        
+        # Convert the timestamp to a formatted string
+        formatted_time = datetime.fromtimestamp(creation_time).strftime('%Y%m%d_%H%M%S')
+        return formatted_time
+    
+    def get_mail_generated_time(self, mail_dict):
+        parsed_date = datetime.strptime(mail_dict['Date'], '%a, %d %b %Y %H:%M:%S %z')
+        utc_date = parsed_date.astimezone(timezone.utc)
+        date_str = utc_date.strftime('%Y%m%d_%H%M%S')
+        return date_str
         
     def write_gwalert(self,
                       file_path : str, # Path of the alert file (Astropy Table readable)
@@ -175,14 +196,7 @@ class AlertBroker(mainConfig):
     def read_gwalert(self,
                      path_alert : str,
                      format_alert : str = 'fixed_width'):
-        def get_file_generated_time(filepath):
-            # Get the file's creation time (or modification time as a fallback on some systems)
-            stat_info = os.stat(filepath)
-            creation_time = getattr(stat_info, 'st_birthtime', stat_info.st_mtime)
-            
-            # Convert the timestamp to a formatted string
-            formatted_time = datetime.fromtimestamp(creation_time).strftime('%Y%m%d_%H%M%S')
-            return formatted_time
+
         
         # Read the alert file
         alert = Alert()
@@ -190,9 +204,13 @@ class AlertBroker(mainConfig):
         try:
             alert_tbl = ascii.read(path_alert, format = format_alert)
             alert.decode_gwalert(alert_tbl)
-            # Set alert key as file generated time
-            alert.key = get_file_generated_time(path_alert)
-            self.save_alert_info(alert = alert)
+            dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, self.get_file_generated_time(path_alert))
+            # If new alert, save the alert
+            if not os.path.exists(dirname):
+                self.save_alert_info(alert = alert, save_dir = self.get_file_generated_time(path_alert))
+            # Else, load the alert from the history
+            else:
+                alert = self.load_alert_from_folder(dirname)
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
         return alert
@@ -200,26 +218,22 @@ class AlertBroker(mainConfig):
     def read_tbl(self,
                  path_alert : str,
                  format_alert : str = 'fixed_width',
-                 match_to_tiles : bool = False):
-        
-        def get_file_generated_time(filepath):
-            # Get the file's creation time (or modification time as a fallback on some systems)
-            stat_info = os.stat(filepath)
-            creation_time = getattr(stat_info, 'st_birthtime', stat_info.st_mtime)
-            
-            # Convert the timestamp to a formatted string
-            formatted_time = datetime.fromtimestamp(creation_time).strftime('%Y%m%d_%H%M%S')
-            return formatted_time
+                 match_to_tiles : bool = False,
+                 match_tolerance_minutes : float = 3):
         
         # Read the alert file
         alert = Alert()
         print('Reading the alert from Astropy Table...')
         try:
             alert_tbl = ascii.read(path_alert, format = format_alert)
-            alert.decode_tbl(alert_tbl, match_to_tiles = match_to_tiles)
-            # Set alert key as file generated time
-            alert.key = get_file_generated_time(path_alert)
-            self.save_alert_info(alert = alert)
+            alert.decode_tbl(alert_tbl, match_to_tiles = match_to_tiles, match_tolerance_minutes = match_tolerance_minutes)            
+            dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, self.get_file_generated_time(path_alert))
+            # If new alert, save the alert
+            if not os.path.exists(dirname):                
+                self.save_alert_info(alert = alert, save_dir = self.get_file_generated_time(path_alert))
+            # Else, load the alert from the history
+            else:
+                alert = self.load_alert_from_folder(dirname)
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
         return alert
@@ -228,14 +242,9 @@ class AlertBroker(mainConfig):
                   mailbox : str = 'inbox',
                   since_days : int = 1,
                   max_numbers : int = 10,
-                  match_to_tiles : bool = False
+                  match_to_tiles : bool = False,
+                  match_tolerance_minutes : float = 3
                   ) -> List[Alert]:
-        
-        def get_received_time(mail_dict):
-            parsed_date = datetime.strptime(mail_dict['Date'], '%a, %d %b %Y %H:%M:%S %z')
-            utc_date = parsed_date.astimezone(timezone.utc)
-            date_str = utc_date.strftime('%Y%m%d_%H%M%S')
-            return date_str
         
         print('Reading the alert from GmailConnector...')
         self._set_gmail()
@@ -248,11 +257,15 @@ class AlertBroker(mainConfig):
                 for mail_dict in maillist:
                     alert = Alert()
                     try:
-                        alert.decode_mail(mail_dict, match_to_tiles = match_to_tiles)
+                        alert.decode_mail(mail_dict, match_to_tiles = match_to_tiles, match_tolerance_minutes = match_tolerance_minutes)
+                        dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, self.get_mail_generated_time(mail_dict))
+                        # If new alert, save the alert
+                        if not os.path.exists(dirname):
+                            self.save_alert_info(alert = alert, save_dir = self.get_mail_generated_time(mail_dict))
+                        # Else, load the alert from the history 
+                        else:
+                            alert = self.load_alert_from_folder(dirname)
                         alertlist.append(alert)
-                        # Set alert key as received time
-                        alert.key = get_received_time(mail_dict)
-                        self.save_alert_info(alert = alert)
                     except:
                         pass
         except:
@@ -261,7 +274,8 @@ class AlertBroker(mainConfig):
     
     def read_sheet(self,
                    sheet_name : str, # Sheet name
-                   match_to_tiles : bool = False
+                   match_to_tiles : bool = False,
+                   match_tolerance_minutes : float = 3
                    )-> List[Alert]:
         # Read the alert file
         alert = Alert()
@@ -269,9 +283,14 @@ class AlertBroker(mainConfig):
         self._set_googlesheet()
         try:
             alert_tbl = self.googlesheet.read_sheet(sheet_name = sheet_name, format_ = 'Table', save = True, save_dir = os.path.join(self.config['ALERTBROKER_PATH'], 'googlesheet'))
-            alert.decode_gsheet(tbl = alert_tbl, match_to_tiles = match_to_tiles)
-            alert.key = sheet_name
-            self.save_alert_info(alert = alert)
+            alert.decode_gsheet(tbl = alert_tbl, match_to_tiles = match_to_tiles, match_tolerance_minutes = match_tolerance_minutes)
+            dirname = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, sheet_name)
+            # If new alert, save the alert
+            if not os.path.exists(dirname):
+                self.save_alert_info(alert = alert, save_dir = sheet_name)
+            # Else, load the alert from the history
+            else:
+                alert = self.load_alert_from_folder(dirname)
         except Exception as e:
             raise RuntimeError(f'Failed to read and decode the alert : {e}')
         print('Alert is read from GoogleSheetConnector.')
@@ -294,9 +313,9 @@ class AlertBroker(mainConfig):
                 single_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
                 single_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"
                 
-                single_target_tail += "<br>"
-                single_target_tail = "<p> Best regards, </p>"
-                single_target_tail += "Hyeonho Choi"
+                single_target_tail = "<br>"
+                single_target_tail += "<p> Best regards, </p>"
+                single_target_tail += "7DT Team"
                 single_target_text = single_target_head + single_target_tail
                 return single_target_text
             else:
@@ -311,7 +330,7 @@ class AlertBroker(mainConfig):
                 
                 multi_target_tail = "<br>"
                 multi_target_tail = "<p> Best regards, </p>"
-                multi_target_tail += "Hyeonho Choi"
+                multi_target_tail += "7DT Team"
                 multi_target_text = multi_target_head + multi_target_tail
                 return multi_target_text
         if not alert.is_decoded:
@@ -608,7 +627,10 @@ if __name__ == '__main__':
     ab = AlertBroker()
     file_path  = '/Users/hhchoi1022/code/tcspy/utils/alertmanager/20241128_164230_GECKO.ascii_fixed_width'
     #alert = ab.read_gwalert(path_alert = file_path)
-    alert = ab.read_sheet(sheet_name = '241219', match_to_tiles= True)
-    message_ts = ab.send_alertslack(alert = alert)
+    #alert = ab.read_sheet(sheet_name = '241219', match_to_tiles= True)
+    alertlist = ab.read_mail(since_days = 10)
+    alert = alertlist[0]
+    #message_ts = ab.send_alertslack(alert = alert)
+    ab.send_resultmail(alert = alert, users = 'hhchoi1022@gmail.com', observed_time = '2024-12-26')
     #ab.read_gwalert(path_alert = file_path)#, match_to_tiles = True)
 # %%

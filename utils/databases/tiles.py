@@ -239,28 +239,8 @@ if __name__ == "__main__":
     #list_ra = [tbl1[0]['ra']]#tbl1['ra'][0]
     #list_dec = [tbl1[0]['dec']]#tbl1['dec'][0]
     
-    list_ra = np.array(['117.553',
-    '117.5',
-    '118.4',
-    '119',
-    '120.23',
-    '120.45',
-    '122.1',
-    '123.22',
-    '123.1',
-    '123',
-    '124.55']).astype(float)
-    list_dec = np.array(['-34.811',
-    '-36.509',
-    '-34.811',
-    '-18.679',
-    '-35.66',
-    '-39.906',
-    '-38.208',
-    '-39.057',
-    '-40.755',
-    '-38.208',
-    '-36.509']).astype(float)
+    list_ra = np.array(['74.804']).astype(float)
+    list_dec = np.array(['7.110']).astype(float)
     tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, visualize=True, visualize_ncols=5, match_tolerance_minutes= 11)  
     print(tbl_filtered['distance_to_boundary'])
 # %%
