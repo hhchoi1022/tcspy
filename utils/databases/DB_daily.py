@@ -579,7 +579,7 @@ if __name__ == '__main__':
     # #tbl_input['ntelescope'] = 10
     # #Daily.insert(tbl_input)
 
-    from tcspy.utils.databases import DB_Annual
+    # from tcspy.utils.databases import DB_Annual
     RIS = DB_Annual('RIS').data
     tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
     tbl_to_insert['note'] = 'Faint White Dwarf'
@@ -587,7 +587,11 @@ if __name__ == '__main__':
     tbl_to_insert['specmode'] = ['specall_ugriz']*len(tbl_to_insert)
     tbl_to_insert['priority'] = 50
     Daily.insert(tbl_to_insert)
-    Daily.initialize(True)
+
+    # tbl_to_insert = RIS[[21177]]
+    # tbl_to_insert['note'] = 'EP241223a'
+    # Daily.insert(tbl_to_insert)
+    # Daily.initialize(True)
     #Daily.write()
 
 
