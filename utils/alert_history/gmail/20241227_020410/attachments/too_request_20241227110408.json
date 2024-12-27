@@ -1,0 +1,23 @@
+{
+    "requester": "hhchoi1022@gmail.com",
+    "target": "GRB241227",
+    "ra": "12:23:34",
+    "dec": "-23:23:23",
+    "exposure": 300,
+    "obsmode": "Deep",
+    "comments": "",
+    "abortObservation": true,
+    "singleFrameExposure": 60,
+    "imageCount": 5,
+    "priority": 50,
+    "gain": 2750,
+    "binning": 1,
+    "obsStartTime": "",
+    "selectedFilters": [
+        "g",
+        "r",
+        "i"
+    ],
+    "selectedTelNumber": 15,
+    "id": "20241227_110408"
+}

@@ -1,0 +1,10 @@
+{
+    "From": [
+        "HyeonhoChoi",
+        "7dt.observation.alert@gmail.com"
+    ],
+    "Subject": "asdasd",
+    "Date": "Fri, 27 Dec 2024 11:38:37 +0900",
+    "Body": "asdsad\r\n",
+    "Attachments": []
+}

@@ -109,7 +109,7 @@ class GoogleSheetConnector:
                 save_dir_for_sheet = os.path.join(save_dir, sheet_name)
                 if not os.path.exists(save_dir_for_sheet):
                     os.makedirs(save_dir_for_sheet)
-                Table(np.array(rows), names = header).write(f'{os.path.join(save_dir, sheet_name)}.ascii.fixed_width', format = 'ascii.fixed_width', overwrite = True)
+                Table(np.array(rows), names = header).write(f'{os.path.join(save_dir_for_sheet, sheet_name)}.ascii.fixed_width', format = 'ascii.fixed_width', overwrite = True)
             return output
             
         else:

@@ -234,9 +234,8 @@ class GmailConnector:
                                     attachment_path = os.path.join(save_dir_for_attachments, filename)
                                     with open(attachment_path, "wb") as f:
                                         f.write(part.get_payload(decode=True))
-                                
-                                # Append attachment info
-                                email_data['Attachments'].append(attachment_path)
+                                    # Append attachment info
+                                    email_data['Attachments'].append(attachment_path)
                 if save:
                     save_dir_for_email = os.path.join(save_dir, date_str)
                     if not os.path.exists(save_dir_for_email):

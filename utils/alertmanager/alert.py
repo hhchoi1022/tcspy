@@ -18,20 +18,23 @@ from tcspy.utils.databases.tiles import Tiles
 class Alert:
     
     def __init__(self):
+        self.rawdata = None # raw data of the alert
         self.alert_data = None # raw data of the alert
         self.alert_type = None # mail_broker, mail_user, googlesheet, gw, table
         self.alert_sender = 'Undefined' # sender of the alert
         self.formatted_data = None # formatted data of the alert
         self.is_decoded = False # after decoding the alert data, set it to True
         self.is_inputted = False # after inputting the alert data to the scheduler, set it to True
+        self.is_observed = False # after observing the alert, set it to True
         self.is_matched_to_tiles = False
         self.distance_to_tile_boundary = None
         self.update_time = None
-        self.key = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.key = uuid.uuid4().hex # unique key for the alert
+        self.historypath = None
         self._tiles = None
     
     def __repr__(self):
-        txt = (f'ALERT (type = {self.alert_type}, sender = {self.alert_sender}, decoded = {self.is_decoded}, inputted = {self.is_inputted}, key = {self.key})')
+        txt = (f'ALERT (type = {self.alert_type}, sender = {self.alert_sender}, decoded = {self.is_decoded}, inputted = {self.is_inputted}, history_path = {self.historypath}')
         return txt   
     
     @property
@@ -49,7 +52,7 @@ class Alert:
         default_config['gain'] = 1
         default_config['objtype'] = 'Request'
         default_config['is_ToO'] = 0
-        default_config['id'] = uuid.uuid4().hex
+        default_config['id'] = self.key
         
         return default_config
     
@@ -71,6 +74,7 @@ class Alert:
         - tbl: astropy.Table, the Google Sheet table
         
         """
+        self.rawdata = tbl
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'googlesheet'
         self.alert_sender = 'Undefined'
@@ -124,6 +128,7 @@ class Alert:
         - tbl: astropy.Table, the Google Sheet table
         
         """
+        self.rawdata = tbl
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'table'
         self.alert_sender = 'Undefined'
@@ -178,6 +183,7 @@ class Alert:
         
         """
         # Read the alert data from the file
+        self.rawdata = tbl
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'gw'
         self.alert_sender = 'GECKO'
@@ -218,6 +224,7 @@ class Alert:
         - alert_type: str, the alert type (broker or user)
         
         """
+        
         # If Attachment is not present, read the body
         alert_dict_normalized = dict()
         if len(mail_dict['Attachments']) > 0:
@@ -239,6 +246,7 @@ class Alert:
                 file_path = None
             except:
                 raise ValueError(f'Error reading the alert data')
+        self.rawdata = mail_dict
         self.alert_data = alert_dict_normalized
         self.alert_type = 'gmail'
         self.alert_sender = mail_dict['From'][1]
@@ -385,7 +393,6 @@ class Alert:
         # Iterate through the dictionary to find a match
         for canonical_key, variants in self.required_key_variants.items():
             if key.lower() in variants:
-                print(canonical_key)
                 return canonical_key
         return None
     
