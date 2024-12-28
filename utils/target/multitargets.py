@@ -63,15 +63,14 @@ class MultiTargets(mainConfig):
     """
     
     def __init__(self,
-                 observer : mainObserver,
                  targets_ra : np.array,
                  targets_dec : np.array,
                  targets_name : np.array = None,
                  **kwargs):
         
-        super().__init__(unitnum = observer.unitnum)
-        self._observer = observer
-        self._astroplan_observer = observer.status['observer']
+        super().__init__()
+        self._observer = mainObserver()
+        self._astroplan_observer = self._observer.status['observer']
         self._constraints = self._get_constraints(**self.config)
         self.ra = np.array(targets_ra)
         self.dec = np.array(targets_dec)     
@@ -117,7 +116,7 @@ class MultiTargets(mainConfig):
             midnight = Time((self._observer.tonight(current_date)[0].jd + self._observer.tonight(current_date)[1].jd )/2, format = 'jd')
             alt_at_midnight = self.altaz(midnight).alt.value
             expanded_arrays_altitude_midnight.append(alt_at_midnight)
-            observablity = self.is_ever_observable(current_date, time_grid_resolution= time_grid_resolution * u.hour)
+            observablity = self.is_ever_observable(current_date, None, time_grid_resolution= time_grid_resolution * u.hour)
             expanded_arrays_observability.append(observablity)
             expanded_arrays_date.append(current_date.datetime)
             current_date += 1 * u.day
@@ -150,7 +149,8 @@ class MultiTargets(mainConfig):
         return np.array(all_observability)
         
     def is_ever_observable(self,
-                           utctime : datetime or Time = None,
+                           utctime_start : datetime or Time = None,
+                           utctime_end : datetime or Time = None,
                            time_grid_resolution = 1 * u.hour) -> List[bool]:
         """
         Determines whether the targets are observable during the specified time.
@@ -172,13 +172,27 @@ class MultiTargets(mainConfig):
         TypeError
             If the provided time is not a valid datetime or Time object.
         """
-        if utctime is None:
-            utctime = Time.now()
-        if not isinstance(utctime, Time):
-            utctime = Time(utctime)
-        tonight = self._observer.tonight(utctime)
-        starttime = tonight[0]
-        endtime = tonight[1]
+        # Ensure both start and end times are Time objects
+        if utctime_start is not None and not isinstance(utctime_start, Time):
+            utctime_start = Time(utctime_start)
+        if utctime_end is not None and not isinstance(utctime_end, Time):
+            utctime_end = Time(utctime_end)
+  
+        # Handle case where both times are None
+        if utctime_start is None and utctime_end is None:
+            tonight = self._observer.tonight(Time.now())
+            starttime, endtime = tonight[0], tonight[1]
+        # Handle case where one time is None
+        elif utctime_start is None:
+            tonight = self._observer.tonight(utctime_end)
+            starttime, endtime = tonight[0], utctime_end
+        elif utctime_end is None:
+            tonight = self._observer.tonight(utctime_start)
+            starttime, endtime = utctime_start, tonight[1]
+        # Handle case where both times are provided
+        else:
+            starttime, endtime = utctime_start, utctime_end              
+
         time_range = [starttime, endtime]
         return is_observable(constraints = self._constraints, observer = self._astroplan_observer, targets = self.target_astroplan, time_range = time_range, time_grid_resolution = time_grid_resolution)
     
@@ -401,3 +415,4 @@ class MultiTargets(mainConfig):
             constraint_all.append(constraint_altitude)
         return constraint_all
     
+# %%

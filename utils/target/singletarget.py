@@ -153,6 +153,7 @@ class SingleTarget(mainConfig):
         self.dec_deg = None
         self._id = id_
         self.note = note
+        self.comment = comment
         self.is_ToO = is_ToO
         
         
@@ -304,6 +305,7 @@ class SingleTarget(mainConfig):
         targetinfo['objtype'] = self.objtype
         targetinfo['id_'] = self._id
         targetinfo['note'] = self.note
+        targetinfo['comment'] = self.comment
         targetinfo['is_ToO'] = self.is_ToO
         
         if self._coordtype == 'altaz':
@@ -658,7 +660,7 @@ if __name__ == '__main__':
     unitnum = 21
     import time
     observer = mainObserver()
-    ra = 327.88467
+    ra = 37.88467
     dec = -56.66531
     objname = 'GRB 241127A'
     start = time.time()
@@ -670,8 +672,7 @@ if __name__ == '__main__':
                      filter_ = 'g',
                      count = 5, 
                      binning=  1, 
-                     obsmode ='Spec',
-                     specmode = 'specall')
+                     obsmode ='Deep')
     S.status
     S.staralt()
     print(time.time() - start)

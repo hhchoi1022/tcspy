@@ -5,14 +5,14 @@ from astropy.table import Table
 from astropy.time import Time
 import json
 import re
-import math
-import os
-from datetime import datetime
+from typing import List
 import uuid
 import numpy as np
 from astropy.coordinates import Angle
-
+import astropy.units as u
+from tcspy.utils.target import MultiTargets
 from tcspy.utils.databases.tiles import Tiles
+from tcspy.utils import NightSession
 #%%
 
 class Alert:
@@ -23,9 +23,9 @@ class Alert:
         self.alert_type = None # mail_broker, mail_user, googlesheet, gw, table
         self.alert_sender = 'Undefined' # sender of the alert
         self.formatted_data = None # formatted data of the alert
-        self.is_decoded = False # after decoding the alert data, set it to True
         self.is_inputted = False # after inputting the alert data to the scheduler, set it to True
         self.is_observed = False # after observing the alert, set it to True
+        self.num_observed_targets = 0 # number of observed targets
         self.is_matched_to_tiles = False
         self.distance_to_tile_boundary = None
         self.update_time = None
@@ -34,7 +34,7 @@ class Alert:
         self._tiles = None
     
     def __repr__(self):
-        txt = (f'ALERT (type = {self.alert_type}, sender = {self.alert_sender}, decoded = {self.is_decoded}, inputted = {self.is_inputted}, history_path = {self.historypath}')
+        txt = (f'ALERT (type = {self.alert_type}, sender = {self.alert_sender}, inputted = {self.is_inputted}, history_path = {self.historypath}')
         return txt   
     
     @property
@@ -65,7 +65,16 @@ class Alert:
             dec = [dec]
         tile, matched_indices, _ = self._tiles.find_overlapping_tiles(ra, dec, visualize = False, match_tolerance_minutes= match_tolerance_minutes)
         return tile, matched_indices
-        
+
+    def _check_visibility(self, ra : list, dec : list) -> List[bool]:
+        print('Checking visibility...')
+        nightsession = NightSession()
+        night_start = nightsession.obsnight_utc.sunset_astro
+        night_end = nightsession.obsnight_utc.sunrise_astro
+        M = MultiTargets(targets_ra = np.array(ra), targets_dec = np.array(dec))
+        is_observable = M.is_ever_observable(utctime_start = night_start, utctime_end = night_end, time_grid_resolution = 10 * u.minute)
+        return is_observable
+
     def decode_gsheet(self, tbl : Table, match_to_tiles : bool = False, match_tolerance_minutes : float = 3):
         """
         Decodes a Google Sheet and register the alert data as an astropy.Table.
@@ -77,7 +86,6 @@ class Alert:
         self.rawdata = tbl
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'googlesheet'
-        self.alert_sender = 'Undefined'
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -115,8 +123,10 @@ class Alert:
                 formatted_tbl['note'][within_boundary_indices] = objname
             self.distance_to_tile_boundary = list(tile_info['distance_to_boundary'])
         
+        # Check visibility 
+        formatted_tbl['is_observable'] = self._check_visibility(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
+        
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
-        self.is_decoded = True
         self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
 
@@ -131,7 +141,6 @@ class Alert:
         self.rawdata = tbl
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'table'
-        self.alert_sender = 'Undefined'
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -148,7 +157,7 @@ class Alert:
                 
         # Convert the RA, Dec to degrees
         formatted_tbl['RA'], formatted_tbl['De'] = self._convert_to_deg(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
-                
+
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
             self.is_matched_to_tiles = True
@@ -168,9 +177,11 @@ class Alert:
                 formatted_tbl['De'][within_boundary_indices] = tile_info['dec'][within_boundary_indices]
                 formatted_tbl['note'][within_boundary_indices] = objname
             self.distance_to_tile_boundary = list(tile_info['distance_to_boundary'])
+            
+        # Check visibility 
+        formatted_tbl['is_observable'] = self._check_visibility(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
-        self.is_decoded = True
         self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
 
@@ -186,7 +197,6 @@ class Alert:
         self.rawdata = tbl
         self.alert_data = {col: tbl[col].tolist() for col in tbl.colnames}
         self.alert_type = 'gw'
-        self.alert_sender = 'GECKO'
         
         # Set/Modify the columns to the standard format
         formatted_tbl = Table()
@@ -209,8 +219,10 @@ class Alert:
         formatted_tbl['objtype'] = 'GECKO'
         formatted_tbl['note'] = tbl['obj'] # Tile observation -> objname is stored in "Note"
         
+        # Check visibility 
+        formatted_tbl['is_observable'] = self._check_visibility(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
+        
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
-        self.is_decoded = True
         self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
     
@@ -265,7 +277,7 @@ class Alert:
         
         # Convert the RA, Dec to degrees
         formatted_dict['RA'], formatted_dict['De'] = self._convert_to_deg(formatted_dict['RA'], formatted_dict['De'])
-        
+
         # Match the RA, Dec to the RIS tiles
         if match_to_tiles:
             tile_info, matched_indices = self._match_RIS_tile(formatted_dict['RA'], formatted_dict['De'], match_tolerance_minutes = match_tolerance_minutes)
@@ -301,7 +313,10 @@ class Alert:
             
         # If specmode is defined, remove the extension
         if 'specmode' in alert_dict_normalized.keys():
-            formatted_dict['specmode'] = alert_dict_normalized['specmode'].split('.')[0]        
+            formatted_dict['specmode'] = alert_dict_normalized['specmode'].split('.')[0]    
+            
+        # Check visibility
+        formatted_dict['is_observable'] = self._check_visibility([formatted_dict['RA']], [formatted_dict['De']])[0]
 
         # Convert the dict to astropy.Table
         formatted_tbl = Table()
@@ -309,7 +324,6 @@ class Alert:
             formatted_tbl[key] = [value]
             
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
-        self.is_decoded = True
         self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
         
@@ -419,7 +433,8 @@ class Alert:
             'comments': ['comment', 'comments'],
             'is_ToO': ['is_too', 'is too', 'abortobservation', 'abort current observation'],
             'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
-            'id': ['id', 'uuid', 'uniqueid', 'unique id', 'unique identifier']
+            'id': ['id', 'uuid', 'uniqueid', 'unique id', 'unique identifier'],
+            'is_observable': ['is_observable']
         }
         # Sort each list in the dictionary by string length (descending order)
         sorted_required_key_variants = {
@@ -438,7 +453,7 @@ if __name__ == '__main__':
 # %%
 if __name__ == '__main__':
     alert = Alert()
-    ABC = Gsheet.read_sheet(sheet_name = '241219')
+    #ABC = Gsheet.read_sheet(sheet_name = '241210')
     #alert.decode_gsheet(tbl= ABC, match_to_tiles = True, match_tolerance_minutes= 10)
     alert.decode_mail(mail_str[3], match_to_tiles = True)
     print(alert.formatted_data)

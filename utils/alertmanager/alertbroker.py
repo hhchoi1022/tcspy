@@ -9,6 +9,7 @@ from tcspy.utils.databases import DB
 from astropy.time import Time
 from datetime import datetime, timezone
 import os, json
+import time
 from typing import List
 from astropy.io import ascii
 #%%
@@ -87,8 +88,9 @@ class AlertBroker(mainConfig):
         alert_status = dict()
         alert_status['alert_type'] = alert.alert_type
         alert_status['alert_sender'] = alert.alert_sender
-        alert_status['is_decoded'] = alert.is_decoded
         alert_status['is_inputted'] = alert.is_inputted
+        alert_status['is_observed'] = alert.is_observed
+        alert_status['num_observed_targets'] = alert.num_observed_targets
         alert_status['is_matched_to_tiles'] = alert.is_matched_to_tiles
         alert_status['distance_to_tile_boundary'] = alert.distance_to_tile_boundary
         alert_status['update_time'] = Time.now().isot
@@ -97,8 +99,7 @@ class AlertBroker(mainConfig):
             json.dump(alert_status, f, indent = 4)
         
         print(f'Alert is saved: {alert.historypath}')
-
-            
+  
     def load_alerthistory(self, 
                           alert_path : str) -> Alert:
         alert = Alert()        
@@ -121,8 +122,8 @@ class AlertBroker(mainConfig):
                 alert_status = json.load(f)
                 alert.alert_type = alert_status['alert_type']
                 alert.alert_sender = alert_status['alert_sender']
-                alert.is_decoded = alert_status['is_decoded']
                 alert.is_inputted = alert_status['is_inputted']
+                alert.is_observed = alert_status['is_observed']
                 alert.is_matched_to_tiles = alert_status['is_matched_to_tiles']
                 alert.distance_to_tile_boundary = alert_status['distance_to_tile_boundary']
                 alert.update_time = alert_status['update_time']
@@ -310,59 +311,11 @@ class AlertBroker(mainConfig):
         print('Alert is read from GoogleSheetConnector.')
         return alert
     
-    def send_resultmail(self,
-                        alert : Alert,
-                        users : List[str],
-                        observed_time :str,
-                        attachment : str = None):
-        def format_mail_body(alert : Alert, observed_time : str = None):
-            target_info = alert.formatted_data
-            if len(target_info) == 1:
-                single_target_info = target_info[0]
-                single_target_head =  "<p>Dear ToO requester, </p>"
-                single_target_head += "<br>"
-                single_target_head += "<p>Thank you for submitting your ToO request! We are pleased to inform you that your ToO target (%s) has been successfully observed.</p>" %(single_target_info['objname'])
-                single_target_head += "<p>The observation was completed on <b><code>%s</code></b>.</p>" %(observed_time)
-                single_target_head += "<p>Your data will be shortly being processed and be available. Please check processing status on the following webpage: [Insert Link].</p>"
-                single_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
-                single_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"
-                
-                single_target_tail = "<br>"
-                single_target_tail += "<p> Best regards, </p>"
-                single_target_tail += "7DT Team"
-                single_target_text = single_target_head + single_target_tail
-                return single_target_text
-            else:
-                multi_target_info = target_info
-                multi_target_head =  "<p>Dear ToO requester, </p>"
-                multi_target_head += "<br>"
-                multi_target_head += "<p>Thank you for submitting your ToO request! We are pleased to inform you that your ToO targets (%s targets) have been successfully observed.</p>" %(len(multi_target_info))
-                multi_target_head += "<p>The observation was completed on <b><code>%s</code></b>.</p>" %(observed_time)
-                multi_target_head += "<p>Your data will be shortly being processed and will be available. Please check processing status on the following webpage: [Insert Link].</p>"
-                multi_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
-                multi_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"                                
-                
-                multi_target_tail = "<br>"
-                multi_target_tail = "<p> Best regards, </p>"
-                multi_target_tail += "7DT Team"
-                multi_target_text = multi_target_head + multi_target_tail
-                return multi_target_text
-        if not alert.is_decoded:
-            raise ValueError('The alert is not formatted yet')
-        
-        print('Sending the result mail to the users...')
-        self._set_gmail()
-        try:  
-            mail_body = format_mail_body(alert = alert, observed_time = observed_time)
-            self.gmail.send_mail(to_users = users, cc_users = None, subject = '[7DT ToO Alert] Your ToO target(s) are observed', body = mail_body, attachments= attachment, text_type = 'html')
-            print('Mail is sent to the users.')            
-        except:
-            raise RuntimeError(f'Failed to send the result mail to the users')
-        
-        
+
     def send_alertmail(self, 
                        alert : Alert,
                        users : List[str],
+                       cc_users : List[str] = None,
                        scheduled_time : str = None,
                        attachment : str = None):
         
@@ -375,6 +328,8 @@ class AlertBroker(mainConfig):
                 single_target_head += "<p>Single alert is received from the user: %s.</p>" %alert.alert_sender
                 if scheduled_time:
                     single_target_head += "<p>The observation is scheduled at(on) <b><code>%s</code></b>.</p>" %scheduled_time
+                if not single_target_info['is_observable']:
+                    single_target_head += "<p>The target is <b><code>not observable</code></b> due to the visibility (moon separation and alaitude).</p>"
                 single_target_head += "<p>Please check below observation information.</p>"
                 
                 single_target_targetinfo_body = "<p><strong>===== Target Information =====</strong></p>"
@@ -440,6 +395,7 @@ class AlertBroker(mainConfig):
                 return single_target_text
             else:
                 multi_target_info = target_info
+                observable_target_info = multi_target_info[multi_target_info['is_observable'] == True]
                 multi_target_head =  "<p>Dear 7DT users, </p>"
                 multi_target_head += f"<p>Multiple alerts are received from the user: %s.</p>" %alert.alert_sender
                 if scheduled_time:
@@ -447,9 +403,10 @@ class AlertBroker(mainConfig):
                 multi_target_head += "<p>Please check below observation information.</p>"
                 
                 multi_targetinfo_body = "<p><strong>===== Target Information =====</strong></p>"
-                multi_targetinfo_body += "<p><b>Number of targets:</b> %s </p>" %len(multi_target_info)
-                multi_targetinfo_body += "<p><b>Obsmode:</b> %s </p>" %list(set(multi_target_info['obsmode']))
-                multi_targetinfo_body += "<p><b>Note:</b> %s </p>" %list(set(multi_target_info['note']))  
+                multi_targetinfo_body += "<p><b>Number of requested targets:</b> %s </p>" %len(multi_target_info)
+                multi_targetinfo_body += "<p><b>Number of observable targets:</b> %s </p>" %len(observable_target_info)
+                multi_targetinfo_body += "<p><b>Obsmode:</b> %s </p>" %list(set(observable_target_info['obsmode']))
+                multi_targetinfo_body += "<p><b>Note:</b> %s </p>" %list(set(observable_target_info['note']))  
                 multi_targetinfo_body += "<span style='color: red;'><p><b>Please check the detailed target information in the attachment</p></b></span>"
                 if alert.is_matched_to_tiles:
                     multi_targetinfo_body += "<span style='color: red;'><p><b>[These targets are matched to the 7DS RIS tiles. The target name is stored in 'Note'] </p></b></span>"
@@ -471,18 +428,126 @@ class AlertBroker(mainConfig):
                 multi_targetinfo_tail += "Hyeonho Choi"
                 multi_target_text = multi_target_head + multi_targetinfo_box + multi_targetinfo_tail
                 return multi_target_text
-        if not alert.is_decoded:
-            raise ValueError('The alert is not formatted yet')
-        
+
         print('Sending the alert mail to the users...')
         self._set_gmail()
         try:  
             mail_body = format_mail_body(alert = alert, scheduled_time = scheduled_time)
-            self.gmail.send_mail(to_users = users, cc_users = None, subject = '[7DT ToO Alert] New ToO target(s) are received', body = mail_body, attachments= attachment, text_type = 'html')
+            self.gmail.send_mail(to_users = users, cc_users = cc_users, subject = '[7DT ToO Alert] New ToO target(s) are received', body = mail_body, attachments= attachment, text_type = 'html')
             print('Mail is sent to the users.')
         except:
             raise RuntimeError(f'Failed to send the alert mail to the users')
     
+    
+    def send_observedmail(self,
+                          alert : Alert,
+                          users : List[str],
+                          cc_users : List[str] = None,
+                          observed_time :str = None,
+                          attachment : str = None):
+        def format_mail_body(alert : Alert, observed_time : str = None):
+            target_info = alert.formatted_data
+            if len(target_info) == 1:
+                single_target_info = target_info[0]
+                
+                single_target_head =  "<p>Dear ToO requester, </p>"
+                single_target_head += "<br>"
+                single_target_head += "<p>Thank you for submitting your ToO request! We are pleased to inform you that your ToO target (%s) has been successfully observed.</p>" %(single_target_info['objname'])
+                single_target_head += "<p>The observation was completed on <b><code>%s</code></b>.</p>" %(observed_time)
+                single_target_head += "<p>Your data will be shortly being processed and be available. Please check processing status on the following webpage: [Insert Link].</p>"
+                single_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
+                single_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"
+                
+                single_target_tail = "<br>"
+                single_target_tail += "<p> Best regards, </p>"
+                single_target_tail += "7DT Team"
+                single_target_text = single_target_head + single_target_tail
+                return single_target_text
+            else:
+                multi_target_info = target_info
+                observable_target_info = multi_target_info[multi_target_info['is_observable'] == True]   
+                             
+                multi_target_head =  "<p>Dear ToO requester, </p>"
+                multi_target_head += "<br>"
+                multi_target_head += "<p>Thank you for submitting your ToO request! We are pleased to inform you that your ToO targets (%s targets) have been successfully observed.</p>" %(len(multi_target_info))
+                multi_target_head += "<p>The observation was completed on <b><code>%s</code></b>.</p>" %(observed_time)
+                multi_target_head += "<p>Total # of targets: %s, # of Observable: %s, # of observed: %s  </p>" %(len(multi_target_info), len(observable_target_info), alert.num_observed_targets)
+                multi_target_head += "<p>Your data will be shortly being processed and will be available. Please check processing status on the following webpage: [Insert Link].</p>"
+                multi_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
+                multi_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"                                
+                
+                multi_target_tail = "<br>"
+                multi_target_tail = "<p> Best regards, </p>"
+                multi_target_tail += "7DT Team"
+                multi_target_text = multi_target_head + multi_target_tail
+                return multi_target_text
+        
+        print('Sending the result mail to the users...')
+        self._set_gmail()
+        try:  
+            mail_body = format_mail_body(alert = alert, observed_time = observed_time)
+            self.gmail.send_mail(to_users = users, cc_users = cc_users, subject = '[7DT ToO Alert] Your ToO target(s) are observed', body = mail_body, attachments= attachment, text_type = 'html')
+            print('Mail is sent to the users.')            
+        except:
+            raise RuntimeError(f'Failed to send the result mail to the users')
+        
+    def send_failedmail(self,
+                        alert : Alert,
+                        users : List[str],
+                        cc_users : List[str] = None,
+                        observed_time :str = None,
+                        attachment : str = None):
+        def format_mail_body(alert : Alert, observed_time : str = None):
+            target_info = alert.formatted_data
+            if len(target_info) == 1:
+                single_target_info = target_info[0]
+                
+                single_target_head =  "<p>Dear ToO requester, </p>"
+                single_target_head += "<br>"
+                single_target_head += (
+                    "<p>Thank you for submitting your Target of Opportunity (ToO) request. "
+                    "We regret to inform you that your ToO target, <b>%s</b>, could not be observed. "
+                    "This was due to one or more of the following reasons: low altitude, inadequate moon separation, or lower priority.</p>"
+                    % single_target_info['objname']
+                )
+                single_target_head += (
+                    "<p>As a reminder, ToO requests are valid for two days. "
+                    "This email serves as a notification after the lifetime of your ToO request. "
+                    % observed_time
+                )
+                single_target_tail = "<br>"
+                single_target_tail += "<p> Best regards, </p>"
+                single_target_tail += "7DT Team"
+                single_target_text = single_target_head + single_target_tail
+                return single_target_text
+            else:
+                multi_target_info = target_info
+                observable_target_info = multi_target_info[multi_target_info['is_observable'] == True]
+                
+                multi_target_head =  "<p>Dear ToO requester, </p>"
+                multi_target_head += "<br>"
+                multi_target_head += "<p>Thank you for submitting your ToO request! We are pleased to inform you that your ToO targets (%s targets) have been successfully observed.</p>" %(len(multi_target_info))
+                multi_target_head += "<p>The observation was completed on <b><code>%s</code></b>.</p>" %(observed_time)
+                multi_target_head += "<p>Total # of targets: %s, # of Observable: %s, of observed: %s  </p>" %(len(multi_target_info), len(observable_target_info), alert.num_observed_targets)
+                multi_target_head += "<p>Your data will be shortly being processed and will be available. Please check processing status on the following webpage: [Insert Link].</p>"
+                multi_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
+                multi_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"                                
+                
+                multi_target_tail = "<br>"
+                multi_target_tail = "<p> Best regards, </p>"
+                multi_target_tail += "7DT Team"
+                multi_target_text = multi_target_head + multi_target_tail
+                return multi_target_text
+        
+        print('Sending the result mail to the users...')
+        self._set_gmail()
+        try:  
+            mail_body = format_mail_body(alert = alert, observed_time = observed_time)
+            self.gmail.send_mail(to_users = users, cc_users = cc_users, subject = '[7DT ToO Alert] Your ToO target(s) are observed', body = mail_body, attachments= attachment, text_type = 'html')
+            print('Mail is sent to the users.')            
+        except:
+            raise RuntimeError(f'Failed to send the result mail to the users')
+        
     def send_alertslack(self,
                         alert : Alert,
                         scheduled_time : str = None,
@@ -502,6 +567,7 @@ class AlertBroker(mainConfig):
                                 f"Single alert is received from the user: *{alert.alert_sender}*\n"
                                 + f"at `{alert.update_time}`\n"
                                 + (f"The observation is scheduled at(on): `{scheduled_time}`\n" if scheduled_time else "")
+                                + (f"The target is `not observable` due to the visibility (moon separation and alaitude)" if not single_target_info['is_observable'] else "")
                                 + f"Alert ID: {single_target_info['id']}\n\n"
                                 "Please check observation information below."
                             ),
@@ -558,6 +624,7 @@ class AlertBroker(mainConfig):
 
             else:
                 multi_target_info = target_info
+                observable_target_info = multi_target_info[multi_target_info['is_observable'] == True]
                 blocks = [
                     {
                         "type": "section",
@@ -568,6 +635,7 @@ class AlertBroker(mainConfig):
                                 f"Multiple alerts are received from the user: *{alert.alert_sender}* \n"
                                 + f"at `{alert.update_time}`\n"
                                 + (f"The observation is scheduled on: `{scheduled_time}`\n" if scheduled_time else "")
+                                + f"Alert ID: {alert.formatted_data['id'][0]}\n\n"
                                 + "Please check observation information in the thread."
                             ),
                         },
@@ -577,9 +645,10 @@ class AlertBroker(mainConfig):
 
                 # Observation details
                 details_text = (
-                    f"*Number of targets:* {len(multi_target_info)}\n"
-                    f"*Notes:* {list(set(multi_target_info['note'])) if 'note' in multi_target_info.keys() else 'N/A'}\n"
-                    f"*Obsmode:* {list(set(multi_target_info['obsmode']))}\n"
+                    f"*Number of requested targets:* {len(observable_target_info)}\n"
+                    f"*Number of observable targets:* {len(observable_target_info)}\n"
+                    f"*Notes:* {list(set(observable_target_info['note'])) if 'note' in observable_target_info.keys() else 'N/A'}\n"
+                    f"*Obsmode:* {list(set(observable_target_info['obsmode']))}\n"
                 )
                 
                 # Add a warning if the target is matched to the tiles
@@ -596,9 +665,6 @@ class AlertBroker(mainConfig):
                     },
                 })
             return blocks
-        
-        if not alert.is_decoded:
-            raise ValueError('The alert is not formatted yet')
 
         print('Sending the alert to SlackConnector...')
         self._set_slack()
@@ -612,8 +678,152 @@ class AlertBroker(mainConfig):
         except:
             raise RuntimeError(f'Failed to send the alert to SlackConnector')            
     
-    def to_DB(self,
-              alert : List[Alert]):
+    def send_observedslack(self, 
+                           alert: Alert, 
+                           message_ts : str,
+                           observed_time: str = None,):
+        def format_slack_body(alert: Alert, observed_time: str = None):
+            target_info = alert.formatted_data
+            if len(target_info) == 1:
+                single_target_info = target_info[0]
+                blocks = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                f":white_check_mark: *ToO Observation Success* [{alert.alert_type.upper()}]\n"
+                                f"The ToO target, *{single_target_info['objname']}*, has been successfully observed.\n"
+                                f"Observation completed on: `{observed_time}`\n"
+                                f"Alert ID: {single_target_info['id']}\n\n"
+                                "Observation details below:"
+                            ),
+                        },
+                    },
+                    {"type": "divider"},
+                ]
+                
+                details_text = (
+                    f"*Target Name:* {single_target_info['objname']}\n"
+                    f"*RA:* {single_target_info['RA']:.5f}\n"
+                    f"*Dec:* {single_target_info['De']:.5f}\n"
+                    f"*Priority:* {single_target_info['priority']}\n"
+                    f"*Obsmode:* {single_target_info['obsmode']}\n"
+                    f"*Exposure Time:* {single_target_info['exptime']:.1f}s x {single_target_info['count']}\n"
+                )
+
+                if single_target_info['obsmode'].lower() == 'spec':
+                    details_text += f"*Specmode:* {single_target_info['specmode']}\n"
+                elif single_target_info['obsmode'].lower() == 'deep':
+                    details_text += (
+                        f"*Filter:* {single_target_info['filter']}\n"
+                        f"*Number of Telescopes:* {single_target_info['ntelescopes']}\n"
+                    )
+                else:
+                    details_text += f"*Filter:* {single_target_info['filter']}\n"
+
+                details_text += (
+                    f"*Gain:* {single_target_info['gain']}\n"
+                    f"*Binning:* {single_target_info['binning']}\n"
+                )
+                
+                blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": details_text,
+                    },
+                })
+            else:
+                multi_target_info = target_info
+                observable_target_info = multi_target_info[multi_target_info['is_observable'] == True]
+                blocks = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                f":white_check_mark: *ToO Observation Success* [{alert.alert_type.upper()}]\n"
+                                f"Multiple ToO targets have been successfully observed.\n"
+                                f"Observation completed on: `{observed_time}`\n\n"
+                                f"*Total # of Targets:* {len(multi_target_info)}, # of Observable: {len(observable_target_info)}, # of observed: {alert.num_observed_targets}\n"
+                                f"*Alert ID:* {alert.formatted_data['id'][0]}"
+                            ),
+                        },
+                    },
+                    {"type": "divider"},
+                ]
+
+            return blocks
+
+        print('Sending the observed alert to SlackConnector...')
+        self._set_slack()
+        try:
+            slack_message = format_slack_body(alert=alert, observed_time=observed_time)
+            self.slack.post_thread_message(message_ts = message_ts, blocks=slack_message)
+            print('Slack message for observed alert is sent.')
+        except:
+            raise RuntimeError('Failed to send the observed alert to SlackConnector')
+
+    def send_failedslack(self, 
+                         alert: Alert, 
+                         message_ts : str,
+                         observed_time: str = None):
+        
+        def format_slack_body(alert: Alert, observed_time: str = None):
+            target_info = alert.formatted_data
+            if len(target_info) == 1:
+                single_target_info = target_info[0]
+                blocks = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                f":warning: *ToO Observation Failed* [{alert.alert_type.upper()}]\n"
+                                f"The ToO target, *{single_target_info['objname']}*, could not be observed.\n"
+                                f"Reasons could include low altitude, inadequate moon separation, or lower priority.\n"
+                                f"Alert ID: {single_target_info['id']}\n\n"
+                                "Observation request expired after two days."
+                            ),
+                        },
+                    },
+                    {"type": "divider"},
+                ]
+            else:
+                multi_target_info = target_info
+                observable_target_info = multi_target_info[multi_target_info['is_observable'] == True]
+                blocks = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                f":warning: *ToO Observation Failed* [{alert.alert_type.upper()}]\n"
+                                f"Multiple ToO targets could not be observed.\n"
+                                f"Reasons could include low altitude, inadequate moon separation, or lower priority.\n\n"
+                                f"*Total # of Targets:* {len(multi_target_info)}, # of Observable: {len(observable_target_info)}, # of observed: {alert.num_observed_targets}\n"
+                                f"Alert ID: {alert.formatted_data['id'][0]}"
+                            ),
+                        },
+                    },
+                    {"type": "divider"},
+                ]
+
+            return blocks
+
+        print('Sending the failed alert to SlackConnector...')
+        self._set_slack()
+        try:
+            slack_message = format_slack_body(alert = alert, observed_time = observed_time)
+            self.slack.post_thread_message(message_ts = message_ts, blocks = slack_message)
+            print('Slack message for failed alert is sent.')
+        except:
+            raise RuntimeError('Failed to send the failed alert to SlackConnector')
+
+    
+    def input_alert(self,
+                    alert : List[Alert]):
         """
         Send the alert to the database.
         
@@ -627,9 +837,10 @@ class AlertBroker(mainConfig):
             alert.is_inputted = True
             alert.update_time = Time.now().isot
             print(f'Targets are inserted to the database.')
+            return alert
         except:
             raise RuntimeError(f'Failed to insert the alert to the database')
-        return alert
+        
     
 
       
@@ -641,7 +852,7 @@ if __name__ == '__main__':
     #alert = ab.read_gwalert(path_alert = file_path)
     #alert = ab.read_sheet(sheet_name = '241219', match_to_tiles= True)
     alertlist = ab.read_mail(since_days = 10)
-    alert = alertlist[0]
+    #alert = alertlist[0]
     #message_ts = ab.send_alertslack(alert = alert)
     #ab.send_resultmail(alert = alert, users = 'hhchoi1022@gmail.com', observed_time = '2024-12-26')
     #ab.read_gwalert(path_alert = file_path)#, match_to_tiles = True)

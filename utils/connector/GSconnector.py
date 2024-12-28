@@ -63,7 +63,7 @@ class GoogleSheetConnector:
     def __repr__(self):
         return f'GoogleSheet(Sheetlist={self._get_sheet_list()})'
         
-    def _get_sheet_list(self):
+    def get_sheet_list(self):
         sheet_list = [sheet.title for sheet in self.doc.worksheets()]
         return sheet_list
     
@@ -153,7 +153,7 @@ class GoogleSheetConnector:
         else:
             raise AttributeError('Format is not matched(one among ["Pandas","Table","Dict"])')
         if not sheet_name in self._get_sheet_list():
-            self.doc.add_worksheet(sheet_name, rows = "1000", cols = "26")
+            self.doc.add_worksheet(sheet_name, rows = "1000", cols = "40")
         
         if not append:
             worksheet = self.doc.worksheet(sheet_name)

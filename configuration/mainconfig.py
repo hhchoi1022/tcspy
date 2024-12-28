@@ -194,17 +194,15 @@ class mainConfig:
                                                        'https://www.googleapis.com/auth/drive',
                                                        'https://www.googleapis.com/auth/spreadsheets'])
         
-        alertbroker_params = dict(ALERTBROKER_AUTHUSERS = ['hhchoi1022@gmail.com', # Hyeonho Choi
-                                                           'hhchoi1022@snu.ac.kr', # Hyeonho Choi (2)
-                                                           '7dt.observation.broker@gmail.com', # 7DT ToO web
+        alertbroker_params = dict(ALERTBROKER_AUTHUSERS = ['hhchoi1022@snu.ac.kr', # Hyeonho Choi (2)
                                                            #'jhkim.astrosnu@gmail.com', # Ji hoon Kim
                                                            #'myungshin.im@gmail.com',  # Myungshin Im
                                                            ],
-                                  ALERTBROKER_NORMUSERS = ['hhchoi1022@gmail.com', # Hyeonho Choi
-                                                           'hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
+                                  ALERTBROKER_NORMUSERS = ['hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
                                                            #'jhkim.astrosnu@gmail.com', # Ji hoon Kim
                                                            #'myungshin.im@gmail.com', # Myungshin Im
                                                            ],
+                                  ALERTBROKER_ADMINUSERS = ['hhchoi1022@gmail.com'], # Hyeonho Choi
                                   ALERTBROKER_PATH = f'/data2/obsdata/alert_history',
                                   ALERTBROKER_STATUSPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "alert")}',
                                 )
