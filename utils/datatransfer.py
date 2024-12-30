@@ -344,6 +344,8 @@ if __name__ == '__main__':
     time.sleep(600)
     A.run(key = '*/image/2024-12-26_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
     time.sleep(600)
+    A.run(key = '*/image/2024-12-27_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
+
     #A.run(key = '*/2024-12-15_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
 
     #A.run(key = '*/2024-12-12_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
