@@ -66,7 +66,7 @@ class SlackConnector:
         message_ts = matched_messages[0]["ts"]
         return message_ts
 
-    def post_thread_message(self, message_ts, text):
+    def post_thread_message(self, message_ts, text = None, blocks = None):
         """
         Post a message to a thread in the selected Slack channel.
         """
@@ -75,9 +75,10 @@ class SlackConnector:
         result = self.client.chat_postMessage(
             channel=self.channel_id,
             text=text,
+            blocks = blocks,
             thread_ts=message_ts
         )
-        print(f'Thread message posted: text = {text}')
+        print(f'Thread message posted: text = {text}, blocks = {blocks}')
         return result
 
     def post_message(self, text = None, blocks = None):

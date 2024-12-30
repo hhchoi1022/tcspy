@@ -16,14 +16,14 @@
             "focusval": 7508.1
         },
         "m450": {
-            "update_time": "2024-12-28T07:48:58.839",
+            "update_time": "2024-12-30T05:45:03.831",
             "succeeded": true,
-            "focusval": 7624.3
+            "focusval": 7619.4
         },
         "m475": {
-            "update_time": "2024-12-28T07:56:01.220",
+            "update_time": "2024-12-30T04:50:00.046",
             "succeeded": true,
-            "focusval": 7779.6
+            "focusval": 7752.9
         },
         "Slot6": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -31,9 +31,9 @@
             "focusval": 10000
         },
         "m700": {
-            "update_time": "2024-12-27T03:32:42.265",
+            "update_time": "2024-12-29T03:33:08.262",
             "succeeded": true,
-            "focusval": 7608.2
+            "focusval": 7601.8
         },
         "Slot8": {
             "update_time": "2000-01-01T00:00:00.000",

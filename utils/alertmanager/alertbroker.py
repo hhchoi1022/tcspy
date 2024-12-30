@@ -504,17 +504,13 @@ class AlertBroker(mainConfig):
                 
                 single_target_head =  "<p>Dear ToO requester, </p>"
                 single_target_head += "<br>"
-                single_target_head += (
-                    "<p>Thank you for submitting your Target of Opportunity (ToO) request. "
-                    "We regret to inform you that your ToO target, <b>%s</b>, could not be observed. "
-                    "This was due to one or more of the following reasons: low altitude, inadequate moon separation, or lower priority.</p>"
-                    % single_target_info['objname']
-                )
-                single_target_head += (
-                    "<p>As a reminder, ToO requests are valid for two days. "
-                    "This email serves as a notification after the lifetime of your ToO request. "
-                    % observed_time
-                )
+                single_target_head += "<p>Thank you for submitting your Target of Opportunity (ToO) request. </p>"
+                single_target_head += "<p>We regret to inform you that your ToO target, <b>%s</b>, could not be observed. </p>"% single_target_info['objname']
+                single_target_head += "<p>This was due to one or more of the following reasons: low altitude, inadequate moon separation, or lower priority.</p>" 
+                single_target_head += "<p>As a reminder, ToO requests are valid only for two days.  </p>"
+                single_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
+                single_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"                     
+
                 single_target_tail = "<br>"
                 single_target_tail += "<p> Best regards, </p>"
                 single_target_tail += "7DT Team"
@@ -526,13 +522,16 @@ class AlertBroker(mainConfig):
                 
                 multi_target_head =  "<p>Dear ToO requester, </p>"
                 multi_target_head += "<br>"
-                multi_target_head += "<p>Thank you for submitting your ToO request! We are pleased to inform you that your ToO targets (%s targets) have been successfully observed.</p>" %(len(multi_target_info))
-                multi_target_head += "<p>The observation was completed on <b><code>%s</code></b>.</p>" %(observed_time)
+                multi_target_head += "<p>Thank you for submitting your Target of Opportunity (ToO) request. </p>"
+                multi_target_head += "<p>We regret to inform you that your ToO targets could not be observed. </p>"
                 multi_target_head += "<p>Total # of targets: %s, # of Observable: %s, of observed: %s  </p>" %(len(multi_target_info), len(observable_target_info), alert.num_observed_targets)
-                multi_target_head += "<p>Your data will be shortly being processed and will be available. Please check processing status on the following webpage: [Insert Link].</p>"
+                multi_target_head += "<p>This was due to one or more of the following reasons: low altitude, inadequate moon separation, or lower priority.</p>" 
+                multi_target_head += "<p>As a reminder, ToO requests are valid for two days. </p>"
+                multi_target_head += "<p>This email serves as a notification after the lifetime of your ToO request.  </p>"
                 multi_target_head += "<p>If you have any questions, please feel free to reach out to our team members with the following address.</p>"
                 multi_target_head += "<p>Hyeonho Choi: hhchoi1022@gmail.com</p>"                                
-                
+                multi_target_head += "<p>Myungshin Im: myungshin.im@gmail.com</p>"                                
+
                 multi_target_tail = "<br>"
                 multi_target_tail = "<p> Best regards, </p>"
                 multi_target_tail += "7DT Team"
@@ -543,7 +542,7 @@ class AlertBroker(mainConfig):
         self._set_gmail()
         try:  
             mail_body = format_mail_body(alert = alert, observed_time = observed_time)
-            self.gmail.send_mail(to_users = users, cc_users = cc_users, subject = '[7DT ToO Alert] Your ToO target(s) are observed', body = mail_body, attachments= attachment, text_type = 'html')
+            self.gmail.send_mail(to_users = users, cc_users = cc_users, subject = '[7DT ToO Alert] Your ToO request is failed', body = mail_body, attachments= attachment, text_type = 'html')
             print('Mail is sent to the users.')            
         except:
             raise RuntimeError(f'Failed to send the result mail to the users')
@@ -634,7 +633,7 @@ class AlertBroker(mainConfig):
                                 f":red_circle: *NEW ToO Alert Request* [{alert.alert_type.upper()}]\n"
                                 f"Multiple alerts are received from the user: *{alert.alert_sender}* \n"
                                 + f"at `{alert.update_time}`\n"
-                                + (f"The observation is scheduled on: `{scheduled_time}`\n" if scheduled_time else "")
+                                + (f"The observation is scheduled at(on): `{scheduled_time}`\n" if scheduled_time else "")
                                 + f"Alert ID: {alert.formatted_data['id'][0]}\n\n"
                                 + "Please check observation information in the thread."
                             ),

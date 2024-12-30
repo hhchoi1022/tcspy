@@ -195,6 +195,7 @@ class mainConfig:
                                                        'https://www.googleapis.com/auth/spreadsheets'])
         
         alertbroker_params = dict(ALERTBROKER_AUTHUSERS = ['hhchoi1022@snu.ac.kr', # Hyeonho Choi (2)
+                                                           'hhchoi1022@gmail.com',
                                                            #'jhkim.astrosnu@gmail.com', # Ji hoon Kim
                                                            #'myungshin.im@gmail.com',  # Myungshin Im
                                                            ],

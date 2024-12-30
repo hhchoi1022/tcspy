@@ -34,7 +34,7 @@ class Alert:
         self._tiles = None
     
     def __repr__(self):
-        txt = (f'ALERT (type = {self.alert_type}, sender = {self.alert_sender}, inputted = {self.is_inputted}, history_path = {self.historypath}')
+        txt = (f'ALERT (type = {self.alert_type}, sender = {self.alert_sender}, inputted = {self.is_inputted}, observed = {self.is_observed}, history_path = {self.historypath}')
         return txt   
     
     @property
@@ -415,7 +415,7 @@ class Alert:
         # Define key variants, if a word is duplicated in the same variant, posit the word with the highest priority first
         required_key_variants_lower = {
             'requester': ['requester', 'requestor', 'requestinguser', 'requesting user', 'requesting user name'],
-            'objname': ['target name', 'target', 'object', 'objname', 'id'],
+            'objname': ['target name', 'target', 'object', 'objname'],
             'RA': ['right ascension (ra)', 'right ascension (r.a.)', 'ra', 'r.a.'],
             'De': ['de', 'dec', 'dec.', 'declination', 'declination (dec)', 'declination (dec.)'],
             'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleframeexposure', 'single frame exposure'],
@@ -444,10 +444,17 @@ class Alert:
         return sorted_required_key_variants
 #%%
 if __name__ == '__main__':
+    from tcspy.configuration import mainConfig
     from tcspy.utils.connector import GmailConnector
     from tcspy.utils.connector import GoogleSheetConnector
-    G = GmailConnector('7dt.observation.alert@gmail.com')
-    Gsheet = GoogleSheetConnector()
+    config = mainConfig().config
+    G = GmailConnector(user_account = config['GMAIL_USERNAME'], 
+                                        user_token_path = config['GMAIL_TOKENPATH'])
+            
+    Gsheet = GoogleSheetConnector(spreadsheet_url = config['GOOGLESHEET_URL'], 
+                                    authorize_json_file = config['GOOGLESHEET_AUTH'],
+                                    scope = config['GOOGLESHEET_SCOPE'])            
+
     #G.login()
     mail_str = G.read_mail(since_days = 10)
 # %%
@@ -455,7 +462,7 @@ if __name__ == '__main__':
     alert = Alert()
     #ABC = Gsheet.read_sheet(sheet_name = '241210')
     #alert.decode_gsheet(tbl= ABC, match_to_tiles = True, match_tolerance_minutes= 10)
-    alert.decode_mail(mail_str[3], match_to_tiles = True)
+    alert.decode_mail(mail_str[3], match_to_tiles = False)
     print(alert.formatted_data)
 
 # %%
