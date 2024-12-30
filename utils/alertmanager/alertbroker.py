@@ -57,31 +57,27 @@ class AlertBroker(mainConfig):
             self.DB_Daily = DB().Daily   
     
     def is_history_saved(self,
-                         alert : Alert):
-        if not alert.historypath:
-            raise ValueError('The alert history path is not defined yet')
-        
-        if not os.path.exists(os.path.join(alert.historypath, 'alert_rawdata.json')):
+                         history_path : str):
+        if not os.path.exists(os.path.join(history_path, 'alert_rawdata.json')):
             return False
         else:
             return True
         
     def save_alerthistory(self, 
-                          alert : Alert):
+                          alert : Alert,
+                          history_path : str):
         if not alert.alert_data:
             raise ValueError('The alert data is not read or received yet')
-        if not alert.historypath:
-            raise ValueError('The alert history path is not defined yet')
         
-        if not os.path.exists(alert.historypath):
-            os.makedirs(alert.historypath)
+        if not os.path.exists(history_path):
+            os.makedirs(history_path)
 
         # Save formatted_data (Optional)
         if alert.formatted_data:
-            alert.formatted_data.write(os.path.join(alert.historypath, 'alert_formatted.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
+            alert.formatted_data.write(os.path.join(history_path, 'alert_formatted.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
         
         # Save alert_data
-        with open(os.path.join(alert.historypath, 'alert_rawdata.json'), 'w') as f:
+        with open(os.path.join(history_path, 'alert_rawdata.json'), 'w') as f:
             json.dump(alert.alert_data, f, indent = 4)
 
         # Save the alert status as json
@@ -95,22 +91,22 @@ class AlertBroker(mainConfig):
         alert_status['distance_to_tile_boundary'] = alert.distance_to_tile_boundary
         alert_status['update_time'] = Time.now().isot
         alert_status['key'] = alert.key
-        with open(os.path.join(alert.historypath, 'alert_status.json'), 'w') as f:
+        with open(os.path.join(history_path, 'alert_status.json'), 'w') as f:
             json.dump(alert_status, f, indent = 4)
         
-        print(f'Alert is saved: {alert.historypath}')
+        print(f'Alert is saved: {history_path}')
   
     def load_alerthistory(self, 
-                          alert_path : str) -> Alert:
+                          history_path : str) -> Alert:
         alert = Alert()        
-        alert.historypath = alert_path
-        if not os.path.exists(alert_path):
-            raise FileNotFoundError(f'Folder not found: {alert_path}')
+        alert.historypath = history_path
+        if not os.path.exists(history_path):
+            raise FileNotFoundError(f'Folder not found: {history_path}')
         
         # Set folder path
-        alert_rawdata_path = os.path.join(alert_path, 'alert_rawdata.json')
-        alert_formatted_path = os.path.join(alert_path, 'alert_formatted.ascii_fixed_width')
-        alert_status_path = os.path.join(alert_path, 'alert_status.json')
+        alert_rawdata_path = os.path.join(history_path, 'alert_rawdata.json')
+        alert_formatted_path = os.path.join(history_path, 'alert_formatted.ascii_fixed_width')
+        alert_status_path = os.path.join(history_path, 'alert_status.json')
         
         if os.path.exists(alert_rawdata_path):
             with open(alert_rawdata_path, 'r') as f:
@@ -206,11 +202,11 @@ class AlertBroker(mainConfig):
             alert.decode_gwalert(alert_tbl)
             alert.historypath = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, get_file_generated_time(path_alert))
             # If new alert, save the alert
-            if not self.is_history_saved(alert = alert):
-                self.save_alerthistory(alert = alert)
+            if not self.is_history_saved(history_path = alert.historypath):
+                self.save_alerthistory(alert = alert, history_path = alert.historypath)
             # Else, load the alert from the history
             else:
-                alert = self.load_alerthistory(alert.historypath)
+                alert = self.load_alerthistory(history_path = alert.historypath)
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
         return alert
@@ -238,11 +234,11 @@ class AlertBroker(mainConfig):
             alert.decode_tbl(alert_tbl, match_to_tiles = match_to_tiles, match_tolerance_minutes = match_tolerance_minutes)            
             alert.historypath = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, get_file_generated_time(path_alert))
             # If new alert, save the alert
-            if not self.is_history_saved(alert = alert):
-                self.save_alerthistory(alert = alert)
+            if not self.is_history_saved(history_path = alert.historypath):
+                self.save_alerthistory(alert = alert, history_path = alert.historypath)
             # Else, load the alert from the history
             else:
-                alert = self.load_alerthistory(alert.historypath)
+                alert = self.load_alerthistory(history_path = alert.historypath)
         except:
             raise RuntimeError(f'Failed to read and decode the alert')
         return alert
@@ -275,11 +271,11 @@ class AlertBroker(mainConfig):
                         alert.decode_mail(mail_dict, match_to_tiles = match_to_tiles, match_tolerance_minutes = match_tolerance_minutes)
                         alert.historypath = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, get_mail_generated_time(mail_dict))
                         # If new alert, save the alert
-                        if not self.is_history_saved(alert = alert):
-                            self.save_alerthistory(alert = alert)
+                        if not self.is_history_saved(history_path = alert.historypath):
+                            self.save_alerthistory(alert = alert, history_path = alert.historypath)
                         # Else, load the alert from the history 
                         else:
-                            alert = self.load_alerthistory(alert.historypath)
+                            alert = self.load_alerthistory(history_path = alert.historypath)
                         alertlist.append(alert)
                     except:
                         pass
@@ -301,11 +297,11 @@ class AlertBroker(mainConfig):
             alert.decode_gsheet(tbl = alert_tbl, match_to_tiles = match_to_tiles, match_tolerance_minutes = match_tolerance_minutes)
             alert.historypath = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, sheet_name)
             # If new alert, save the alert
-            if not self.is_history_saved(alert = alert):
-                self.save_alerthistory(alert = alert)
+            if not self.is_history_saved(history_path = alert.historypath):
+                self.save_alerthistory(alert = alert, history_path = alert.historypath)
             # Else, load the alert from the history
             else:
-                alert = self.load_alerthistory(alert.historypath)
+                alert = self.load_alerthistory(history_path = alert.historypath)
         except Exception as e:
             raise RuntimeError(f'Failed to read and decode the alert : {e}')
         print('Alert is read from GoogleSheetConnector.')

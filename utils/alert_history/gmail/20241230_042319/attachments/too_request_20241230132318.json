@@ -1,0 +1,15 @@
+{
+    "requester": "takdg123@gmail.com",
+    "target": "test",
+    "ra": "231",
+    "dec": "-60",
+    "exposure": "100",
+    "obsmode": "Spec",
+    "comments": "",
+    "abortObservation": false,
+    "priority": 50,
+    "gain": 2750,
+    "binning": 1,
+    "obsStartTime": "",
+    "selectedSpecFile": "specall.specmode"
+}

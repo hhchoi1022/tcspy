@@ -1,0 +1,12 @@
+{
+    "From": [
+        "7DT Observation Alert",
+        "7dt.observation.broker@gmail.com"
+    ],
+    "Subject": "[Automated] 7DT ToO Observation Request",
+    "Date": "Mon, 30 Dec 2024 13:26:58 +0900",
+    "Body": "\r\n        ================================\r\n        New ToO Request Submitted\r\n        ================================\r\n\r\n        **Observation Information**\r\n        ----------------------\r\n        - Requester: takdg123@gmail.com\r\n        - Target Name: AT 2024aeyw\r\n        - Right Ascension (R.A.): 120.51299\r\n        - Declination (Dec.): -46.96852\r\n        - Total Exposure Time (seconds): 300.0\r\n        - Single Exposure Time (seconds): 100\r\n        - # of images: 3\r\n        - Obsmode: Spec\r\n            - Specmode: specall.specmode\r\n            \r\n\r\n        **Detailed Settings**\r\n        --------------------\r\n        - Abort Current Observation: False\r\n        - Priority: None\r\n        - Gain: None\r\n        - Binning: None\r\n        - Observation Start Time: None\r\n        - Comments: \r\n\r\n        ================================\r\n        Please take necessary actions.\r\n        ================================\r\n        ",
+    "Attachments": [
+        "../alert_history/gmail/20241230_042658/attachments/too_request_20241230132656.json"
+    ]
+}

@@ -31,6 +31,7 @@ class Alert:
         self.update_time = None
         self.key = uuid.uuid4().hex # unique key for the alert
         self.historypath = None
+        self.statuspath = None
         self._tiles = None
     
     def __repr__(self):
@@ -418,7 +419,7 @@ class Alert:
             'objname': ['target name', 'target', 'object', 'objname'],
             'RA': ['right ascension (ra)', 'right ascension (r.a.)', 'ra', 'r.a.'],
             'De': ['de', 'dec', 'dec.', 'declination', 'declination (dec)', 'declination (dec.)'],
-            'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleframeexposure', 'single frame exposure'],
+            'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleframeexposure', 'single frame exposure', 'singleexposure'],
             'count': ['count', 'counts', 'imagecount', 'numbercount', 'image count', 'number count'],
             'obsmode': ['obsmode', 'observationmode', 'mode'],
             'specmode': ['specmode', 'spectralmode', 'spectral mode', 'selectedspecfile'],
@@ -462,7 +463,7 @@ if __name__ == '__main__':
     alert = Alert()
     #ABC = Gsheet.read_sheet(sheet_name = '241210')
     #alert.decode_gsheet(tbl= ABC, match_to_tiles = True, match_tolerance_minutes= 10)
-    alert.decode_mail(mail_str[3], match_to_tiles = False)
+    alert.decode_mail(mail_str[-1], match_to_tiles = False)
     print(alert.formatted_data)
 
 # %%
