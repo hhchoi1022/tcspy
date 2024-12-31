@@ -133,7 +133,7 @@ class mainConfig:
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022', 
                                TRANSFER_SERVER_PORTNUM = '8022',
                                TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
-                               TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archfive/',
+                               TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 8,
                                TRANSFER_GRIPFTP_VERBOSE = True,
