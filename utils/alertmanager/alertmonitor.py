@@ -83,11 +83,8 @@ class AlertMonitor(mainConfig):
                         args=(alert, send_slack, send_email)
                     )
                     alert_thread.start()
-                    alert.statuspath = os.path.join(self.config['ALERTBROKER_STATUSPATH'], os.path.basename(alert.historypath))
-                    self.update_alertstatus(alert, alert.statuspath)
 
                     # Update the thread information in self.active_alerts
-                    
                     self.active_alerts[alert.key] = {}
                     self.active_alerts[alert.key]["alert"] = alert
                     self.active_alerts[alert.key]["status"] = "Processing"
@@ -132,9 +129,10 @@ class AlertMonitor(mainConfig):
             Whether to send the alert notification via email (default is True).
         """
         tonight_str = "UTC " + datetime.datetime.now().strftime("%Y-%m-%d")
-        
+        alert.statuspath = os.path.join(self.config['ALERTBROKER_STATUSPATH'], os.path.basename(alert.historypath))
         print(f"[{datetime.datetime.now()}] Inserting alert into the database.")
         alert = self.alertbroker.input_alert(alert)
+        self.update_alertstatus(alert, alert.statuspath)
         self.alertbroker.save_alerthistory(alert = alert, history_path = alert.historypath)
         print(f"[{datetime.datetime.now()}] Alert inserted and history saved.")
 
@@ -183,6 +181,7 @@ class AlertMonitor(mainConfig):
 
         alert.is_observed = is_alert_observed
         self.alertbroker.save_alerthistory(alert = alert, history_path = alert.historypath)
+        self.update_alertstatus(alert, alert.statuspath)
 
         # Send final notifications based on observation result
         requester = alert.alert_sender if alert.alert_sender != '7dt.observation.broker@gmail.com' else None

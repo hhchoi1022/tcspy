@@ -386,7 +386,7 @@ class AlertBroker(mainConfig):
                 """
                 
                 single_target_tail = "<p> Best regards, </p>"
-                single_target_tail += "Hyeonho Choi"
+                single_target_tail += "7DT Team"
                 single_target_text = single_target_head + single_target_targetinfo_box + single_target_expinfo_box + single_target_tail
                 return single_target_text
             else:
@@ -421,7 +421,7 @@ class AlertBroker(mainConfig):
                 """
                 
                 multi_targetinfo_tail = "<p> Best regards, </p>"
-                multi_targetinfo_tail += "Hyeonho Choi"
+                multi_targetinfo_tail += "7DT Team"
                 multi_target_text = multi_target_head + multi_targetinfo_box + multi_targetinfo_tail
                 return multi_target_text
 
