@@ -175,7 +175,8 @@ class DB_Daily(mainConfig):
         print(f'{len(target_tbl_to_update)} targets are updated')
     
     def best_target(self,
-                    utctime : Time = Time.now()):
+                    utctime : Time = Time.now(),
+                    force_non_ToO : bool = False):
         """
         Returns the best target to observe.
 
@@ -201,11 +202,12 @@ class DB_Daily(mainConfig):
         target_ordinary = target_all[~idx_ToO]
         
         # If there is any observable ToO target, return ToO target with the scoring algorithm
-        exist_ToO = (len(target_ToO) > 0)
-        if exist_ToO:
-            target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ToO)        
-            if target_score:
-                return target_best, target_score
+        if not force_non_ToO:
+            exist_ToO = (len(target_ToO) > 0)
+            if exist_ToO:
+                target_best, target_score = self._scorer(utctime = utctime, target_tbl = target_ToO)        
+                if target_score:
+                    return target_best, target_score
         
         # Else, ordinary targets are scored with the group. First, Observe Group 1 target, seconds, group 2 targets, and so on...
         exist_ordinary = (len(target_ordinary) > 0)

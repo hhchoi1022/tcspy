@@ -45,6 +45,7 @@ class NightObservation(mainConfig):
         self.is_obs_triggered = False
         self.is_shutdown_triggered = False
         self.is_ToO_triggered = False
+        self.last_ToO_trigger_time = Time.now().isot
         self._ToO_abort = Event()
         self._observation_abort = Event()
         self.initialize()
@@ -402,7 +403,6 @@ class NightObservation(mainConfig):
         now = Time.now()
         
         # Wait until sunset
-        # Wait until sunset
         if now < obs_start_time:
             self.multitelescopes.log.info('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
             print('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
@@ -432,10 +432,11 @@ class NightObservation(mainConfig):
             # Check weather status
             is_weather_safe = self.is_safe()
             aborted_action_ToO = None
-            
+            is_shutdown_triggered = False
             # If weather is safe
             if is_weather_safe:    
-                unsafe_weather_count = 0  
+                is_shutdown_triggered = False
+                self.last_ToO_trigger_time = now.isot
                 # If there is any aborted_action due to unsafe weather, resume the observation
                 if aborted_action_ToO:
                     for action in aborted_action_ToO:
@@ -444,9 +445,9 @@ class NightObservation(mainConfig):
                             if isinstance(action['action'], (SpecObservation, DeepObservation)):
                                 observation_status = {tel_name: status['status'] for tel_name, status in action['action'].shared_memory['status'].items()}
                             else:
-                                observation_status =  action['action'].shared_memory['status']
+                                observation_status = action['action'].shared_memory['status']
                             self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._ToO_abort, observation_status = observation_status)
-                    aborted_action = None
+                    aborted_action_ToO = None
                 # If there is no observable target
                 if not best_target:
                     break
@@ -456,24 +457,25 @@ class NightObservation(mainConfig):
                     break
                 
                 # If target is not ToO, finish loop
-                
                 if not best_target['is_ToO']:
                     break
+                
                 # Else; trigger observation
                 else:
                     self._obstrigger(target = best_target, abort_action = self._ToO_abort)
             # If weather is unsafe
             else:
-                unsafe_weather_count += 1
+                #unsafe_weather_count += 1
                 aborted_action_ToO = self.abort_ToO()
                 self.multitelescopes.log.info(f'[{type(self).__name__} ToO is aborted: Unsafe weather]')
                 time.sleep(200)
                 self._ToO_abort = Event()
                 #self.is_ToO_triggered = True
-                if not self.is_shutdown_triggered:
+                if not is_shutdown_triggered:
                     Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
-                    self.is_shutdown_triggered = True
+                    is_shutdown_triggered = True
             time.sleep(0.5)
+            
         while len(self.action_queue) > 0:
             print('Waiting for ToO to be finished')
             time.sleep(1)
@@ -482,6 +484,7 @@ class NightObservation(mainConfig):
         self.multitelescopes.log.info(f'[{type(self).__name__}] ToO observation is finished')
         self._observation_abort = Event()
         
+        # Resume the ordinary aborted observation
         for action in aborted_action:
             time.sleep(0.5)
             if set(action['telescope'].devices.keys()).issubset(self.tel_queue.keys()):
@@ -490,6 +493,7 @@ class NightObservation(mainConfig):
                 else:
                     observation_status =  action['action'].shared_memory['status']
                 self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
+            aborted_action = None
         return True
     
     def run(self):
@@ -521,7 +525,6 @@ class NightObservation(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         aborted_action = None
-        unsafe_weather_count = 0
         # Trigger observation until sunrise
         while now < obs_end_time:
             if self.abort_action.is_set():
@@ -533,16 +536,12 @@ class NightObservation(mainConfig):
             self.DB.initialize(initialize_all = False)
             time.sleep(0.5)  
             
-            # Retrieve best target
-            best_target, score = self.DB.best_target(utctime = now)
-            
             # Check weather status
             is_weather_safe = self.is_safe()
-            
+            is_shutdown_triggered = False
             # If weather is safe
             if is_weather_safe:
-                self.is_shutdown_triggered = False
-                unsafe_weather_count = 0
+                is_shutdown_triggered = False
                 # If there is any aborted_action due to unsafe weather, resume the observation
                 if aborted_action:
                     for action in aborted_action:
@@ -555,11 +554,20 @@ class NightObservation(mainConfig):
                             self._obsresume(target = action['target'], telescopes = action['telescope'], abort_action = self._observation_abort, observation_status = observation_status)
                     aborted_action = None
                 else:
+                    # Retrieve best target
+                    best_target, score = self.DB.best_target(utctime = now)
                     if best_target:
-                        print(f'Best target: {now.isot, best_target["objname"]}')
-                        if best_target['is_ToO']:
-                            self._ToOobservation()
+                        if bool(best_target['is_ToO']):
+                            since_last_ToO = (now - Time(self.last_ToO_trigger_time)).jd * 86400
+                            if since_last_ToO > 1800:
+                                self._ToOobservation()
+                            else:
+                                # If ToO is triggered within 30 minutes, trigger ordinary observation
+                                best_target, score = self.DB.best_target(utctime = now, force_non_ToO= True)
+                                print(f'Best target: {now.isot, best_target["objname"]}')
+                                self._obstrigger(target = best_target, abort_action = self._observation_abort)
                         else:
+                            print(f'Best target: {now.isot, best_target["objname"]}')
                             self._obstrigger(target = best_target, abort_action = self._observation_abort)
                     else:
                         print('No observable target exists... Waiting for target being observable or new target input')
@@ -571,16 +579,18 @@ class NightObservation(mainConfig):
                 self.multitelescopes.log.info(f'[{type(self).__name__}] is waiting for safe weather condition')
                 time.sleep(200)
                 self._observation_abort = Event()
-                if not self.is_shutdown_triggered:
+                if not is_shutdown_triggered:
                     Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
-                    self.is_shutdown_triggered = True
+                    is_shutdown_triggered = True
             time.sleep(0.5)
         if len(self.action_queue) > 0:
             aborted_action = self.abort_observation()
         time.sleep(10)
         self.is_running = False
         print('observation finished', Time.now())        
-        Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
+        if not is_shutdown_triggered:
+            Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
+            is_shutdown_triggered = True
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished')
         
     def _put_action(self, target, action, telescopes, action_id):

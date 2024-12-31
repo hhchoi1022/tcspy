@@ -1,0 +1,18 @@
+{
+    "requester": "hhchoi1022@gmail.com",
+    "target": "AT 2024aeyw",
+    "ra": 120.51299,
+    "dec": -46.96852,
+    "exposure": 300.0,
+    "imageCount": "3",
+    "obsmode": "Deep",
+    "comments": "",
+    "abortObservation": false,
+    "selectedFilters": [
+        "g",
+        "r",
+        "i"
+    ],
+    "selectedTelNumber": 10,
+    "singleExposure": "100"
+}
