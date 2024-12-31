@@ -596,6 +596,6 @@ if __name__ == '__main__':
 #%%
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
-    Daily.export_to_csv('status')
+    #Daily.export_to_csv('status')
 
 # %%

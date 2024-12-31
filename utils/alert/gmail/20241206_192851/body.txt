@@ -1,9 +1,0 @@
-{
-    "From": "=?utf-8?q?7DT_Observation_Alert?= <7dt.observation.broker@gmail.com>",
-    "Subject": "[Automated] 7DT ToO Observation Request",
-    "Date": "Fri, 06 Dec 2024 19:28:51 +0900",
-    "Body": "\r\n        New ToO Request Submitted:\r\n\r\n        Target: 101227406\r\n        R.A.: 240.2100067138672\r\n        Dec.: -15.930000305175781\r\n        Exposure (minutes): 5\r\n        Mode: Deep (g, r, i / 5)\r\n        Abort Current Observation: True\r\n\r\n        Detailed Settings:\r\n        Single Frame Exposure (seconds): 30\r\n        # of Images (counts): 10\r\n        Priority: 50\r\n        Gain: 2750\r\n        Binning: 1\r\n        Observation Start Time: \r\n\r\n        Comments: \r\n        test 2\r\n\r\n        Please take necessary actions.\r\n        ",
-    "Attachments": [
-        "../alert/gmail/20241206_192851/attachments/too_request.json"
-    ]
-}

@@ -330,9 +330,9 @@ class AlertBroker(mainConfig):
                 
                 single_target_targetinfo_body = "<p><strong>===== Target Information =====</strong></p>"
                 single_target_targetinfo_body += "<p><b>Name:</b> %s </p>" %single_target_info['objname']
-                single_target_targetinfo_body += "<p><b>RA:</b> %.5f </p>" %single_target_info['RA']
-                single_target_targetinfo_body += "<p><b>Dec:</b> %.5f </p>" %single_target_info['De']
-                single_target_targetinfo_body += "<p><b>Priority:</b> %d </p>" %single_target_info['priority']  
+                single_target_targetinfo_body += "<p><b>RA:</b> %.5f </p>" %float(single_target_info['RA'])
+                single_target_targetinfo_body += "<p><b>Dec:</b> %.5f </p>" %float(single_target_info['De'])
+                single_target_targetinfo_body += "<p><b>Priority:</b> %f </p>" %float(single_target_info['priority'])
                 single_target_targetinfo_body += "<p><b>Immediate start?:</b> %s </p>" %str(bool(single_target_info['is_ToO']))
                 single_target_targetinfo_body += "<p><b>ID:</b> %s </p>" %single_target_info['id']  
                 if 'note' in single_target_info.keys() and single_target_info['note']:
@@ -359,13 +359,13 @@ class AlertBroker(mainConfig):
                 """
                 
                 single_target_expinfo_body = "<p><strong>===== Exposure Information =====</p></strong>"
-                single_target_expinfo_body += "<p><b>Exposure time:</b> %.1fs x %d </p>" %(single_target_info['exptime'], single_target_info['count'])
+                single_target_expinfo_body += "<p><b>Exposure time:</b> %.1fs x %d </p>" %(float(single_target_info['exptime']), int(single_target_info['count']))
                 single_target_expinfo_body += "<p><b>Obsmode:</b> %s </p>" %single_target_info['obsmode']
                 if single_target_info['obsmode'].lower() == 'spec':
                     single_target_expinfo_body += "<p><b>Specmode:</b> %s </p>" %single_target_info['specmode']
                 elif single_target_info['obsmode'].lower() == 'deep':
                     single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter']
-                    single_target_expinfo_body += "<p><b>Number of telescope:</b> %d </p>" %single_target_info['ntelescopes']
+                    single_target_expinfo_body += "<p><b>Number of telescope:</b> %d </p>" %int(single_target_info['ntelescopes'])
                 else:
                     single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter']
                 single_target_expinfo_body += "<p><b>Gain:</b> %s </p>" %single_target_info['gain']
@@ -574,15 +574,15 @@ class AlertBroker(mainConfig):
                 # Observation details
                 details_text = (
                     f"*Target Name:* {single_target_info['objname']}\n"
-                    f"*RA:* {single_target_info['RA']:.5f}\n"
-                    f"*Dec:* {single_target_info['De']:.5f}\n"
+                    f"*RA:* {float(single_target_info['RA']):.5f}\n"
+                    f"*Dec:* {float(single_target_info['De']):.5f}\n"
                     f"*Priority:* {single_target_info['priority']}\n"
                     f"*Immediate start?* {'Yes' if single_target_info['is_ToO'] else 'No'}\n"
                     f"*Note:* {single_target_info['note'] if 'note' in single_target_info.keys() and single_target_info['note'] else 'N/A'}\n"
                     f"*Comments:* {single_target_info['comments'] if 'comments' in single_target_info.keys() and single_target_info['comments'] else 'N/A'}\n"
                     f"*Requested obstime:* {single_target_info['obs_starttime'] if 'obs_starttime' in single_target_info.keys() and single_target_info['obs_starttime'] else 'N/A'}\n"
                     f"*Obsmode:* {single_target_info['obsmode']}\n"
-                    f"*Exposure time:* {single_target_info['exptime']:.1f}s x {single_target_info['count']}\n"
+                    f"*Exposure time:* {float(single_target_info['exptime']):.1f}s x {single_target_info['count']}\n"
                 )
 
                 # Add a warning if the target is matched to the tiles
@@ -700,11 +700,11 @@ class AlertBroker(mainConfig):
                 
                 details_text = (
                     f"*Target Name:* {single_target_info['objname']}\n"
-                    f"*RA:* {single_target_info['RA']:.5f}\n"
-                    f"*Dec:* {single_target_info['De']:.5f}\n"
+                    f"*RA:* {float(single_target_info['RA']):.5f}\n"
+                    f"*Dec:* {float(single_target_info['De']):.5f}\n"
                     f"*Priority:* {single_target_info['priority']}\n"
                     f"*Obsmode:* {single_target_info['obsmode']}\n"
-                    f"*Exposure Time:* {single_target_info['exptime']:.1f}s x {single_target_info['count']}\n"
+                    f"*Exposure Time:* {float(single_target_info['exptime']):.1f}s x {single_target_info['count']}\n"
                 )
 
                 if single_target_info['obsmode'].lower() == 'spec':

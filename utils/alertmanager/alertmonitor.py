@@ -13,6 +13,8 @@ from astropy.table import Table
 import threading
 import json
 from astropy.time import Time
+import shutil
+from tcspy.utils.databases import DB_Daily
 #%%
 
 class AlertMonitor(mainConfig):
@@ -21,11 +23,9 @@ class AlertMonitor(mainConfig):
         super().__init__()
         self.alertbroker = AlertBroker()
         self.alert_queue = queue.Queue()
+        self.DB_daily = DB_Daily(Time.now())
         self.active_alerts = {}
-        
-    def monitor_alert_in_thread(self):
-        
-    
+
     def monitor_alert(self, 
                       send_slack: bool = True,
                       send_email: bool = True,
@@ -40,6 +40,17 @@ class AlertMonitor(mainConfig):
         """
         Automatically monitors for new alerts (email and Google Sheets), and
         processes each alert in a separate thread while keeping track of active alerts.
+        send_slack: bool = True
+        send_email: bool = True
+        check_interval: int = 30  # seconds
+        # Mail configuration
+        since_days : int = 3
+        max_email_alerts: int = 5
+        # Google Sheets configuration
+        max_sheet_alerts: int = 5
+        match_to_tiles: bool = False
+        match_tolerance_minutes: int = 5
+        
         """
         print("Starting automatic alert monitoring with multithreading.")
         active_threads = []
@@ -72,10 +83,14 @@ class AlertMonitor(mainConfig):
                         args=(alert, send_slack, send_email)
                     )
                     alert_thread.start()
-                    alert.statuspath = os.path.join(self.config['DB_STATUSPATH'], os.path.basename(alert.historypath))
+                    alert.statuspath = os.path.join(self.config['ALERTBROKER_STATUSPATH'], os.path.basename(alert.historypath))
                     self.update_alertstatus(alert, alert.statuspath)
 
                     # Update the thread information in self.active_alerts
+                    
+                    self.active_alerts[alert.key] = {}
+                    self.active_alerts[alert.key]["alert"] = alert
+                    self.active_alerts[alert.key]["status"] = "Processing"
                     self.active_alerts[alert.key]["thread"] = alert_thread
                     active_threads.append(alert_thread)
                     time.sleep(5)
@@ -91,7 +106,7 @@ class AlertMonitor(mainConfig):
             except Exception as e:
                 print(f"An error occurred during automatic alert monitoring: {e}")
             
-
+        
             # Wait before checking for new alerts again
             print(f"[{datetime.datetime.now()}] Waiting for {check_interval} seconds before the next check.")
             time.sleep(check_interval)
@@ -120,7 +135,7 @@ class AlertMonitor(mainConfig):
         
         print(f"[{datetime.datetime.now()}] Inserting alert into the database.")
         alert = self.alertbroker.input_alert(alert)
-        self.alertbroker.save_alerthistory(history_path = alert.historypath)
+        self.alertbroker.save_alerthistory(alert = alert, history_path = alert.historypath)
         print(f"[{datetime.datetime.now()}] Alert inserted and history saved.")
 
         # Send the alert via Slack
@@ -139,7 +154,7 @@ class AlertMonitor(mainConfig):
         # Monitor the alert for observation
         print(f"[{datetime.datetime.now()}] Monitoring alert status for observability.")
         alert_targets = alert.formatted_data
-        alert_observable_targets = alert_targets[alert_targets['is_observable'] == True]
+        alert_observable_targets = alert_targets[alert_targets['is_observable'].astype(str) == 'True']
         DB_status_path = os.path.join(self.config['DB_STATUSPATH'], f'DB_Daily.{self.config["DB_STATUSFORMAT"]}')
         observation_status = Table.read(DB_status_path, format=self.config['DB_STATUSFORMAT'])
         alert_observation_status = observation_status[np.isin(observation_status['id'], alert_observable_targets['id'])]
@@ -151,7 +166,8 @@ class AlertMonitor(mainConfig):
 
         while maximum_waiting_time > 0:
             time.sleep(15)
-            observation_status = Table.read(DB_status_path, format=self.config['DB_STATUSFORMAT'])
+            observation_status = self.DB_daily.data
+            #observation_status = Table.read(DB_status_path, format=self.config['DB_STATUSFORMAT'])
             alert_observation_status = observation_status[np.isin(observation_status['id'], alert_observable_targets['id'])]
             is_observed_each_target = [status.lower() == 'observed' for status in alert_observation_status['status']]
             is_alert_observed = all(is_observed_each_target)
@@ -166,7 +182,7 @@ class AlertMonitor(mainConfig):
             maximum_waiting_time -= 15
 
         alert.is_observed = is_alert_observed
-        self.alertbroker.save_alerthistory(history_path = alert.historypath)
+        self.alertbroker.save_alerthistory(alert = alert, history_path = alert.historypath)
 
         # Send final notifications based on observation result
         requester = alert.alert_sender if alert.alert_sender != '7dt.observation.broker@gmail.com' else None
@@ -189,7 +205,7 @@ class AlertMonitor(mainConfig):
     def update_alertstatus(self, 
                            alert : Alert,
                            status_path : str):
-        if alert.is_inputted == False:
+        if alert.is_observed == False:
             if not alert.alert_data:
                 raise ValueError('The alert data is not read or received yet')
             
@@ -221,8 +237,8 @@ class AlertMonitor(mainConfig):
             print(f'Alert status is saved: {status_path}')
         else:
             if os.path.exists(status_path):
-                os.removedirs(status_path)
-            print(f'Alert status is removed: {status_path}')
+                shutil.rmtree(status_path)
+                print(f"Alert status is removed: {status_path}")
             
     def check_new_mail(self,
                        mailbox = 'inbox',
@@ -280,5 +296,12 @@ class AlertMonitor(mainConfig):
 # %%
 if __name__ == "__main__":
     alertmonitor = AlertMonitor()
-    alertmonitor.monitor_alert()
+    alertmonitor.monitor_alert(send_slack = True,
+                               send_email = True,
+                               check_interval = 30,
+                               since_days = 3,
+                               max_email_alerts = 5,
+                               max_sheet_alerts = 5,
+                               match_to_tiles = True,
+                               match_tolerance_minutes = 3)
 # %%
