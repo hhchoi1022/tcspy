@@ -182,7 +182,7 @@ class FocusModel:
         tbl['image'] = imlist
         tbl['obsdate'] = all_obsdatetime
         tbl['focus'] = all_focusval
-        tbl['filter'] = all_filter
+        tbl['filter_'] = all_filter
         tbl['temperature'] = all_temp
         tbl.sort('obsdate')
         # cut sample with the obstime > start_obsdate & obstime < end_obsdate
@@ -203,7 +203,7 @@ class FocusModel:
         # Groupping by filters
         tbl_filter_dict = dict()
         for filter_ in self.filters:
-            tbl_filter_dict[filter_] = tbl_binning[tbl_binning['filter'] == filter_]
+            tbl_filter_dict[filter_] = tbl_binning[tbl_binning['filter_'] == filter_]
         
         # Setting color for each filter
         colorset = ['red','peru','darkorange','green','deeppink','teal','navy','blueviolet','dodgerblue', 'blue', 'black']

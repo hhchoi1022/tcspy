@@ -364,10 +364,10 @@ class AlertBroker(mainConfig):
                 if single_target_info['obsmode'].lower() == 'spec':
                     single_target_expinfo_body += "<p><b>Specmode:</b> %s </p>" %single_target_info['specmode']
                 elif single_target_info['obsmode'].lower() == 'deep':
-                    single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter']
-                    single_target_expinfo_body += "<p><b>Number of telescope:</b> %d </p>" %int(single_target_info['ntelescopes'])
+                    single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter_']
+                    single_target_expinfo_body += "<p><b>Number of telescope:</b> %d </p>" %int(single_target_info['ntelescope'])
                 else:
-                    single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter']
+                    single_target_expinfo_body += "<p><b>Filter:</b> %s </p>" %single_target_info['filter_']
                 single_target_expinfo_body += "<p><b>Gain:</b> %s </p>" %single_target_info['gain']
                 single_target_expinfo_body += "<p><b>Binning:</b> %s </p>" %single_target_info['binning']
                 
@@ -596,11 +596,11 @@ class AlertBroker(mainConfig):
                     details_text += f"*Specmode:* {single_target_info['specmode']}\n"
                 elif single_target_info['obsmode'].lower() == 'deep':
                     details_text += (
-                        f"*Filter:* {single_target_info['filter']}\n"
-                        f"*Number of telescopes:* {single_target_info['ntelescopes']}\n"
+                        f"*Filter:* {single_target_info['filter_']}\n"
+                        f"*Number of telescopes:* {single_target_info['ntelescope']}\n"
                     )
                 else:
-                    details_text += f"*Filter:* {single_target_info['filter']}\n"
+                    details_text += f"*Filter:* {single_target_info['filter_']}\n"
 
                 # Add telescope info
                 details_text += (
@@ -711,11 +711,11 @@ class AlertBroker(mainConfig):
                     details_text += f"*Specmode:* {single_target_info['specmode']}\n"
                 elif single_target_info['obsmode'].lower() == 'deep':
                     details_text += (
-                        f"*Filter:* {single_target_info['filter']}\n"
-                        f"*Number of Telescopes:* {single_target_info['ntelescopes']}\n"
+                        f"*Filter:* {single_target_info['filter_']}\n"
+                        f"*Number of Telescopes:* {single_target_info['ntelescope']}\n"
                     )
                 else:
-                    details_text += f"*Filter:* {single_target_info['filter']}\n"
+                    details_text += f"*Filter:* {single_target_info['filter_']}\n"
 
                 details_text += (
                     f"*Gain:* {single_target_info['gain']}\n"
@@ -843,7 +843,7 @@ class AlertBroker(mainConfig):
 #%%
 if __name__ == '__main__':
     ab = AlertBroker()
-    file_path  = '/Users/hhchoi1022/code/tcspy/utils/alertmanager/20241128_164230_GECKO.ascii_fixed_width'
+    #file_path  = '/Users/hhchoi1022/code/tcspy/utils/alertmanager/20241128_164230_GECKO.ascii_fixed_width'
     #alert = ab.read_gwalert(path_alert = file_path)
     #alert = ab.read_sheet(sheet_name = '241219', match_to_tiles= True)
     alertlist = ab.read_mail(since_days = 10)

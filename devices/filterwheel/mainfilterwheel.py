@@ -68,7 +68,7 @@ class mainFilterwheel(mainConfig):
         status['jd'] = round(Time.now().jd,6)
         status['is_connected'] = False
         status['name'] = None
-        status['filter'] = None
+        status['filter_'] = None
         status['offset'] = None
 
         if self.device.Connected:
@@ -89,7 +89,7 @@ class mainFilterwheel(mainConfig):
             except:
                 pass
             try:
-                status['filter'] = filtinfo['name']
+                status['filter_'] = filtinfo['name']
             except:
                 pass
             try:

@@ -138,7 +138,7 @@ class DB_Annual(mainConfig):
                 S = SingleTarget(observer = self.observer, 
                                 exptime = target['exptime'], 
                                 count = target['count'], 
-                                filter_ = target['filter'], 
+                                filter_ = target['filter_'], 
                                 binning = target['binning'], 
                                 obsmode = target['obsmode'],
                                 ntelescope = target['ntelescope'])

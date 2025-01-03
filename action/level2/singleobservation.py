@@ -314,7 +314,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         result_all_exposure = []
         for filter_, exptime, count, binning in zip(observation_trigger['filter_'], observation_trigger['exptime'], observation_trigger['count'], observation_trigger['binning']):
             info_filterwheel = self.telescope.filterwheel.get_status()
-            current_filter = info_filterwheel['filter']
+            current_filter = info_filterwheel['filter_']
             is_filter_changed = (current_filter != filter_)
             
             if is_filter_changed:

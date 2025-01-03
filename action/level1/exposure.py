@@ -159,7 +159,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 self._log.critical(f'=====LV1[{type(self).__name__}] Filter must be determined for LIGHT frame')
                 raise ActionFailedException('Filter must be determined for LIGHT frame')
             info_filterwheel = self.telescope.filterwheel.get_status()
-            current_filter = info_filterwheel['filter']
+            current_filter = info_filterwheel['filter_']
             do_filterchange = (current_filter != filter_)
             if do_filterchange:
                 changefilter = ChangeFilter(singletelescope = self.telescope, abort_action = self.abort_action)    

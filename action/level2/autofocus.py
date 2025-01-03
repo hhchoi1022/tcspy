@@ -144,13 +144,13 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         
         if filter_ == None:
             info_filterwheel = self.telescope.filterwheel.get_status()
-            filter_ = info_filterwheel['filter']
+            filter_ = info_filterwheel['filter_']
         focus_history = self.history[filter_]
         
         # Apply focus offset
         if use_offset:
             info_filterwheel = self.telescope.filterwheel.get_status()
-            current_filter = info_filterwheel['filter']
+            current_filter = info_filterwheel['filter_']
             if not current_filter == filter_:
                 offset = self.telescope.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
                 self._log.info(f'[{type(self).__name__}] Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
@@ -169,7 +169,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             
         # Change filter
         info_filterwheel = self.telescope.filterwheel.get_status()
-        current_filter = info_filterwheel['filter']
+        current_filter = info_filterwheel['filter_']
         if not current_filter == filter_:
             try:
                 result_filterchange = action_changefilter.run(filter_ = filter_)

@@ -87,7 +87,7 @@ tbl['image'] = imlist
 tbl['obsdate'] = all_obsdatetime
 tbl['obshour'] = all_obshour
 tbl['focus'] = all_focusval
-tbl['filter'] = all_filter
+tbl['filter_'] = all_filter
 tbl.sort('obsdate')
 first_obsdate = tbl['obsdate'][0]
 tbl['obsdate_relative'] = (tbl['obsdate'] - first_obsdate).value
@@ -102,11 +102,11 @@ for row in tbl:
     previous_focus = current_focus
 # %%
 import matplotlib.pyplot as plt
-tbl_filters = tbl_binning.group_by('filter')
+tbl_filters = tbl_binning.group_by('filter_')
 tbl_filter_dict = dict()
-all_filters = tbl_filters.groups.keys['filter']
+all_filters = tbl_filters.groups.keys['filter_']
 #all_filters = ['u','g','r','i','z','m400','m425','m650','m675']
-for i, filter_ in enumerate(list(tbl_filters.groups.keys['filter'])):
+for i, filter_ in enumerate(list(tbl_filters.groups.keys['filter_'])):
     tbl_filter_dict[filter_] = tbl_filters.groups[i]
 #%%
 colorset = ['red','peru','darkorange','green','deeppink','teal','navy','blueviolet','dodgerblue', 'blue', 'black']
@@ -157,7 +157,7 @@ for filter_ in all_filters:
     focus_tbl = tbl_filter_dict[filter_]
     focus_tbl.write(f'FOCUS_{name_telescope}_{filter_}.ascii', format = 'ascii.fixed_width', overwrite = True)
 offset_tbl = Table()
-offset_tbl['filter'] = all_filters
+offset_tbl['filter_'] = all_filters
 offset_tbl['offset'] = focusdiffmean_all
 offset_tbl['error'] =focusdiffstd_all
 offset_tbl.write(f'OFFSET_{name_telescope}_{filter_}.ascii', format = 'ascii.fixed_width', overwrite = True)

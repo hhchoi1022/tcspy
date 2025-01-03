@@ -44,13 +44,13 @@ class Alert:
         default_config['exptime'] = 100
         default_config['count'] = 3
         default_config['obsmode'] = 'Spec'
-        default_config['filter'] = 'g'
+        default_config['filter_'] = 'g'
         default_config['specmode'] = 'specall'
         default_config['ntelescope'] = 10
         default_config['priority'] = 50
         default_config['weight'] = 1
         default_config['binning'] = 1
-        default_config['gain'] = 1
+        default_config['gain'] = 2750
         default_config['objtype'] = 'Request'
         default_config['is_ToO'] = 0
         default_config['id'] = self.key
@@ -423,8 +423,8 @@ class Alert:
             'count': ['count', 'counts', 'imagecount', 'numbercount', 'image count', 'number count'],
             'obsmode': ['obsmode', 'observationmode', 'mode'],
             'specmode': ['specmode', 'spectralmode', 'spectral mode', 'selectedspecfile'],
-            'filter': ['filter', 'filters', 'selectedfilters'],
-            'ntelescopes': ['ntelescopes', 'ntelescope', 'numberoftelescopes', 'number of telescopes', 'selectedtelnumber'],
+            'filter_': ['filter', 'filters', 'selectedfilters'],
+            'ntelescope': ['ntelescopes', 'ntelescope', 'numberoftelescopes', 'number of telescopes', 'selectedtelnumber'],
             'binning': ['binning'],
             'gain': ['gain'],
             'priority': ['priority', 'rank'],
@@ -463,7 +463,7 @@ if __name__ == '__main__':
     alert = Alert()
     #ABC = Gsheet.read_sheet(sheet_name = '241210')
     #alert.decode_gsheet(tbl= ABC, match_to_tiles = True, match_tolerance_minutes= 10)
-    alert.decode_mail(mail_str[-2], match_to_tiles = False)
+    alert.decode_mail(mail_str[-1], match_to_tiles = True)
     print(alert.formatted_data)
 
 # %%

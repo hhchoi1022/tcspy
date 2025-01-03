@@ -357,7 +357,7 @@ class mainImage(mainConfig):
         info = dict()
         info['FILTER'] = None
         if self._filtinfo:
-            info['FILTER'] = self._format_header(self._filtinfo['filter'], 'Name of the filter')
+            info['FILTER'] = self._format_header(self._filtinfo['filter_'], 'Name of the filter')
         return info
 
     def _add_focusinfo_to_hdr(self):
