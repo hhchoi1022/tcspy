@@ -157,7 +157,7 @@ class DB_Annual(mainConfig):
                             utcdate : Time = Time.now(),
                             size : int = 300,
                             observable_minimum_hour : float = 2,
-                            n_time_grid : float = 10,
+                            n_time_grid : float = 10
                             ):
         """
         Select the best observable targets at certain night.
@@ -212,6 +212,38 @@ class DB_Annual(mainConfig):
         n_target_for_each_timegrid = np.full(n_time_grid, size / n_time_grid, dtype = int)
         n_target_for_each_timegrid[len(n_target_for_each_timegrid)//2] += size - sum(n_target_for_each_timegrid)
 
+        # for target_tbl_for_scoring in target_tbl_by_obscount.groups:
+
+        #     multitargets_for_scoring = MultiTargets(observer = self.observer,
+        #                             targets_ra = target_tbl_for_scoring['RA'],
+        #                             targets_dec = target_tbl_for_scoring['De'],
+        #                             targets_name = target_tbl_for_scoring['objname']) 
+            
+        #     # Calculate the maximum altitude
+        #     maxalt = 90 - np.abs(self.config['OBSERVER_LATITUDE'] - target_tbl_for_scoring['De'])
+            
+        #     # Track already selected targets
+        #     selected_indices = list()
+
+        #     for i, (n_target, time) in enumerate(zip(n_target_for_each_timegrid, time_grid)):
+        #         altaz = multitargets_for_scoring.altaz(utctimes=time)
+        #         score = altaz.alt.value / maxalt
+        #         high_score_criteria = np.percentile(score, 90)
+        #         high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
+                
+        #         available_indices = list(np.setdiff1d(np.arange(len(target_tbl_for_scoring))[high_scored_idx], list(selected_indices)))
+                
+        #         if len(available_indices) < n_target:
+        #             selected_idx = available_indices  # If not enough targets, select all available
+        #         else:
+        #             selected_idx = list(np.random.choice(available_indices, n_target, replace=False))
+                
+        #         selected_indices += selected_idx
+        #         n_target_for_each_timegrid[i] -= len(selected_idx)
+            
+        #     if len(selected_indices) == size:
+        #         return target_tbl_for_scoring[list(selected_indices)]
+                
         for target_tbl_for_scoring in target_tbl_by_obscount.groups:
 
             multitargets_for_scoring = MultiTargets(observer = self.observer,
@@ -228,15 +260,28 @@ class DB_Annual(mainConfig):
             for i, (n_target, time) in enumerate(zip(n_target_for_each_timegrid, time_grid)):
                 altaz = multitargets_for_scoring.altaz(utctimes=time)
                 score = altaz.alt.value / maxalt
-                high_score_criteria = np.percentile(score, 90)
+                high_score_criteria = 0.9
                 high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
                 
-                available_indices = list(np.setdiff1d(np.arange(len(target_tbl_for_scoring))[high_scored_idx], list(selected_indices)))
+                # Get available indices excluding already selected ones
+                available_indices = list(
+                    np.setdiff1d(
+                        np.arange(len(target_tbl_for_scoring))[high_scored_idx], 
+                        list(selected_indices)
+                    )
+                )
                 
-                if len(available_indices) < n_target:
-                    selected_idx = available_indices  # If not enough targets, select all available
+                # Sort available indices by declination (ascending order)
+                available_indices_sorted = sorted(
+                    available_indices, 
+                    key=lambda idx: target_tbl_for_scoring['De'][idx]
+                )
+                
+                # Select targets based on sorted indices
+                if len(available_indices_sorted) < n_target:
+                    selected_idx = available_indices_sorted  # Select all available if fewer than required
                 else:
-                    selected_idx = list(np.random.choice(available_indices, n_target, replace=False))
+                    selected_idx = available_indices_sorted[:n_target]  # Select the first n_target targets
                 
                 selected_indices += selected_idx
                 n_target_for_each_timegrid[i] -= len(selected_idx)
