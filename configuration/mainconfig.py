@@ -4,6 +4,7 @@ import glob
 import os
 from astropy.io import ascii
 import json
+from typing import List
 
 class mainConfig:
     def __init__(self,
@@ -46,6 +47,22 @@ class mainConfig:
                 config = json.load(f)
                 all_config.update(config)
         return all_config
+    
+    def write_default_specmode(self,
+                               list_unitnum : List[int]):
+        default_specmode_dict = dict()
+        for unitnum in list_unitnum:
+            default_specmode_dict[f'{self.tel_name}%.2d' % unitnum] = dict()
+        with open(os.path.join(self.config['SPECMODE_FOLDER'], 'specmode.format'), 'w') as f:
+            json.dump(default_specmode_dict, f, indent=4)
+            
+    def write_default_colormode(self,
+                               list_unitnum : List[int]):
+        default_colormode_dict = dict()
+        for unitnum in list_unitnum:
+            default_colormode_dict[f'{self.tel_name}%.2d' % unitnum] = dict()
+        with open(os.path.join(self.config['COLORMODE_FOLDER'], 'colormode.format'), 'w') as f:
+            json.dump(default_colormode_dict, f, indent=4)
 
     def make_configfile(self, 
                         dict_params : dict,
@@ -98,7 +115,8 @@ class mainConfig:
                                   FTWHEEL_PORTNUM=portnum,
                                   FTWHEEL_DEVICENUM=0,
                                   FTWHEEL_CHECKTIME=0.5,
-                                  FTWHEEL_OFFSETFILE =f"{os.path.join(savepath_unit,'filter.offset')}")
+                                  FTWHEEL_OFFSETFILE =f"{os.path.join(savepath_unit,'filter.offset')}",
+                                  AUTOFOCUS_FILTINFO_FILE = f"{os.path.join(self.path_home, '.tcspy', 'sync', 'filtinfo.dict')}")
 
         focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
@@ -223,6 +241,8 @@ class mainConfig:
                                )
         
         specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/u10/")}')
+
+        colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250108/")}')
         
         startup_params = dict(STARTUP_ALT = 30,
                               STARTUP_AZ = 90,
