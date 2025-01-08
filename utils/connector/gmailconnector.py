@@ -55,7 +55,7 @@ class GmailConnector:
             print("The account is not logged in. Try login...")
             self.login()
         return True
-            
+
     def login(self):
         """Login to the IMAP server to check credentials and set login status."""
         try:

@@ -295,6 +295,8 @@ class AlertMonitor(mainConfig):
 # %%
 if __name__ == "__main__":
     alertmonitor = AlertMonitor()
+#%%
+if __name__ == "__main__":
     alertmonitor.monitor_alert(send_slack = True,
                                send_email = True,
                                check_interval = 30,
