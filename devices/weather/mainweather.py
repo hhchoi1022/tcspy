@@ -39,7 +39,7 @@ class mainWeather(mainConfig):
     Methods
     -------
     get_status() -> dict
-        Get the current weather status.
+        Get the current weather statu.
     """
     
     def __init__(self):

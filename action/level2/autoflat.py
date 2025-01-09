@@ -33,7 +33,6 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self.shared_memory['status'] = dict()
-        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
         self.is_running = False
         self.is_focus_changed = False
     
@@ -41,10 +40,10 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             count : int = 9,
             gain : int = 2750,
             binning : int = 1):
-        
-        self._log.info(f'==========LV2[{type(self).__name__}] is triggered.')
+        self.telescope.register_logfile()
+        self.telescope.log.info(f'==========LV2[{type(self).__name__}] is triggered.')
         if (self.telescope.safetymonitor.get_status()['is_safe'] == False) | (self.telescope.weather.get_status()['is_safe'] == False):
-            self._log.warning(f'==========LV2[{type(self).__name__}] is failed: Unsafe weather.')
+            self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is failed: Unsafe weather.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Unsafe weather.')
         self.is_running = True
         self.shared_memory['succeeded'] = False
@@ -55,13 +54,13 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is disconnected.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is disconnected.')
         if status_filterwheel.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: filterwheel is disconnected.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: filterwheel is disconnected.')
         if status_telescope.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: mount is disconnected.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: mount is disconnected.')
         if trigger_abort_disconnected:
             self.is_running = False
             raise ConnectionException(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
@@ -81,13 +80,13 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             result_slew = action_slew.run(alt = self.telescope.config['AUTOFLAT_ALTITUDE'], az = self.telescope.config['AUTOFLAT_AZIMUTH'], tracking = False)
         except ConnectionException:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: mount is disconnected.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: mount is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: mount is disconnected.')
         except AbortionException:
             self.abort()
         except ActionFailedException:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
         
         # Abort action when triggered
@@ -100,13 +99,13 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.is_focus_changed = True
         except ConnectionException:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
             raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
         except AbortionException:
             self.abort()
         except ActionFailedException:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
     
         # Abort action when triggered
@@ -119,15 +118,15 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         # Check camera status
         if status_camera.lower() == 'disconnected':
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is disconnected.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
         elif status_camera.lower() == 'busy':
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is busy.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is busy.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is busy.')
         elif status_camera.lower() == 'idle':
             is_light = False
-            self._log.info(f'=====[{type(self).__name__}] Start exposure for calculation of a BIAS level')
+            self.telescope.log.info(f'=====[{type(self).__name__}] Start exposure for calculation of a BIAS level')
             try:
                 imginfo = camera.exposure(exptime = 0,
                                           imgtype = 'BIAS',
@@ -136,20 +135,20 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                                           gain = gain,
                                           abort_action = self.abort_action)
                 bias_level = float(np.mean(imginfo['data'])) 
-                self._log.info(f'=====[{type(self).__name__}] BIAS level: {bias_level}')
+                self.telescope.log.info(f'=====[{type(self).__name__}] BIAS level: {bias_level}')
             except ExposureFailedException:
                 self.is_running = False
-                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera exposure failure.')
+                self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera exposure failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: camera exposure failure.')
             except AbortionException:
                 self.abort()
             except:
                 self.is_running = False
-                self._log.warning(f'==========LV2[{type(self).__name__}] is failed.')
+                self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is failed.')
                 raise AbortionException(f'[{type(self).__name__}] is failed: BIAS level calculation failure')
         else:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is under unknown condition.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is under unknown condition.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is under unknown condition.')
 
         # Define the filter order for FLAT observation
@@ -162,18 +161,18 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
 
         # Start autoflat
         def autoflat_filter(filter_, count, gain, binning):
-            self._log.info(f'=====[{type(self).__name__}] for filter {filter_} is triggered')
+            self.telescope.log.info(f'=====[{type(self).__name__}] for filter {filter_} is triggered')
             # Filterchange
             try:    
                 result_filterchange = action_changefilter.run(filter_ = filter_)
             except ConnectionException:
-                self._log.critical(f'=====[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
             except AbortionException:
-                self._log.warning(f'=====[{type(self).__name__}] is aborted.')
+                self.telescope.log.warning(f'=====[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             except ActionFailedException:
-                self._log.critical(f'=====[{type(self).__name__}] is failed: Filterwheel movement failure.')
+                self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: Filterwheel movement failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
             
             # Exposure with default value & wait for the sky level arised
@@ -185,13 +184,13 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                 # Check camera status
                 status_camera = self.telescope_status.camera
                 if status_camera.lower() == 'disconnected':
-                    self._log.critical(f'=====[{type(self).__name__}] is failed: camera is disconnected.')
+                    self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: camera is disconnected.')
                     raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
                 elif status_camera.lower() == 'busy':
-                    self._log.critical(f'=====[{type(self).__name__}] is failed: camera is busy.')
+                    self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: camera is busy.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is busy.')
                 elif status_camera.lower() == 'idle':
-                    self._log.info(f'[{type(self).__name__}] Start exposure for calculation of a sky level')
+                    self.telescope.log.info(f'[{type(self).__name__}] Start exposure for calculation of a sky level')
                     try:
                         imginfo = camera.exposure(exptime = exptime,
                                                   imgtype = 'FLAT',
@@ -203,18 +202,18 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                         sky_level_acceleration = np.abs(sky_level_per_second_this - sky_level_per_second_this)
                         sky_level_per_second_this = sky_level/exptime 
                         sky_level_per_second_expected = sky_level_per_second_this + sky_level_acceleration
-                        self._log.info(f'[{type(self).__name__}] Sky level: {sky_level} with {exptime}s exposure')
+                        self.telescope.log.info(f'[{type(self).__name__}] Sky level: {sky_level} with {exptime}s exposure')
                     except ExposureFailedException:
-                        self._log.critical(f'=====[{type(self).__name__}] is failed: camera exposure failure.')
+                        self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: camera exposure failure.')
                         raise ActionFailedException(f'[{type(self).__name__}] is failed: camera exposure failure.')
                     except AbortionException:
-                        self._log.warning(f'=====[{type(self).__name__}] is aborted.')
+                        self.telescope.log.warning(f'=====[{type(self).__name__}] is aborted.')
                         raise AbortionException(f'[{type(self).__name__}] is aborted.')
                     except:
-                        self._log.warning(f'=====[{type(self).__name__}] is failed.')
+                        self.telescope.log.warning(f'=====[{type(self).__name__}] is failed.')
                         raise AbortionException(f'[{type(self).__name__}] is failed: Sky level calculation failure')
                 else:
-                    self._log.critical(f'=====[{type(self).__name__}] is failed: camera is under unknown condition.')
+                    self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: camera is under unknown condition.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is under unknown condition.')
                 
                 # If sky level is within the range, then save the image
@@ -253,36 +252,36 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                                         target_info = target.status,
                                         weather_info = status['weather'])
                         filepath = img.save()
-                        self._log.info(f'[{type(self).__name__}] Image saved: %s'%(filepath))
+                        self.telescope.log.info(f'[{type(self).__name__}] Image saved: %s'%(filepath))
                         obs_count += 1
 
                     except:
-                        self._log.critical(f'=====[{type(self).__name__}] is failed: mainImage save failure.')
+                        self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: mainImage save failure.')
                         raise ActionFailedException(f'[{type(self).__name__}] is failed: mainImage save failure.')
                 
                 # Abort action when triggered
                 if self.abort_action.is_set():
-                    self._log.warning(f'=====[{type(self).__name__}] is aborted.')
+                    self.telescope.log.warning(f'=====[{type(self).__name__}] is aborted.')
                     raise AbortionException(f'[{type(self).__name__}] is aborted.')
                 
                 # Adjust the exposure time
                 exptime_min = np.round(np.abs(self.telescope.config['AUTOFLAT_MINCOUNT']/sky_level_per_second_expected),2)
                 exptime_max = np.round(np.abs(self.telescope.config['AUTOFLAT_MAXCOUNT']/sky_level_per_second_this),2)
-                self._log.info(f'[{type(self).__name__}] Required exposure time: (%s~%s) sec'%(exptime_min, exptime_max))
+                self.telescope.log.info(f'[{type(self).__name__}] Required exposure time: (%s~%s) sec'%(exptime_min, exptime_max))
                 
                 # If sky level is too low, then wait for the sky level arised
                 if exptime_min > self.telescope.config['AUTOFLAT_MAXEXPTIME']:
                     time.sleep(self.telescope.config['AUTOFLAT_WAITDURATION'])
-                    self._log.info(f'[{type(self).__name__}] Waiting {self.telescope.config["AUTOFLAT_WAITDURATION"]}s for the sky level arised')
+                    self.telescope.log.info(f'[{type(self).__name__}] Waiting {self.telescope.config["AUTOFLAT_WAITDURATION"]}s for the sky level arised')
                 # If sky level is too high, raise an exception
                 elif exptime_max < self.telescope.config['AUTOFLAT_MINEXPTIME']:
-                    self._log.warning(f'=====[{type(self).__name__}] is failed: Sky is too bright.')
+                    self.telescope.log.warning(f'=====[{type(self).__name__}] is failed: Sky is too bright.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Sky is too bright.')
                 #
                 else:
                     exptime = np.round(np.max([np.sum([0.9*exptime_min, 0.1*exptime_max]), self.telescope.config['AUTOFLAT_MINEXPTIME']]),2)
-                    self._log.info(f'[{type(self).__name__}] Exposure time is adjusted to {exptime} sec')
-            self._log.info(f'=====[{type(self).__name__}] for filter {filter_} is succeeded')
+                    self.telescope.log.info(f'[{type(self).__name__}] Exposure time is adjusted to {exptime} sec')
+            self.telescope.log.info(f'=====[{type(self).__name__}] for filter {filter_} is succeeded')
         
         for filtname in ordered_filtnames:
             try:
@@ -291,10 +290,10 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                 self.shared_memory['status'] = observation_status
             except ActionFailedException:
                 self.is_running = False
-                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: autoflat_filter failure.')
+                self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: autoflat_filter failure.')
             except ConnectionException:
                 self.is_running = False
-                self._log.critical(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
+                self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
                 raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
             except AbortionException:
                 self.abort()
@@ -305,19 +304,19 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.is_focus_changed = False
         except ConnectionException:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
             raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
         except AbortionException:
             self.abort()
         except ActionFailedException:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
     
         self.is_running = False
         self.shared_memory['succeeded'] = all(observation_status.values())
         
-        self._log.info(f'==========LV2[{type(self).__name__}] is finished.')
+        self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished.')
         if self.shared_memory['succeeded']:
             return True    
         
@@ -330,15 +329,15 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             result_changefocus = action_changefocus.run(position = -3000, is_relative= True)
         except ConnectionException:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
             raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
         except ActionFailedException:
             self.is_running = False
-            self._log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
     
         self.is_running = False
-        self._log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+        self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
 

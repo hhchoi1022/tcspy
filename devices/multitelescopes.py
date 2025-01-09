@@ -11,7 +11,7 @@ import time
 from tcspy.configuration import mainConfig
 import json
 import re
-
+from multiprocessing import Lock
 #%%
 
 class MultiTelescopes(mainConfig):
@@ -56,6 +56,7 @@ class MultiTelescopes(mainConfig):
         
     def update_statusfile(self, 
                           status : str, #idle or busy
+                          file_lock : Lock,
                           do_trigger : bool = True
                           ):
         if do_trigger:
@@ -63,18 +64,19 @@ class MultiTelescopes(mainConfig):
                 raise ValueError('Status must be either "idle" or "busy".')
             status_file = self.config['MULTITELESCOPES_FILE']
             # Load the JSON file
-            with open(status_file, 'r') as f:
-                status_dict = json.load(f)
-            
-            # Update the status for each telescope
-            for tel_name in self.devices.keys():
-                if tel_name in status_dict:
-                    status_dict[tel_name]['Status'] = status.lower()
-                    status_dict[tel_name]['Status_update_time'] = Time.now().isot
-            
-            # Write back the modified data to the file
-            with open(status_file, 'w') as f:
-                json.dump(status_dict, f, indent=4)
+            with file_lock:
+                with open(status_file, 'r') as f:
+                    status_dict = json.load(f)
+                
+                # Update the status for each telescope
+                for tel_name in self.devices.keys():
+                    if tel_name in status_dict:
+                        status_dict[tel_name]['Status'] = status.lower()
+                        status_dict[tel_name]['Status_update_time'] = Time.now().isot
+                
+                # Write back the modified data to the file
+                with open(status_file, 'w') as f:
+                    json.dump(status_dict, f, indent=4)
         else:
             return None
     
@@ -137,7 +139,7 @@ class MultiTelescopes(mainConfig):
                 filters_dict[telescope.name] = None
         return filters_dict
     
-    def update_logfile(self):
+    def register_logfile(self):
         self.log_dict = self._dict_logs()
         self.log = self._all_logs()
     
@@ -170,7 +172,7 @@ class MultiTelescopes(mainConfig):
         self.devices = self._get_telescopes()
         self.observer = mainObserver()
         self._status_dict = dict()
-        self.update_logfile()
+        self.register_logfile()
         
     def _get_device_status(self, telescope):
         self._status_dict[telescope. name] = TelescopeStatus(telescope).dict

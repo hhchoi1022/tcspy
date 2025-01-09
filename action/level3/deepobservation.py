@@ -157,7 +157,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         observation_status = None
 
         """
-        
+        self.multitelescopes.register_logfile()
         self.multitelescopes.log.info(f'===============LV3[{type(self).__name__}] is triggered.')
         self.is_running = True
         self.shared_memory['succeeded'] = False

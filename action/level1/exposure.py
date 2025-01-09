@@ -22,7 +22,6 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
-        self._log = mainLogger(unitnum = self.telescope.unitnum, logger_name = __name__+str(self.telescope.unitnum)).log()
         self.is_running = False
 
     def run(self,
@@ -110,7 +109,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         note : str = None
         """
         # Check condition of the instruments for this Action
-        self._log.info(f'=====LV1[{type(self).__name__}] is triggered.')
+        self.telescope.register_logfile()
+        self.telescope.log.info(f'=====LV1[{type(self).__name__}] is triggered.')
         self.is_running = True
         self.shared_memory['succeeded'] = False
         status_filterwheel = self.telescope_status.filterwheel
@@ -118,10 +118,10 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is disconnected.')
+            self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is disconnected.')
         if status_filterwheel.lower() == 'disconnected':
             trigger_abort_disconnected = True
-            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is disconnected.')
+            self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is disconnected.')
         if trigger_abort_disconnected:
             self.is_running = False
             raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
@@ -156,7 +156,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         if imgtype.upper() == 'LIGHT':
             if not filter_:
                 self.is_running = False
-                self._log.critical(f'=====LV1[{type(self).__name__}] Filter must be determined for LIGHT frame')
+                self.telescope.log.critical(f'=====LV1[{type(self).__name__}] Filter must be determined for LIGHT frame')
                 raise ActionFailedException('Filter must be determined for LIGHT frame')
             info_filterwheel = self.telescope.filterwheel.get_status()
             current_filter = info_filterwheel['filter_']
@@ -167,13 +167,13 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                     result_changefilter = changefilter.run(str(filter_))
                 except ConnectionException:
                     self.is_running = False
-                    self._log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is disconnected.')
+                    self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is disconnected.')
                     raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
                 except AbortionException:
                     self.abort()
                 except ActionFailedException:
                     self.is_running = False
-                    self._log.critical(f'=====LV1[{type(self).__name__}] is failed: filterchange failure.')
+                    self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterchange failure.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: filterchange failure.')
 
         # Check device connection
@@ -182,17 +182,17 @@ class Exposure(Interface_Runnable, Interface_Abortable):
 
         if status_camera.lower() == 'disconnected':
             self.is_running = False
-            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is disconnected.')
+            self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is disconnected.')
             raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
         elif status_camera.lower() == 'busy':
             self.is_running = False
-            self._log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is busy.')
+            self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is busy.')
             raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is busy.')
         elif status_camera.lower() == 'idle':
             # Exposure camera
             if imgtype.upper() == 'BIAS':
                 exptime = camera.device.ExposureMin
-                self._log.warning(f'[{type(self).__name__}]Input exposure time is set to the minimum value for BIAS image')
+                self.telescope.log.warning(f'[{type(self).__name__}]Input exposure time is set to the minimum value for BIAS image')
                 is_light = False
             elif imgtype.upper() == 'DARK':
                 is_light = False
@@ -200,7 +200,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 is_light = True
             else:
                 is_light = True
-            self._log.info(f'[{type(self).__name__}]Start exposure %s frame... (exptime = %.1f, filter = %s, binning = %s, gain = %s)'%(imgtype.upper(), exptime, filter_, binning, gain))
+            self.telescope.log.info(f'[{type(self).__name__}]Start exposure %s frame... (exptime = %.1f, filter = %s, binning = %s, gain = %s)'%(imgtype.upper(), exptime, filter_, binning, gain))
             try:
                 imginfo = camera.exposure(exptime = float(exptime),
                                           imgtype = imgtype,
@@ -211,14 +211,14 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 
             except ExposureFailedException:
                 self.is_running = False
-                self._log.critical(f'=====LV1[{type(self).__name__}] is failed: camera exposure failure.')
+                self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: camera exposure failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: camera exposure failure.')
             except AbortionException:
                 self.is_running = False
-                self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             if imginfo:
-                self._log.info(f'[{type(self).__name__}] Exposure finished (exptime = %.1f, filter = %s, binning = %s, gain = %s)'%(exptime, filter_, binning, gain))
+                self.telescope.log.info(f'[{type(self).__name__}] Exposure finished (exptime = %.1f, filter = %s, binning = %s, gain = %s)'%(exptime, filter_, binning, gain))
             
             status = self.telescope.status
             try:
@@ -233,22 +233,22 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                                 target_info = target.status,
                                 weather_info = status['weather'])
                 filepath = img.save()
-                self._log.info(f'[{type(self).__name__}] Image Saved: %s'%(filepath))
+                self.telescope.log.info(f'[{type(self).__name__}] Image Saved: %s'%(filepath))
                 self.shared_memory['succeeded'] = True
             except:
                 self.is_running = False
-                self._log.critical(f'=====LV1[{type(self).__name__}] is failed: mainImage save failure.')
+                self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: mainImage save failure.')
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: mainImage save failure.')
         
         self.is_running = False
-        self._log.info(f'=====LV1[{type(self).__name__}] is finished.')
+        self.telescope.log.info(f'=====LV1[{type(self).__name__}] is finished.')
         if self.shared_memory['succeeded']:
             return True
 
     def abort(self):
         self.abort_action.set()
         self.is_running = False
-        self._log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         raise AbortionException(f'[{type(self).__name__}] is aborted.')      
         
 # %%

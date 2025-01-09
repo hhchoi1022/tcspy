@@ -151,6 +151,7 @@ class ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         observation_status = None
         """
         # Check condition of the instruments for this Action
+        self.multitelescopes.register_logfile()
         self.multitelescopes.log.info(f'===============LV3[{type(self).__name__}] is triggered.')
         self.is_running = True
         self.shared_memory['succeeded'] = False

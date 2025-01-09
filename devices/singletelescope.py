@@ -10,8 +10,10 @@ from tcspy.devices.safetymonitor import mainSafetyMonitor
 from tcspy.utils.error import *
 from tcspy.devices.mount import mainMount_Alpaca
 from tcspy.devices.mount import mainMount_pwi4
+from tcspy.utils.logger import mainLogger
 import json
 from astropy.time import Time
+from multiprocessing import Lock
 #%%
 
 class SingleTelescope(mainConfig):
@@ -66,6 +68,7 @@ class SingleTelescope(mainConfig):
         self.safetymonitor = None
         self.observer = self._get_observer()
         self._set_devices()
+        self.log = self.register_logfile()
 
     def __repr__(self):
         txt=  f'SingleTelescope[{self.name}]'
@@ -113,25 +116,30 @@ class SingleTelescope(mainConfig):
     
     def update_statusfile(self, 
                           status : str, #idle or busy
-                          do_trigger : bool = True
+                          file_lock : Lock,
+                          do_trigger : bool = True,
                           ):
         if do_trigger:
             if status.lower() not in ['idle', 'busy']:
                 raise ValueError('Status must be either "idle" or "busy".')
             status_file = self.config['MULTITELESCOPES_FILE']
             # Load the JSON file
-            with open(status_file, 'r') as f:
-                status_dict = json.load(f)
+            with file_lock:
+                with open(status_file, 'r') as f:
+                    status_dict = json.load(f)
 
-            # Update the status for each telescope
-            status_dict[self.name]['Status'] = status.lower()
-            status_dict[self.name]['Status_update_time'] = Time.now().isot
+                # Update the status for each telescope
+                status_dict[self.name]['Status'] = status.lower()
+                status_dict[self.name]['Status_update_time'] = Time.now().isot
 
-            # Write back the modified data to the file
-            with open(status_file, 'w') as f:
-                json.dump(status_dict, f, indent=4)       
+                # Write back the modified data to the file
+                with open(status_file, 'w') as f:
+                    json.dump(status_dict, f, indent=4)       
         else:
             return None
+    
+    def register_logfile(self):
+        self.log = mainLogger(unitnum = self.unitnum, logger_name = __name__+str(self.unitnum)).log()
         
     def _get_status(self):
         self.camera.status = self.camera.get_status()

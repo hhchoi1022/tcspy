@@ -3,8 +3,8 @@ from tcspy.configuration import mainConfig
 from tcspy.action.level2 import AutoFocus
 from tcspy.action import MultiAction
 from tcspy.action.level1 import SlewAltAz
-from tcspy.devices import SingleTelescope, MultiTelescopes
-from multiprocessing import Event
+from tcspy.devices import MultiTelescopes
+from multiprocessing import Event, Lock
 from threading import Thread
 from tcspy.utils.exception import *
 import json, os
@@ -62,9 +62,10 @@ class AutofocusInitializer(mainConfig):
                  slew : bool = True):
         
         self.is_running = True
-        self.multitelescopes.update_logfile()
+        self.multitelescopes.register_logfile()
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
-        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
+        statusfile_lock = Lock()
+        self.multitelescopes.update_statusfile(status = 'busy', file_lock = statusfile_lock, do_trigger = True)
 
         # Slew 
         if slew:
@@ -115,7 +116,7 @@ class AutofocusInitializer(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
         self.is_running = False
-        self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
+        self.multitelescopes.update_statusfile(status = 'idle', file_lock = statusfile_lock, do_trigger = True)
 
 
 #%%  
