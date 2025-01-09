@@ -16,7 +16,7 @@ class Tiles:
     def __init__(self, tile_path: str = None):
         if tile_path is None:
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            self.tile_path = os.path.join(current_dir, './final_tiles.txt')
+            self.tile_path = os.path.join(current_dir, './sky-grid and tiling/7-DT/final_tiles.txt')
         else:
             self.tile_path = tile_path
         self.tbl_RIS = None
@@ -28,7 +28,7 @@ class Tiles:
                                list_aperture= 0,
                                visualize: bool = True, 
                                visualize_ncols: int = 5, 
-                               visualize_savepath: str = './tiles',
+                               visualize_savepath: str = './tiles/tiles',
                                match_tolerance_minutes = 4,
                                fraction_overlap_lower = 0.2):
         """
@@ -68,6 +68,7 @@ class Tiles:
         list_matched_coords = []
         list_distance_to_boundary = []
         list_overlapped_areas = []
+        list_is_within_boundary = []
 
         for i, (ra, dec, aperture) in enumerate(zip(list_ra, list_dec, list_aperture)):
             target_point = Point(ra, dec)
@@ -84,6 +85,8 @@ class Tiles:
                     list_matched_coords.append(i)
                     list_distance_to_boundary.append([distance_to_boundary])
                     list_overlapped_areas.append([1])
+                    list_is_within_boundary.append(distance_to_boundary > match_tolerance_minutes/60)
+            
             else:  # Aperture-based matching
                 target_circle = target_point.buffer(aperture)
                 overlapped_tiles, overlapped_areas = self._find_overlapped_tiles(polygons_by_id = RIS_polygons_nearby, target_circle = target_circle, fraction_overlap_lower = fraction_overlap_lower)
@@ -92,7 +95,8 @@ class Tiles:
                     list_matched_coords.append(i)
                     list_distance_to_boundary.append([0.5]*len(overlapped_areas))
                     list_overlapped_areas.append(overlapped_areas)
-
+                    list_is_within_boundary.append(True)
+                    
         if not list_matched_tiles:
             return Table(), list_matched_coords, None
 
@@ -101,11 +105,12 @@ class Tiles:
             fig_path = self.visualize_tiles(list_ra, list_dec, list_aperture, list_matched_coords, list_matched_tiles, visualize_ncols, visualize_savepath)
 
         matched_tbl = Table()
-        for matched_coord, matched_tiles, distance_to_boundaries, overlapped_areas in zip(list_matched_coords, list_matched_tiles, list_distance_to_boundary, list_overlapped_areas):
+        for matched_coord, matched_tiles, distance_to_boundaries, overlapped_areas, is_within_boundary in zip(list_matched_coords, list_matched_tiles, list_distance_to_boundary, list_overlapped_areas, list_is_within_boundary):
             matched_tbl_single = self.tbl_RIS[np.isin(self.tbl_RIS['id'], matched_tiles)]
             matched_tbl_single['matched_idx'] = matched_coord
             matched_tbl_single['distance_to_boundary'] = distance_to_boundaries
             matched_tbl_single['overlapped_area'] = overlapped_areas
+            matched_tbl_single['is_within_boundary'] = is_within_boundary
             matched_tbl = vstack([matched_tbl, matched_tbl_single])
         
         _, unique_indices = np.unique(matched_tbl['id'], return_index=True)
@@ -291,8 +296,9 @@ if __name__ == "__main__":
     #data = ascii.read('./7DT_observed_Tile')
     #list_ra = data['ra']
     #list_dec = data['dec']
-    list_ra = [359.9]
-    list_dec = [-15]
+    list_ra = [359.9, 359.95]
+    list_dec = [-15, -15]
     #tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, 0.5, visualize = False, visualize_ncols=5, match_tolerance_minutes= 11)  
-    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 1, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
+    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 0, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
     #print(tbl_filtered['distance_to_boundary'])
+# %%

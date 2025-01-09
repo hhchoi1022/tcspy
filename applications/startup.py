@@ -87,7 +87,7 @@ class Startup(mainConfig):
             If the abortion event is triggered during the startup process.
         """
         self.is_running = True
-        self.multitelescopes.update_logfile()
+        self.multitelescopes.initialize_log()
         self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         # Connect

@@ -12,7 +12,7 @@ import re
 import os
 import numpy as np
 from multiprocessing import Event
-
+from multiprocessing import Lock
 # Alpaca modules
 from alpaca.observingconditions import ObservingConditions
 # TCSpy modules
@@ -50,7 +50,7 @@ class mainWeather(mainConfig):
         self.constraints = self._get_constraints()
         self.is_running = False
 
-    def get_status(self) -> dict:
+    def get_status(self, status_lock : Lock) -> dict:
         """
         Get the status of the Weather device
 
@@ -67,7 +67,6 @@ class mainWeather(mainConfig):
         updatetime_list =  [datetime.strptime(re.findall(pattern = f'(\d\d\d\d\d\d_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in weatherinfo_list]
         
         if len(updatetime_list) == 0:
-            print('AAAAAAAAAAAAAAAAAAAAAA')  
             status = self.update_info_file(return_status = True)
         else:
 
@@ -76,16 +75,10 @@ class mainWeather(mainConfig):
             elapse_time_since_update = (np.abs((updatetime - Time(dt_ut)).jd * 86400))[last_update_idx]
             last_update_file = weatherinfo_list[last_update_idx]
             if elapse_time_since_update > 5* self.config['WEATHER_UPDATETIME']: 
-                print('BBBBBBBBBBBBBBBBBBBBBBBBBBBBB')  
-
                 status = self.update_info_file(return_status = True)
             else:
-                print('CCCCCCCCCCCCCCCCCCCCCCCCCCC')  
-
-                lock_file = last_update_file + ".lock"
-                with FileLock(lock_file):
-                    with open(last_update_file, 'r') as f:
-                        status = json.load(f)       
+                with open(last_update_file, 'r') as f:
+                    status = json.load(f)       
         return status   
 
     def run(self, abort_action : Event):
