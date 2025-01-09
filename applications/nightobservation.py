@@ -116,7 +116,60 @@ class NightObservation(mainConfig):
             return True
         else:
             return False
-    
+
+    def _colorobs(self, target, telescopes, abort_action, observation_status):
+        kwargs = dict(exptime = target['exptime'], 
+                      count = target['count'],
+                      colormode = target['colormode'],
+                      gain = target['gain'],
+                      binning = target['binning'], 
+                      imgtype = 'Light', 
+                      ra = target['RA'],
+                      dec = target['De'], 
+                      name = target['objname'],
+                      objtype = target['objtype'], 
+                      id_ = target['id'],
+                      note = target['note'],
+                      comment = target['comment'],
+                      is_ToO = target['is_ToO'],
+                      autofocus_use_history = self.autofocus.use_history,
+                      autofocus_history_duration = self.autofocus.history_duration,
+                      autofocus_before_start = self.autofocus.before_start,
+                      autofocus_when_filterchange = self.autofocus.when_filterchange,
+                      autofocus_when_elapsed = self.autofocus.when_elapsed,
+                      autofocus_elapsed_duration = self.autofocus.elapsed_duration,
+                      observation_status = observation_status)  
+        
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
+        telescopes.update_statusfile(status = 'busy', do_trigger = True)
+        self.DB.export_to_csv()
+        action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
+        action_id = uuid.uuid4().hex
+        # Pop the telescope from the tel_queue
+        self._pop_telescope(telescope = telescopes)
+        # Apped the action and telescope to the action_queue
+        self._put_action(target = target, action = action, telescopes = telescopes, action_id = action_id)
+        
+        # Run observation
+        try:
+            result_action = action.run(**kwargs)
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.export_to_csv()
+            telescopes.update_statusfile(status = 'idle', do_trigger = True)
+        except AbortionException:
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.export_to_csv()
+            telescopes.update_statusfile(status = 'idle', do_trigger = True)
+        except ActionFailedException:
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.export_to_csv()
+            telescopes.update_statusfile(status = 'idle', do_trigger = True)
+        finally:
+            # Pop the action and telescope from  the action_queue
+            self._pop_action(action_id = action_id)
+            # Apped the telescope to the tel_queue
+            self._put_telescope(telescope = telescopes)
+
     def _specobs(self, target, telescopes, abort_action, observation_status):
         kwargs = dict(exptime = target['exptime'], 
                     count = target['count'],
@@ -335,6 +388,11 @@ class NightObservation(mainConfig):
     
     def _obstrigger(self, target, abort_action, observation_status = None):     
         obsmode = target['obsmode'].upper()
+        if obsmode == 'COLOR':
+            if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
+                telescopes = MultiTelescopes(SingleTelescope_list = list(self.tel_queue.values()))
+                thread = Thread(target= self._colorobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                thread.start()
         if obsmode == 'SPEC':
             if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 telescopes = MultiTelescopes(SingleTelescope_list = list(self.tel_queue.values()))
@@ -358,8 +416,12 @@ class NightObservation(mainConfig):
                 thread.start()   
         return True 
     
-    def _obsresume(self, target, telescopes, abort_action, observation_status = None):
-        # Check observability
+    def _obsresume(self, 
+                   target : SingleTarget, 
+                   telescopes : MultiTelescopes or SingleTelescope,
+                   abort_action : Event,
+                   observation_status : dict = None): 
+        # Check observability and trigger observation
         singletarget = SingleTarget(observer = self.multitelescopes.observer, 
                                     ra = target['RA'], 
                                     dec = target['De'], 
@@ -367,11 +429,16 @@ class NightObservation(mainConfig):
                                     count = target['count'], 
                                     filter_ = target['filter_'], 
                                     binning = target['binning'], 
-                                    specmode = target['specmode'])
+                                    specmode = target['specmode'],
+                                    colormode = target['colormode'])
         is_observable = singletarget.is_observable(utctime= Time.now() + singletarget.exposure_info['exptime_tot'] * u.s)
         obsmode = target['obsmode'].upper()        
         
         if is_observable:
+            if obsmode == 'COLOR':
+                if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
+                    thread = Thread(target= self._colorobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread.start()
             if obsmode == 'SPEC':
                 if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                     thread = Thread(target= self._specobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
@@ -665,8 +732,13 @@ class NightObservation(mainConfig):
             for action in action_history:
                 action['telescope'].log.warning('Waiting for ordinary observation aborted...')
                 # Check process aborted
-                while any(action['action'].multiaction.status.values()):
-                    time.sleep(0.2)
+                action_observation = action['action']
+                if isinstance(action_observation, (SpecObservation, DeepObservation)):
+                    while any(action_observation.multiaction.status.values()):
+                        time.sleep(0.2)
+                else:
+                    while action_observation.is_running:
+                        time.sleep(0.2)
                 # Check telescope ready to observe
                 #all_tel_status = {tel_name:self._is_tel_ready(tel_status) for tel_name, tel_status in action['telescope'].status.items()}
                 #while not all(all_tel_status.values()):
@@ -692,8 +764,13 @@ class NightObservation(mainConfig):
         if len(action_history) > 0:
             for action in action_history:
                 self.multitelescopes.log.warning('Waiting for ordinary observation aborted...')
-                while any(action['action'].multiaction.status.values()):
-                    time.sleep(0.2)
+                action_observation = action['action']
+                if isinstance(action_observation, (SpecObservation, DeepObservation)):
+                    while any(action_observation.multiaction.status.values()):
+                        time.sleep(0.2)
+                else:
+                    while action_observation.is_running:
+                        time.sleep(0.2)
                 self._pop_action(action_id =action['id'])
                 self._put_telescope(telescope = action['telescope'])   
                 self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = action['target']['id'], id_key = 'id')
