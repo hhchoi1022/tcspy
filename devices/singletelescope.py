@@ -13,7 +13,7 @@ from tcspy.devices.mount import mainMount_pwi4
 from tcspy.utils.logger import mainLogger
 import json
 from astropy.time import Time
-from multiprocessing import Lock
+import portalocker
 #%%
 
 class SingleTelescope(mainConfig):
@@ -115,26 +115,35 @@ class SingleTelescope(mainConfig):
         return devices
     
     def update_statusfile(self, 
-                          status : str, #idle or busy
-                          file_lock : Lock,
-                          do_trigger : bool = True,
-                          ):
+                        status: str,  # 'idle' or 'busy'
+                        do_trigger: bool = True):
         if do_trigger:
             if status.lower() not in ['idle', 'busy']:
                 raise ValueError('Status must be either "idle" or "busy".')
+
             status_file = self.config['MULTITELESCOPES_FILE']
-            # Load the JSON file
-            with file_lock:
-                with open(status_file, 'r') as f:
+
+            # Lock the file for safe access
+            with portalocker.Lock(status_file, 'r+', timeout=10) as f:
+                try:
+                    # Load the JSON data
+                    f.seek(0)  # Ensure reading starts at the beginning
                     status_dict = json.load(f)
 
-                # Update the status for each telescope
-                status_dict[self.name]['Status'] = status.lower()
-                status_dict[self.name]['Status_update_time'] = Time.now().isot
+                    # Update the status for this telescope
+                    if self.name in status_dict:
+                        status_dict[self.name]['Status'] = status.lower()
+                        status_dict[self.name]['Status_update_time'] = Time.now().isot
+                    else:
+                        raise KeyError(f"Telescope '{self.name}' not found in status file.")
 
-                # Write back the modified data to the file
-                with open(status_file, 'w') as f:
-                    json.dump(status_dict, f, indent=4)       
+                    # Overwrite the file with the updated data
+                    f.seek(0)  # Reset pointer to the beginning
+                    f.truncate()  # Clear the file before writing
+                    json.dump(status_dict, f, indent=4)
+                    f.flush()  # Ensure data is written to disk
+                except json.JSONDecodeError:
+                    raise ValueError(f"The file {status_file} is not a valid JSON file.")
         else:
             return None
     

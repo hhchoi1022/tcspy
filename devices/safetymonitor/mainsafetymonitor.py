@@ -13,10 +13,10 @@ from astropy.time import Time
 from multiprocessing import Event
 
 from alpaca.safetymonitor import SafetyMonitor
-from tcspy.utils.logger import mainLogger
 from tcspy.utils import Timeout
 from tcspy.configuration import mainConfig
 from tcspy.utils.exception import *
+import portalocker
 # %%
 class mainSafetyMonitor(mainConfig):
     """
@@ -49,7 +49,6 @@ class mainSafetyMonitor(mainConfig):
         self.device = SafetyMonitor(f"{self.config['SAFEMONITOR_HOSTIP']}:{self.config['SAFEMONITOR_PORTNUM']}",self.config['SAFEMONITOR_DEVICENUM'])
         self.is_running = False
 
-
     def get_status(self) -> dict:
         """
         Get the status of the SafetyMonitor device
@@ -60,24 +59,30 @@ class mainSafetyMonitor(mainConfig):
             A dictionary containing the current status of the SafetyMonitor device.
         """
         dt_ut = datetime.strptime(Time.now().isot, '%Y-%m-%dT%H:%M:%S.%f')
-        str_date = dt_ut.strftime('%y%m%d')
-        str_date_for_dir = datetime.strptime((Time.now() - 12*u.hour).isot, '%Y-%m-%dT%H:%M:%S.%f').strftime('%y%m%d')
-        directory = os.path.join(self.config['SAFEMONITOR_PATH'], str_date_for_dir)
-        safemonitorinfo_list = glob.glob(directory + f'/safemonitorinfo*.txt')
-        updatetime_list =  [datetime.strptime(re.findall(pattern = f'(\d\d\d\d\d\d_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in safemonitorinfo_list]
+        str_date_for_dir = datetime.strptime((Time.now() - 12 * u.hour).isot, '%Y-%m-%dT%H:%M:%S.%f').strftime('%y%m%d')        
         
-        if len(updatetime_list) == 0:
+        # Define the directory and find existing files
+        directory = os.path.join(self.config['SAFEMONITOR_PATH'], str_date_for_dir)
+        safemonitorinfo_list = glob.glob(os.path.join(directory, 'safemonitorinfo*.txt'))
+
+        if len(safemonitorinfo_list) == 0:
             status = self.update_info_file(return_status = True)
         else:
+            # Extract update times from filenames
+            updatetime_list =  [datetime.strptime(re.findall(pattern = r'(\d{6}_\d{6})', string = file_)[0], '%y%m%d_%H%M%S') for file_ in safemonitorinfo_list]
+            # Convert update times to astropy Time objects
             updatetime = Time(updatetime_list)
+            # Find the most recent update file
             last_update_idx =  np.argmin(np.abs((updatetime - Time(dt_ut)).jd * 86400))
             elapse_time_since_update = (np.abs((updatetime - Time(dt_ut)).jd * 86400))[last_update_idx]
             last_update_file = safemonitorinfo_list[last_update_idx]
+            
             if elapse_time_since_update > 5* self.config['SAFEMONITOR_UPDATETIME']: 
                 status = self.update_info_file(return_status = True)
             else:
-                with open(last_update_file, 'r') as f:
-                    status = json.load(f)      
+                # Safely read the last update file with a lock
+                with portalocker.Lock(last_update_file, 'r', timeout=10) as f:
+                    status = json.load(f) 
         return status   
 
     def run(self, abort_action : Event):
@@ -139,22 +144,37 @@ class mainSafetyMonitor(mainConfig):
             raise ConnectionException('Disconnect failed')
         return True
     
-    def update_info_file(self, return_status : bool = False):
+    def update_info_file(self, return_status: bool = False):
         current_status = self._status
         dt_ut = datetime.strptime(current_status['update_time'], '%Y-%m-%dT%H:%M:%S.%f')
         str_date = dt_ut.strftime('%y%m%d')
         str_time = dt_ut.strftime('%H%M%S')
-        str_date_for_dir = datetime.strptime((Time.now() - 12*u.hour).isot, '%Y-%m-%dT%H:%M:%S.%f').strftime('%y%m%d')
+        str_date_for_dir = datetime.strptime((Time.now() - 12 * u.hour).isot, '%Y-%m-%dT%H:%M:%S.%f').strftime('%y%m%d')
         filename = f'safemonitorinfo_{str_date}_{str_time}.txt'
         directory = os.path.join(self.config['SAFEMONITOR_PATH'], str_date_for_dir)
-        if not os.path.exists(directory):
-            os.makedirs(name = directory)
-        abspath_file = os.path.join(directory, filename)
-        with open(abspath_file, 'w') as f:
+
+        # Ensure the directory exists
+        os.makedirs(directory, exist_ok=True)
+
+        file_abspath = os.path.join(directory, filename)
+        #temp_file_abspath = file_abspath + ".tmp"
+
+        # Write the status file to a temporary file with a lock
+        #with portalocker.Lock(temp_file_abspath, 'w', timeout=10) as f:
+        #    json.dump(current_status, f, indent=4)
+
+        # Atomically rename the temporary file to the final file
+        #os.rename(temp_file_abspath, file_abspath)
+        #os.remove(temp_file_abspath)
+
+        # Write the status file to a temporary file with a lock
+        with portalocker.Lock(file_abspath, 'w', timeout=10) as f:
             json.dump(current_status, f, indent=4)
+
+        # Return the status if requested
         if return_status:
             return current_status
-    
+        
     @property
     def _status(self):
         """
@@ -172,7 +192,7 @@ class mainSafetyMonitor(mainConfig):
         status['is_safe'] = None
         status['name'] = None
 
-        @Timeout(3, 'Timeout error when updating status of SafetyMonitor device') 
+        @Timeout(15, 'Timeout (15sec) error when updating status of SafetyMonitor device') 
         def update_status(status: dict):
             if self.device.Connected:
                 try:

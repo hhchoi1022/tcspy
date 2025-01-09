@@ -87,8 +87,7 @@ class Startup(mainConfig):
         """
         self.is_running = True
         self.multitelescopes.register_logfile()
-        statusfile_lock = Lock()
-        self.multitelescopes.update_statusfile(status = 'busy', file_lock = statusfile_lock, do_trigger = True)
+        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         # Connect
         
@@ -259,7 +258,7 @@ class Startup(mainConfig):
                 raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
             
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
-        self.multitelescopes.update_statusfile(status = 'idle', file_lock = statusfile_lock, do_trigger = True)
+        self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
         self.is_running = False
 
 

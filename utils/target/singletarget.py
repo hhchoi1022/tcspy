@@ -92,8 +92,6 @@ class SingleTarget(mainConfig):
     
     Methods
     -------
-    get_status() -> dict
-        Returns a dictionary with information about the current status of the target.
     is_observable(utctime: datetime or Time = None) -> bool
         Determines whether the target is observable at the specified time or at the current time.
     altaz(utctime: datetime or Time = None) -> SkyCoord

@@ -11,6 +11,7 @@ import re
 import os
 import numpy as np
 from multiprocessing import Event
+import portalocker
 
 # Alpaca modules
 from alpaca.observingconditions import ObservingConditions
@@ -59,23 +60,28 @@ class mainWeather(mainConfig):
             A dictionary containing the current status of the Weather device.
         """
         dt_ut = datetime.strptime(Time.now().isot, '%Y-%m-%dT%H:%M:%S.%f')
-        str_date = dt_ut.strftime('%y%m%d')
         str_date_for_dir = datetime.strptime((Time.now() - 12*u.hour).isot, '%Y-%m-%dT%H:%M:%S.%f').strftime('%y%m%d')
+        
+        # Define the directory and find existing files
         directory = os.path.join(self.config['WEATHER_PATH'], str_date_for_dir)
         weatherinfo_list = glob.glob(directory + f'/weatherinfo*.txt')
-        updatetime_list =  [datetime.strptime(re.findall(pattern = f'(\d\d\d\d\d\d_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in weatherinfo_list]
         
-        if len(updatetime_list) == 0:
+        if len(weatherinfo_list) == 0:
             status = self.update_info_file(return_status = True)
         else:
+            # Extract update times from filenames
+            updatetime_list =  [datetime.strptime(re.findall(pattern = r'(\d{6}_\d{6})', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in weatherinfo_list]
+            # Convert update times to astropy Time objects
             updatetime = Time(updatetime_list)
+            # Find the most recent update file
             last_update_idx =  np.argmin(np.abs((updatetime - Time(dt_ut)).jd * 86400))
             elapse_time_since_update = (np.abs((updatetime - Time(dt_ut)).jd * 86400))[last_update_idx]
             last_update_file = weatherinfo_list[last_update_idx]
+            
             if elapse_time_since_update > 5* self.config['WEATHER_UPDATETIME']: 
                 status = self.update_info_file(return_status = True)
             else:
-                with open(last_update_file, 'r') as f:
+                with portalocker.Lock(last_update_file, 'r', timeout=10) as f:
                     status = json.load(f)      
         return status   
 
@@ -137,28 +143,43 @@ class mainWeather(mainConfig):
             raise ConnectionException('Disconnect failed')
         return True   
 
-    @Timeout(5, 'Timeout')
     def update_info_file(self, return_status : bool = False):
         current_status = self._status
         dt_ut = datetime.strptime(current_status['update_time'], '%Y-%m-%dT%H:%M:%S.%f')
-        str_datetime = dt_ut.strftime('%y%m%d_%H%M%S')
+        str_date = dt_ut.strftime('%y%m%d')
+        str_time = dt_ut.strftime('%H%M%S')
         str_date_for_dir = datetime.strptime((Time.now() - 12*u.hour).isot, '%Y-%m-%dT%H:%M:%S.%f').strftime('%y%m%d')
-        filename = f'weatherinfo_{str_datetime}.txt'
+        filename = f'weatherinfo_{str_date}_{str_time}.txt'
         directory = os.path.join(self.config['WEATHER_PATH'], str_date_for_dir)
-        if not os.path.exists(directory):
-            os.makedirs(name = directory)
-        abspath_file = os.path.join(directory, filename)
-        with open(abspath_file, 'w') as f:
+        
+        # Ensure the directory exists
+        os.makedirs(name = directory, exist_ok = True)
+        
+        file_abspath = os.path.join(directory, filename)
+        #temp_file_abspath = file_abspath + ".tmp"
+        
+        # Write the status file to a temporary file with a lock
+        #with portalocker.Lock(temp_file_abspath, 'w', timeout=10) as f:
+        #    json.dump(current_status, f, indent=4)
+
+        # Atomically rename the temporary file to the final file
+        #os.rename(temp_file_abspath, file_abspath)
+        #os.remove(temp_file_abspath)
+        
+        # Write the status file to a temporary file with a lock
+        with portalocker.Lock(file_abspath, 'w', timeout=10) as f:
             json.dump(current_status, f, indent=4)
+            
         # [241220] Added for synching 7DT weather status to the SNU server (proton) 
         filename_status = f'weatherinfo.dict'
         foldername_status = self.config['WEATHER_STATUSPATH']
-        abspath_file_status = os.path.join(foldername_status, filename_status)
-        if not os.path.exists(foldername_status):
-            os.makedirs(name = foldername_status)
-        with open(abspath_file_status, 'w') as f:
+        statusfile_abspath = os.path.join(foldername_status, filename_status)
+        os.makedirs(name = foldername_status, exist_ok = True)
+        with portalocker.Lock(statusfile_abspath, 'w', timeout=10) as f:
             json.dump(current_status, f, indent=4)
-        # Done [241220]
+        # [241220]
+
+        # Return the status if requested
         if return_status:
             return current_status
     
@@ -219,7 +240,7 @@ class mainWeather(mainConfig):
         status['fwhm'] = None
         status['constraints'] = self.constraints
 
-        @Timeout(3, 'Timeout error when updating status of Weather device') 
+        @Timeout(15, 'Timeout (15sec) error when updating status of Weather device') 
         def update_status(status):
             if self.device.Connected:
                 try:
@@ -287,7 +308,7 @@ class mainWeather(mainConfig):
                 except:
                     pass
                 try:
-                    status['is_connected'] = self.device.Connected
+                    status['is_connected'] = True
                 except:
                     pass
             return status

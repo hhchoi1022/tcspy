@@ -5,13 +5,11 @@ from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.logger import mainLogger
-from concurrent.futures import ThreadPoolExecutor
 from astropy.time import Time
-import time
 from tcspy.configuration import mainConfig
 import json
 import re
-from multiprocessing import Lock
+import portalocker
 #%%
 
 class MultiTelescopes(mainConfig):
@@ -56,27 +54,34 @@ class MultiTelescopes(mainConfig):
         
     def update_statusfile(self, 
                           status : str, #idle or busy
-                          file_lock : Lock,
                           do_trigger : bool = True
                           ):
         if do_trigger:
             if status.lower() not in ['idle', 'busy']:
                 raise ValueError('Status must be either "idle" or "busy".')
+
             status_file = self.config['MULTITELESCOPES_FILE']
-            # Load the JSON file
-            with file_lock:
-                with open(status_file, 'r') as f:
+
+            # Safely lock the file for updating
+            with portalocker.Lock(status_file, 'r+', timeout=10) as f:
+                try:
+                    # Load the JSON data
+                    f.seek(0)  # Ensure reading starts at the beginning
                     status_dict = json.load(f)
-                
-                # Update the status for each telescope
-                for tel_name in self.devices.keys():
-                    if tel_name in status_dict:
-                        status_dict[tel_name]['Status'] = status.lower()
-                        status_dict[tel_name]['Status_update_time'] = Time.now().isot
-                
-                # Write back the modified data to the file
-                with open(status_file, 'w') as f:
+
+                    # Update the status for each telescope
+                    for tel_name in self.devices.keys():
+                        if tel_name in status_dict:
+                            status_dict[tel_name]['Status'] = status.lower()
+                            status_dict[tel_name]['Status_update_time'] = Time.now().isot
+
+                    # Overwrite the file with the updated data
+                    f.seek(0)  # Reset pointer to the beginning
+                    f.truncate()  # Clear the file before writing
                     json.dump(status_dict, f, indent=4)
+                    f.flush()  # Ensure data is written to disk
+                except json.JSONDecodeError:
+                    raise ValueError(f"The file {status_file} is not a valid JSON file.")
         else:
             return None
     

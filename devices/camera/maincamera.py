@@ -435,9 +435,9 @@ class mainCamera(mainConfig):
                     
                     # Update the previous temperature for the next iteration
                     prev_temperature = current_temperature
-                self.device.CoolerOn = False
-
                 self._log.info('Warning finished. Current temperature: %.1f' % self.device.CCDTemperature)
+                self.device.CoolerOn = False
+                self._log.info('Cooler is turned off')
                 return True
             else:
                 self._log.critical('Warming is not implemented on this device')
