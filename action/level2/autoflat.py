@@ -238,7 +238,6 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                                           gain = gain,
                                           obsmode = None,
                                           specmode = None,
-                                          colormode = None,
                                           ntelescope = 1
                                           )
                     status = self.telescope.status

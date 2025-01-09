@@ -67,9 +67,6 @@ class ActionFailedException(Exception):
 class SpecmodeRegisterException(Exception):
     pass
 
-class ColormodeRegisterException(Exception):
-    pass
-
 class ObsModeRegisterException(Exception):
     pass
 

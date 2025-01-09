@@ -131,7 +131,6 @@ class SingleTarget(mainConfig):
                  obsmode : str = None,
                  filter_ : str = None,
                  specmode : str = None,
-                 colormode : str = None,
                  ntelescope : int = 1,
                  gain : int = 2750,
                  binning : int or str = 1,
@@ -189,7 +188,6 @@ class SingleTarget(mainConfig):
         self.binning = binning
         self.gain = gain
         self.specmode = specmode
-        self.colormode = colormode
         self.obsmode = obsmode
         self.ntelescope = ntelescope
         self.exist_exposureinfo = False
@@ -226,8 +224,6 @@ class SingleTarget(mainConfig):
                 - obsmode: the observation mode.
                 - specmode: the spectroscopy mode.
                 - specmode_filter: the filter used in spectroscopy mode.
-                - colormode : the color mode.
-                - colormode_filter: the filter used in color mode.
                 - ntelescope: the number of telescopes.
         """
         exposureinfo = dict()
@@ -239,8 +235,6 @@ class SingleTarget(mainConfig):
         exposureinfo['obsmode'] = self.obsmode
         exposureinfo['specmode'] = self.specmode
         exposureinfo['specmode_filter'] = None
-        exposureinfo['colormode'] = self.colormode
-        exposureinfo['colormode_filter'] = None
         exposureinfo['ntelescope'] = self.ntelescope
         
         # Check whether all exposure information is inputted
@@ -268,23 +262,8 @@ class SingleTarget(mainConfig):
             exposureinfo['count'] = format_exposure['count']
             exposureinfo['filter_'] = exposureinfo['filter_']
             exposureinfo['binning'] = format_exposure['binning']
-            exposureinfo['exptime_tot'] = format_exposure['exptime_tot']c
-            exposureinfo['specmode_filter'] = filter_info
-            
-        if self.colormode:
-            filter_info = self._get_filters_from_colormode()
-            filter_str = list(filter_info.values())[0]
-            format_exposure = self._format_expinfo(filter_str = str(filter_str),
-                                                   exptime_str = str(self.exptime),
-                                                   count_str = str(self.count),
-                                                   binning_str = str(self.binning))
-            exposureinfo['exptime'] = format_exposure['exptime']
-            exposureinfo['count'] = format_exposure['count']
-            exposureinfo['filter_'] = exposureinfo['filter_']
-            exposureinfo['binning'] = format_exposure['binning']
             exposureinfo['exptime_tot'] = format_exposure['exptime_tot']
-            exposureinfo['colormode_filter'] = filter_info    
-            
+            exposureinfo['specmode_filter'] = filter_info        
         return exposureinfo
     
     @property
@@ -615,20 +594,6 @@ class SingleTarget(mainConfig):
         else:
             raise SpecmodeRegisterException(f'Specmode : {self.specmode} is not registered in {self.config["SPECMODE_FOLDER"]}')
        
-    def _get_filters_from_colormode(self):
-        colormode_file = self.config['COLORMODE_FOLDER'] + f'{self.colormode}.colormode'
-        is_exist_colormodefile = os.path.isfile(colormode_file)
-        if is_exist_colormodefile: 
-            with open(colormode_file, 'r') as f:
-                colormode_dict = json.load(f)
-            all_filters_dict = dict()
-            for tel_name, filters in colormode_dict.items():
-                filters_str = ','.join(filters)
-                all_filters_dict[tel_name] = filters_str
-            return all_filters_dict
-        else:
-            raise ColormodeRegisterException(f'Colormode : {self.colormode} is not registered in {self.config["COLORMODE_FOLDER"]}')
-              
     def _format_expinfo(self,
                         filter_str : str,
                         exptime_str : str,
