@@ -10,7 +10,7 @@ from tcspy.utils.exception import *
 from tcspy.configuration import mainConfig
 
 from tcspy.action import MultiAction
-from tcspy.action.level2 import SingleObservation
+from tcspy.action.level2 import SingleObservation 
 
 class ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):
     """
