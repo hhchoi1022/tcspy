@@ -268,7 +268,7 @@ class SingleTarget(mainConfig):
             exposureinfo['count'] = format_exposure['count']
             exposureinfo['filter_'] = exposureinfo['filter_']
             exposureinfo['binning'] = format_exposure['binning']
-            exposureinfo['exptime_tot'] = format_exposure['exptime_tot']c
+            exposureinfo['exptime_tot'] = format_exposure['exptime_tot']
             exposureinfo['specmode_filter'] = filter_info
             
         if self.colormode:
@@ -602,7 +602,7 @@ class SingleTarget(mainConfig):
             return None
 
     def _get_filters_from_specmode(self):
-        specmode_file = self.config['SPECMODE_FOLDER'] + f'{self.specmode}.specmode'
+        specmode_file = os.path.join(self.config['SPECMODE_FOLDER'],f'{self.specmode}.specmode')
         is_exist_specmodefile = os.path.isfile(specmode_file)
         if is_exist_specmodefile: 
             with open(specmode_file, 'r') as f:
@@ -616,7 +616,7 @@ class SingleTarget(mainConfig):
             raise SpecmodeRegisterException(f'Specmode : {self.specmode} is not registered in {self.config["SPECMODE_FOLDER"]}')
        
     def _get_filters_from_colormode(self):
-        colormode_file = self.config['COLORMODE_FOLDER'] + f'{self.colormode}.colormode'
+        colormode_file = os.path.join(self.config['COLORMODE_FOLDER'],f'{self.colormode}.colormode')
         is_exist_colormodefile = os.path.isfile(colormode_file)
         if is_exist_colormodefile: 
             with open(colormode_file, 'r') as f:
@@ -707,7 +707,8 @@ if __name__ == '__main__':
                      filter_ = 'g',
                      count = 5, 
                      binning=  1, 
-                     obsmode ='Deep')
+                     obsmode ='Spec',
+                     specmode = 'specall')
     S.status
     S.staralt()
     print(time.time() - start)

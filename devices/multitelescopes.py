@@ -11,6 +11,7 @@ import time
 from tcspy.configuration import mainConfig
 import json
 import re
+from filelock import FileLock
 
 #%%
 
@@ -63,8 +64,9 @@ class MultiTelescopes(mainConfig):
                 raise ValueError('Status must be either "idle" or "busy".')
             status_file = self.config['MULTITELESCOPES_FILE']
             # Load the JSON file
-            with open(status_file, 'r') as f:
-                status_dict = json.load(f)
+            with FileLock(status_file + '.lock'):
+                with open(status_file, 'r') as f:
+                    status_dict = json.load(f)
             
             # Update the status for each telescope
             for tel_name in self.devices.keys():
@@ -73,8 +75,9 @@ class MultiTelescopes(mainConfig):
                     status_dict[tel_name]['Status_update_time'] = Time.now().isot
             
             # Write back the modified data to the file
-            with open(status_file, 'w') as f:
-                json.dump(status_dict, f, indent=4)
+            with FileLock(status_file + '.lock'):
+                with open(status_file, 'w') as f:
+                    json.dump(status_dict, f, indent=4)
         else:
             return None
     

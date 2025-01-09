@@ -12,7 +12,7 @@ from tcspy.configuration import mainConfig
 from tcspy.action import MultiAction
 from tcspy.action.level2 import SingleObservation
 
-class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
+class ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):
     """
     A class representing a spectroscopic observation of multiple telescopes.
 
@@ -22,7 +22,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         An instance of MultiTelescopes class representing a collection of telescopes to perform the specservation.
     abort_action : Event
         An instance of the built-in Event class to handle the abort action.
-    specmode_folder : str
+    colormode_folder : str
         Path to the folder containing the spectroscopic mode configurations.
 
     Attributes
@@ -33,7 +33,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         Details of the observer.
     abort_action : Event
         An instance of Event to handle the abort action.
-    _specmode_folder : str
+    _colormode_folder : str
         The Folder containing the config files for the spectroscopic modes.
 
     Methods

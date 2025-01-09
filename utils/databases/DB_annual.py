@@ -260,7 +260,7 @@ class DB_Annual(mainConfig):
             for i, (n_target, time) in enumerate(zip(n_target_for_each_timegrid, time_grid)):
                 altaz = multitargets_for_scoring.altaz(utctimes=time)
                 score = altaz.alt.value / maxalt
-                high_score_criteria = 0.9
+                high_score_criteria = 0.7
                 high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
                 
                 # Get available indices excluding already selected ones
@@ -274,7 +274,8 @@ class DB_Annual(mainConfig):
                 # Sort available indices by declination (ascending order)
                 available_indices_sorted = sorted(
                     available_indices, 
-                    key=lambda idx: target_tbl_for_scoring['De'][idx]
+                    key=lambda idx: target_tbl_for_scoring['De'][idx],
+                    reverse = True
                 )
                 
                 # Select targets based on sorted indices
@@ -437,4 +438,8 @@ if __name__ == '__main__':
     print('Current_obscount = ', current_obscount)
     print('Total_obscount_sum = ', np.sum(db.data['obs_count']))
     print(f'{current_obscount}/{tot_tilecount}')
+# %%
+if __name__ == '__main__':
+    db=  DB_Annual(tbl_name = 'RIS')
+    targets = db.select_best_targets(size = 300, observable_minimum_hour = 2)
 # %%

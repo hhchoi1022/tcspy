@@ -122,11 +122,11 @@ class AutofocusInitializer(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    AutofocusInitializer(M, Event()).run(filter_ = 'specall',
+    AutofocusInitializer(M, Event()).run(filter_ = 'r',
                                          use_offset = False,
                                          use_history = False, 
                                          history_duration = 60,
                                          search_focus_when_failed = False, 
                                          search_focus_range = 200,
-                                         slew = True) 
+                                         slew = False) 
 # %%

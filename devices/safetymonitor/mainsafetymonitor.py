@@ -1,4 +1,5 @@
 #%%
+from filelock import FileLock
 from astropy.io import ascii
 from astropy.time import Time
 import astropy.units as u
@@ -67,6 +68,8 @@ class mainSafetyMonitor(mainConfig):
         updatetime_list =  [datetime.strptime(re.findall(pattern = f'(\d\d\d\d\d\d_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in safemonitorinfo_list]
         
         if len(updatetime_list) == 0:
+            print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')  
+
             status = self.update_info_file(return_status = True)
         else:
             updatetime = Time(updatetime_list)
@@ -74,10 +77,16 @@ class mainSafetyMonitor(mainConfig):
             elapse_time_since_update = (np.abs((updatetime - Time(dt_ut)).jd * 86400))[last_update_idx]
             last_update_file = safemonitorinfo_list[last_update_idx]
             if elapse_time_since_update > 5* self.config['SAFEMONITOR_UPDATETIME']: 
+                print('BBBBBBBBBBBBBBBBBBBBBBBBBBBBB')  
+
                 status = self.update_info_file(return_status = True)
             else:
-                with open(last_update_file, 'r') as f:
-                    status = json.load(f)      
+                print('CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC')  
+                # Use a lock file
+                lock_file = last_update_file + ".lock"
+                with FileLock(lock_file):
+                    with open(last_update_file, 'r') as f:
+                        status = json.load(f)      
         return status   
 
     def run(self, abort_action : Event):
@@ -139,7 +148,8 @@ class mainSafetyMonitor(mainConfig):
             raise ConnectionException('Disconnect failed')
         return True
     
-    def update_info_file(self, return_status : bool = False):
+    def update_info_file(self, return_status: bool = False):
+        print('Updating SafetyMonitor info file')
         current_status = self._status
         dt_ut = datetime.strptime(current_status['update_time'], '%Y-%m-%dT%H:%M:%S.%f')
         str_date = dt_ut.strftime('%y%m%d')
@@ -148,10 +158,15 @@ class mainSafetyMonitor(mainConfig):
         filename = f'safemonitorinfo_{str_date}_{str_time}.txt'
         directory = os.path.join(self.config['SAFEMONITOR_PATH'], str_date_for_dir)
         if not os.path.exists(directory):
-            os.makedirs(name = directory)
+            os.makedirs(name=directory)
         abspath_file = os.path.join(directory, filename)
-        with open(abspath_file, 'w') as f:
-            json.dump(current_status, f, indent=4)
+        
+        # Use a lock file
+        lock_file = abspath_file + ".lock"
+        with FileLock(lock_file):
+            with open(abspath_file, 'w') as f:
+                json.dump(current_status, f, indent=4)
+                return 'True'
         if return_status:
             return current_status
     

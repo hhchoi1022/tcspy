@@ -72,9 +72,9 @@ class NightObservation(mainConfig):
         self.DB.initialize(initialize_all= True)
         
         # Connect Weather Updater
-        Thread(target = self.weather.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
+        #Thread(target = self.weather.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
         # Connect SafetyMonitor Updater
-        Thread(target = self.safetymonitor.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
+        #Thread(target = self.safetymonitor.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
 
         # Set device for safety check
         if self.config['NIGHTOBS_SAFETYPE'].upper() == 'WEATHER':
@@ -687,15 +687,15 @@ class NightObservation(mainConfig):
         try:
             # Append telescopes used in the action to the list
             if isinstance(telescope, SingleTelescope):
-                status = TelescopeStatus(telescope).dict
+                #status = TelescopeStatus(telescope).dict
                 tel_name = telescope.tel_name
                 #if self._is_tel_ready(status):
                 self.tel_queue[tel_name] = telescope
             if isinstance(telescope, MultiTelescopes):
-                status_devices = telescope.status
-                for tel_name, status in status_devices.items():
+                #status_devices = telescope.status
+                for tel_name, tel in telescope.devices.items():
                     #if self._is_tel_ready(status):
-                    self.tel_queue[tel_name] = self.multitelescopes.devices[tel_name]
+                    self.tel_queue[tel_name] = tel
         finally:
             # Release the lock
             self.tel_lock.release()
@@ -733,8 +733,13 @@ class NightObservation(mainConfig):
             for action in action_history:
                 action['telescope'].log.warning('Waiting for ordinary observation aborted...')
                 # Check process aborted
-                while any(action['action'].multiaction.status.values()):
-                    time.sleep(0.2)
+                action_observation = action['action']
+                if isinstance(action_observation, (SpecObservation, DeepObservation)):
+                    while any(action_observation.multiaction.status.values()):
+                        time.sleep(0.2)
+                else:
+                    while action_observation.is_running:
+                        time.sleep(0.2)
                 # Check telescope ready to observe
                 #all_tel_status = {tel_name:self._is_tel_ready(tel_status) for tel_name, tel_status in action['telescope'].status.items()}
                 #while not all(all_tel_status.values()):
