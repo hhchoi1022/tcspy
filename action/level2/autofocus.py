@@ -136,7 +136,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         
         # Abort action when triggered
         if self.abort_action.is_set():
-            self.abort()
+            self.abrot()
     
         # Define action
         action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action)

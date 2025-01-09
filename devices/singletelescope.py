@@ -10,7 +10,6 @@ from tcspy.devices.safetymonitor import mainSafetyMonitor
 from tcspy.utils.error import *
 from tcspy.devices.mount import mainMount_Alpaca
 from tcspy.devices.mount import mainMount_pwi4
-from tcspy.utils.logger import mainLogger
 import json
 from astropy.time import Time
 #%%
@@ -67,7 +66,6 @@ class SingleTelescope(mainConfig):
         self.safetymonitor = None
         self.observer = self._get_observer()
         self._set_devices()
-        self.log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
 
     def __repr__(self):
         txt=  f'SingleTelescope[{self.name}]'

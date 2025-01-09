@@ -163,7 +163,6 @@ class DB_Daily(mainConfig):
                                 ntelescope = target['ntelescope'])
                 exposure_info = S.exposure_info
                 del exposure_info['specmode_filter']
-                del exposure_info['colormode_filter']
                 exposureinfo_listdict.append(exposure_info)
             except:
                 exposureinfo_listdict.append(dict(status = 'error'))
@@ -572,17 +571,15 @@ class DB_Daily(mainConfig):
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
     #Daily.from_GSheet('241122_1')
-    Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
-    Daily.clear(clear_only_7ds= True)
-    Daily.from_IMS()
-    Daily.from_RIS(size = 300)
+    #Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
+    #Daily.clear(clear_only_7ds= True)
+    #Daily.from_IMS()
+    #Daily.from_RIS(size = 100)
     # #from astropy.io import ascii
     # #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
     # #tbl_input = tbl[tbl['note'] == 'GW190814']
     # #tbl_input['ntelescope'] = 10
     # #Daily.insert(tbl_input)
-#%%
-if __name__ == '__main__':
 
     from tcspy.utils.databases import DB_Annual
     from astropy.io import ascii
@@ -630,7 +627,7 @@ if __name__ == '__main__':
     # tbl_to_insert = RIS[[21177]]
     # tbl_to_insert['note'] = 'EP241223a'
     # Daily.insert(tbl_to_insert)
-    Daily.initialize(True)
+    # Daily.initialize(True)
     #Daily.write()
 
 # %%

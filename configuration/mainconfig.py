@@ -52,9 +52,7 @@ class mainConfig:
                                list_unitnum : List[int]):
         default_specmode_dict = dict()
         for unitnum in list_unitnum:
-            default_specmode_dict[f'7DT%.2d' % unitnum] = []
-        if not os.path.exists(self.config['SPECMODE_FOLDER']):
-            os.makedirs(self.config['SPECMODE_FOLDER'], exist_ok=True)
+            default_specmode_dict[f'{self.tel_name}%.2d' % unitnum] = dict()
         with open(os.path.join(self.config['SPECMODE_FOLDER'], 'specmode.format'), 'w') as f:
             json.dump(default_specmode_dict, f, indent=4)
             
@@ -62,9 +60,7 @@ class mainConfig:
                                list_unitnum : List[int]):
         default_colormode_dict = dict()
         for unitnum in list_unitnum:
-            default_colormode_dict[f'7DT%.2d' % unitnum] = []
-        if not os.path.exists(self.config['COLORMODE_FOLDER']):
-            os.makedirs(self.config['COLORMODE_FOLDER'], exist_ok=True)
+            default_colormode_dict[f'{self.tel_name}%.2d' % unitnum] = dict()
         with open(os.path.join(self.config['COLORMODE_FOLDER'], 'colormode.format'), 'w') as f:
             json.dump(default_colormode_dict, f, indent=4)
 
@@ -244,7 +240,7 @@ class mainConfig:
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250108")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/u10/")}')
 
         colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250108/")}')
         
@@ -290,7 +286,6 @@ class mainConfig:
         self.make_configfile(autofocus_params, filename = 'Autofocus.config', savepath= self.path_global)
         self.make_configfile(autoflat_params, filename = 'Autoflat.config', savepath= self.path_global)
         self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self.path_global)
-        self.make_configfile(colormode_params, filename = 'colormode.config', savepath= self.path_global)
         self.make_configfile(startup_params, filename = 'startup.config', savepath= self.path_global)
         self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_global)
         self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_global)
