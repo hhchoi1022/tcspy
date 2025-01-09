@@ -5,7 +5,6 @@ from tcspy.action import MultiAction
 from tcspy.action.level1 import SlewAltAz
 from tcspy.devices import SingleTelescope, MultiTelescopes
 from multiprocessing import Event
-from multiprocessing import Lock
 from threading import Thread
 from tcspy.utils.exception import *
 import json, os
@@ -16,12 +15,10 @@ class AutofocusInitializer(mainConfig):
     def __init__(self,
                  multitelescopes : MultiTelescopes,
                  abort_action : Event,
-                 status_lock : Lock,
                  ):
         super().__init__()
         self.multitelescopes = multitelescopes
         self.abort_action = abort_action
-        self.status_lock = status_lock
         self.filtinfo = self._get_filtinfo()
         self.is_running = False
     

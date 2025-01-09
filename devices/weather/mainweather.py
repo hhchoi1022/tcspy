@@ -67,28 +67,28 @@ class mainWeather(mainConfig):
         updatetime_list =  [datetime.strptime(re.findall(pattern = f'(\d\d\d\d\d\d_\d\d\d\d\d\d)', string = file_)[0], '%y%m%d_%H%M%S'  ) for file_ in weatherinfo_list]
         
         if len(updatetime_list) == 0:
-            status = self.update_info_file(status_lock = status_lock, return_status = True)
+            status = self.update_info_file(return_status = True)
         else:
+
             updatetime = Time(updatetime_list)
             last_update_idx =  np.argmin(np.abs((updatetime - Time(dt_ut)).jd * 86400))
             elapse_time_since_update = (np.abs((updatetime - Time(dt_ut)).jd * 86400))[last_update_idx]
             last_update_file = weatherinfo_list[last_update_idx]
             if elapse_time_since_update > 5* self.config['WEATHER_UPDATETIME']: 
-                status = self.update_info_file(status_lock = status_lock, return_status = True)
+                status = self.update_info_file(return_status = True)
             else:
-                with status_lock:
-                    with open(last_update_file, 'r') as f:
-                        status = json.load(f)       
+                with open(last_update_file, 'r') as f:
+                    status = json.load(f)       
         return status   
 
-    def run(self, abort_action : Event, status_lock : Lock):
+    def run(self, abort_action : Event):
         
         def update_status():
             if not self.device.Connected:
                 self.connect()  
             print(f'WeatherUpdater activated')
             while not abort_action.is_set():
-                self.update_info_file(status_lock = status_lock, return_status = True)
+                self.update_info_file(return_status = False)
                 print(f'Last weatherinfo update: {Time.now().isot}')
                 time.sleep(self.config['WEATHER_UPDATETIME'])
                 self.is_running = True
@@ -140,9 +140,7 @@ class mainWeather(mainConfig):
         return True   
 
     @Timeout(10, 'Timeout')
-    def update_info_file(self, 
-                         status_lock : Lock, 
-                         return_status: bool = False):
+    def update_info_file(self, return_status: bool = False):
         current_status = self._status
         dt_ut = datetime.strptime(current_status['update_time'], '%Y-%m-%dT%H:%M:%S.%f')
         str_datetime = dt_ut.strftime('%y%m%d_%H%M%S')
@@ -155,7 +153,9 @@ class mainWeather(mainConfig):
 
         abspath_file = os.path.join(directory, filename)
 
-        with status_lock:
+        # Add a lock file
+        lock_file = abspath_file + ".lock"
+        with FileLock(lock_file):
             with open(abspath_file, 'w') as f:
                 json.dump(current_status, f, indent=4)
 
@@ -167,7 +167,7 @@ class mainWeather(mainConfig):
         if not os.path.exists(foldername_status):
             os.makedirs(name=foldername_status)
 
-        with status_lock:
+        with FileLock(abspath_file_status + ".lock"):
             with open(abspath_file_status, 'w') as f:
                 json.dump(current_status, f, indent=4)
 
@@ -201,7 +201,8 @@ class mainWeather(mainConfig):
         constraints['WINDSPEED'] = self.config['WEATHER_WINDSPEED']
         return constraints
 
-    def get_weatherinfo(self):
+    @property
+    def _status(self):
         """
         Get the current weather status.
 
@@ -230,8 +231,8 @@ class mainWeather(mainConfig):
         status['fwhm'] = None
         status['constraints'] = self.constraints
 
-        #@Timeout(5, 'Timeout error when updating status of Weather device') 
-        def update_weatherinfo(status):
+        @Timeout(5, 'Timeout error when updating status of Weather device') 
+        def update_status(status):
             if self.device.Connected:
                 try:
                     status['update_time'] = Time.now().isot
@@ -303,7 +304,7 @@ class mainWeather(mainConfig):
                     pass
             return status
         #try:
-        status = update_weatherinfo(status)
+        status = update_status(status)
         #except:
         #    pass
 
