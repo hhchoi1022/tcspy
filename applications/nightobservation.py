@@ -573,7 +573,7 @@ class NightObservation(mainConfig):
             
     def _process(self):
         self.is_running = True
-        self.multitelescopes.initialize_log()
+        self.multitelescopes.update_logfile()
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         self._observation_abort = Event()
         self._ToO_abort = Event()

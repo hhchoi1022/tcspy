@@ -44,7 +44,7 @@ class DarkAcquisition(mainConfig):
         
     def _process(self, count, exptime, binning, gain):
         self.is_running = True
-        self.multitelescopes.initialize_log()
+        self.multitelescopes.update_logfile()
         self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         

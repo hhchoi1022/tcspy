@@ -194,6 +194,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self.is_running = False
             raise ConnectionException(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
+
         
         # Set target
         target = SingleTarget(observer = self.telescope.observer, 
