@@ -64,6 +64,9 @@ class ConnectionException(Exception):
 class ActionFailedException(Exception):
     pass
 
+class ColormodeRegisterException(Exception):
+    pass
+
 class SpecmodeRegisterException(Exception):
     pass
 

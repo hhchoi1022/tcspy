@@ -203,6 +203,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
                                     obsmode = 'Deep',
                                     filter_ = filter_,
                                     specmode = None,
+                                    colormode = None,
                                     ntelescope= ntelescope,
                                     gain = gain,
                                     binning = binning

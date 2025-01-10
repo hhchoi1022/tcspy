@@ -157,12 +157,14 @@ class DB_Daily(mainConfig):
                                 count = target['count'], 
                                 filter_ = target['filter_'], 
                                 binning = target['binning'], 
+                                colormode = target['colormode'],
                                 specmode = target['specmode'],
                                 obsmode = target['obsmode'],
                                 gain = target['gain'],
                                 ntelescope = target['ntelescope'])
                 exposure_info = S.exposure_info
                 del exposure_info['specmode_filter']
+                del exposure_info['colormode_filter']
                 exposureinfo_listdict.append(exposure_info)
             except:
                 exposureinfo_listdict.append(dict(status = 'error'))
@@ -236,7 +238,7 @@ class DB_Daily(mainConfig):
                       update_values,
                       update_keys,
                       id_value,
-                      id_key = 'id'):
+                      id_key = ['objname','id']):
         """
         Updates an existing target's attribute.
 
@@ -582,52 +584,52 @@ if __name__ == '__main__':
     # #Daily.insert(tbl_input)
 
     from tcspy.utils.databases import DB_Annual
-    from astropy.io import ascii
-    tbl = ascii.read('./S240422ed.ascii')
-    RIS = DB_Annual('RIS').data
-    tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
-    tbl_to_insert['filter_'][:] = 'r'
-    tbl_to_insert['obsmode'] = tbl_to_insert['obsmode'].astype('U20')
-    tbl_to_insert['obsmode'][:] = 'Search'
-    tbl_to_insert['exptime'][:] = 120
-    tbl_to_insert['count'][:] = 3
+    # from astropy.io import ascii
+    # tbl = ascii.read('./S240422ed.ascii')
+    # RIS = DB_Annual('RIS').data
+    # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
+    # tbl_to_insert['filter_'][:] = 'r'
+    # tbl_to_insert['obsmode'] = tbl_to_insert['obsmode'].astype('U20')
+    # tbl_to_insert['obsmode'][:] = 'Search'
+    # tbl_to_insert['exptime'][:] = 120
+    # tbl_to_insert['count'][:] = 3
     
-    tbl_to_insert['ntelescope'][:] = 1
-    tbl_to_insert['priority'][:] = 40
+    # tbl_to_insert['ntelescope'][:] = 1
+    # tbl_to_insert['priority'][:] = 40
+    #Daily.insert(tbl_to_insert)
+    tbl_to_insert = RIS[[1637,
+    1753,
+    1872,
+    1873,
+    3259,
+    3260,
+    3418,
+    3580,
+    3581,
+    7756,
+    7757,
+    7983,
+    7984,
+    8212,
+    8213]]
+    notelist = []
+    for i in range(4):
+        notelist.append('FRB010312A')
+    for i in range(5):
+        notelist.append('4hr')
+    for i in range(6):
+        notelist.append('Antlia')
+    #tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
+    tbl_to_insert['note'] = notelist
+    #tbl_to_insert['status'] = 'pending'
+    #tbl_to_insert['specmode'] = ['specall_ugriz']*len(tbl_to_insert)
+    tbl_to_insert['priority'] = 15
     Daily.insert(tbl_to_insert)
-    # tbl_to_insert = RIS[[1637,
-    # 1753,
-    # 1872,
-    # 1873,
-    # 3259,
-    # 3260,
-    # 3418,
-    # 3580,
-    # 3581,
-    # 7756,
-    # 7757,
-    # 7983,
-    # 7984,
-    # 8212,
-    # 8213]]
-    # notelist = []
-    # for i in range(4):
-    #     notelist.append('FRB010312A')
-    # for i in range(5):
-    #     notelist.append('4hr')
-    # for i in range(6):
-    #     notelist.append('Antlia')
-    # #tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
-    # tbl_to_insert['note'] = notelist
-    # #tbl_to_insert['status'] = 'pending'
-    # #tbl_to_insert['specmode'] = ['specall_ugriz']*len(tbl_to_insert)
-    # tbl_to_insert['priority'] = 10
-    # Daily.insert(tbl_to_insert)
 
     # tbl_to_insert = RIS[[21177]]
     # tbl_to_insert['note'] = 'EP241223a'
     # Daily.insert(tbl_to_insert)
-    # Daily.initialize(True)
+    Daily.initialize(True)
     #Daily.write()
 
 # %%

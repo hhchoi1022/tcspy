@@ -846,7 +846,7 @@ if __name__ == '__main__':
     #file_path  = '/Users/hhchoi1022/code/tcspy/utils/alertmanager/20241128_164230_GECKO.ascii_fixed_width'
     #alert = ab.read_gwalert(path_alert = file_path)
     #alert = ab.read_sheet(sheet_name = '241219', match_to_tiles= True)
-    alertlist = ab.read_mail(since_days = 3)
+    alertlist = ab.read_mail(since_days = 3, match_to_tiles = True)
     #alert = alertlist[0]
     #message_ts = ab.send_alertslack(alert = alert)
     #ab.send_resultmail(alert = alert, users = 'hhchoi1022@gmail.com', observed_time = '2024-12-26')

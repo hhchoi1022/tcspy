@@ -260,7 +260,7 @@ class DB_Annual(mainConfig):
             for i, (n_target, time) in enumerate(zip(n_target_for_each_timegrid, time_grid)):
                 altaz = multitargets_for_scoring.altaz(utctimes=time)
                 score = altaz.alt.value / maxalt
-                high_score_criteria = 0.9
+                high_score_criteria = 0.7
                 high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
                 
                 # Get available indices excluding already selected ones
@@ -274,7 +274,8 @@ class DB_Annual(mainConfig):
                 # Sort available indices by declination (ascending order)
                 available_indices_sorted = sorted(
                     available_indices, 
-                    key=lambda idx: target_tbl_for_scoring['De'][idx]
+                    key=lambda idx: target_tbl_for_scoring['De'][idx],
+                    reverse = True
                 )
                 
                 # Select targets based on sorted indices

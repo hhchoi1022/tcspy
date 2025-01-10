@@ -122,7 +122,7 @@ class SQLConnector:
             insertion_results.append(cursor is not None)
         return insertion_results
 
-    def update_row(self, tbl_name: str, update_value: list or str, update_key: list or str, id_value: str, id_key: str = 'id'):
+    def update_row(self, tbl_name: str, update_value: list or str, update_key: list or str, id_value: list or str, id_key: list or str = ['id']):
         def convert_value(val):
             if isinstance(val, (np.integer, np.int64)):
                 return int(val)
@@ -130,17 +130,27 @@ class SQLConnector:
                 return float(val)
             return val
 
+        # Handle single or multiple id_keys and id_values
+        if isinstance(id_key, str) and isinstance(id_value, str):
+            where_clause = f"{id_key} = '{id_value}'"
+        elif isinstance(id_key, list) and isinstance(id_value, list) and len(id_key) == len(id_value):
+            where_clause = ' AND '.join([f"{key} = %s" for key in id_key])
+        else:
+            raise ValueError("id_key and id_value must both be strings or lists of the same length.")
+
         if isinstance(update_value, (str, np.int64, np.float64, np.integer, np.floating)):
             update_command = f"{update_key} = '{update_value}'"
-            sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
-            cursor = self.execute(sql_command, commit=True)
+            sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {where_clause}"
+            cursor = self.execute(sql_command, id_value if isinstance(id_value, list) else [id_value], commit=True)
             return cursor is not None
         else:
             update_command = ', '.join([f"{key} = %s" for key in update_key])
-            sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {id_key} = '{id_value}'"
+            sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {where_clause}"
             value_None = tuple(None if val in ('None', '') else val for val in update_value)
             value = tuple(convert_value(val) for val in value_None)
-            cursor = self.execute(sql_command, convert_value(value), commit=True)
+            # Combine update values with id values for the placeholders
+            all_values = value + (tuple(id_value) if isinstance(id_value, list) else (id_value,))
+            cursor = self.execute(sql_command, all_values, commit=True)
             return cursor is not None
 
     def get_data(self, tbl_name: str, select_key: str = '*', where_value: str = None, where_key: str = 'id', out_format: str = 'Table'):

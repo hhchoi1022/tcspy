@@ -31,6 +31,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             obsmode : str = 'Single',
             filter_ : str = None,
             specmode : str = None,
+            colormode : str = None,
             ntelescope : int = 1,
             gain = 0,
             binning : int = 1,
@@ -149,6 +150,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                               gain = gain,
                               obsmode = obsmode,
                               specmode = specmode,
+                              colormode = colormode,
                               ntelescope = ntelescope
                               )
         # Move filter

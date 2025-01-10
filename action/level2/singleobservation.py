@@ -62,6 +62,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             obsmode : str = 'Single',
             filter_ : str = None,
             specmode : str = None,
+            colormode : str = None,
             ntelescope : int = 1,
             gain : int = 2750,
             binning : str = '1',
@@ -216,6 +217,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               gain = gain,
                               obsmode = obsmode,
                               specmode = specmode,
+                              colormode = colormode,
                               ntelescope = ntelescope
                               )
         target_info = target.target_info
@@ -224,7 +226,10 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 
         if exposure_info['filter_'] == 'None':
             try:
-                exposure_info['filter_'] = exposure_info['specmode_filter'][self.telescope.tel_name]
+                if specmode:
+                    exposure_info['filter_'] = exposure_info['specmode_filter'][self.telescope.tel_name]
+                else:
+                    exposure_info['filter_'] = exposure_info['colormode_filter'][self.telescope.tel_name]
             except:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: filter is not defined.')
@@ -391,6 +396,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                           obsmode = obsmode,
                                                           filter_ = filter_,
                                                           specmode = specmode,
+                                                          colormode = colormode,
                                                           ntelescope = ntelescope,
                                                           gain = int(gain),
                                                           binning = int(binning),

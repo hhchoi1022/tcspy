@@ -16,7 +16,7 @@ class Tiles:
     def __init__(self, tile_path: str = None):
         if tile_path is None:
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            self.tile_path = os.path.join(current_dir, './final_tiles.txt')
+            self.tile_path = os.path.join(current_dir, './sky-grid and tiling/7-DT/final_tiles.txt')
         else:
             self.tile_path = tile_path
         self.tbl_RIS = None
@@ -106,6 +106,7 @@ class Tiles:
             matched_tbl_single['matched_idx'] = matched_coord
             matched_tbl_single['distance_to_boundary'] = distance_to_boundaries
             matched_tbl_single['overlapped_area'] = overlapped_areas
+            matched_tbl_single['is_within_boundary'] = np.array(distance_to_boundaries) > match_tolerance_minutes/60
             matched_tbl = vstack([matched_tbl, matched_tbl_single])
         
         _, unique_indices = np.unique(matched_tbl['id'], return_index=True)
@@ -291,8 +292,9 @@ if __name__ == "__main__":
     #data = ascii.read('./7DT_observed_Tile')
     #list_ra = data['ra']
     #list_dec = data['dec']
-    list_ra = [359.9]
+    list_ra = [350.1]
     list_dec = [-15]
     #tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, 0.5, visualize = False, visualize_ncols=5, match_tolerance_minutes= 11)  
     tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 1, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
     #print(tbl_filtered['distance_to_boundary'])
+# %%

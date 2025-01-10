@@ -28,51 +28,69 @@ class GmailConnector:
         self.smtp_server = 'smtp.gmail.com'
         self.smtp_port = 587
         self.imap_server = 'imap.gmail.com'
-        self.logged_in = False  # Track login status
+        self.logged_in_imap = False  # Track login status
+        self.logged_in_smtp = False  # Track login status
         self.server_imap = None
         self.server_smtp = None
 
     def __repr__(self):
         return f"<GmailConnector(user_account='{self.user_account}', logged_in={self.logged_in})>"
 
-    def ensure_logged_in(self):
-        """Check if connections to IMAP and SMTP servers are still alive."""
+    def ensure_logged_in_imap(self):
+        """Check if connections to IMAP servers are still alive."""
         if self.server_imap:
             try:
                 self.server_imap.noop()  # Send a no-operation command to test connection
             except Exception as e:
                 print(f"IMAP connection lost: {e}")
-                self.logged_in = False
+                self.logged_in_imap = False
 
+        if not self.logged_in_imap:
+            print("The account is not logged in. Try login...")
+            self.login_imap()
+        return True
+    
+    def ensure_logged_in_smtp(self):
+        """Check if connections to SMTP servers are still alive."""
         if self.server_smtp:
             try:
                 self.server_smtp.noop()  # SMTP doesn't officially support NOOP but try a simple command
             except Exception as e:
                 print(f"SMTP connection lost: {e}")
-                self.logged_in = False
+                self.logged_in_smtp = False
 
-        if not self.logged_in:
+        if not self.logged_in_smtp:
             print("The account is not logged in. Try login...")
-            self.login()
+            self.login_smtp()
         return True
 
-    def login(self):
+    def login_imap(self):
         """Login to the IMAP server to check credentials and set login status."""
         try:
             # Connect to the IMAP server
             self.server_imap = imaplib.IMAP4_SSL(self.imap_server)
             self.server_imap.login(self.user_account, self.user_token)
+            self.logged_in_imap = True
+            print("IMAP Login successful.")
+        except Exception as e:
+            self.logged_in_imap = False
+            print(f"Failed to login IMAP: {e}")
+            
+    def login_smtp(self):
+        """Login to the IMAP server to check credentials and set login status."""
+        try:
+
             # Connect to the SMTP server
             self.server_smtp = smtplib.SMTP(self.smtp_server, self.smtp_port)
             self.server_smtp.starttls()
             self.server_smtp.login(self.user_account, self.user_token)
-            self.logged_in = True
-            print("Login successful.")
+            self.logged_in_smtp = True
+            print("SMTP Login successful.")
         except Exception as e:
-            self.logged_in = False
-            print(f"Failed to login: {e}")
+            self.logged_in_smtp = False
+            print(f"Failed to login SMTP: {e}")
             
-    def logout(self):
+    def logout_imap(self):
         """Gracefully close connections to IMAP and SMTP servers."""
         if self.server_imap:
             try:
@@ -81,6 +99,10 @@ class GmailConnector:
             except Exception as e:
                 print(f"Error logging out of IMAP server: {e}")
 
+        self.logged_in_imap = False
+        
+    def logout_smtp(self):
+        """Gracefully close connections to IMAP and SMTP servers."""
         if self.server_smtp:
             try:
                 self.server_smtp.quit()
@@ -88,7 +110,7 @@ class GmailConnector:
             except Exception as e:
                 print(f"Error logging out of SMTP server: {e}")
 
-        self.logged_in = False
+        self.logged_in_smtp = False
     
     def send_mail(self, to_users: str or list, cc_users : str or list, subject: str, body: str, attachments: list or str = None, text_type = 'plain'):
         """
@@ -103,7 +125,7 @@ class GmailConnector:
         """
         if text_type not in ['plain', 'html']:
             raise ValueError("Invalid text_type. Must be 'plain' or 'html'.")
-        self.ensure_logged_in()
+        self.ensure_logged_in_smtp()
         try:
             # Convert to_users and cc_users to lists if they are strings
             if isinstance(to_users, str):
@@ -144,7 +166,15 @@ class GmailConnector:
                 all_recipients += cc_users
 
             # Send the email
-            self.server_smtp.sendmail(self.user_account, all_recipients, msg.as_string())
+            try:
+                self.server_smtp.sendmail(self.user_account, all_recipients, msg.as_string())
+            except:
+                print('Sending email failed. Try to login again...')
+                self.login_smtp()
+                time.sleep(5)
+                self.server_smtp.sendmail(self.user_account, all_recipients, msg.as_string())
+            # Logout of the SMTP server
+            self.logout_smtp()
             print("Email sent successfully.")
         except Exception as e:
             print(f"Failed to send email: {e}")
@@ -178,7 +208,7 @@ class GmailConnector:
             else:
                 return None, mail_from
         
-        self.ensure_logged_in()
+        self.ensure_logged_in_imap()
         emails = []
         
         try:

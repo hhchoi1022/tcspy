@@ -222,7 +222,9 @@ class mainConfig:
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/u10/")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250108/")}')
+
+        colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250108/")}')
         
         startup_params = dict(STARTUP_ALT = 30,
                               STARTUP_AZ = 90,
@@ -266,6 +268,7 @@ class mainConfig:
         self.make_configfile(autofocus_params, filename = 'Autofocus.config', savepath= self.path_global)
         self.make_configfile(autoflat_params, filename = 'Autoflat.config', savepath= self.path_global)
         self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self.path_global)
+        self.make_configfile(colormode_params, filename = 'colormode.config', savepath= self.path_global)
         self.make_configfile(startup_params, filename = 'startup.config', savepath= self.path_global)
         self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_global)
         self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_global)

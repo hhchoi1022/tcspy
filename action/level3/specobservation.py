@@ -56,8 +56,6 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         self.shared_memory['status'] = dict()
         self.shared_memory['succeeded'] = False
         self.is_running = False
-        self._specmode_folder = self.config['SPECMODE_FOLDER']
-
     
     def run(self, 
             # Exposure information
@@ -197,6 +195,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                                     obsmode = 'Spec',
                                     filter_ = None,
                                     specmode = specmode,
+                                    colormode = None,
                                     ntelescope= len(self.multitelescopes.devices),
                                     gain = gain,
                                     binning = binning
