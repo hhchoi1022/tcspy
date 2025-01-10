@@ -1,7 +1,7 @@
 #%%
 from astropy.time import Time
 import astropy.units as u
-from multiprocessing import Event, Lock, Process, Manager
+from multiprocessing import Event, Lock
 from threading import Thread
 import time
 import uuid
@@ -18,6 +18,7 @@ from tcspy.utils.error import *
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.exception import *
 from tcspy.utils.nightsession import NightSession
+#%%
 
 
 class NightObservation(mainConfig):
@@ -36,11 +37,10 @@ class NightObservation(mainConfig):
 
         self.autofocus = self.autofocus_config()
 
-        manager = Manager()
-        self.tel_queue = manager.dict()
-        self.action_queue = manager.list()
-        #self.tel_lock = Lock()
-        #self.action_lock = Lock()
+        self.action_queue = list()
+        self.tel_queue = dict()
+        self.tel_lock = Lock()
+        self.action_lock = Lock()
         self.is_running = False
         self.is_obs_triggered = False
         self.is_shutdown_triggered = False
@@ -87,9 +87,7 @@ class NightObservation(mainConfig):
         not_ready_tel = []
         for tel_name, status in status_devices.items():
             if self._is_tel_ready(status):
-                Process(target = self._put_telescope, kwargs = dict(telescope = self.multitelescopes.devices[tel_name]), daemon = False).start()
-                #self._put_telescope(telescope = self.multitelescopes.devices[tel_name])
-                #self.tel_queue[tel_name] = self.multitelescopes.devices[tel_name]
+                self.tel_queue[tel_name] = self.multitelescopes.devices[tel_name]
             else:
                 not_ready_tel.append(tel_name)
         if len(not_ready_tel) > 0:
@@ -106,7 +104,6 @@ class NightObservation(mainConfig):
         return all([ready_tel, ready_cam, ready_filt, ready_focus])
     
     def _is_weather_safe(self):
-        return True
         weather_status = self.weather.get_status()
         if weather_status['is_safe'] == True:
             return True
@@ -114,7 +111,6 @@ class NightObservation(mainConfig):
             return False
 
     def _is_safetymonitor_safe(self):
-        return True
         safetymonitor_status = self.safetymonitor.get_status()
         if safetymonitor_status['is_safe'] == True:
             return True
@@ -144,7 +140,7 @@ class NightObservation(mainConfig):
                       autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                       observation_status = observation_status)  
         
-        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.DB.export_to_csv()
         action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
@@ -156,17 +152,16 @@ class NightObservation(mainConfig):
         
         # Run observation
         try:
-            #result_action = action.run(**kwargs)
-            time.sleep(10)           
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            result_action = action.run(**kwargs)
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -198,7 +193,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)  
         
-        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.DB.export_to_csv()
         action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
@@ -210,17 +205,16 @@ class NightObservation(mainConfig):
         
         # Run observation
         try:
-            #result_action = action.run(**kwargs)
-            time.sleep(10)            
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            result_action = action.run(**kwargs)
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -252,7 +246,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)  
 
-        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
         self.DB.export_to_csv()
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         action = DeepObservation(multitelescopes= telescopes, abort_action = abort_action)
@@ -264,17 +258,16 @@ class NightObservation(mainConfig):
         
         # Run observation
         try:
-            #result_action = action.run(**kwargs)
-            time.sleep(10)            
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            result_action = action.run(**kwargs)
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -308,7 +301,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)    
 
-        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
         self.DB.export_to_csv()
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
@@ -320,17 +313,16 @@ class NightObservation(mainConfig):
         
         # Run observation
         try:
-            #result_action = action.run(**kwargs)
-            time.sleep(10)            
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            result_action = action.run(**kwargs)
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -364,7 +356,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)          
 
-        self.DB.update_target(update_values = [Time.now().isot, 'scheduled'], update_keys = ['obs_starttime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+        self.DB.update_target(update_values = [Time.now().isot, 'scheduled'], update_keys = ['obs_starttime','status'], id_value = target['id'], id_key = 'id')
         self.DB.export_to_csv()
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
@@ -376,17 +368,16 @@ class NightObservation(mainConfig):
 
         # Run observation
         try:
-            #result_action = action.run(**kwargs)
-            time.sleep(10)            
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            result_action = action.run(**kwargs)
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -400,28 +391,28 @@ class NightObservation(mainConfig):
         if obsmode == 'COLOR':
             if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 telescopes = MultiTelescopes(SingleTelescope_list = list(self.tel_queue.values()))
-                thread = Process(target= self._colorobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                thread = Thread(target= self._colorobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
         if obsmode == 'SPEC':
             if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 telescopes = MultiTelescopes(SingleTelescope_list = list(self.tel_queue.values()))
-                thread = Process(target= self._specobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                thread = Thread(target= self._specobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
         elif obsmode == 'DEEP':
             ntelescope = target['ntelescope']
             if len(self.tel_queue) >= ntelescope:
                 telescopes = MultiTelescopes(SingleTelescope_list = [self.tel_queue.popitem()[1] for i in range(ntelescope)])
-                thread = Process(target= self._deepobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                thread = Thread(target= self._deepobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
         elif obsmode == 'SEARCH':
             if len(self.tel_queue) >= 1:
                 tel_name, telescopes = self.tel_queue.popitem()
-                thread = Process(target= self._searchobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                thread = Thread(target= self._searchobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()
         else:
             if len(self.tel_queue) >= 1:
                 tel_name, telescopes = self.tel_queue.popitem()
-                thread = Process(target= self._singleobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                thread = Thread(target= self._singleobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                 thread.start()   
         return True 
     
@@ -446,25 +437,25 @@ class NightObservation(mainConfig):
         if is_observable:
             if obsmode == 'COLOR':
                 if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
-                    thread = Process(target= self._colorobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread = Thread(target= self._colorobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                     thread.start()
             if obsmode == 'SPEC':
                 if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
-                    thread = Process(target= self._specobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread = Thread(target= self._specobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                     thread.start()
             elif obsmode == 'DEEP':
                 ntelescope = target['ntelescope']
                 if len(self.tel_queue) >= ntelescope:
-                    thread = Process(target= self._deepobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread = Thread(target= self._deepobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                     thread.start()
             elif obsmode == 'SEARCH':
                 ntelescope = target['ntelescope']
                 if len(self.tel_queue) >= 1:
-                    thread = Process(target= self._searchobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread = Thread(target= self._searchobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                     thread.start()
             else:
                 if len(self.tel_queue) >= 1:
-                    thread = Process(target= self._singleobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
+                    thread = Thread(target= self._singleobs, kwargs = {'telescopes':telescopes, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False)
                     thread.start()
         else:
             self.multitelescopes.log.warning('Observation cannot be resumed: Target is unobservable')
@@ -590,15 +581,15 @@ class NightObservation(mainConfig):
         now = Time.now() 
         
         # Wait until sunse
-        # if now < obs_start_time:
-        #     self.multitelescopes.log.info('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
-        #     print('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
-        # while now < obs_start_time:
-        #     time.sleep(5)
-        #     now = Time.now()
-        #     if self.abort_action.is_set():
-        #         self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
-        #         raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        if now < obs_start_time:
+            self.multitelescopes.log.info('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
+            print('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
+        while now < obs_start_time:
+            time.sleep(5)
+            now = Time.now()
+            if self.abort_action.is_set():
+                self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         aborted_action = None
         # Trigger observation until sunrise
@@ -607,8 +598,6 @@ class NightObservation(mainConfig):
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
                 raise AbortionException (f'[{type(self).__name__}] is aborted.')
             now = Time.now() 
-            print(self.action_queue)
-            print(self.tel_queue)
             
             # Initialize the Daily target tbl
             self.DB.initialize(initialize_all = False)
@@ -690,8 +679,7 @@ class NightObservation(mainConfig):
         finally:
             # Release the lock
             self.action_lock.release()
-
- 
+            
     def _put_telescope(self, telescope):
         # Acquire the lock before modifying self.used_telescopes
         self.tel_lock.acquire()
@@ -794,5 +782,6 @@ class NightObservation(mainConfig):
 # %%
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
-    #M = MultiTelescopes()
-    #NightObservation(M, Event()).run()
+    M = MultiTelescopes()
+    NightObservation(M, Event()).run()
+# %%
