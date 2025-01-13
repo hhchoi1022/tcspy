@@ -129,17 +129,17 @@ class ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         """
         
         """ Test
-        exptime= '5,5'
-        count= '5,5'
+        exptime= '30'
+        count= '12'
         colormode = 'gri'
-        binning= '1,1'
-        gain = 2750
+        binning= '1'
+        gain = 0
         imgtype = 'Light'
-        ra= '248.133'
-        dec= '-13.0538'
+        ra= '107.6'
+        dec= '-39.0974'
         alt = None
         az = None
-        name = "M107"
+        name = "WASP121b"
         objtype = 'Commissining'
         note = 'This is for Deep observing mode. (5 Telescopes will be used for sequential g,r,i observation)'
         autofocus_use_history = False

@@ -12,7 +12,7 @@ from tcspy.configuration import mainConfig
 from tcspy.devices import MultiTelescopes
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
-from tcspy.applications import StartUp
+from tcspy.applications import Shutdown
 from tcspy.utils.databases import DB
 from tcspy.utils.error import *
 from tcspy.utils.target import SingleTarget
@@ -783,5 +783,5 @@ class NightObservation(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    N = NightObservation(M, Event()).run()
+    N = NightObservation(M, Event())#.run()
 # %%
