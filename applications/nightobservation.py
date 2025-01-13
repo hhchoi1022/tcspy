@@ -140,10 +140,10 @@ class NightObservation(mainConfig):
                       autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                       observation_status = observation_status)  
         
-        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.DB.export_to_csv()
-        action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
+        action = ColorObservation(multitelescopes= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
         self._pop_telescope(telescope = telescopes)
@@ -153,15 +153,15 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -193,7 +193,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)  
         
-        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.DB.export_to_csv()
         action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
@@ -206,15 +206,15 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -246,7 +246,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)  
 
-        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
         self.DB.export_to_csv()
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         action = DeepObservation(multitelescopes= telescopes, abort_action = abort_action)
@@ -259,15 +259,15 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -301,7 +301,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)    
 
-        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
         self.DB.export_to_csv()
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
@@ -314,15 +314,15 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -356,7 +356,7 @@ class NightObservation(mainConfig):
                     autofocus_elapsed_duration = self.autofocus.elapsed_duration,
                     observation_status = observation_status)          
 
-        self.DB.update_target(update_values = [Time.now().isot, 'scheduled'], update_keys = ['obs_starttime','status'], id_value = target['id'], id_key = 'id')
+        self.DB.update_target(update_values = [Time.now().isot, 'scheduled'], update_keys = ['obs_starttime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
         self.DB.export_to_csv()
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
@@ -369,15 +369,15 @@ class NightObservation(mainConfig):
         # Run observation
         try:
             result_action = action.run(**kwargs)
-            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except AbortionException:
-            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         except ActionFailedException:
-            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = target['id'], id_key = 'id')
+            self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
         finally:
@@ -745,7 +745,7 @@ class NightObservation(mainConfig):
                 #    all_tel_status = {tel_name:self._is_tel_ready(tel_status) for tel_name, tel_status in action['telescope'].status.items()}
                 self._pop_action(action_id =action['id'])
                 self._put_telescope(telescope = action['telescope'])
-                self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = action['target']['id'], id_key = 'id')
+                self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [action['target']['objname'], action['target']['id']], id_key = ['objname','id'])
                 self.DB.export_to_csv()
         # Get status of all telescopes
         return action_history
@@ -759,7 +759,7 @@ class NightObservation(mainConfig):
             ToO_targets_unobserved = targets[targets['is_ToO'] == 1]
             if len(ToO_targets_unobserved) > 0:
                 for ToO_target in ToO_targets_unobserved:
-                    self.DB.update_target(update_values = [Time.now().isot, 'retracted'], update_keys = ['obs_endtime','status'], id_value = ToO_target['target']['id'], id_key = 'id')
+                    self.DB.update_target(update_values = [Time.now().isot, 'retracted'], update_keys = ['obs_endtime','status'], id_value = [action['target']['objname'], action['target']['id']], id_key = ['objname','id'])
                     self.DB.export_to_csv()
         if len(action_history) > 0:
             for action in action_history:
@@ -783,5 +783,5 @@ class NightObservation(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    NightObservation(M, Event()).run()
+    N = NightObservation(M, Event()).run()
 # %%

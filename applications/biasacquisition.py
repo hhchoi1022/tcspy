@@ -49,7 +49,7 @@ class BiasAcquisition(mainConfig):
                  binning : int = 1, 
                  gain : int = 2750):
         self.is_running = True
-        self.multitelescopes.update_logfile()
+        self.multitelescopes.register_logfile()
         self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
 

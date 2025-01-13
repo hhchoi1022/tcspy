@@ -173,7 +173,7 @@ class DB_Daily(mainConfig):
                 
         for i, value in enumerate(tqdm(values_update)):
             target_to_update = target_tbl_to_update[i]  
-            self.sql.update_row(tbl_name = self.tblname, update_value = list(value.values()), update_key = list(value.keys()), id_value= target_to_update['id'], id_key = 'id')
+            self.sql.update_row(tbl_name = self.tblname, update_value = list(value.values()), update_key = list(value.keys()), id_value= [target_to_update['id']], id_key = ['id'])
         print(f'{len(target_tbl_to_update)} targets are updated')
     
     def best_target(self,
@@ -333,15 +333,45 @@ class DB_Daily(mainConfig):
             print('Updating GoogleSheet data...')
             gsheet.write_sheet(sheet_name = sheet_name, data = tbl_sheet, append = False, clear_header = False)        
     
-    def clear(self, clear_only_7ds : bool = True):
-        data = self.data 
-        if clear_only_7ds:
-            data_7ds = data[(data['objtype'] == 'RIS') | (data['objtype'] == 'IMS') | (data['objtype'] == 'WFS')]
-            all_ids = data_7ds['id']
-        else:
-            all_ids = data['id']
-        self.sql.remove_rows(tbl_name = self.tblname, ids = all_ids)
+    def clear(self, 
+            clear_only_7ds: bool = True,
+            clear_only_observed: bool = False):
+        """
+        Clears rows from the database table based on the specified conditions.
 
+        Parameters:
+            clear_only_7ds (bool): If True, only clear rows with objtype in ['RIS', 'IMS', 'WFS'].
+            clear_only_observed (bool): If True, only clear rows with status 'observed'.
+        """
+        data = self.data  # Assuming `self.data` is a DataFrame or similar structure.
+
+        if clear_only_7ds and clear_only_observed:
+            # Clear rows that are both 7DS objects and observed.
+            filtered_data = data[
+                ((data['objtype'] == 'RIS') | 
+                (data['objtype'] == 'IMS') | 
+                (data['objtype'] == 'WFS')) & 
+                (data['status'] == 'observed')
+            ]
+        elif clear_only_7ds:
+            # Clear only 7DS objects.
+            filtered_data = data[
+                (data['objtype'] == 'RIS') | 
+                (data['objtype'] == 'IMS') | 
+                (data['objtype'] == 'WFS')
+            ]
+        elif clear_only_observed:
+            # Clear only observed objects.
+            filtered_data = data[data['status'] == 'observed']
+        else:
+            # Clear all rows if no specific filter is applied.
+            filtered_data = data
+
+        # Extract IDs of rows to be cleared.
+        all_ids = filtered_data['id']
+
+        # Remove rows from the database table.
+        self.sql.remove_rows(tbl_name=self.tblname, ids=all_ids)
     
     @property
     def data(self):
@@ -572,11 +602,11 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
-    #Daily.from_GSheet('241122_1')
+    Daily.from_GSheet('250113_WASP121b')
     #Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
-    #Daily.clear(clear_only_7ds= True)
+    #Daily.clear(clear_only_7ds= True, clear_only_observed = True)
     #Daily.from_IMS()
-    #Daily.from_RIS(size = 100)
+    #Daily.from_RIS(size = 300)
     # #from astropy.io import ascii
     # #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
     # #tbl_input = tbl[tbl['note'] == 'GW190814']
@@ -586,7 +616,7 @@ if __name__ == '__main__':
     from tcspy.utils.databases import DB_Annual
     # from astropy.io import ascii
     # tbl = ascii.read('./S240422ed.ascii')
-    # RIS = DB_Annual('RIS').data
+    #RIS = DB_Annual('RIS').data
     # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
     # tbl_to_insert['filter_'][:] = 'r'
     # tbl_to_insert['obsmode'] = tbl_to_insert['obsmode'].astype('U20')
@@ -597,38 +627,39 @@ if __name__ == '__main__':
     # tbl_to_insert['ntelescope'][:] = 1
     # tbl_to_insert['priority'][:] = 40
     #Daily.insert(tbl_to_insert)
-    tbl_to_insert = RIS[[1637,
-    1753,
-    1872,
-    1873,
-    3259,
-    3260,
-    3418,
-    3580,
-    3581,
-    7756,
-    7757,
-    7983,
-    7984,
-    8212,
-    8213]]
-    notelist = []
-    for i in range(4):
-        notelist.append('FRB010312A')
-    for i in range(5):
-        notelist.append('4hr')
-    for i in range(6):
-        notelist.append('Antlia')
-    #tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
-    tbl_to_insert['note'] = notelist
-    #tbl_to_insert['status'] = 'pending'
-    #tbl_to_insert['specmode'] = ['specall_ugriz']*len(tbl_to_insert)
-    tbl_to_insert['priority'] = 15
-    Daily.insert(tbl_to_insert)
+    # tbl_to_insert = RIS[[1637,
+    # 1753,
+    # 1872,
+    # 1873,
+    # 3259,
+    # 3260,
+    # 3418,
+    # 3580,
+    # 3581,
+    # 7756,
+    # 7757,
+    # 7983,
+    # 7984,
+    # 8212,
+    # 8213]]
+    # notelist = []
+    # for i in range(4):
+    #     notelist.append('FRB010312A')
+    # for i in range(5):
+    #     notelist.append('4hr')
+    # for i in range(6):
+    #     notelist.append('Antlia')
+    # #tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
+    # tbl_to_insert['note'] = notelist
+    # #tbl_to_insert['status'] = 'pending'
+    # #tbl_to_insert['specmode'] = ['specall_ugriz']*len(tbl_to_insert)
+    # tbl_to_insert['priority'] = 15
+    # Daily.insert(tbl_to_insert)
 
     # tbl_to_insert = RIS[[21177]]
     # tbl_to_insert['note'] = 'EP241223a'
     # Daily.insert(tbl_to_insert)
+    
     Daily.initialize(True)
     #Daily.write()
 

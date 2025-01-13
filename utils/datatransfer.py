@@ -340,11 +340,11 @@ class DataTransferManager(mainConfig):
 if __name__ == '__main__':
     A = DataTransferManager()
     import time
-    #A.run(key = '*/image/2025-01-05_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
-    #time.sleep(600)
-    #A.run(key = '*/image/2025-01-03_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
-    #time.sleep(600)
-    #A.run(key = '*/image/2025-01-04_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
+    A.run(key = '*/image/2025-01-07_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
+    time.sleep(600)
+    A.run(key = '*/image/2025-01-09_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
+    time.sleep(600)
+    A.run(key = '*/image/2025-01-10_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = True, thread = False)
 
 
     #A.run(key = '*/2024-12-15_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
@@ -352,12 +352,12 @@ if __name__ == '__main__':
     #A.run(key = '*/2024-12-12_gain2750', save_hash = True, tar = True, transfer = True, move_and_clean = False, thread = False)
 
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
-    A.start_monitoring(
-        ordinary_file_key='*/image/*',   # Adjust these parameters as needed
-        ToO_file_key='*/image/*_ToO',
-        inactivity_period=1800,             # 30 minutes of inactivity
-        tar=True,                        # Compress files into tar
-        protocol='gridftp'               # File transfer protocol
-    )
+    # A.start_monitoring(
+    #     ordinary_file_key='*/image/*',   # Adjust these parameters as needed
+    #     ToO_file_key='*/image/*_ToO',
+    #     inactivity_period=1800,             # 30 minutes of inactivity
+    #     tar=True,                        # Compress files into tar
+    #     protocol='gridftp'               # File transfer protocol
+    # )
 
 # %%

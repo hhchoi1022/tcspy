@@ -131,9 +131,12 @@ class SQLConnector:
             return val
 
         # Handle single or multiple id_keys and id_values
-        if isinstance(id_key, str) and isinstance(id_value, str):
-            where_clause = f"{id_key} = '{id_value}'"
-        elif isinstance(id_key, list) and isinstance(id_value, list) and len(id_key) == len(id_value):
+        if isinstance(id_key, str):
+            id_key = [id_key]
+        if isinstance(id_value, str):
+            id_value = [id_value]
+            #where_clause = f"{id_key} = '{id_value}'"
+        if isinstance(id_key, list) and isinstance(id_value, list) and len(id_key) == len(id_value):
             where_clause = ' AND '.join([f"{key} = %s" for key in id_key])
         else:
             raise ValueError("id_key and id_value must both be strings or lists of the same length.")
@@ -183,7 +186,7 @@ class SQLConnector:
         uuidlist = [uuid.uuid4().hex for _ in range(len(values_to_update))]
 
         for id_, index in zip(uuidlist, values_to_update['idx']):
-            self.update_row(tbl_name=tbl_name, update_value=id_, update_key='id', id_value=index, id_key='idx')
+            self.update_row(tbl_name=tbl_name, update_value=id_, update_key='id', id_value=str(index), id_key='idx')
   
     def pool_status(self):
         """Check the status of the connection pool"""

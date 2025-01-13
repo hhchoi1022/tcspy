@@ -274,6 +274,7 @@ class AlertMonitor(mainConfig):
         sheetlist = self.alertbroker.googlesheet.get_sheet_list()
         # Remove the sheet that contains "format" or "readme" in the name
         sheetlist = [sheet_name for sheet_name in sheetlist if "format" not in sheet_name.lower() and "readme" not in sheet_name.lower()]
+        sheetlist = [sheet_name for sheet_name in sheetlist if sheet_name.endswith('ToO')]
         if len(sheetlist) < 0:
             print("No new sheet found")
             return None

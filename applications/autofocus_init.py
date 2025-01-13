@@ -62,7 +62,7 @@ class AutofocusInitializer(mainConfig):
                  slew : bool = True):
         
         self.is_running = True
-        self.multitelescopes.update_logfile()
+        self.multitelescopes.register_logfile()
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
         self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
 
@@ -122,7 +122,7 @@ class AutofocusInitializer(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    AutofocusInitializer(M, Event()).run(filter_ = 'specall',
+    AutofocusInitializer(M, Event()).run(filter_ = 'gri',
                                          use_offset = False,
                                          use_history = False, 
                                          history_duration = 60,

@@ -265,11 +265,11 @@ if __name__ == '__main__':
     import time
     from tcspy.devices import SingleTelescope
     start = time.time()
-    list_telescopes = [SingleTelescope(1),
+    list_telescopes = [#SingleTelescope(1),
                         SingleTelescope(2),
                         SingleTelescope(3),
                         SingleTelescope(5),
-                        SingleTelescope(6),
+                        #SingleTelescope(6),
                         SingleTelescope(7),
                         SingleTelescope(8),
                         SingleTelescope(9),
@@ -287,10 +287,10 @@ if __name__ == '__main__':
     #M = MultiTelescopes([SingleTelescope(21)])
 
     abort_action = Event()
-    S  = SpecObservation(M, abort_action)
+    S  = ColorObservation(M, abort_action)
     exptime= '10'
     count= '2,2'
-    specmode = 'specall'
+    colormode = 'gri'
     binning= '1,1'
     imgtype = 'Light'
     ra= None
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     autofocus_before_start= False
     autofocus_when_filterchange= False
     autofocus_when_elapsed = False
-    kwargs = dict(exptime = exptime, count = count, specmode = specmode,
+    kwargs = dict(exptime = exptime, count = count, colormode = colormode,
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,
         alt = alt, az = az, name = name, objtype = objtype,
         autofocus_before_start= autofocus_before_start,

@@ -33,16 +33,11 @@ class TelescopeStatus(Interface):
         """
         status = 'disconnected'
         try:
-            print(f'[{self.tel_name}] Debug_point_camera_status_Connected_start')
-
             if self.telescope.camera.device.Connected:
-                print(f'[{self.tel_name}] Debug_point_camera_status_Connected_success')
                 status = 'idle'
                 if self.telescope.camera.device.CameraState.name == 'cameraIdle':
-                    print(f'[{self.tel_name}] Debug_point_camera_status_Name_success')
                     status = 'idle'
                 else:
-                    print(f'[{self.tel_name}] Debug_point_camera_status_Name_failed')
                     status = 'busy'    
         except:
             pass
@@ -94,10 +89,7 @@ class TelescopeStatus(Interface):
         """
         status = 'disconnected'
         try:
-            print(f'[{self.tel_name}] Debug_point_filterwheel_status_Connected_start')
-
             if self.telescope.filterwheel.device.Connected:
-                print(f'[{self.tel_name}] Debug_point_filterwheel_status_Connected_succeeded')
                 status = 'idle'
         except:
             pass

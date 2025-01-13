@@ -89,7 +89,7 @@ class GoogleSheetConnector:
         try:
             worksheet = self.doc.worksheet(sheet_name)
         except:
-            raise AttributeError(f'{sheet_name} does not exist. Existing sheets are {self._get_sheet_list()}')
+            raise AttributeError(f'{sheet_name} does not exist. Existing sheets are {self.get_sheet_list()}')
         values = worksheet.get_all_values()
         if len(values) > 0:
             header, rows = values[0], values[1:]
@@ -152,7 +152,7 @@ class GoogleSheetConnector:
             add_data = pd.DataFrame(values, columns = header)
         else:
             raise AttributeError('Format is not matched(one among ["Pandas","Table","Dict"])')
-        if not sheet_name in self._get_sheet_list():
+        if not sheet_name in self.get_sheet_list():
             self.doc.add_worksheet(sheet_name, rows = "1000", cols = "40")
         
         if not append:
