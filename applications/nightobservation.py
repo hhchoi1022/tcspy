@@ -12,7 +12,7 @@ from tcspy.configuration import mainConfig
 from tcspy.devices import MultiTelescopes
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
-from tcspy.applications import Shutdown
+from tcspy.applications import StartUp
 from tcspy.utils.databases import DB
 from tcspy.utils.error import *
 from tcspy.utils.target import SingleTarget

@@ -147,7 +147,7 @@ class NightObservation(mainConfig):
         self.DB.update_target(update_values = ['scheduled',Time.now().isot], update_keys = ['status','obs_starttime'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
         telescopes.update_statusfile(status = 'busy', do_trigger = True)
         self.DB.export_to_csv()
-        action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
+        action = ColorObservation(multitelescopes= telescopes, abort_action = abort_action)
         action_id = uuid.uuid4().hex
         # Pop the telescope from the tel_queue
         self._pop_telescope(telescope = telescopes)

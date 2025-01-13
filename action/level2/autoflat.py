@@ -341,9 +341,3 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
-
-# %%
-S = SingleTelescope(11)
-# %%
-B = AutoFlat(S, Event())
-# %%
