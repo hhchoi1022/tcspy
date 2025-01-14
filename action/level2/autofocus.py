@@ -60,6 +60,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
+        self.shared_memory['exception'] = None
         self.is_running = False
 
     def run_threaded(self, filter_ : str = None, use_offset : bool = True):
@@ -132,6 +133,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             self.telescope.log.critical(f'Filterwheel is disconnected. Action "{type(self).__name__}" is not triggered')
         if trigger_abort_disconnected:
             self.is_running = False
+            self.shared_memory['exception'] = 'ConnectionException'
             raise ConnectionException(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
         
         # Abort action when triggered
@@ -159,12 +161,14 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 except ConnectionException:
                     self.is_running = False
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')
+                    self.shared_memory['exception'] = 'ConnectionException'
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')
                 except AbortionException:
                     self.abort()
                 except ActionFailedException:
                     self.is_running = False
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+                    self.shared_memory['exception'] = 'ActionFailedException'
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
             
         # Change filter
@@ -175,13 +179,15 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 result_filterchange = action_changefilter.run(filter_ = filter_)
             except ConnectionException:
                 self.is_running = False
-                self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel is disconnected.')           
+                self.shared_memory['exception'] = 'ConnectionException'     
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
             except AbortionException:
                 self.abort()
             except ActionFailedException:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel movement failure.')
+                self.shared_memory['exception'] = 'ActionFailedException'
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
         
         # run Autofocus
@@ -231,13 +237,15 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 result_changefocus = action_changefocus.run(position = focus_history['focusval'], is_relative = False)
             except ConnectionException:
                 self.is_running = False
-                self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')    
+                self.shared_memory['exception'] = 'ConnectionException'            
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
             except AbortionException:
                 self.abort()
             except ActionFailedException:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+                self.shared_memory['exception'] = 'ActionFailedException'
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
             self.telescope.log.info(f'[{type(self).__name__}]Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')
             
@@ -267,13 +275,15 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                     action_changefocus.run(position = relative_position, is_relative = True)
                 except ConnectionException:
                     self.is_running = False
-                    self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                    self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')    
+                    self.shared_memory['exception'] = 'ConnectionException'            
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
                 except AbortionException:
                     self.abort()
                 except ActionFailedException:
                     self.is_running = False
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+                    self.shared_memory['exception'] = 'ActionFailedException'
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
                 
                 # Autofocus
@@ -301,13 +311,15 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             self.telescope.log.warning(f'==========LV2[{type(self).__name__}] Autofocus process is failed. Return to the original position')
         except ConnectionException:
             self.is_running = False
-            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')       
+            self.shared_memory['exception'] = 'ConnectionException'         
             raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
         except AbortionException:
             self.abort()
         except ActionFailedException:
             self.is_running = False
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+            self.shared_memory['exception'] = 'ActionFailedException'
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
         self.is_running = False
 
@@ -350,4 +362,5 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         self.abort_action.set()
         self.is_running = False
         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+        self.shared_memory['exception'] = 'AbortionException'
         raise AbortionException(f'[{type(self).__name__}] is aborted.')

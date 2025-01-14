@@ -53,6 +53,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
         self.shared_memory['status'] = dict()
+        self.shared_memory['exception'] = None
         self.is_running = False
 
     def run(self, 
@@ -189,6 +190,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: mount is disconnected.')
         if trigger_abort_disconnected:
             self.is_running = False
+            self.shared_memory['exception'] = 'ConnectionException'
             raise ConnectionException(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
 
@@ -228,6 +230,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             except:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: filter is not defined.')
+                self.shared_memory['exception'] = 'ActionFailedException'
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: filter is not defined.')
 
         # Slewing
@@ -238,12 +241,14 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             except ConnectionException:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: telescope is disconnected.')
+                self.shared_memory['exception'] = 'ConnectionException'
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
             except AbortionException:
                 self.abort()
             except ActionFailedException:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
+                self.shared_memory['exception'] = 'ActionFailedException'
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
 
         elif target.status['coordtype'] == 'altaz':
@@ -253,16 +258,19 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             except ConnectionException:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: telescope is disconnected.')
+                self.shared_memory['exception'] = 'ConnectionException'
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
             except AbortionException:
                 self.abort()
             except ActionFailedException:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
+                self.shared_memory['exception'] = 'ActionFailedException'
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
         else:
             self.is_running = False
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Coordinate type of the target : {target.status["coordtype"]} is not defined')
+            self.shared_memory['exception'] = 'ActionFailedException'
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Coordinate type of the target : {target.status["coordtype"]} is not defined')
 
         # Get exposure information
@@ -300,6 +308,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             except ConnectionException:
                 self.is_running = False
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
+                self.shared_memory['exception'] = 'ConnectionException'
                 raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
             except AbortionException:
                 self.abort()
@@ -321,13 +330,15 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     result_focus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action).run(position = offset, is_relative= True)
                 except ConnectionException:
                     self.is_running = False
-                    self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
+                    self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')      
+                    self.shared_memory['exception'] = 'ConnectionException'          
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
                 except AbortionException:
                     self.abort()
                 except ActionFailedException:
                     self.is_running = False
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
+                    self.shared_memory['exception'] = 'ActionFailedException'
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
                 
                 # Filterchange
@@ -336,12 +347,14 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 except ConnectionException:
                     self.is_running = False
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
+                    self.shared_memory['exception'] = 'ConnectionException'
                     raise ConnectionException(f'[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
                 except AbortionException:
                     self.abort()
                 except ActionFailedException:
                     self.is_running = False
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel movement failure.')
+                    self.shared_memory['exception'] = 'ActionFailedException'
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Filterwheel movement failure.')
 
                 # Autofocus when filter changed
@@ -351,6 +364,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     except ConnectionException:
                         self.is_running = False
                         self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
+                        self.shared_memory['exception'] = 'ConnectionException'
                         raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
                     except AbortionException:
                         self.abort()
@@ -371,6 +385,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                         except ConnectionException:
                             self.is_running = False
                             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
+                            self.shared_memory['exception'] = 'ConnectionException'
                             raise ConnectionException(f'[{type(self).__name__}] is failed: Device connection is lost.')
                         except AbortionException:
                             self.abort()
@@ -406,12 +421,14 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 except ConnectionException:
                     self.is_running = False
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera is disconnected.')
+                    self.shared_memory['exception'] = 'ConnectionException'
                     raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
                 except AbortionException:
                     self.abort()
                 except ActionFailedException:
                     self.is_running = False
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: exposure failure.')
+                    self.shared_memory['exception'] = 'ActionFailedException'
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
         self.shared_memory['succeeded'] = all(result_all_exposure)
         self.is_running = False
@@ -423,6 +440,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.abort_action.set()
         self.is_running = False
         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+        self.shared_memory['exception'] = 'AbortionException'
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
     def _exposureinfo_to_list(self,

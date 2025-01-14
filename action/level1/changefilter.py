@@ -44,6 +44,8 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
+        self.shared_memory['exception'] = None
+        self.shared_memory['is_running'] = False
         self.is_running = False
 
     def run(self,
@@ -73,11 +75,14 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         self.telescope.register_logfile()
         self.telescope.log.info(f'=====LV1[{type(self).__name__}] is triggered.')
         self.is_running = True
+        self.shared_memory['is_running'] = True
         self.shared_memory['succeeded'] = False
         # Check device connection
         if self.telescope_status.filterwheel.lower() == 'disconnected':
-            self.is_running = True
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is disconnected.')
+            self.shared_memory['exception'] = 'ConnectionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
             raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
         
         # If not aborted, execute the action
@@ -89,17 +94,23 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
             try:
                 result_move = self.telescope.filterwheel.move(filter_ = filter_)
             except FilterChangeFailedException:
-                self.is_running = False
                 self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel move failure.')
+                self.shared_memory['exception'] = 'ActionFailedException'
+                self.shared_memory['is_running'] = False    
+                self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel move failure.')
                 
         elif self.telescope_status.filterwheel.lower() == 'busy':
-            self.is_running = False
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is busy.')
+            self.shared_memory['exception'] = 'ActionFailedException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel is busy.')
         else:
-            self.is_running = False
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel status error.')
+            self.shared_memory['exception'] = 'ActionFailedException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: filterwheel status error.')
         if result_move:
             self.shared_memory['succeeded'] = True
@@ -111,8 +122,10 @@ class ChangeFilter(Interface_Runnable, Interface_Abortable):
         
     def abort(self):
         self.abort_action.set()
-        self.is_running = False
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        self.shared_memory['exception'] = 'AbortionException'
+        self.shared_memory['is_running'] = False
+        self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
 
 # %%
