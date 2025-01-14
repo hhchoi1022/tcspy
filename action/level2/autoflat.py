@@ -109,7 +109,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
           
         # Defocusing 
         try:
-            result_changefocus = action_changefocus.run(position = 3000, is_relative= True)
+            result_changefocus = True#action_changefocus.run(position = 3000, is_relative= True)
             self.is_focus_changed = True
         except ConnectionException:
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
@@ -332,7 +332,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         
         # Defocusing 
         try:
-            result_changefocus = action_changefocus.run(position = -3000, is_relative= True)
+            result_changefocus = True #action_changefocus.run(position = -3000, is_relative= True)
             self.is_focus_changed = False
         except ConnectionException:
             self.is_running = False
@@ -359,7 +359,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         # Defocusing 
         try:
             action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = Event())
-            result_changefocus = action_changefocus.run(position = -3000, is_relative= True)
+            result_changefocus = True#action_changefocus.run(position = -3000, is_relative= True)
         except ConnectionException:
             self.is_running = False
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')     
