@@ -5,8 +5,8 @@ from multiprocessing import Manager
 
 from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
-from tcspy.utils.logger import mainLogger
 from tcspy.interfaces import *
+from tcspy.utils.exception import *
 
 class Connect(Interface_Runnable):
     """
@@ -44,6 +44,8 @@ class Connect(Interface_Runnable):
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
+        self.shared_memory['exception'] = None
+        self.shared_memory['is_running'] = False
         self.is_running = False
     
     def run(self):
@@ -53,6 +55,7 @@ class Connect(Interface_Runnable):
         self.telescope.register_logfile()
         self.telescope.log.info(f'=====LV1[{type(self).__name__}] is triggered.')
         self.is_running = True
+        self.shared_memory['is_running'] = True
         self.shared_memory['succeeded'] = False
         # connect devices
         devices_status = self.telescope_status.dict
@@ -82,9 +85,8 @@ class Connect(Interface_Runnable):
             else:
                 self.abort()
         self.telescope.log.info('='*30)
-        self.shared_memory['status'] = devices_status
         self.shared_memory['succeeded'] = True
-
+        self.shared_memory['is_running'] = False
         self.is_running = False
         self.telescope.log.info(f'=====LV1[{type(self).__name__}] is finished.')
         if self.shared_memory['succeeded']:
@@ -92,6 +94,8 @@ class Connect(Interface_Runnable):
     
     def abort(self):
         self.abort_action.set()
+        self.shared_memory['exception'] = 'AbortionException'
+        self.shared_memory['is_running'] = False
         self.is_running = False
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         raise AbortionException(f'[{type(self).__name__}] is aborted.')

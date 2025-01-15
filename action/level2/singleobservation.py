@@ -54,6 +54,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.shared_memory['succeeded'] = False
         self.shared_memory['status'] = dict()
         self.shared_memory['exception'] = None
+        self.shared_memory['is_running'] = True
         self.is_running = False
 
     def run(self, 
