@@ -131,11 +131,11 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         """ Test
         exptime= '5,5'
         count= '5,5'
-        specmode = 'specall'
+        specmode = 'calspec'
         binning= '1,1'
         gain = 2750
         imgtype = 'Light'
-        ra= '248.133'
+        ra= '54.133'
         dec= '-13.0538'
         alt = None
         az = None
@@ -149,6 +149,9 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         autofocus_when_elapsed = False
         autofocus_elapsed_duration = 60
         observation_status = None
+        is_ToO = False
+        comment = ''
+        force_slewing = False
         """
         # Check condition of the instruments for this Action
         self.multitelescopes.register_logfile()
@@ -263,25 +266,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
 # %%
 if __name__ == '__main__':
     import time
-    from tcspy.devices import SingleTelescope
-    start = time.time()
-    list_telescopes = [SingleTelescope(1),
-                        SingleTelescope(2),
-                        SingleTelescope(3),
-                        SingleTelescope(5),
-                        SingleTelescope(6),
-                        SingleTelescope(7),
-                        SingleTelescope(8),
-                        SingleTelescope(9),
-                        SingleTelescope(10),
-                        SingleTelescope(11),
-                        ]
-    
-    print(time.time() - start)
-
-    start = time.time()
-
-    M = MultiTelescopes(list_telescopes)
+    M = MultiTelescopes()
 #%%
 if __name__ == '__main__':
     #M = MultiTelescopes([SingleTelescope(21)])
@@ -290,7 +275,7 @@ if __name__ == '__main__':
     S  = SpecObservation(M, abort_action)
     exptime= '10'
     count= '2,2'
-    specmode = 'specall'
+    specmode = 'calspec'
     binning= '1,1'
     imgtype = 'Light'
     ra= None
