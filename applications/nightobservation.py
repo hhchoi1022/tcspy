@@ -783,5 +783,5 @@ class NightObservation(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    N = NightObservation(M, Event())#.run()
+    N = NightObservation(M, Event()).run()
 # %%
