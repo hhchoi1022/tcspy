@@ -287,14 +287,14 @@ class Tiles:
 # %%
 # Example usage
 if __name__ == "__main__":
-    
+    tbl = ascii.read('./Subset_White_Dwarfs_with_Matched_Tiles.csv')
     T = Tiles()
     #data = ascii.read('./7DT_observed_Tile')
     #list_ra = data['ra']
     #list_dec = data['dec']
-    list_ra = [350.1]
-    list_dec = [-15]
+    list_ra = tbl['ra']#[350.1]
+    list_dec = tbl['dec']
     #tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, 0.5, visualize = False, visualize_ncols=5, match_tolerance_minutes= 11)  
-    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 1, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
+    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 0, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
     #print(tbl_filtered['distance_to_boundary'])
 # %%

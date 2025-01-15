@@ -702,8 +702,9 @@ if __name__ == '__main__':
                      filter_ = 'g',
                      count = 5, 
                      binning=  1, 
-                     obsmode ='Deep')
-    S.status
-    S.staralt()
-    print(time.time() - start)
+                     obsmode ='Spec',
+                     specmode = 'calspec')
+    #S.status
+    #S#.staralt()
+    #print(time.time() - start)
 #%%

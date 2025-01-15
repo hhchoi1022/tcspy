@@ -616,7 +616,7 @@ if __name__ == '__main__':
     from tcspy.utils.databases import DB_Annual
     # from astropy.io import ascii
     # tbl = ascii.read('./S240422ed.ascii')
-    #RIS = DB_Annual('RIS').data
+    RIS = DB_Annual('RIS').data
     # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
     # tbl_to_insert['filter_'][:] = 'r'
     # tbl_to_insert['obsmode'] = tbl_to_insert['obsmode'].astype('U20')
@@ -649,12 +649,22 @@ if __name__ == '__main__':
     #     notelist.append('4hr')
     # for i in range(6):
     #     notelist.append('Antlia')
-    # #tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
-    # tbl_to_insert['note'] = notelist
-    # #tbl_to_insert['status'] = 'pending'
-    # #tbl_to_insert['specmode'] = ['specall_ugriz']*len(tbl_to_insert)
-    # tbl_to_insert['priority'] = 15
-    # Daily.insert(tbl_to_insert)
+    
+    from tcspy.utils.databases.tiles import Tiles
+    from astropy.io import ascii
+    tbl = ascii.read('./Subset_White_Dwarfs_with_Matched_Tiles.csv')
+    T = Tiles()
+    list_ra = tbl['ra']
+    list_dec = tbl['dec']
+    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 0, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
+
+    tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
+    tbl_to_insert['obsmode'] = 'Sepc'
+    tbl_to_insert['exptime'] = '60,60,60,100,100,100,100'
+    tbl_to_insert['specmode'] = ['calspec']*len(tbl_to_insert)
+    tbl_to_insert['priority'] = 15
+    tbl_to_insert['note'] = tbl['name']
+    Daily.insert(tbl_to_insert)
 
     # tbl_to_insert = RIS[[21177]]
     # tbl_to_insert['note'] = 'EP241223a'
