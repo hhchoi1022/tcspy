@@ -157,6 +157,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         is_ToO = False
         comment = ''
         force_slewing = False
+        id_ = 'asdasd'
         """
         # Check condition of the instruments for this Action
         self.multitelescopes.register_logfile()
@@ -312,12 +313,4 @@ if __name__ == '__main__':
     t = Thread(target = S.run, kwargs= kwargs)
     t.start()
     #t.abort()
-# %%
-if __name__ == '__main__':
-    S.run(exptime = exptime, count = count, specmode = specmode,
-        binning = binning, imgtype = imgtype, ra = ra, dec = dec,
-        alt = alt, az = az, name = name, objtype = objtype,
-        autofocus_before_start= autofocus_before_start,
-        autofocus_when_filterchange= autofocus_when_filterchange,
-        observation_status= S.observation_status)
 # %%
