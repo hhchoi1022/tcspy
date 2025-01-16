@@ -1,5 +1,5 @@
 #%%
-from multiprocessing import Process, Event
+from multiprocessing import Process, Event, Manager
 from tcspy.devices import SingleTelescope
 from typing import List, Union
 import time
@@ -57,7 +57,9 @@ class MultiAction:
             self.array_kwargs = [self.array_kwargs.copy() for i in range(num_telescope)]
         self.function = function
         self.abort_action = abort_action
-        self.shared_memory = dict()
+        #self.shared_memory = dict()
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
         self._set_multiprocess()
         
     def _set_multiprocess(self):

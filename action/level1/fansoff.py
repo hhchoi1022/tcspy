@@ -45,6 +45,8 @@ class FansOff(Interface_Runnable, Interface_Abortable):
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
+        self.shared_memory['exception'] = None
+        self.shared_memory['is_running'] = False
         self.is_running = False
 
     def run(self):
@@ -63,11 +65,14 @@ class FansOff(Interface_Runnable, Interface_Abortable):
         self.telescope.register_logfile()
         self.telescope.log.info(f'=====LV1[{type(self).__name__}] is triggered.')
         self.is_running = True
+        self.shared_memory['is_running'] = True
         self.shared_memory['succeeded'] = False
         # Check device connection
         if self.telescope_status.focuser.lower() == 'disconnected':
-            self.is_running = False
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: focuser is disconnected.')
+            self.shared_memory['exception'] = 'ConnectionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
             raise ConnectionException(f'[{type(self).__name__}] is failed: focuser is disconnected.')
         
         # If not aborted, execute the action
@@ -78,12 +83,16 @@ class FansOff(Interface_Runnable, Interface_Abortable):
         try:
             result_fansoff = self.telescope.focuser.fans_off()
         except FocusFansFailedException:
-            self.is_running = False
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: fan operation failure.')
+            self.shared_memory['exception'] = 'ActionFailedException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: fan operation failure.')          
         if result_fansoff:
             self.shared_memory['succeeded'] = True
         
+        # Finish action    
+        self.shared_memory['is_running'] = False
         self.is_running = False
         self.telescope.log.info(f'=====LV1[{type(self).__name__}] is finished.')
         if self.shared_memory['succeeded']:
@@ -91,6 +100,8 @@ class FansOff(Interface_Runnable, Interface_Abortable):
     
     def abort(self):
         self.abort_action.set()
-        self.is_running = False
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        self.shared_memory['exception'] = 'AbortionException'
+        self.shared_memory['is_running'] = False
+        self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')

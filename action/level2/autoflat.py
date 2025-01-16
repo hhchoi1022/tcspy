@@ -31,8 +31,8 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         self.abort_action = abort_action
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
-        self.shared_memory['succeeded'] = False
         self.shared_memory['status'] = dict()
+        self.shared_memory['succeeded'] = False
         self.shared_memory['exception'] = None
         self.shared_memory['is_running'] = False
         self.is_running = False
@@ -108,6 +108,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.abort()
           
         # Defocusing 
+        """
         try:
             result_changefocus = True#action_changefocus.run(position = 3000, is_relative= True)
             self.is_focus_changed = True
@@ -125,7 +126,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.shared_memory['is_running'] = False
             self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-    
+        """
         # Abort action when triggered
         if self.abort_action.is_set():
             self.abort()
@@ -307,7 +308,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                 elif exptime_max < self.telescope.config['AUTOFLAT_MINEXPTIME']:
                     self.telescope.log.warning(f'=====[{type(self).__name__}] is failed: Sky is too bright.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: Sky is too bright.')
-                #
+                # If sky level is within the range, then adjust the exposure time
                 else:
                     exptime = np.round(np.max([np.sum([0.9*exptime_min, 0.1*exptime_max]), self.telescope.config['AUTOFLAT_MINEXPTIME']]),2)
                     self.telescope.log.info(f'[{type(self).__name__}] Exposure time is adjusted to {exptime} sec')
@@ -330,7 +331,8 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             except AbortionException:
                 self.abort()
         
-        # Defocusing 
+        # Infocusing 
+        """
         try:
             result_changefocus = True #action_changefocus.run(position = -3000, is_relative= True)
             self.is_focus_changed = False
@@ -348,7 +350,8 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.shared_memory['is_running'] = False
             self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-    
+        """
+        
         self.is_running = False
         self.shared_memory['succeeded'] = all(observation_status.values())
         
@@ -360,6 +363,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         self.abort_action.set()
         time.sleep(10)
         # Defocusing 
+        """
         try:
             action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = Event())
             result_changefocus = True#action_changefocus.run(position = -3000, is_relative= True)
@@ -375,7 +379,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.shared_memory['is_running'] = False
             self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-    
+        """
         
         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'

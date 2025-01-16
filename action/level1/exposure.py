@@ -22,6 +22,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
+        self.shared_memory['exception'] = None
+        self.shared_memory['is_running'] = False
         self.is_running = False
 
     def run(self,
@@ -113,6 +115,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         self.telescope.register_logfile()
         self.telescope.log.info(f'=====LV1[{type(self).__name__}] is triggered.')
         self.is_running = True
+        self.shared_memory['is_running'] = True
         self.shared_memory['succeeded'] = False
         status_filterwheel = self.telescope_status.filterwheel
         status_camera = self.telescope_status.camera
@@ -124,6 +127,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             trigger_abort_disconnected = True
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is disconnected.')
         if trigger_abort_disconnected:
+            self.shared_memory['exception'] = 'ConnectionException'
+            self.shared_memory['is_running'] = False
             self.is_running = False
             raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
         
@@ -157,8 +162,10 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         result_changefilter = True
         if imgtype.upper() == 'LIGHT':
             if not filter_:
-                self.is_running = False
                 self.telescope.log.critical(f'=====LV1[{type(self).__name__}] Filter must be determined for LIGHT frame')
+                self.shared_memory['exception'] = 'ActionFailedException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
                 raise ActionFailedException('Filter must be determined for LIGHT frame')
             info_filterwheel = self.telescope.filterwheel.get_status()
             current_filter = info_filterwheel['filter_']
@@ -168,14 +175,18 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 try:
                     result_changefilter = changefilter.run(str(filter_))
                 except ConnectionException:
-                    self.is_running = False
                     self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterwheel is disconnected.')
+                    self.shared_memory['exception'] = 'ConnectionException'
+                    self.shared_memory['is_running'] = False
+                    self.is_running = False
                     raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
                 except AbortionException:
                     self.abort()
                 except ActionFailedException:
-                    self.is_running = False
                     self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterchange failure.')
+                    self.shared_memory['exception'] = 'ActionFailedException'
+                    self.shared_memory['is_running'] = False
+                    self.is_running = False
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: filterchange failure.')
 
         # Check device connection
@@ -183,12 +194,16 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         status_camera = self.telescope_status.camera
 
         if status_camera.lower() == 'disconnected':
-            self.is_running = False
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is disconnected.')
+            self.shared_memory['exception'] = 'ConnectionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
             raise ConnectionException(f'[{type(self).__name__}] is failed: camera is disconnected.')
         elif status_camera.lower() == 'busy':
-            self.is_running = False
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: camera is busy.')
+            self.shared_memory['exception'] = 'ActionFailedException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is busy.')
         elif status_camera.lower() == 'idle':
             # Exposure camera
@@ -212,12 +227,16 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                                           abort_action = self.abort_action)
                 
             except ExposureFailedException:
-                self.is_running = False
                 self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: camera exposure failure.')
+                self.shared_memory['exception'] = 'ActionFailedException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: camera exposure failure.')
             except AbortionException:
-                self.is_running = False
                 self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             if imginfo:
                 self.telescope.log.info(f'[{type(self).__name__}] Exposure finished (exptime = %.1f, filter = %s, binning = %s, gain = %s)'%(exptime, filter_, binning, gain))
@@ -238,10 +257,13 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                 self.telescope.log.info(f'[{type(self).__name__}] Image Saved: %s'%(filepath))
                 self.shared_memory['succeeded'] = True
             except:
-                self.is_running = False
                 self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: mainImage save failure.')
+                self.shared_memory['exception'] = 'ActionFailedException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: mainImage save failure.')
         
+        self.shared_memory['is_running'] = False
         self.is_running = False
         self.telescope.log.info(f'=====LV1[{type(self).__name__}] is finished.')
         if self.shared_memory['succeeded']:
@@ -249,8 +271,10 @@ class Exposure(Interface_Runnable, Interface_Abortable):
 
     def abort(self):
         self.abort_action.set()
-        self.is_running = False
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+        self.shared_memory['exception'] = 'AbortionException'
+        self.shared_memory['is_running'] = False
+        self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')      
         
 # %%

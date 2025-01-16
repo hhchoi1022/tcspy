@@ -1,5 +1,6 @@
 #%%
 from multiprocessing import Event
+from multiprocessing import Manager
 import time
 
 from tcspy.devices import SingleTelescope
@@ -48,9 +49,13 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         self.multitelescopes = multitelescopes
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
-        self.shared_memory = dict()
-        self.shared_memory['status'] = dict()
+        #self.shared_memory = dict()
+        self.shared_memory_manager = Manager()
+        self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
+        self.shared_memory['status'] = dict()
+        self.shared_memory['exception'] = None
+        self.shared_memory['is_running'] = False
         self.is_running = False
     
     def _format_params(self,
@@ -160,7 +165,9 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         self.multitelescopes.register_logfile()
         self.multitelescopes.log.info(f'===============LV3[{type(self).__name__}] is triggered.')
         self.is_running = True
+        self.shared_memory['is_running'] = True
         self.shared_memory['succeeded'] = False
+        
         # Check condition of the instruments for this Action
         status_multitelescope = self.multitelescopes.status
         for telescope_name, telescope_status in status_multitelescope.items():
@@ -249,9 +256,15 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
                     self.multitelescopes.log_dict[tel_name].info(f'===============LV3[{type(self).__name__}] is finished')
                 else:
                     self.multitelescopes.log_dict[tel_name].info(f'===============LV3[{type(self).__name__}] is failed')
+            self.shared_memory['exception'] = 'ActionFailedException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed.')
+        
+        self.telescope.log.info(f'===============LV3[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(self.shared_memory['status'].values())
-        self.is_running = False 
+        self.shared_memory['is_running'] = False
+        self.is_running = False
         if self.shared_memory['succeeded']:
             return True
 
@@ -260,8 +273,10 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         A function to abort the ongoing spectroscopic observation process.
         """
         self.abort_action.set()
-        self.is_running = False
         self.multitelescopes.log.warning(f'===============LV3[{type(self).__name__}] is aborted.')
+        self.shared_memory['exception'] = 'AbortionException'
+        self.shared_memory['is_running'] = False
+        self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
      
 # %%

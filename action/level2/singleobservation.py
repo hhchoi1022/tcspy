@@ -9,7 +9,6 @@ from tcspy.devices import SingleTelescope
 from tcspy.devices import TelescopeStatus
 from tcspy.interfaces import *
 from tcspy.utils.error import *
-from tcspy.utils.logger import mainLogger
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.exception import *
 
@@ -163,6 +162,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         self.is_running = True
         self.shared_memory['is_running'] = True
         self.shared_memory['succeeded'] = False
+        
         # Check condition of the instruments for this Action
         trigger_abort_disconnected = False
         try:        
@@ -447,10 +447,12 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     self.shared_memory['is_running'] = False
                     self.is_running = False
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
+
+        self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(result_all_exposure)
+        self.shared_memory['is_running'] = False
         self.is_running = False
         
-        self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')
         return all(result_all_exposure)
 
     def abort(self):
