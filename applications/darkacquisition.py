@@ -83,6 +83,6 @@ if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
     DarkAcquisition(M, Event()).run(count = 9,  
-                                    exptime = 100, 
+                                    exptime = 30, 
                                     binning = 1, 
-                                    gain =2750)
+                                    gain =0)
