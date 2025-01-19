@@ -194,14 +194,13 @@ class mainConfig:
                                                        'https://www.googleapis.com/auth/drive',
                                                        'https://www.googleapis.com/auth/spreadsheets'])
         
-        alertbroker_params = dict(ALERTBROKER_AUTHUSERS = ['hhchoi1022@snu.ac.kr', # Hyeonho Choi (2)
-                                                           'hhchoi1022@gmail.com',
-                                                           #'jhkim.astrosnu@gmail.com', # Ji hoon Kim
-                                                           #'myungshin.im@gmail.com',  # Myungshin Im
+        alertbroker_params = dict(ALERTBROKER_AUTHUSERS = ['hhchoi1022@gmail.com',
+                                                           'jhkim.astrosnu@gmail.com', # Ji hoon Kim
+                                                           'myungshin.im@gmail.com',  # Myungshin Im
+                                                           'takdg123@gmail.com',
+                                                           'seowon.chang@gmail.com',
                                                            ],
                                   ALERTBROKER_NORMUSERS = ['hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
-                                                           #'jhkim.astrosnu@gmail.com', # Ji hoon Kim
-                                                           #'myungshin.im@gmail.com', # Myungshin Im
                                                            ],
                                   ALERTBROKER_ADMINUSERS = ['hhchoi1022@gmail.com'], # Hyeonho Choi
                                   ALERTBROKER_PATH = f'/data2/obsdata/alert_history',

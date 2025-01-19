@@ -393,7 +393,9 @@ class Alert:
             pattern = r'(?<!\w)[ \W]*(' + '|'.join(re.escape(variant) for variant in variants) + r')\s*[:= ]\s*(.*)$'
             
             # Search for the pattern in the line string
-            match = re.search(pattern, line_string.lower())
+            #match = re.search(pattern, line_string.lower())
+            match = re.search(pattern, line_string, re.IGNORECASE)
+
             if match:
                 # Extract the matched key variant and the value
                 key_variant = match.group(1)  # The matched key (variant)

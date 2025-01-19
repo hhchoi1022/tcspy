@@ -215,12 +215,22 @@ if __name__ == '__main__':
     A.schedule_app(A.run_nightobs, A.obsnight.sunset_observation, alert_slack = alert_slack)
     # Bias
     A.schedule_app(A.run_bias, A.obsnight.sunrise_observation + 30 * u.minute, count = 9, binning = 1, gain = 2750, alert_slack = alert_slack)
+    # Bias
+    A.schedule_app(A.run_bias, A.obsnight.sunrise_observation + 35 * u.minute, count = 9, binning = 1, gain = 0, alert_slack = alert_slack)
+
     # Flat
-    A.schedule_app(A.run_flat, A.obsnight.sunrise_flat, count = 9, binning = 1, gain = 2750, alert_slack = alert_slack)
+    if A.obsnight.sunrise_startup.datetime.day % 3 == 0:
+        A.schedule_app(A.run_flat, A.obsnight.sunrise_flat, count = 9, binning = 1, gain = 2750, alert_slack = alert_slack)
+    else:
+        A.schedule_app(A.run_flat, A.obsnight.sunrise_flat, count = 9, binning = 1, gain = 0, alert_slack = alert_slack)
+
     # Dark
     A.schedule_app(A.run_dark, A.obsnight.sunrise_flat + 40 * u.minute, count = 9, exptime = 100, binning = 1, gain = 2750, alert_slack = alert_slack)
+    # Dark for exoplanet
+    A.schedule_app(A.run_dark, A.obsnight.sunrise_flat + 65 * u.minute, count = 9, exptime = 15, binning = 1, gain = 0, alert_slack = alert_slack)
+
     # Shutdown
-    A.schedule_app(A.run_shutdown, A.obsnight.sunrise_flat + 1 * u.hour, fanoff = True, slew = True, warm = True, alert_slack = alert_slack)
+    A.schedule_app(A.run_shutdown, A.obsnight.sunrise_flat + 75 * u.minute, fanoff = True, slew = True, warm = True, alert_slack = alert_slack)
     A.set_alert_sender(post_schedule= True)
     A.show_schedule()
     A.run_schedule()

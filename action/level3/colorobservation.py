@@ -256,7 +256,7 @@ class ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed.')    
         
-        self.telescope.log.info(f'===============LV3[{type(self).__name__}] is finished')
+        self.multitelescopes.log.info(f'===============LV3[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(self.shared_memory['status'].values())
         self.shared_memory['is_running'] = False
         self.is_running = False 
