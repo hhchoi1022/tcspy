@@ -115,8 +115,8 @@ class NightObservation(mainConfig):
         if safetymonitor_status['is_safe'] == True:
             return True
         else:
-            return False
-
+            return Falsew
+    
     def _colorobs(self, target, telescopes, abort_action, observation_status):
         kwargs = dict(exptime = target['exptime'], 
                       count = target['count'],
