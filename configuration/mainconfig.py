@@ -117,7 +117,7 @@ class mainConfig:
         
         image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
                             FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$",
-                            IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/',
+                            IMAGE_PATH=f'/Users/hhchoi1022/obsdata/{self.tel_name}/image/',
                             IMAGE_SAVEHEADER = True,
                             IMAGE_FORMAT = 'FITS'
                             )
@@ -125,14 +125,14 @@ class mainConfig:
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT=f'[%(levelname)s,{self.tel_name}]%(asctime)-15s |%(message)s',
-                             LOGGER_PATH= f'/data2/obsdata/{self.tel_name}/log/')
+                             LOGGER_PATH= f'/Users/hhchoi1022/obsdata/{self.tel_name}/log/')
         
         # Share configuration
 
         transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022', 
                                TRANSFER_SERVER_PORTNUM = '8022',
-                               TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
+                               TRANSFER_SOURCE_HOMEDIR = '/Users/hhchoi1022/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 8,
@@ -145,7 +145,7 @@ class mainConfig:
                               WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
                               WEATHER_UPDATETIME=60,
-                              WEATHER_PATH= f'/data2/obsdata/weather_history/',
+                              WEATHER_PATH= f'/Users/hhchoi1022/obsdata/weather_history/',
                               WEATHER_STATUSPATH = f'{os.path.join(self.path_home,".tcspy", "sync")}',
                               WEATHER_HUMIDITY=85,
                               WEATHER_RAINRATE=80,
@@ -163,7 +163,7 @@ class mainConfig:
                                     SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_UPDATETIME=60,
-                                    SAFEMONITOR_PATH= f'/data2/obsdata/safetymonitor_history/')
+                                    SAFEMONITOR_PATH= f'/Users/hhchoi1022/obsdata/safetymonitor_history/')
         
         target_params = dict(TARGET_MINALT=27,
                              TARGET_MAXALT=90,
@@ -175,7 +175,7 @@ class mainConfig:
                          DB_ID='hhchoi',
                          DB_PWD='gusgh1020!', # gusgh1020! for MCS, lksdf1020 for Lnx
                          DB_NAME='target',
-                         DB_HISTORYPATH= f'/data2/obsdata/DB_history',
+                         DB_HISTORYPATH= f'/Users/hhchoi1022/obsdata/DB_history',
                          DB_HISTORYFORMAT = 'ascii.fixed_width',
                          DB_STATUSPATH = f'{os.path.join(self.path_home,".tcspy", "sync")}',
                          DB_STATUSFORMAT = 'ascii')
@@ -203,7 +203,7 @@ class mainConfig:
                                   ALERTBROKER_NORMUSERS = ['hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
                                                            ],
                                   ALERTBROKER_ADMINUSERS = ['hhchoi1022@gmail.com'], # Hyeonho Choi
-                                  ALERTBROKER_PATH = f'/data2/obsdata/alert_history',
+                                  ALERTBROKER_PATH = f'/Users/hhchoi1022/obsdata/alert_history',
                                   ALERTBROKER_STATUSPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "alert")}',
                                 )
         
@@ -243,29 +243,29 @@ class mainConfig:
         multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_home, ".tcspy", "sync", "multitelescopes.dict")}')
         
         nightobs_params = dict(NIGHTOBS_SAFETYPE = 'safetymonitor',)        
-        self.make_configfile(mount_params, filename='Mount.config', savepath = savepath_unit)
-        self.make_configfile(camera_params, filename='Camera.config', savepath = savepath_unit)
-        self.make_configfile(filterwheel_params, filename='FilterWheel.config', savepath = savepath_unit)
-        self.make_configfile(focuser_params, filename='Focuser.config', savepath = savepath_unit)
-        self.make_configfile(logger_params, filename='Logger.config', savepath = savepath_unit)
-        self.make_configfile(image_params, filename='Image.config', savepath = savepath_unit)
+        self.make_configfile(mount_params, filename='mount.config', savepath = savepath_unit)
+        self.make_configfile(camera_params, filename='camera.config', savepath = savepath_unit)
+        self.make_configfile(filterwheel_params, filename='filterWheel.config', savepath = savepath_unit)
+        self.make_configfile(focuser_params, filename='focuser.config', savepath = savepath_unit)
+        self.make_configfile(logger_params, filename='logger.config', savepath = savepath_unit)
+        self.make_configfile(image_params, filename='image.config', savepath = savepath_unit)
 
         # Global params
-        self.make_configfile(gmail_params, filename='Gmail.config', savepath= self.path_global)
-        self.make_configfile(slack_params, filename='Slack.config', savepath= self.path_global)
-        self.make_configfile(googlesheet_params, filename='GoogleSheet.config', savepath= self.path_global)
-        self.make_configfile(alertbroker_params, filename='AlertBroker.config', savepath= self.path_global)
+        self.make_configfile(gmail_params, filename='gmail.config', savepath= self.path_global)
+        self.make_configfile(slack_params, filename='slack.config', savepath= self.path_global)
+        self.make_configfile(googlesheet_params, filename='googleSheet.config', savepath= self.path_global)
+        self.make_configfile(alertbroker_params, filename='alertbroker.config', savepath= self.path_global)
         self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_global)
-        self.make_configfile(observer_params, filename='Observer.config', savepath= self.path_global)
-        self.make_configfile(target_params, filename='Target.config', savepath= self.path_global)
-        self.make_configfile(transfer_params, filename='Transfer.config', savepath= self.path_global)
+        self.make_configfile(observer_params, filename='observer.config', savepath= self.path_global)
+        self.make_configfile(target_params, filename='target.config', savepath= self.path_global)
+        self.make_configfile(transfer_params, filename='transfer.config', savepath= self.path_global)
         
-        self.make_configfile(weather_params, filename='Weather.config', savepath= self.path_global)
-        self.make_configfile(dome_params, filename='Dome.config', savepath= self.path_global)
-        self.make_configfile(safetymonitor_params, filename='SafetyMonitor.config', savepath= self.path_global)
-        self.make_configfile(DB_params, filename = 'DB.config', savepath= self.path_global)
-        self.make_configfile(autofocus_params, filename = 'Autofocus.config', savepath= self.path_global)
-        self.make_configfile(autoflat_params, filename = 'Autoflat.config', savepath= self.path_global)
+        self.make_configfile(weather_params, filename='weather.config', savepath= self.path_global)
+        self.make_configfile(dome_params, filename='dome.config', savepath= self.path_global)
+        self.make_configfile(safetymonitor_params, filename='safetymonitor.config', savepath= self.path_global)
+        self.make_configfile(DB_params, filename = 'db.config', savepath= self.path_global)
+        self.make_configfile(autofocus_params, filename = 'autofocus.config', savepath= self.path_global)
+        self.make_configfile(autoflat_params, filename = 'autoflat.config', savepath= self.path_global)
         self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self.path_global)
         self.make_configfile(colormode_params, filename = 'colormode.config', savepath= self.path_global)
         self.make_configfile(startup_params, filename = 'startup.config', savepath= self.path_global)

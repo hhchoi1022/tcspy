@@ -45,7 +45,7 @@ class AlertBroker(mainConfig):
                                                     scope = self.config['GOOGLESHEET_SCOPE'])            
             print('GoogleSheetConnector is ready.')
     
-    def _set_gmail(self):
+    def _set_gmail(self): 
         if not self.gmail:
             print('Setting up GmailConnector...')
             self.gmail = GmailConnector(user_account = self.config['GMAIL_USERNAME'], 
@@ -839,14 +839,17 @@ class AlertBroker(mainConfig):
     
 
       
-# %%
 #%%
 if __name__ == '__main__':
     ab = AlertBroker()
+    file_path = '/Users/hhchoi1022/SkyGridCatalog_7DT_90.csv'
+    tbl = ascii.read(file_path)
+    a = Alert()
     #file_path  = '/Users/hhchoi1022/code/tcspy/utils/alertmanager/20241128_164230_GECKO.ascii_fixed_width'
+    ab.write_gwalert(file_path)
     #alert = ab.read_gwalert(path_alert = file_path)
     #alert = ab.read_sheet(sheet_name = '241219', match_to_tiles= True)
-    alertlist = ab.read_mail(since_days = 3, match_to_tiles = True)
+    #alertlist = ab.read_mail(since_days = 3, match_to_tiles = True)
     #alert = alertlist[0]
     #message_ts = ab.send_alertslack(alert = alert)
     #ab.send_resultmail(alert = alert, users = 'hhchoi1022@gmail.com', observed_time = '2024-12-26')
