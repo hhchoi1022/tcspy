@@ -5,7 +5,7 @@ from tcspy.utils.connector import SQLConnector
 from tcspy.devices.observer import mainObserver
 from tcspy.utils.nightsession import NightSession
 
-from astropy.table import Table 
+from astropy.table import Table, vstack
 from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -159,25 +159,6 @@ class DB_Annual(mainConfig):
                             observable_minimum_hour : float = 2,
                             n_time_grid : float = 10
                             ):
-        """
-        Select the best observable targets at certain night.
-
-        Parameters
-        ----------
-        utcdate : Time
-        	Representing the current time.
-        size : int
-        	The number of targets to select.
-        mode : str
-        	Target selection mode which is either 'best' or 'urgent'.
-        observable_minimum_hour : float
-        	The minimum number of hours a target needs to be observable.
-        
-        Returns
-        -------
-        Table
-        	A table containing the best targets for the night.
-        """
         obsnight = self.nightsession.set_obsnight(utctime = utcdate)
         observable_fraction_criteria = observable_minimum_hour / obsnight.observable_hour 
         
@@ -212,84 +193,53 @@ class DB_Annual(mainConfig):
         n_target_for_each_timegrid = np.full(n_time_grid, size / n_time_grid, dtype = int)
         n_target_for_each_timegrid[len(n_target_for_each_timegrid)//2] += size - sum(n_target_for_each_timegrid)
 
-        # for target_tbl_for_scoring in target_tbl_by_obscount.groups:
-
-        #     multitargets_for_scoring = MultiTargets(observer = self.observer,
-        #                             targets_ra = target_tbl_for_scoring['RA'],
-        #                             targets_dec = target_tbl_for_scoring['De'],
-        #                             targets_name = target_tbl_for_scoring['objname']) 
-            
-        #     # Calculate the maximum altitude
-        #     maxalt = 90 - np.abs(self.config['OBSERVER_LATITUDE'] - target_tbl_for_scoring['De'])
-            
-        #     # Track already selected targets
-        #     selected_indices = list()
-
-        #     for i, (n_target, time) in enumerate(zip(n_target_for_each_timegrid, time_grid)):
-        #         altaz = multitargets_for_scoring.altaz(utctimes=time)
-        #         score = altaz.alt.value / maxalt
-        #         high_score_criteria = np.percentile(score, 90)
-        #         high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
-                
-        #         available_indices = list(np.setdiff1d(np.arange(len(target_tbl_for_scoring))[high_scored_idx], list(selected_indices)))
-                
-        #         if len(available_indices) < n_target:
-        #             selected_idx = available_indices  # If not enough targets, select all available
-        #         else:
-        #             selected_idx = list(np.random.choice(available_indices, n_target, replace=False))
-                
-        #         selected_indices += selected_idx
-        #         n_target_for_each_timegrid[i] -= len(selected_idx)
-            
-        #     if len(selected_indices) == size:
-        #         return target_tbl_for_scoring[list(selected_indices)]
-                
+        best_targets = Table()
         for target_tbl_for_scoring in target_tbl_by_obscount.groups:
-
-            multitargets_for_scoring = MultiTargets(observer = self.observer,
-                                    targets_ra = target_tbl_for_scoring['RA'],
-                                    targets_dec = target_tbl_for_scoring['De'],
-                                    targets_name = target_tbl_for_scoring['objname']) 
             
-            # Calculate the maximum altitude
-            maxalt = 90 - np.abs(self.config['OBSERVER_LATITUDE'] - target_tbl_for_scoring['De'])
-            
-            # Track already selected targets
-            selected_indices = list()
-
+            # Sort all observable targets by declination in descending order
+            target_tbl_for_scoring_sorted = target_tbl_for_scoring[np.argsort(-target_tbl_for_scoring['De'])]
+            multitargets_for_scoring = MultiTargets(
+                observer=self.observer,
+                targets_ra=target_tbl_for_scoring_sorted['RA'],
+                targets_dec=target_tbl_for_scoring_sorted['De'],
+                targets_name=target_tbl_for_scoring_sorted['objname']
+            )
+            maxalt = 90 - np.abs(self.config['OBSERVER_LATITUDE'] - target_tbl_for_scoring_sorted['De'])
+        
+            # Allocate targets across time grids
+            selected_indices = []
             for i, (n_target, time) in enumerate(zip(n_target_for_each_timegrid, time_grid)):
+                # Check the altitude and moon separation for sorted targets at the current time
+
                 altaz = multitargets_for_scoring.altaz(utctimes=time)
                 score = altaz.alt.value / maxalt
-                high_score_criteria = 0.7
-                high_scored_idx = ((score > high_score_criteria) & (altaz.alt.value > 30))
+                moonsep = multitargets_for_scoring.moon_sep(utctime=time)
+
+                # Filter targets meeting criteria
+                high_scored_idx = ((score > 0.7) &
+                                   (altaz.alt.value > self.config['TARGET_MINALT']) & 
+                                   (moonsep > self.config['TARGET_MOONSEP']))
                 
-                # Get available indices excluding already selected ones
-                available_indices = list(
-                    np.setdiff1d(
-                        np.arange(len(target_tbl_for_scoring))[high_scored_idx], 
-                        list(selected_indices)
-                    )
-                )
-                
-                # Sort available indices by declination (ascending order)
-                available_indices_sorted = sorted(
-                    available_indices, 
-                    key=lambda idx: target_tbl_for_scoring['De'][idx],
-                    reverse = True
-                )
-                
-                # Select targets based on sorted indices
-                if len(available_indices_sorted) < n_target:
-                    selected_idx = available_indices_sorted  # Select all available if fewer than required
+                available_indices = np.where(high_scored_idx)[0]
+                available_indices = np.setdiff1d(available_indices, selected_indices)
+
+                # Select up to n_target targets
+                if len(available_indices) < n_target:
+                    selected_idx = available_indices             
                 else:
-                    selected_idx = available_indices_sorted[:n_target]  # Select the first n_target targets
-                
-                selected_indices += selected_idx
+                    selected_idx = available_indices[:n_target]
+                    
                 n_target_for_each_timegrid[i] -= len(selected_idx)
-            
-            if len(selected_indices) == size:
-                return target_tbl_for_scoring[list(selected_indices)]
-                
+                selected_indices.extend(selected_idx)
+                    
+                if len(selected_indices) >= size:
+                    best_targets = target_tbl_for_scoring_sorted[list(selected_indices)]
+                else:
+                    best_target_group = target_tbl_for_scoring_sorted[list(selected_indices)]
+            best_targets = vstack([best_targets, best_target_group])
+        # Return the selected targets
+        return best_targets[:size]
+
     def to_Daily(self,
                  target_tbl : Table):
         """
@@ -432,7 +382,9 @@ class DB_Annual(mainConfig):
         return constraint  
 # %%
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
     db = DB_Annual(tbl_name = 'RIS')
+    tbl = db.select_best_targets()
     current_obscount = len(db.data[db.data['obs_count']>  0])
     tot_tilecount = len(db.data)
     print('Current_obscount = ', current_obscount)

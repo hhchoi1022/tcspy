@@ -148,6 +148,31 @@ class MultiTargets(mainConfig):
         
         return np.array(all_observability)
         
+    def moon_sep(self,
+                 utctime : datetime or Time or np.array = None):
+        """
+        Calculate the separation between the Moon and the target.
+
+        Parameters
+        ----------
+        utctime : datetime or Time, optional
+            The time at which to calculate the separation. If not provided, the current time will be used.
+
+        Returns
+        -------
+        moonsep : astropy.coordinates.Angle
+            The separation between the Moon and the target.
+        """
+            
+        if utctime is None:
+            utctime = Time.now()
+        if not isinstance(utctime, Time):
+            utctime = Time(utctime)
+        moon_coord = self._observer.moon_radec(utctime)
+        target_coord = self.coordinate
+        moonsep = np.round(moon_coord.separation(target_coord),2)
+        return moonsep.value
+        
     def is_ever_observable(self,
                            utctime_start : datetime or Time = None,
                            utctime_end : datetime or Time = None,

@@ -11,19 +11,19 @@
             "focusval": 4529.2
         },
         "i": {
-            "update_time": "2025-01-19T03:17:33.437",
+            "update_time": "2025-01-21T02:49:41.214",
             "succeeded": true,
-            "focusval": 4563.7
+            "focusval": 4576.1
         },
         "m850": {
-            "update_time": "2025-01-19T06:43:26.726",
+            "update_time": "2025-01-21T03:31:18.652",
             "succeeded": true,
-            "focusval": 4687.8
+            "focusval": 4696.6
         },
         "m875": {
-            "update_time": "2025-01-19T06:50:28.942",
+            "update_time": "2025-01-21T03:38:22.829",
             "succeeded": true,
-            "focusval": 4681.0
+            "focusval": 4702.3
         },
         "Slot6": {
             "update_time": "2000-01-01T00:00:00.000",
