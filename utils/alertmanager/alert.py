@@ -205,18 +205,19 @@ class Alert:
             formatted_tbl[key] = [value] * len(tbl)
         
         # Update values from alert_data if the key exists         
-        for key in tbl.keys():
-            noramlized_key = self._normalize_required_keys(key)
-            if noramlized_key:
-                formatted_tbl[noramlized_key] = tbl[key]
-            else:
-                print('The key is not found in the key variants: ', key)
+        # for key in tbl.keys():
+        #     noramlized_key = self._normalize_required_keys(key)
+        #     if noramlized_key:
+        #         formatted_tbl[noramlized_key] = tbl[key]
+        #     else:
+        #         print('The key is not found in the key variants: ', key)
 
         # Convert the RA, Dec to degrees
-        formatted_tbl['RA'], formatted_tbl['De'] = self._convert_to_deg(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
+        formatted_tbl['RA'], formatted_tbl['De'] = self._convert_to_deg(tbl['ra'].tolist(), tbl['dec'].tolist())
         
         # Modify the objname to the standard format                    
-        formatted_tbl['objname'] = ['T%.5d'%int(objname) if not str(objname).startswith('T') else objname for objname in formatted_tbl['objname']]
+        formatted_tbl['objname'] = ['T%.5d'%int(objname) if not str(objname).startswith('T') else objname for objname in tbl['id']]
+        formatted_tbl['priority'] = tbl['rank']
         formatted_tbl['objtype'] = 'GECKO'
         formatted_tbl['note'] = tbl['obj'] # Tile observation -> objname is stored in "Note"
         
