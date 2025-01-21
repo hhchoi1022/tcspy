@@ -117,7 +117,7 @@ class mainConfig:
         
         image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
                             FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$",
-                            IMAGE_PATH=f'/Users/hhchoi1022/obsdata/{self.tel_name}/image/',
+                            IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/',
                             IMAGE_SAVEHEADER = True,
                             IMAGE_FORMAT = 'FITS'
                             )
@@ -125,14 +125,14 @@ class mainConfig:
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT=f'[%(levelname)s,{self.tel_name}]%(asctime)-15s |%(message)s',
-                             LOGGER_PATH= f'/Users/hhchoi1022/obsdata/{self.tel_name}/log/')
+                             LOGGER_PATH= f'/data2/obsdata/{self.tel_name}/log/')
         
         # Share configuration
 
         transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
                                TRANSFER_SERVER_USERNAME = 'hhchoi1022', 
                                TRANSFER_SERVER_PORTNUM = '8022',
-                               TRANSFER_SOURCE_HOMEDIR = '/Users/hhchoi1022/obsdata/',
+                               TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 8,
@@ -145,7 +145,7 @@ class mainConfig:
                               WEATHER_PORTNUM= 5575,#portnum, #5575
                               WEATHER_DEVICENUM=0,
                               WEATHER_UPDATETIME=60,
-                              WEATHER_PATH= f'/Users/hhchoi1022/obsdata/weather_history/',
+                              WEATHER_PATH= f'/data2/obsdata/weather_history/',
                               WEATHER_STATUSPATH = f'{os.path.join(self.path_home,".tcspy", "sync")}',
                               WEATHER_HUMIDITY=85,
                               WEATHER_RAINRATE=80,
@@ -163,7 +163,7 @@ class mainConfig:
                                     SAFEMONITOR_PORTNUM= 5565,#portnum, #5565
                                     SAFEMONITOR_DEVICENUM=0,
                                     SAFEMONITOR_UPDATETIME=60,
-                                    SAFEMONITOR_PATH= f'/Users/hhchoi1022/obsdata/safetymonitor_history/')
+                                    SAFEMONITOR_PATH= f'/data2/obsdata/safetymonitor_history/')
         
         target_params = dict(TARGET_MINALT=27,
                              TARGET_MAXALT=90,
@@ -175,7 +175,7 @@ class mainConfig:
                          DB_ID='hhchoi',
                          DB_PWD='gusgh1020!', # gusgh1020! for MCS, lksdf1020 for Lnx
                          DB_NAME='target',
-                         DB_HISTORYPATH= f'/Users/hhchoi1022/obsdata/DB_history',
+                         DB_HISTORYPATH= f'/data2/obsdata/DB_history',
                          DB_HISTORYFORMAT = 'ascii.fixed_width',
                          DB_STATUSPATH = f'{os.path.join(self.path_home,".tcspy", "sync")}',
                          DB_STATUSFORMAT = 'ascii')
@@ -199,11 +199,12 @@ class mainConfig:
                                                            'myungshin.im@gmail.com',  # Myungshin Im
                                                            'takdg123@gmail.com',
                                                            'seowon.chang@gmail.com',
+                                                           'gregorypaek94@gmail.com'
                                                            ],
                                   ALERTBROKER_NORMUSERS = ['hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
                                                            ],
                                   ALERTBROKER_ADMINUSERS = ['hhchoi1022@gmail.com'], # Hyeonho Choi
-                                  ALERTBROKER_PATH = f'/Users/hhchoi1022/obsdata/alert_history',
+                                  ALERTBROKER_PATH = f'/data2/obsdata/alert_history',
                                   ALERTBROKER_STATUSPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "alert")}',
                                 )
         
@@ -236,8 +237,8 @@ class mainConfig:
                                SHUTDOWN_CCDTEMP_TOLERANCE = 1)
         
         nightsession_params = dict(NIGHTSESSION_SUNALT_AUTOFLAT = -8,
-                                   NIGHTSESSION_SUNALT_STARTUP = -5,
-                                   NIGHTSESSION_SUNALT_OBSERVATION = -18,
+                                   NIGHTSESSION_SUNALT_STARTUP = -1,
+                                   NIGHTSESSION_SUNALT_OBSERVATION = -12,
                                    NIGHTSESSION_SUNALT_SHUTDOWN = 0)
         
         multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_home, ".tcspy", "sync", "multitelescopes.dict")}')

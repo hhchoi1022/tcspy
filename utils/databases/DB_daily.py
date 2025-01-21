@@ -616,7 +616,7 @@ if __name__ == '__main__':
     # from astropy.io import ascii
     # tbl = ascii.read('./S240422ed.ascii')
     RIS = DB_Annual('RIS').data
-    Daily.from_GSheet('WASP121b_monitoring')
+    Daily.from_GSheet('250121')
 
     # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
     # tbl_to_insert['filter_'][:] = 'r'

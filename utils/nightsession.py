@@ -69,3 +69,4 @@ class NightSession(mainConfig):
             else:
                 setattr(obsnight_ltc, key, value)
         return obsnight_ltc 
+# %%

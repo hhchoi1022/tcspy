@@ -390,4 +390,5 @@ if __name__ == '__main__':
     print('Current_obscount = ', current_obscount)
     print('Total_obscount_sum = ', np.sum(db.data['obs_count']))
     print(f'{current_obscount}/{tot_tilecount}')
+
 # %%
