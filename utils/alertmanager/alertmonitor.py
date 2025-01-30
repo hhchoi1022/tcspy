@@ -158,7 +158,7 @@ class AlertMonitor(mainConfig):
         alert_observation_status = observation_status[np.isin(observation_status['id'], alert_observable_targets['id'])]
         
         # Set the maximum waiting time for the alert to be observed
-        maximum_waiting_time = 172800  # Maximum waiting time in seconds (48 hours)
+        maximum_waiting_time = 86400  # Maximum waiting time in seconds (48 hours)
         is_alert_observed = False
         print(f"[{datetime.datetime.now()}] Waiting for the alert to be observed. Maximum wait: 48 hours.")
 

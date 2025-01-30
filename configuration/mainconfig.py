@@ -237,8 +237,8 @@ class mainConfig:
                                SHUTDOWN_CCDTEMP_TOLERANCE = 1)
         
         nightsession_params = dict(NIGHTSESSION_SUNALT_AUTOFLAT = -8,
-                                   NIGHTSESSION_SUNALT_STARTUP = -1,
-                                   NIGHTSESSION_SUNALT_OBSERVATION = -12,
+                                   NIGHTSESSION_SUNALT_STARTUP = -6,
+                                   NIGHTSESSION_SUNALT_OBSERVATION = -18,
                                    NIGHTSESSION_SUNALT_SHUTDOWN = 0)
         
         multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_home, ".tcspy", "sync", "multitelescopes.dict")}')

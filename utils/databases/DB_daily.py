@@ -469,7 +469,7 @@ class DB_Daily(mainConfig):
         if len(obstime_fixed_targets) > 0:
             obstime = Time([Time(time) for time in obstime_fixed_targets['obs_starttime']])
             time_left_sec = (obstime - utctime).sec
-            urgent_targets = obstime_fixed_targets[(time_left_sec < 0) & (obstime < self.obsnight.sunrise_astro) & (obstime > self.obsnight.sunset_astro)]
+            urgent_targets = obstime_fixed_targets[(time_left_sec < 0) & (obstime < self.obsnight.sunrise_observation) & (obstime > self.obsnight.sunset_observation)]
             if len(urgent_targets) > 0:
                 score, alt = calc_constraints(urgent_targets)
                 urgent_targets_scored = urgent_targets[score.astype(bool)]
@@ -603,7 +603,7 @@ class DB_Daily(mainConfig):
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
     Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
-    Daily.clear(clear_only_7ds= False, clear_only_observed = False)
+    Daily.clear(clear_only_7ds= True, clear_only_observed = False)
     Daily.from_IMS()
     Daily.from_RIS(size = 300)
     # #from astropy.io import ascii
@@ -616,7 +616,9 @@ if __name__ == '__main__':
     # from astropy.io import ascii
     # tbl = ascii.read('./S240422ed.ascii')
     RIS = DB_Annual('RIS').data
-    Daily.from_GSheet('250121')
+    Daily.from_GSheet('WASP121b_monitoring')
+
+    #Daily.from_GSheet('WASP121b_monitoring')
 
     # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
     # tbl_to_insert['filter_'][:] = 'r'

@@ -1,9 +1,9 @@
 {
     "7DT03": {
         "g": {
-            "update_time": "2025-01-21T02:49:43.443",
+            "update_time": "2025-01-30T02:43:12.432",
             "succeeded": true,
-            "focusval": 6180.7
+            "focusval": 6172.9
         },
         "r": {
             "update_time": "2025-01-16T01:50:12.245",
@@ -16,14 +16,14 @@
             "focusval": 6140.6
         },
         "m500": {
-            "update_time": "2025-01-21T07:40:14.357",
+            "update_time": "2025-01-30T06:30:03.592",
             "succeeded": true,
-            "focusval": 6380.6
+            "focusval": 6349.5
         },
         "m525": {
-            "update_time": "2025-01-21T07:47:16.717",
+            "update_time": "2025-01-30T06:37:07.344",
             "succeeded": true,
-            "focusval": 6538.0
+            "focusval": 6523.2
         },
         "m450": {
             "update_time": "2025-01-16T02:10:22.732",

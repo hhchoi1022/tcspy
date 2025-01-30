@@ -215,15 +215,18 @@ class GmailConnector:
             # Connect to the IMAP server
             self.server_imap.select(mailbox)
             
+            print('Searching for emails...')
             # Search for all emails
             search_criteria = 'ALL'
             if since_days:
                 since_time = datetime.utcnow() - timedelta(days=since_days)
                 since_date = since_time.strftime('%d-%b-%Y')
                 search_criteria = f'(SINCE "{since_date}")'
+                print(f'Searching for emails since {since_time}...')    
 
             status, data = self.server_imap.search(None, search_criteria)
             email_ids = data[0].split()
+            print(f"{len(email_ids)} emails are found.")
             for email_id in email_ids[-max_numbers:]:
                 # Fetch each email
                 status, data = self.server_imap.fetch(email_id, '(RFC822)')
