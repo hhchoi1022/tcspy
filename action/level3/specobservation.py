@@ -92,6 +92,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             autofocus_when_elapsed : bool = False,
             autofocus_elapsed_duration : float = 60,
             observation_status : dict = None,
+            **kwargs
             ):
         """
         Performs the action to start spectroscopic observation.
