@@ -644,11 +644,11 @@ class NightObservation(mainConfig):
                     aborted_action = self.abort_observation()
                     self.multitelescopes.log.info(f'[{type(self).__name__}] is aborted: Unsafe weather')
                 self.multitelescopes.log.info(f'[{type(self).__name__}] is waiting for safe weather condition')
-                time.sleep(200)
                 self._observation_abort = Event()
                 if not is_shutdown_triggered:
                     Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
                     is_shutdown_triggered = True
+                time.sleep(200)
             time.sleep(0.5)
         if len(self.action_queue) > 0:
             aborted_action = self.abort_observation()
