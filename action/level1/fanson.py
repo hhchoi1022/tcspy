@@ -77,8 +77,12 @@ class FansOn(Interface_Runnable, Interface_Abortable):
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
-            self.abort()
-         
+            self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+            self.shared_memory['exception'] = 'AbortionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                    
         # Start action
         try:
             result_fanson = self.telescope.focuser.fans_on()
@@ -98,6 +102,7 @@ class FansOn(Interface_Runnable, Interface_Abortable):
             return True    
         
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'

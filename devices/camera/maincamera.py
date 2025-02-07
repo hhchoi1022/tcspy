@@ -67,7 +67,9 @@ class mainCamera(mainConfig):
         self._unitnum = unitnum
         self.device = Camera(f"{self.config['CAMERA_HOSTIP']}:{self.config['CAMERA_PORTNUM']}",self.config['CAMERA_DEVICENUM'])
         self.status = self.get_status()
-        self.cam_lock = Lock()
+        self.is_idle = Event()
+        self.is_idle.set()
+        self.device_lock = Lock()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
 
     def get_status(self) -> dict:
@@ -326,6 +328,10 @@ class mainCamera(mainConfig):
         max_consecutive_stable_iterations : int, optional
             The maximum number of consecutive stable iterations before considering the cooling process stalled.
         """
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+        
         try:
             if self.device.CanSetCCDTemperature:
                 self.device.CoolerOn = True
@@ -367,16 +373,21 @@ class mainCamera(mainConfig):
                     
                     # Update the previous temperature for the next iteration
                     prev_temperature = current_temperature
-
                 self._log.info('Cooling finished. Current temperature: %.1f' % self.device.CCDTemperature)
                 return True
             else:
                 self._log.critical('Cooling is not implemented on this device')
                 raise CoolingFailedException('Cooling is not implemented on this device')
-        except TimeoutError as e:
-            self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
-            raise CoolingFailedException('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
-    
+
+        except Exception as e:
+            exception_raised = e
+        
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
+            
     def warm(self,
              abort_action : Event,
              settemperature : float = 10,
@@ -397,6 +408,10 @@ class mainCamera(mainConfig):
         max_consecutive_stable_iterations : int, optional
             The maximum number of consecutive stable iterations before considering the warming process stalled.
         """
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+                
         try:
             if self.device.CanSetCCDTemperature:
                 self.device.SetCCDTemperature = settemperature
@@ -442,10 +457,16 @@ class mainCamera(mainConfig):
             else:
                 self._log.critical('Warming is not implemented on this device')
                 raise WarmingFailedException('Warming is not implemented on this device')
-        except TimeoutError as e:
-            self._log.warning('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
-            raise WarmingFailedException('{} CCD Temperature cannot be reached to the set temp, current temp: {}'.format(str(e), self.device.CCDTemperature))
-    
+
+        except Exception as e:
+            exception_raised = e
+        
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
+            
     def exposure(self,
                  abort_action : Event,
                  exptime : float,
@@ -483,9 +504,12 @@ class mainCamera(mainConfig):
         imginfo : dict
             A dictionary containing information about the captured image.
         """
-        # Set Gain
-        self.cam_lock.acquire()
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+        
         try:
+            # Set Gain
             self._update_gain(gain = gain)
             
             # Set binning 
@@ -499,38 +523,55 @@ class mainCamera(mainConfig):
             # Set imagetype & exposure time & is_light
             if not imgtype.upper() in ['BIAS', 'DARK', 'FLAT', 'LIGHT']:
                 self._log.critical(f'Type "{imgtype}" is not set as imagetype')
-                self.cam_lock.release()
                 raise ExposureFailedException(f'Type "{imgtype}" is not set as imagetype')
             
             # Exposure
-            self._log.info('Start exposure...')
             self.device.StartExposure(Duration = exptime, Light = is_light)
+            # When Image is already ready, flush the camera memory. For BIAS image, it takes 0.25sec to be ready with C361k
+            if self.device.ImageReady:
+                self._log.warning('Camera exposure is already finished. Flushing camera memory...')
+                self.device.AbortExposure()
+                self.get_imginfo()
+                self._log.warning('Camera memory is flushed')
+                self.device.StartExposure(Duration = exptime, Light = is_light)
+            
+            self._log.info('Start exposure...')
             while not self.device.ImageReady:
-                if abort_action.is_set():
-                    self.cam_lock.release()
-                    self.abort()
                 time.sleep(float(self.config['CAMERA_CHECKTIME']))
+                
+                if abort_action.is_set():
+                    self.device.AbortExposure()
+                    self._log.warning('Camera exposure is aborted')
+                    raise AbortionException('Camera exposure is aborted')
+                
+            # **Check abort before retrieving the image** 
+            if abort_action.is_set():
+                self.device.AbortExposure()
+                self._log.warning('Aborting before retrieving image!')
+                raise AbortionException('Aborted before image retrieval')
             imginfo, status = self.get_imginfo()
+            # **Check abort after retrieving the image** 
+            if abort_action.is_set():
+                self.device.AbortExposure()
+                self._log.warning('Aborting after retrieving image!')
+                raise AbortionException('Aborted after image retrieval')
 
             # Modify image information if camera returns too detailed exposure time
             imginfo['exptime'] = round(float(imginfo['exptime']),1)
             self._log.info('Exposure finished')
             return imginfo 
-        finally:
-            self.cam_lock.release()
 
-    def abort(self):
-        """
-        Aborts the current exposure.
-        """
-        self.cam_lock.acquire()
-        self._log.warning('Camera exposure is aborted')
-        try:
-            if self.device.CanAbortExposure:
-                self.device.AbortExposure()
+        except Exception as e:
+            exception_raised = e
+        
         finally:
-            self.cam_lock.release()
-            raise AbortionException('Camera exposure is aborted')
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
+
+    def wait_idle(self):
+        self.is_idle.wait()
     
     def _update_gain(self,
                     gain : int = 0):
@@ -554,10 +595,3 @@ class mainCamera(mainConfig):
         self.device.BinX = self.device.BinY = binning
         self.device.NumX = self.device.CameraXSize // self.device.BinX
         self.device.NumY = self.device.CameraYSize // self.device.BinY
-        #self.status = self.get_status()
-# %%
-# # Test
-if __name__ == '__main__':
-    cam = mainCamera(unitnum = 1)
-    cam.exposure(abort_action = Event(), exptime = 0, imgtype = 'bias', binning = 1, is_light = False, gain = 2750)
-# %%

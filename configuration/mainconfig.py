@@ -165,7 +165,7 @@ class mainConfig:
                                     SAFEMONITOR_UPDATETIME=60,
                                     SAFEMONITOR_PATH= f'/data2/obsdata/safetymonitor_history/')
         
-        target_params = dict(TARGET_MINALT=27,
+        target_params = dict(TARGET_MINALT=25,
                              TARGET_MAXALT=90,
                              TARGET_MOONSEP=40,
                              TARGET_WEIGHT_ALT = 0.5,
@@ -219,7 +219,7 @@ class mainConfig:
                                AUTOFLAT_MINEXPTIME = 0.1,
                                AUTOFLAT_MAXEXPTIME = 20,
                                AUTOFLAT_WAITDURATION = 10,
-                               AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
+                               AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m375w','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
         specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250108/")}')
@@ -238,7 +238,7 @@ class mainConfig:
         
         nightsession_params = dict(NIGHTSESSION_SUNALT_AUTOFLAT = -8,
                                    NIGHTSESSION_SUNALT_STARTUP = -6,
-                                   NIGHTSESSION_SUNALT_OBSERVATION = -18,
+                                   NIGHTSESSION_SUNALT_OBSERVATION = -12,
                                    NIGHTSESSION_SUNALT_SHUTDOWN = 0)
         
         multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_home, ".tcspy", "sync", "multitelescopes.dict")}')

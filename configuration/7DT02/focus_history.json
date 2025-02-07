@@ -1,14 +1,14 @@
 {
     "7DT02": {
         "g": {
-            "update_time": "2025-01-31T03:42:19.445",
+            "update_time": "2025-02-07T06:27:03.041",
             "succeeded": true,
-            "focusval": 7489.4
+            "focusval": 7480.5
         },
         "r": {
-            "update_time": "2024-12-05T03:29:06.636",
+            "update_time": "2025-02-07T07:17:13.552",
             "succeeded": true,
-            "focusval": 7511.3
+            "focusval": 7453.0
         },
         "i": {
             "update_time": "2024-12-05T03:19:01.066",
@@ -16,14 +16,14 @@
             "focusval": 7508.1
         },
         "m450": {
-            "update_time": "2025-01-31T04:36:00.440",
+            "update_time": "2025-02-06T02:55:00.655",
             "succeeded": true,
-            "focusval": 7586.5
+            "focusval": 7623.9
         },
         "m475": {
-            "update_time": "2025-01-31T04:43:04.185",
+            "update_time": "2025-02-06T03:06:16.249",
             "succeeded": true,
-            "focusval": 7760.4
+            "focusval": 7776.8
         },
         "Slot6": {
             "update_time": "2000-01-01T00:00:00.000",

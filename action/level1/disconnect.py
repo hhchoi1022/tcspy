@@ -62,7 +62,11 @@ class Disconnect(Interface_Runnable):
         devices_status = self.telescope_status.dict
         for device_name in self.telescope.devices.keys():
             if self.abort_action.is_set():
-                self.abort()
+                self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
             device = self.telescope.devices[device_name]
             status = devices_status[device_name]
             try:
@@ -84,7 +88,11 @@ class Disconnect(Interface_Runnable):
                 else:
                     self.telescope.log.info(f'{device_name} : Disconnected')
             else:
-                self.abort()
+                self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.') 
         self.telescope.log.info('='*30)
         self.shared_memory['succeeded'] = True
         self.shared_memory['is_running'] = False
@@ -94,6 +102,7 @@ class Disconnect(Interface_Runnable):
             return True
     
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'

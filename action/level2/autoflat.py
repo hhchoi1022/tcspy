@@ -77,8 +77,12 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         
         # Abort action when triggered
         if self.abort_action.is_set():
-            self.abort()
-
+            self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+            self.shared_memory['exception'] = 'AbortionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+        
         # Define actions required
         action_slew = SlewAltAz(singletelescope = self.telescope, abort_action= self.abort_action)
         action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action)
@@ -95,7 +99,13 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.is_running = False
             raise ConnectionException(f'[{type(self).__name__}] is failed: mount is disconnected.')
         except AbortionException:
-            self.abort()
+            while action_slew.shared_memory['is_running']:
+                time.sleep(0.1)
+            self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+            self.shared_memory['exception'] = 'AbortionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         except ActionFailedException:
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
             self.shared_memory['exception'] = 'ActionFailedException'
@@ -105,31 +115,11 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
         
         # Abort action when triggered
         if self.abort_action.is_set():
-            self.abort()
-          
-        # Defocusing 
-        """
-        try:
-            result_changefocus = True#action_changefocus.run(position = 3000, is_relative= True)
-            self.is_focus_changed = True
-        except ConnectionException:
-            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
-            self.shared_memory['exception'] = 'ConnectionException'
+            self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+            self.shared_memory['exception'] = 'AbortionException'
             self.shared_memory['is_running'] = False
             self.is_running = False
-            raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-        except AbortionException:
-            self.abort()
-        except ActionFailedException:
-            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
-            self.shared_memory['exception'] = 'ActionFailedException'
-            self.shared_memory['is_running'] = False
-            self.is_running = False
-            raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-        """
-        # Abort action when triggered
-        if self.abort_action.is_set():
-            self.abort()
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         # Get bias value
         camera = self.telescope.camera
@@ -166,7 +156,12 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                 self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: camera exposure failure.')
             except AbortionException:
-                self.abort()
+                camera.wait_idle()
+                self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
             except:
                 self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is failed.')
                 self.shared_memory['exception'] = 'ActionFailedException'
@@ -193,6 +188,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.telescope.log.info(f'=====[{type(self).__name__}] for filter {filter_} is triggered')
             # Filterchange
             try:    
+                self.action = action_changefilter
                 result_filterchange = action_changefilter.run(filter_ = filter_)
             except ConnectionException:
                 self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: Filterwheel is disconnected.')                
@@ -241,7 +237,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                         raise AbortionException(f'[{type(self).__name__}] is aborted.')
                     except:
                         self.telescope.log.warning(f'=====[{type(self).__name__}] is failed.')
-                        raise AbortionException(f'[{type(self).__name__}] is failed: Sky level calculation failure')
+                        raise ActionFailedException(f'[{type(self).__name__}] is failed: Sky level calculation failure')
                 else:
                     self.telescope.log.critical(f'=====[{type(self).__name__}] is failed: camera is under unknown condition.')
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: camera is under unknown condition.')
@@ -329,58 +325,24 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                 self.is_running = False
                 raise ConnectionException(f'[{type(self).__name__}] is failed: devices are disconnected.')
             except AbortionException:
-                self.abort()
+                self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
-        # Infocusing 
-        """
-        try:
-            result_changefocus = True #action_changefocus.run(position = -3000, is_relative= True)
-            self.is_focus_changed = False
-        except ConnectionException:
-            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')                
-            self.shared_memory['exception'] = 'ConnectionException'
-            self.shared_memory['is_running'] = False
-            self.is_running = False
-            raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-        except AbortionException:
-            self.abort()
-        except ActionFailedException:
-            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
-            self.shared_memory['exception'] = 'ActionFailedException'
-            self.shared_memory['is_running'] = False
-            self.is_running = False
-            raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-        """
-        
+        self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished.')
         self.is_running = False
         self.shared_memory['succeeded'] = all(observation_status.values())
         
-        self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished.')
         if self.shared_memory['succeeded']:
             return True    
         
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
-        time.sleep(10)
-        # Defocusing 
-        """
-        try:
-            action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = Event())
-            result_changefocus = True#action_changefocus.run(position = -3000, is_relative= True)
-        except ConnectionException:
-            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')     
-            self.shared_memory['exception'] = 'ConnectionException'      
-            self.shared_memory['is_running'] = False     
-            self.is_running = False
-            raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-        except ActionFailedException:
-            self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
-            self.shared_memory['exception'] = 'ActionFailedException'
-            self.shared_memory['is_running'] = False
-            self.is_running = False
-            raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-        """
-        
+        while self.shared_memory['is_running']:
+            time.sleep(0.1)
         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'
         self.shared_memory['is_running'] = False

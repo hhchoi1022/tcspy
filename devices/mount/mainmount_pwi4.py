@@ -4,7 +4,8 @@ from astropy.coordinates import SkyCoord
 import time
 from astropy.time import Time
 import astropy.units as u
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Lock
 
 from tcspy.devices import PWI4 # PWI4 API 
 from tcspy.configuration import mainConfig
@@ -67,7 +68,10 @@ class mainMount_pwi4(mainConfig):
         super().__init__(unitnum = unitnum)
         self.device = PWI4(self.config['MOUNT_HOSTIP'], self.config['MOUNT_PORTNUM'])
         self.status = self.get_status()
+        self.is_idle = Event()
+        self.device_lock = Lock()
         self.observer = mainObserver()
+        self.is_idle.set()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
     
     def get_status(self):
@@ -217,52 +221,83 @@ class mainMount_pwi4(mainConfig):
         disable_mount : bool, optional
             Whether to disable the mount after parking.
         """
-        coordinate = SkyCoord(self.config['MOUNT_PARKAZ'],self.config['MOUNT_PARKALT'], frame = 'altaz', unit ='deg')
-        alt = coordinate.alt.deg
-        az = coordinate.az.deg
-        self._log.info('Parking telescope...')
-        status = self.get_status()
-        # Check the mount is enabled to slew
-        if status['at_parked']:
-            try:
-                self.enable()
-            except MountEnableFailedException:
-                raise ParkingFailedException('Mount parking is failed : Mount enable failed')
-        # Slew
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+        
         try:
-            self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
-        except:
-            self._log.critical('Mount parking is failed : Slewing failed')
-            raise ParkingFailedException('Mount parking is failed : Slewing failed')
-        time.sleep(float(self.config['MOUNT_CHECKTIME']))
-        status = self.get_status()
-        while status['is_slewing']:
+            coordinate = SkyCoord(self.config['MOUNT_PARKAZ'],self.config['MOUNT_PARKALT'], frame = 'altaz', unit ='deg')
+            alt = coordinate.alt.deg
+            az = coordinate.az.deg
+            self._log.info('Parking telescope...')
+            status = self.get_status()
+            # Check the mount is enabled to slew
+            if status['at_parked']:
+                try:
+                    self.enable()
+                except MountEnableFailedException:
+                    raise ParkingFailedException('Mount parking is failed : Mount enable failed')
+            # Slew
+            try:
+                self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
+            except:
+                self._log.critical('Mount parking is failed : Slewing failed')
+                raise ParkingFailedException('Mount parking is failed : Slewing failed')
             time.sleep(float(self.config['MOUNT_CHECKTIME']))
             status = self.get_status()
-            if abort_action.is_set():
-                self.abort()
+            while status['is_slewing']:
+                time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                status = self.get_status()
+                if abort_action.is_set():
+                    self.device.mount_stop()
+                    status = self.get_status()
+                    while status['is_slewing']:
+                        time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                        status = self.get_status()
+                    self._log.warning('Mount parking is aborted')
+                    return AbortionException('Mount parking is aborted')
 
-        time.sleep(float(self.config['MOUNT_CHECKTIME']))
-        # Disable mount when disable == True
-        if disable_mount:
-            try:
-                self.disable()
-            except MountEnableFailedException:
-                raise ParkingFailedException('Mount parking is failed : Mount disable failed')
-        self._log.info('Mount is parked')
-        return True
+            time.sleep(float(self.config['MOUNT_CHECKTIME']))
+            # Disable mount when disable == True
+            if disable_mount:
+                try:
+                    self.disable()
+                except MountEnableFailedException:
+                    raise ParkingFailedException('Mount parking is failed : Mount disable failed')
+            self._log.info('Mount is parked')
+            return True
+        
+        except Exception as e:
+            exception_raised = e
+        
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
+        
     
     def unpark(self):
         """
         Unpark the telescope.
         """
-        self._log.info('Unparking telescope...')
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+        
         try:
+            self._log.info('Unparking telescope...')
             self.enable()
             self._log.info('Mount unparked')
-        except MountEnableFailedException:
-            raise ParkingFailedException('Unparking failed : Mount enable failed')
-        return True
+            
+        except:
+            exception_raised = ParkingFailedException('Mount unparking is failed')
+        
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
     
     def find_home(self, abort_action : Event):
         """
@@ -273,39 +308,59 @@ class mainMount_pwi4(mainConfig):
         abort_action : Event
             An Event object to signal the abort action.
         """
-        self._log.info('Homing mount...')
-        # Check whether mount is parked 
-        status = self.get_status()
-        if status['at_parked']:
-            try:
-                self.unpark()
-            except ParkingFailedException:
-                raise FindingHomeFailedException('Mount homing failed : Unparking failed')
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
         
-        # Find home
         try:
-            self.device.mount_find_home()
-            is_slewing = True       
-        except:
-            self._log.critical('Mount homing is failed')
-            raise FindingHomeFailedException('Mount homing is failed')  
+            self._log.info('Homing mount...')
+            # Check whether mount is parked 
+            status = self.get_status()
+            if status['at_parked']:
+                try:
+                    self.unpark()
+                except:
+                    raise FindingHomeFailedException('Mount homing failed : Unparking failed')
         
-        time.sleep(float(self.config['MOUNT_CHECKTIME']))
-        PWI_status = self.PWI_status
-        alt = PWI_status.mount.altitude_degs
-        az = PWI_status.mount.azimuth_degs
-        while is_slewing:
+            # Find home
+            try:
+                self.device.mount_find_home()
+                is_slewing = True       
+            except:
+                self._log.critical('Mount homing is failed')
+                raise FindingHomeFailedException('Mount homing is failed')  
+        
             time.sleep(float(self.config['MOUNT_CHECKTIME']))
             PWI_status = self.PWI_status
-            diff = abs(PWI_status.mount.altitude_degs - alt) + abs(PWI_status.mount.azimuth_degs - az)
             alt = PWI_status.mount.altitude_degs
             az = PWI_status.mount.azimuth_degs
-            if diff < 0.1:
-                is_slewing = False
-            if abort_action.is_set():
-                self.abort()
-        self._log.info('Mount is homed')
-        return True
+            while is_slewing:
+                time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                PWI_status = self.PWI_status
+                diff = abs(PWI_status.mount.altitude_degs - alt) + abs(PWI_status.mount.azimuth_degs - az)
+                alt = PWI_status.mount.altitude_degs
+                az = PWI_status.mount.azimuth_degs
+                if diff < 0.1:
+                    is_slewing = False
+                if abort_action.is_set():
+                    self.device.mount_stop()
+                    status = self.get_status()
+                    while status['is_slewing']:
+                        time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                        status = self.get_status()
+                    self._log.warning('Mount homing is aborted')
+                    raise AbortionException('Mount homing is aborted')
+            self._log.info('Mount is homed')
+            return True
+        
+        except Exception as e:
+            exception_raised = e
+        
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
 
     def slew_radec(self,
                    ra : float,
@@ -327,59 +382,77 @@ class mainMount_pwi4(mainConfig):
         tracking : bool, optional
             Whether to turn tracking on after slewing.
         """
-        from tcspy.utils.target.singletarget import SingleTarget
-
-        target = SingleTarget(observer = self.observer, ra = float(ra), dec = float(dec))
-        altaz = target.altaz()
-        self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)...' %(ra, dec, altaz.alt.deg, altaz.az.deg))
-
-        # Check coordinates
-        if force_action:
-            self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
-        else:
-            if altaz.alt.deg < float(self.config['TARGET_MINALT']):
-                self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
-                raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
         
-        # Check whether the mount is parked
-        status = self.get_status()
-        if status['at_parked']:
-            try:
-                result_unpark = self.unpark()
-            except ParkingFailedException:
-                raise SlewingFailedException('Mount slewing is failed : Unparking failed')
-        
-        # Slew
         try:
-            self.device.mount_goto_ra_dec_j2000(target.ra_hour, target.dec_deg)
-        except:
-            self._log.critical('Mount slewing is failed : Slewing failed')
-            raise SlewingFailedException('Mount slewing is failed : Slewing failed')    
+            from tcspy.utils.target.singletarget import SingleTarget
+
+            target = SingleTarget(observer = self.observer, ra = float(ra), dec = float(dec))
+            altaz = target.altaz()
+            self._log.info('Slewing to the coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)...' %(ra, dec, altaz.alt.deg, altaz.az.deg))
+
+            # Check coordinates
+            if force_action:
+                self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+            else:
+                if altaz.alt.deg < float(self.config['TARGET_MINALT']):
+                    self._log.critical('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
+                    raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %altaz.alt.deg)
             
-        time.sleep(float(self.config['MOUNT_CHECKTIME']))
-        status = self.get_status()
-        while status['is_slewing']:
+            # Check whether the mount is parked
+            status = self.get_status()
+            if status['at_parked']:
+                try:
+                    result_unpark = self.unpark()
+                except ParkingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Unparking failed')
+            
+            # Slew
+            try:
+                self.device.mount_goto_ra_dec_j2000(target.ra_hour, target.dec_deg)
+            except:
+                self._log.critical('Mount slewing is failed : Slewing failed')
+                raise SlewingFailedException('Mount slewing is failed : Slewing failed')    
+                
             time.sleep(float(self.config['MOUNT_CHECKTIME']))
             status = self.get_status()
-            if abort_action.is_set():
-                self.abort()
-                self._log.warning('Mount slewing is aborted')
-                raise AbortionException('Mount slewing is aborted')
-        self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
-        time.sleep(float(self.config['MOUNT_SETTLETIME']))
-        if not tracking:
-            try:
-                self.tracking_off()
-            except TrackingFailedException:
-                raise SlewingFailedException('Mount slewing is failed : Tracking failed')
-        else:
-            try:
-                self.tracking_on()
-            except TrackingFailedException:
-                raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
-        status = self.get_status()
-        self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(float(status['ra']), float(status['dec']), float(status['alt']), float(status['az'])))
-        return True
+            while status['is_slewing']:
+                time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                status = self.get_status()
+                if abort_action.is_set():
+                    self.device.mount_stop()
+                    status = self.get_status()
+                    while status['is_slewing']:
+                        time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                        status = self.get_status()
+                    self._log.warning('Mount slewing is aborted')
+                    raise AbortionException('Mount slewing is aborted')
+            self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
+            time.sleep(float(self.config['MOUNT_SETTLETIME']))
+            if not tracking:
+                try:
+                    self.tracking_off()
+                except TrackingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Tracking failed')
+            else:
+                try:
+                    self.tracking_on()
+                except TrackingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
+            status = self.get_status()
+            self._log.info('Slewing finished. Current coordinate (RA = %.3f, Dec = %.3f, Alt = %.1f, Az = %.1f)' %(float(status['ra']), float(status['dec']), float(status['alt']), float(status['az'])))
+            return True
+        
+        except Exception as e:
+            exception_raised = e
+        
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
     
     def slew_altaz(self,
                    alt : float,
@@ -401,55 +474,74 @@ class mainMount_pwi4(mainConfig):
         tracking : bool, optional
             If True, tracking will be enabled after slewing.
         """
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
         
-        self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
-
-        # Check coordinates
-        if force_action:
-            self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %alt)
-        else:
-            if alt < float(self.config['TARGET_MINALT']):
-                self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
-                raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %alt)
-        
-        # Check whether the mount is parked
-
-        status = self.get_status()
-        if status['at_parked']:
-            try:
-                result_unpark = self.unpark()
-            except ParkingFailedException:
-                raise SlewingFailedException('Mount slewing is failed : Unparking failed')
-          
-        # Slew
         try:
-            self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
-        except:
-            self._log.critical('Mount slewing is failed : Slewing failed')
-            raise SlewingFailedException('Mount slewing is failed : Slewing failed')    
-        
-        time.sleep(float(self.config['MOUNT_CHECKTIME']))
-        status = self.get_status()
-        while status['is_slewing']:
+            self._log.info('Slewing to the coordinate (Alt = %.1f, Az = %.1f)' %(alt, az))
+
+            # Check coordinates
+            if force_action:
+                self._log.warning('Forced slewing: Destination altitude below limit (%.1fdeg)' %alt)
+            else:
+                if alt < float(self.config['TARGET_MINALT']):
+                    self._log.critical('Destination altitude below limit (%.1fdeg)' %alt)
+                    raise SlewingFailedException('Destination altitude below limit (%.1fdeg)' %alt)
+            
+            # Check whether the mount is parked
+
+            status = self.get_status()
+            if status['at_parked']:
+                try:
+                    result_unpark = self.unpark()
+                except ParkingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Unparking failed')
+            
+            # Slew
+            try:
+                self.device.mount_goto_alt_az(alt_degs = alt, az_degs = az)
+            except:
+                self._log.critical('Mount slewing is failed : Slewing failed')
+                raise SlewingFailedException('Mount slewing is failed : Slewing failed')    
+            
             time.sleep(float(self.config['MOUNT_CHECKTIME']))
             status = self.get_status()
-            if abort_action.is_set():
-                self.abort()
-        self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
-        time.sleep(float(self.config['MOUNT_SETTLETIME']))    
-        if not tracking:
-            try:
-                self.tracking_off()
-            except TrackingFailedException:
-                raise SlewingFailedException('Mount slewing is failed : Tracking failed')
-        else:
-            try:
-                self.tracking_on()
-            except TrackingFailedException:
-                raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
-        status = self.get_status()
-        self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(float(status['alt']), float(status['az'])))
-        return True
+            while status['is_slewing']:
+                time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                status = self.get_status()
+                if abort_action.is_set():
+                    self.device.mount_stop()
+                    status = self.get_status()
+                    while status['is_slewing']:
+                        time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                        status = self.get_status()
+                    self._log.warning('Mount slewing is aborted')
+                    raise AbortionException('Mount slewing is aborted')
+            self._log.info(f'Mount settling for {self.config["MOUNT_SETTLETIME"]}s...' )
+            time.sleep(float(self.config['MOUNT_SETTLETIME']))    
+            if not tracking:
+                try:
+                    self.tracking_off()
+                except TrackingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Tracking failed')
+            else:
+                try:
+                    self.tracking_on()
+                except TrackingFailedException:
+                    raise SlewingFailedException('Mount slewing is failed : Tracking failed')                    
+            status = self.get_status()
+            self._log.info('Slewing finished. Current coordinate (Alt = %.1f, Az = %.1f)' %(float(status['alt']), float(status['az'])))
+            return True
+        
+        except Exception as e:
+            exception_raised = e
+        
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
 
     def tracking_on(self):
         """
@@ -483,20 +575,6 @@ class mainMount_pwi4(mainConfig):
         self._log.info('Tracking deactivated')
         return True        
     
-    def abort(self):
-        """
-        Abort the movement of the mount
-        """        
-        self.device.mount_stop()
-        self._log.warning('Mount parking is aborted')
-        raise AbortionException('Mount parking is aborted')
-
+    def wait_idle(self):
+        self.is_idle.wait()
 # %%
-if __name__ == '__main__':
-    tel  =mainMount_pwi4(unitnum = 1)
-    abort_action = Event()
-    #tel.slew_altaz(alt = 35, az = 270, abort_action =abort_action)
-    from multiprocessing import Process
-    from threading import Thread
-    tel.find_home(abort_action)
-#%%

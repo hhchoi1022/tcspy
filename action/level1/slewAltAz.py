@@ -91,8 +91,13 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
         
         # Check abort_action
         if self.abort_action.is_set():
-            self.abort()
-        
+            self.telescope.mount.wait_idle()
+            self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+            self.shared_memory['exception'] = 'AbortionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                
         # Start action
         if status_mount == 'disconnected':
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: mount is disconnected.')
@@ -126,7 +131,14 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
                 self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: mount slew_altaz failure.')
             except AbortionException:
-                self.abort()
+                print("ABCABC")
+                self.telescope.mount.wait_idle()
+                print('ABSSAD')
+                self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
         if result_slew:
             self.shared_memory['succeeded'] = True
             
@@ -137,18 +149,12 @@ class SlewAltAz(Interface_Runnable, Interface_Abortable):
             return True    
         
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
+        self.telescope.mount.wait_idle()
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'
         self.shared_memory['is_running'] = False
         self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
-#%%
-if __name__ == '__main__':
-    device = SingleTelescope(unitnum = 1)
-    abort_action = Event()
-    s =SlewAltAz(device, abort_action)
-    #s.run(alt=40, az= 270, tracking = True)  
-    from threading import Thread
-    p = Thread(target = s.run, kwargs = dict(alt = 40, az = 160, tracking = True))
-# %%
+

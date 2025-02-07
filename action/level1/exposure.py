@@ -134,8 +134,13 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
-            self.abort()
-        
+            self.telescope.camera.wait_idle()
+            self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+            self.shared_memory['exception'] = 'AbortionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')  
+                
         # Set target
         target = SingleTarget(observer = self.telescope.observer, 
                               ra = ra, 
@@ -181,7 +186,12 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                     self.is_running = False
                     raise ConnectionException(f'[{type(self).__name__}] is failed: filterwheel is disconnected.')
                 except AbortionException:
-                    self.abort()
+                    self.telescope.camera.wait_idle()
+                    self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                    self.shared_memory['exception'] = 'AbortionException'
+                    self.shared_memory['is_running'] = False
+                    self.is_running = False
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')  
                 except ActionFailedException:
                     self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: filterchange failure.')
                     self.shared_memory['exception'] = 'ActionFailedException'
@@ -270,29 +280,11 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             return True
 
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
+        self.telescope.camera.wait_idle()
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'
         self.shared_memory['is_running'] = False
         self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')      
-        
-# %%
-
-if __name__ == '__main__':
-    device = SingleTelescope(unitnum = 21)
-    
-    abort_action = Event()
-    #device.filt.connect()
-    #device.cam.connect()
-    e =Exposure(device, abort_action)
-    from multiprocessing import Process
-#%%
-if __name__ == '__main__':
-    abort_action = Event()
-
-    e =Exposure(device, abort_action)
-    p = Process(target = e.run, kwargs = dict(frame_number = 1, exptime = 10, filter_ = 'r', gain = 2750))
-    p.start()
-    #e.run(1, exptime = 1, filter_ = 'g', gain = 2750)
-# %%

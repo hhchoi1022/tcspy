@@ -97,8 +97,13 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
         
         # If not aborted, execute the action
         if self.abort_action.is_set():
-            self.abort()
-         
+            self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+            self.telescope.focuser.wait_idle()
+            self.shared_memory['exception'] = 'AbortionException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
+            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                 
         # Start action
         if self.telescope_status.focuser.lower() == 'idle':
             try:
@@ -113,7 +118,12 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
                 self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser move failure.')            
             except AbortionException:
-                self.abort()
+                self.telescope.focuser.wait_idle()
+                self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
         elif self.telescope_status.focuser.lower() == 'busy':
             self.telescope.log.critical(f'=====LV1[{type(self).__name__}] is failed: focuser is busy.')
             self.shared_memory['exception'] = 'ActionFailedException'
@@ -127,16 +137,19 @@ class ChangeFocus(Interface_Runnable, Interface_Abortable):
             self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: focuser status error.')
         
+        self.telescope.log.info(f'=====LV1[{type(self).__name__}] is finished.')
         self.shared_memory['succeeded'] = True
         self.shared_memory['is_running'] = False
         self.is_running = False
-        self.telescope.log.info(f'=====LV1[{type(self).__name__}] is finished.')
         return True
             
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
+        self.telescope.focuser.wait_idle()
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'
         self.shared_memory['is_running'] = False
         self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
+# %%

@@ -49,7 +49,7 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         self.multitelescopes = multitelescopes
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
-        #self.shared_memory = dict()
+        self.multiaction = None
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
         self.shared_memory['succeeded'] = False
@@ -274,6 +274,9 @@ class DeepObservation(Interface_Runnable, Interface_Abortable):
         A function to abort the ongoing spectroscopic observation process.
         """
         self.abort_action.set()
+        if self.multiaction:
+            while any(self.multiaction.status.values()):
+                time.sleep(0.1)
         self.multitelescopes.log.warning(f'===============LV3[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'
         self.shared_memory['is_running'] = False

@@ -3,7 +3,8 @@ from astropy.io import ascii
 import time
 from astropy.time import Time
 import numpy as np
-from threading import Event
+from multiprocessing import Event
+from multiprocessing import Lock
 
 from tcspy.devices import PWI4
 from tcspy.utils.logger import mainLogger
@@ -61,6 +62,9 @@ class mainFocuser_pwi4(mainConfig):
         super().__init__(unitnum = unitnum)
         self.device = PWI4(self.config['FOCUSER_HOSTIP'], self.config['FOCUSER_PORTNUM'])
         self.status = self.get_status()
+        self.is_idle = Event()
+        self.is_idle.set()
+        self.device_lock = Lock()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         
     def get_status(self) -> dict:
@@ -200,29 +204,45 @@ class mainFocuser_pwi4(mainConfig):
         abort_action : Event
             Event object for aborting the movement.
         """
-        maxstep =  self.config['FOCUSER_MAXSTEP']
-        minstep =  self.config['FOCUSER_MINSTEP']
-        if (position <= minstep) | (position > maxstep):
-            self._log.critical('Set position is out of bound of this focuser (Min : %d Max : %d)'%(minstep, maxstep))
-            raise FocusChangeFailedException('Set position is out of bound of this focuser (Min : %d Max : %d)'%(minstep, maxstep))
-        else:
-            status =  self.get_status()
-            current_position = status['position']
-            self._log.info('Moving focuser position... (Current : %s To : %s)'%(current_position, position))
-            self.device.focuser_goto(target = position)
-            time.sleep(float(self.config['FOCUSER_CHECKTIME']))
-            status =  self.get_status()
-            while status['is_moving']:
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+        
+        try:
+            maxstep =  self.config['FOCUSER_MAXSTEP']
+            minstep =  self.config['FOCUSER_MINSTEP']
+            if (position <= minstep) | (position > maxstep):
+                self._log.critical('Set position is out of bound of this focuser (Min : %d Max : %d)'%(minstep, maxstep))
+                raise FocusChangeFailedException('Set position is out of bound of this focuser (Min : %d Max : %d)'%(minstep, maxstep))
+            else:
                 status =  self.get_status()
                 current_position = status['position']
+                self._log.info('Moving focuser position... (Current : %s To : %s)'%(current_position, position))
+                self.device.focuser_goto(target = position)
                 time.sleep(float(self.config['FOCUSER_CHECKTIME']))
-                if abort_action.is_set():
-                    self.abort()
-            time.sleep(3 * float (self.config['FOCUSER_CHECKTIME']))
-            status =  self.get_status()
-            current_position = status['position']
-            self._log.info('Focuser position is set (Current : %s)'%(current_position))
-        return True
+                status =  self.get_status()
+                while status['is_moving']:
+                    status =  self.get_status()
+                    current_position = status['position']
+                    time.sleep(float(self.config['FOCUSER_CHECKTIME']))
+                    if abort_action.is_set():
+                        self.device.focuser_stop()   
+                        time.sleep(float(self.config['FOCUSER_CHECKTIME']))
+                        raise AbortionException('Focuser movement is aborted')
+                time.sleep(3 * float (self.config['FOCUSER_CHECKTIME']))
+                status =  self.get_status()
+                current_position = status['position']
+                self._log.info('Focuser position is set (Current : %s)'%(current_position))
+            return True
+        
+        except Exception as e:
+            exception_raised = e
+        
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
     
     def fans_on(self):
         """
@@ -276,53 +296,46 @@ class mainFocuser_pwi4(mainConfig):
             If autofocus fails.
 
         """
-        status =  self.get_status()
-        current_position = status['position']
-        self._log.info('Start autofocus (Central position : %s)'%(current_position))
-        self.device.autofocus_start()
-        time.sleep(float(self.config['FOCUSER_CHECKTIME']))
-        status =  self.get_status()
-        while status['is_autofocusing']:
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+        
+        try:
             status =  self.get_status()
+            current_position = status['position']
+            self._log.info('Start autofocus (Central position : %s)'%(current_position))
+            self.device.autofocus_start()
             time.sleep(float(self.config['FOCUSER_CHECKTIME']))
-            if abort_action.is_set():
-                self.autofocus_stop()
-                status =  self.get_status()
-                self._log.warning('Autofocus is aborted. Move back to the previous position')
-                self.move(position = current_position, abort_action= Event())
-                raise AbortionException('Autofocus is aborted. Move back to the previous position')
-        status =  self.get_status()
-        while status['is_moving']:
             status =  self.get_status()
-        time.sleep(3 * float(self.config['FOCUSER_CHECKTIME']))
-        status =  self.get_status()
-        if (status['is_autofocus_success']) & (status['autofocus_tolerance'] < self.config['AUTOFOCUS_TOLERANCE']):
-            self._log.info('Autofocus complete! (Best position : %s (%s))'%(status['autofocus_bestposition'], status['autofocus_tolerance']))
-        else:
-            self.move(position = current_position, abort_action= abort_action)
-            self._log.warning('Autofocus failed. Move back to the previous position')
-            raise AutofocusFailedException('Autofocus failed. Move back to the previous position')
-        return status['is_autofocus_success'], status['autofocus_bestposition'], status['autofocus_tolerance']
-
-    def autofocus_stop(self):
-        """
-        Stop autofocus.
-        """
-        self.device.autofocus_stop()
+            while status['is_autofocusing']:
+                status =  self.get_status()
+                time.sleep(float(self.config['FOCUSER_CHECKTIME']))
+                if abort_action.is_set():
+                    self.device.autofocus_stop()
+                    self._log.warning('Autofocus is aborted. Move back to the previous position')
+                    self.move(position = current_position, abort_action= Event())
+                    raise AbortionException('Autofocus is aborted. Move back to the previous position')
+            status =  self.get_status()
+            while status['is_moving']:
+                status =  self.get_status()
+            time.sleep(3 * float(self.config['FOCUSER_CHECKTIME']))
+            status =  self.get_status()
+            if (status['is_autofocus_success']) & (status['autofocus_tolerance'] < self.config['AUTOFOCUS_TOLERANCE']):
+                self._log.info('Autofocus complete! (Best position : %s (%s))'%(status['autofocus_bestposition'], status['autofocus_tolerance']))
+            else:
+                self.move(position = current_position, abort_action= Event())
+                self._log.warning('Autofocus failed. Move back to the previous position')
+                raise AutofocusFailedException('Autofocus failed. Move back to the previous position')
+            return status['is_autofocus_success'], status['autofocus_bestposition'], status['autofocus_tolerance']
         
-    def abort(self):
-        """
-        Abort the movement of the Focuser device
-        """
-        self.device.focuser_stop()   
-        self._log.warning('Focuser moving is aborted')
-        raise AbortionException('Focuser moving is aborted')
-
+        except Exception as e:
+            exception_raised = e
         
-# %% Test
-if __name__ == '__main__':
-    #Focus = Focuser('192.168.0.4:11111', 0)
-    F = mainFocuser(unitnum = 2)
-    F.connect()
-    F.move(8000, Event())
-# %%
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
+            
+    def wait_idle(self):
+        self.is_idle.wait()

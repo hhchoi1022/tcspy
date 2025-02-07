@@ -62,7 +62,11 @@ class Connect(Interface_Runnable):
         result_connect_all = []
         for device_name in self.telescope.devices.keys():
             if self.abort_action.is_set():
-                self.abort()
+                self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.') 
             device = self.telescope.devices[device_name]
             status = devices_status[device_name]
             try:
@@ -83,27 +87,25 @@ class Connect(Interface_Runnable):
                 else:
                     self.telescope.log.info(f'{device_name} : Connected')
             else:
-                self.abort()
+                self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
+                self.shared_memory['exception'] = 'AbortionException'
+                self.shared_memory['is_running'] = False
+                self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+    
         self.telescope.log.info('='*30)
+        self.telescope.log.info(f'=====LV1[{type(self).__name__}] is finished.')
         self.shared_memory['succeeded'] = True
         self.shared_memory['is_running'] = False
         self.is_running = False
-        self.telescope.log.info(f'=====LV1[{type(self).__name__}] is finished.')
         if self.shared_memory['succeeded']:
             return True
     
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
+        self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'
         self.shared_memory['is_running'] = False
         self.is_running = False
-        self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
-# %%
-if __name__ == '__main__':
-    tel1 = SingleTelescope(unitnum = 1)
-    c1 = Connect(tel1, abort_action = Event())
-    A = c1.run()
-    #c2.run()
-
-#%%

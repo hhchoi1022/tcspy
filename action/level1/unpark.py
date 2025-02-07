@@ -105,6 +105,7 @@ class Unpark(Interface_Runnable, Interface_Abortable):
             return True    
         
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'
@@ -112,10 +113,3 @@ class Unpark(Interface_Runnable, Interface_Abortable):
         self.is_running = False 
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
 #%%
-if __name__ == '__main__':
-    device = SingleTelescope(unitnum = 2)
-    abort_action = Event()
-    s =Unpark(device, abort_action= abort_action)
-    s.run()
-
-# %%

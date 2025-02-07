@@ -50,7 +50,6 @@ class ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                  abort_action : Event):
         super().__init__()
         self.multitelescopes = multitelescopes
-        self.multiaction = None
         self.observer = list(self.multitelescopes.devices.values())[0].observer
         self.abort_action = abort_action
         #self.shared_memory = dict()
@@ -269,6 +268,9 @@ class ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):
         A function to abort the ongoing spectroscopic observation process.
         """
         self.abort_action.set()
+        if self.multiaction:
+            while any(self.multiaction.status.values()):
+                time.sleep(0.1)        
         self.multitelescopes.log.warning(f'===============LV3[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'
         self.shared_memory['is_running'] = False

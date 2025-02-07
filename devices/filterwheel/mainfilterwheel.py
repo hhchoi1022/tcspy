@@ -4,6 +4,8 @@ from astropy.time import Time
 import time
 import json
 from alpaca.filterwheel import FilterWheel
+from multiprocessing import Event
+from multiprocessing import Lock
 
 from tcspy.configuration import mainConfig
 from tcspy.utils import Timeout
@@ -50,6 +52,9 @@ class mainFilterwheel(mainConfig):
         super().__init__(unitnum = unitnum)
         self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])        
         self.status = self.get_status()
+        self.is_idle = Event()
+        self.is_idle.set()
+        self.device_lock = Lock()
         self.filtnames = self._get_all_filt_names()
         self.offsets = self._get_all_filt_offset()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
@@ -151,31 +156,45 @@ class mainFilterwheel(mainConfig):
         filter_ : str or int
             The position or name of the filter to move to.
         """
-        # Check whether the input filter is implemented
-        current_filter = self._get_current_filtinfo()['name']
-        if isinstance(filter_, str):
-            if not filter_ in self.filtnames:
-                self._log.critical(f'Filter {filter_} is not implemented [{self.filtnames}]')
-                raise FilterChangeFailedException(f'Filter {filter_} is not implemented [{self.filtnames}]')
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+        
+        try:
+            # Check whether the input filter is implemented
+            current_filter = self._get_current_filtinfo()['name']
+            if isinstance(filter_, str):
+                if not filter_ in self.filtnames:
+                    self._log.critical(f'Filter {filter_} is not implemented [{self.filtnames}]')
+                    raise FilterChangeFailedException(f'Filter {filter_} is not implemented [{self.filtnames}]')
+                else:
+                    self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, filter_))
+                    filter_ = self._filtname_to_position(filter_)
             else:
-                self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, filter_))
-                filter_ = self._filtname_to_position(filter_)
-        else:
-            if filter_ > len(self.filtnames):
-                self._log.critical(f'Position "{filter_}" is not implemented')
-                raise FilterChangeFailedException(f'Position "{filter_}" is not implemented')
-        
-        # Change filter
-        self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
-        self.device.Position = filter_
-        time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
-        while not self.device.Position == filter_:
+                if filter_ > len(self.filtnames):
+                    self._log.critical(f'Position "{filter_}" is not implemented')
+                    raise FilterChangeFailedException(f'Position "{filter_}" is not implemented')
+            
+            # Change filter
+            self._log.info('Changing filter... (Current : %s To : %s)'%(current_filter, self._position_to_filtname(filter_)))
+            self.device.Position = filter_
             time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
-        time.sleep(2*float(self.config['FTWHEEL_CHECKTIME']))
+            while not self.device.Position == filter_:
+                time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
+            time.sleep(2*float(self.config['FTWHEEL_CHECKTIME']))
+            
+            # Return result
+            self._log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
+            return True
         
-        # Return result
-        self._log.info('Filter changed (Current : %s)'%(self._get_current_filtinfo()['name']))
-        return True
+        except Exception as e:
+            exception_raised = e
+
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised            
 
     def get_offset_from_currentfilt(self,
                                     filter_ : str):
@@ -229,12 +248,8 @@ class mainFilterwheel(mainConfig):
         except:
             raise FilterRegisterException(f'Filter: one of {current_filt}, {changed_filt} is not registered')
 
-        
-    def abort(self):
-        """
-        Dummy method for aborting actions.
-        """
-        return
+    def wait_idle(self):
+        self.is_idle.wait()
     
     # Information giding
     def _get_all_filt_names(self) -> list:

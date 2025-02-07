@@ -111,6 +111,7 @@ class TrackingOff(Interface_Runnable, Interface_Abortable):
             return True    
         
     def abort(self):
+        self.telescope.register_logfile()
         self.abort_action.set()
         self.telescope.log.warning(f'=====LV1[{type(self).__name__}] is aborted.')
         self.shared_memory['exception'] = 'AbortionException'

@@ -120,6 +120,7 @@ class NightObservation(mainConfig):
                       note = target['note'],
                       comment = target['comment'],
                       is_ToO = target['is_ToO'],
+                      force_slewing = True,
                       autofocus_use_history = self.autofocus.use_history,
                       autofocus_history_duration = self.autofocus.history_duration,
                       autofocus_before_start = self.autofocus.before_start,
@@ -188,7 +189,7 @@ class NightObservation(mainConfig):
                 action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
                 do_trigger = True
         if do_trigger:
-            Thread(target = self.execute_observation, kwargs = {'action': action, 'telescopes': telescopes, 'kwargs': kwargs, 'target': target, 'abort_action': abort_action, 'observation_status': observation_status}, daemon = False).start()
+            Thread(target = self.execute_observation, kwargs = {'action': action, 'telescopes': telescopes, 'kwargs': kwargs, 'target': target, 'observation_status': observation_status}, daemon = False).start()
     
     def execute_observation(self, action, telescopes, kwargs, target, observation_status):
         # Update kwargs with observation_status
@@ -520,15 +521,11 @@ class NightObservation(mainConfig):
                 # Check process aborted
                 action_observation = action['action']
                 if isinstance(action_observation, (SpecObservation, DeepObservation, ColorObservation)):
-                    while any(action_observation.multiaction.status.values()):
+                    while any(action_observation.shared_memory.status.values()):
                         time.sleep(0.2)
                 else:
                     while action_observation.is_running:
                         time.sleep(0.2)
-                # Check telescope ready to observe
-                #all_tel_status = {tel_name:self._is_tel_ready(tel_status) for tel_name, tel_status in action['telescope'].status.items()}
-                #while not all(all_tel_status.values()):
-                #    all_tel_status = {tel_name:self._is_tel_ready(tel_status) for tel_name, tel_status in action['telescope'].status.items()}
                 self._pop_action(action_id =action['id'])
                 self._put_telescope(telescope = action['telescope'])
                 self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [action['target']['objname'], action['target']['id']], id_key = ['objname','id'])
@@ -569,5 +566,5 @@ class NightObservation(mainConfig):
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
-    N = NightObservation(M, Event())#.run()
+    N = NightObservation(M, Event()).run()
 # %%

@@ -1,29 +1,29 @@
 {
     "7DT14": {
         "g": {
-            "update_time": "2025-01-18T02:51:51.580",
+            "update_time": "2025-02-07T06:26:38.518",
             "succeeded": true,
-            "focusval": 9366.2
+            "focusval": 9399.0
         },
         "r": {
-            "update_time": "2025-01-16T01:49:55.626",
+            "update_time": "2025-02-07T07:19:58.411",
             "succeeded": true,
-            "focusval": 9310.9
+            "focusval": 9392.7
         },
         "i": {
-            "update_time": "2025-01-31T03:42:32.431",
+            "update_time": "2025-02-05T09:13:25.183",
             "succeeded": true,
-            "focusval": 9398.9
+            "focusval": 9402.2
         },
         "m600": {
-            "update_time": "2025-01-31T04:36:16.803",
+            "update_time": "2025-02-05T00:38:29.956",
             "succeeded": true,
-            "focusval": 9517.6
+            "focusval": 9549.9
         },
         "m625": {
-            "update_time": "2025-01-31T04:43:44.853",
+            "update_time": "2025-02-05T00:45:56.909",
             "succeeded": true,
-            "focusval": 9671.9
+            "focusval": 9686.6
         },
         "m500": {
             "update_time": "2025-01-16T02:11:50.548",
