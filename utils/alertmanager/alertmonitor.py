@@ -302,7 +302,7 @@ if __name__ == "__main__":
                                send_email = True,
                                check_interval = 30,
                                since_days = 3,
-                               max_email_alerts = 5,
+                               max_email_alerts = 10,
                                max_sheet_alerts = 5,
                                match_to_tiles = True,
                                match_tolerance_minutes = 3)

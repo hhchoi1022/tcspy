@@ -602,10 +602,10 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
-    #Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
-    #Daily.clear(clear_only_7ds= False, clear_only_observed = False)
-    #Daily.from_IMS()
-    #Daily.from_RIS(size = 300)
+    Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
+    Daily.clear(clear_only_7ds= False, clear_only_observed = False)
+    Daily.from_IMS()
+    Daily.from_RIS(size = 300)
     # #from astropy.io import ascii
     # #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
     # #tbl_input = tbl[tbl['note'] == 'GW190814']
@@ -616,9 +616,9 @@ if __name__ == '__main__':
     # from astropy.io import ascii
     # tbl = ascii.read('./S240422ed.ascii')
     #RIS = DB_Annual('RIS').data
-    #Daily.from_GSheet('20250207_085708_GECKO')
-
-    #Daily.from_GSheet('WASP121b_monitoring')
+    # data = Daily.data
+    Daily.from_GSheet('20250208_235342_GECKO')
+    Daily.from_GSheet('WASP121b_monitoring')
 
     # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
     # tbl_to_insert['filter_'][:] = 'r'

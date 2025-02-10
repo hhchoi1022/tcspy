@@ -56,11 +56,12 @@ class AppScheduler(mainConfig):
 
             if post_schedule:
                 # Obsnight information
-                obsnight_info_str = "*Tonight information*\n" +str(self.obsnight).split('Attributes:\n')[1].split('time_inputted')[0]
+                obsnight_info_str = "*Tonight information*\n" + "```" +str(self.obsnight).split('Attributes:\n')[1].split('time_inputted')[0] + "```"
                 self.post_slack_thread(message = obsnight_info_str, alert_slack = alert_slack)
                 time.sleep(3)
                 if self.schedule.jobs:
-                    schedule_str = '*Tonight scheduled TCSpy applications*\n' 
+                    schedule_str = '*Tonight scheduled TCSpy applications*\n'
+                    contents = '' 
                     for job in self.schedule.jobs:
                         next_run = job.next_run.strftime("%Y-%m-%d %H:%M:%S")
                         job_str = str(job)
@@ -69,8 +70,9 @@ class AppScheduler(mainConfig):
                         # Extract kwargs using regex
                         kwargs_match = re.search(r"kwargs=({.*?})", job_str)
                         kwargs = kwargs_match.group(1) if kwargs_match else "{}"
-                        schedule_str += f"`{function_name}`: {next_run} \nKwargs: {kwargs}\n\n"
-                    self.post_slack_thread(message = schedule_str, alert_slack = alert_slack)
+                        contents += f"{function_name}: {next_run} \nKwargs: {kwargs}\n\n"
+                    contents = f"```{contents}```"
+                    self.post_slack_thread(message = schedule_str+contents, alert_slack = alert_slack)
             
     
     def post_slack_thread(self, message, alert_slack: bool = True):
