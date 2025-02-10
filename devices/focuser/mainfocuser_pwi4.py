@@ -312,6 +312,8 @@ class mainFocuser_pwi4(mainConfig):
                 time.sleep(float(self.config['FOCUSER_CHECKTIME']))
                 if abort_action.is_set():
                     self.device.autofocus_stop()
+                    while status['is_moving']:
+                        status =  self.get_status()
                     self._log.warning('Autofocus is aborted. Move back to the previous position')
                     self.move(position = current_position, abort_action= Event())
                     raise AbortionException('Autofocus is aborted. Move back to the previous position')
@@ -322,12 +324,12 @@ class mainFocuser_pwi4(mainConfig):
             status =  self.get_status()
             if (status['is_autofocus_success']) & (status['autofocus_tolerance'] < self.config['AUTOFOCUS_TOLERANCE']):
                 self._log.info('Autofocus complete! (Best position : %s (%s))'%(status['autofocus_bestposition'], status['autofocus_tolerance']))
+                return status['is_autofocus_success'], status['autofocus_bestposition'], status['autofocus_tolerance']
             else:
                 self.move(position = current_position, abort_action= Event())
                 self._log.warning('Autofocus failed. Move back to the previous position')
                 raise AutofocusFailedException('Autofocus failed. Move back to the previous position')
-            return status['is_autofocus_success'], status['autofocus_bestposition'], status['autofocus_tolerance']
-        
+            
         except Exception as e:
             exception_raised = e
         
