@@ -160,7 +160,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                     self.shared_memory['exception'] = 'AbortionException'
                     self.shared_memory['is_running'] = False
                     self.is_running = False
-                    raise AbortionException(f'[{type(self).__name__}] is aborted.') 
+                    raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')
                 except ActionFailedException:
                     self.telescope.log.critical(f'========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
                     self.shared_memory['exception'] = 'ActionFailedException'
@@ -188,7 +188,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 self.shared_memory['exception'] = 'AbortionException'
                 self.shared_memory['is_running'] = False
                 self.is_running = False
-                raise AbortionException(f'[{type(self).__name__}] is aborted.') 
+                raise AbortionException(f'[{type(self).__name__}] is aborted: Filterwheel movement is aborted.')
             except ActionFailedException:
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel movement failure.')
                 self.shared_memory['exception'] = 'ActionFailedException'
@@ -232,7 +232,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             raise AbortionException(f'[{type(self).__name__}] is aborted.') 
         except AutofocusFailedException:
             self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 1st try failed. Try autofocus with the focus history')
-
+            
         # When succeeded
         if result_autofocus:
             self.update_focus_history(filter_ = filter_, focusval =autofocus_position, is_succeeded = result_autofocus)
@@ -262,7 +262,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 self.shared_memory['exception'] = 'AbortionException'
                 self.shared_memory['is_running'] = False
                 self.is_running = False
-                raise AbortionException(f'[{type(self).__name__}] is aborted.') 
+                raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')
             except ActionFailedException:
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
                 self.shared_memory['exception'] = 'ActionFailedException'
@@ -316,6 +316,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                     self.shared_memory['exception'] = 'AbortionException'
                     self.shared_memory['is_running'] = False
                     self.is_running = False
+                    raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')
                 except ActionFailedException:
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
                     self.shared_memory['exception'] = 'ActionFailedException'
@@ -366,6 +367,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             self.shared_memory['exception'] = 'AbortionException'
             self.shared_memory['is_running'] = False
             self.is_running = False
+            raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')
         except ActionFailedException:
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
             self.shared_memory['exception'] = 'ActionFailedException'

@@ -6,7 +6,7 @@ from tcspy.utils.target import SingleTarget
 from tcspy.utils.connector import SQLConnector
 from tcspy.utils.nightsession import NightSession
 
-from astropy.table import Table 
+from astropy.table import Table  
 from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -175,6 +175,7 @@ class DB_Daily(mainConfig):
             target_to_update = target_tbl_to_update[i]  
             self.sql.update_row(tbl_name = self.tblname, update_value = list(value.values()), update_key = list(value.keys()), id_value= [target_to_update['id']], id_key = ['id'])
         print(f'{len(target_tbl_to_update)} targets are updated')
+        return self.data
     
     def best_target(self,
                     utctime : Time = Time.now(),
@@ -196,10 +197,10 @@ class DB_Daily(mainConfig):
         rows_to_update = [any(row[name] is None or row[name] == '' for name in column_names_for_scoring) for row in all_targets]
         target_tbl_to_update =  all_targets[rows_to_update]
         if len(target_tbl_to_update) > 0:
-            self.initialize(initialize_all= False)
-        
-        target_all = self.data
-        idx_ToO = all_targets['is_ToO'] == 1
+            target_all = self.initialize(initialize_all= False)
+        else:
+            target_all = self.data
+        idx_ToO = target_all['is_ToO'] == 1
         target_ToO = target_all[idx_ToO]
         target_ordinary = target_all[~idx_ToO]
         
@@ -603,7 +604,7 @@ class DB_Daily(mainConfig):
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
     Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
-    Daily.clear(clear_only_7ds= False, clear_only_observed = False)
+    Daily.clear(clear_only_7ds= True, clear_only_observed = False)
     Daily.from_IMS()
     Daily.from_RIS(size = 300)
     # #from astropy.io import ascii
@@ -617,7 +618,7 @@ if __name__ == '__main__':
     # tbl = ascii.read('./S240422ed.ascii')
     #RIS = DB_Annual('RIS').data
     # data = Daily.data
-    Daily.from_GSheet('20250208_235342_GECKO')
+    #Daily.from_GSheet('20250208_235342_GECKO')
     Daily.from_GSheet('WASP121b_monitoring')
 
     # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]

@@ -21,6 +21,7 @@ from tcspy.action.level2 import AutoFocus
 from tcspy.utils.exception import *
 import numpy as np
 import time
+import uuid
 #%%
 class AutoFlat(Interface_Runnable, Interface_Abortable):
     def __init__(self, 
@@ -105,7 +106,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             self.shared_memory['exception'] = 'AbortionException'
             self.shared_memory['is_running'] = False
             self.is_running = False
-            raise AbortionException(f'[{type(self).__name__}] is aborted.')
+            raise AbortionException(f'[{type(self).__name__}] is aborted: mount sleing is aborted.')
         except ActionFailedException:
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
             self.shared_memory['exception'] = 'ActionFailedException'
@@ -161,7 +162,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                 self.shared_memory['exception'] = 'AbortionException'
                 self.shared_memory['is_running'] = False
                 self.is_running = False
-                raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                raise AbortionException(f'[{type(self).__name__}] is aborted: Exposure is aborted')
             except:
                 self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is failed.')
                 self.shared_memory['exception'] = 'ActionFailedException'
@@ -205,6 +206,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
             obs_count = 0
             exptime = self.telescope.config['AUTOFLAT_MINEXPTIME']
             sky_level_per_second_this = 0
+            id_ = uuid.uuid4().hex
             
             while obs_count < count:    
                 # Check camera status
@@ -246,12 +248,12 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                 if (sky_level > self.telescope.config['AUTOFLAT_MINCOUNT']) and (sky_level < self.telescope.config['AUTOFLAT_MAXCOUNT']):
                     target = SingleTarget(observer = self.telescope.observer, 
                                           ra = None,
-                                          dec = None,
+                                          dec = None, 
                                           alt = self.telescope.config['AUTOFLAT_ALTITUDE'], 
                                           az = self.telescope.config['AUTOFLAT_AZIMUTH'], 
                                           name = 'FLAT', 
                                           objtype= 'FLAT',
-                                          id_ = None,
+                                          id_ = id_,
                                           note = None,
                                           comment = None,
                                           is_ToO = False,

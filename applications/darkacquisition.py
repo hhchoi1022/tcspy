@@ -2,6 +2,7 @@
 from multiprocessing import Event
 from threading import Thread
 import uuid
+import time
 
 from tcspy.configuration import mainConfig
 from tcspy.devices import MultiTelescopes
@@ -80,9 +81,21 @@ class DarkAcquisition(mainConfig):
 
 # %%
 if __name__ == '__main__':
+    
     from tcspy.devices import MultiTelescopes
+    from tcspy.utils.connector import SlackConnector
+    from tcspy.utils import NightSession
     M = MultiTelescopes()
-    DarkAcquisition(M, Event()).run(count = 9,  
-                                    exptime = 30, 
-                                    binning = 1, 
-                                    gain =0)
+    abort_action = Event()
+    application = DarkAcquisition(M, abort_action)
+    slack = SlackConnector(token_path= application.config['SLACK_TOKEN'], default_channel_id= application.config['SLACK_DEFAULT_CHANNEL'])
+    obsnight = NightSession().obsnight_utc
+    tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
+    message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
+    if message_ts:
+        slack.post_thread_message(message_ts,f'{type(application).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    application.run(count = 9, exptime = 60, binning = 1, gain =2750)
+    while application.is_running:
+        time.sleep(0.1)
+    if message_ts:
+        slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')

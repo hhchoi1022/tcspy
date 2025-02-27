@@ -3,6 +3,7 @@
 
 from multiprocessing import Event, Lock
 from threading import Thread
+import time
 
 from tcspy.configuration import mainConfig
 from tcspy.devices import MultiTelescopes
@@ -141,8 +142,25 @@ class Shutdown(mainConfig):
 # %%
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
+    from tcspy.utils.connector import SlackConnector
+    from tcspy.utils import NightSession
+    
     M = MultiTelescopes()
-    Shutdown(M, Event()).run(fanoff =True,
-                             slew = True, 
-                             warm = True)
-# %%
+    abort_aciton = Event()
+    S = Shutdown(M, abort_aciton)
+    slack = SlackConnector(token_path= S.config['SLACK_TOKEN'], default_channel_id= S.config['SLACK_DEFAULT_CHANNEL'])
+    obsnight = NightSession().obsnight_utc
+    tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
+    message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
+    if message_ts:
+        slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    S.run(fanoff = True,                    
+          slew = True,
+          warm = True)
+    while S.is_running:
+        time.sleep(0.1)
+    if message_ts:
+        slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+
+
+

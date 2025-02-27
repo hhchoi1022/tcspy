@@ -145,7 +145,7 @@ class AlertMonitor(mainConfig):
         if send_email:
             print(f"[{datetime.datetime.now()}] Sending alert notification via email.")
             self.alertbroker.send_alertmail(alert, 
-                                            users=self.users['authorized'], 
+                                            users=self.users['authorized'] + self.users['normal'], 
                                             scheduled_time=tonight_str, 
                                             attachment=os.path.join(alert.historypath, 'alert_formatted.ascii_fixed_width'))
 

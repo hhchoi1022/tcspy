@@ -222,7 +222,7 @@ class GmailConnector:
                 since_time = datetime.utcnow() - timedelta(days=since_days)
                 since_date = since_time.strftime('%d-%b-%Y')
                 search_criteria = f'(SINCE "{since_date}")'
-                print(f'Searching for emails since {since_time}...')    
+                print(f'Searching for emails since {since_date}...')    
 
             status, data = self.server_imap.search(None, search_criteria)
             email_ids = data[0].split()

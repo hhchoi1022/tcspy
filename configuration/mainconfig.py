@@ -1,3 +1,4 @@
+
 # Written by Hyeonho Choi 2023.01
 # %%
 import glob
@@ -199,7 +200,8 @@ class mainConfig:
                                                            'myungshin.im@gmail.com',  # Myungshin Im
                                                            'takdg123@gmail.com',
                                                            'seowon.chang@gmail.com',
-                                                           'gregorypaek94@gmail.com'
+                                                           'gregorypaek94@gmail.com',
+                                                           ''
                                                            ],
                                   ALERTBROKER_NORMUSERS = ['hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
                                                            ],
@@ -238,12 +240,18 @@ class mainConfig:
         
         nightsession_params = dict(NIGHTSESSION_SUNALT_AUTOFLAT = -8,
                                    NIGHTSESSION_SUNALT_STARTUP = -6,
-                                   NIGHTSESSION_SUNALT_OBSERVATION = -12,
-                                   NIGHTSESSION_SUNALT_SHUTDOWN = 0)
+                                   NIGHTSESSION_SUNALT_OBSERVATION = -15,
+                                   NIGHTSESSION_SUNALT_SHUTDOWN = 10)
         
         multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_home, ".tcspy", "sync", "multitelescopes.dict")}')
         
         nightobs_params = dict(NIGHTOBS_SAFETYPE = 'safetymonitor',)        
+        
+        appscheduler_params = dict(APPSCHEDULER_AUTOBIAS = True,
+                                   APPSCHEDULER_AUTODARK = True,
+                                   APPSCHEDULER_AUTOFLAT = True,
+                                   APPSCHEDULER_SEARCHKEY = '/data2/obsdata/7DT??/image/$$TONIGHT$$/*.fits',
+                                   )
         self.make_configfile(mount_params, filename='mount.config', savepath = savepath_unit)
         self.make_configfile(camera_params, filename='camera.config', savepath = savepath_unit)
         self.make_configfile(filterwheel_params, filename='filterWheel.config', savepath = savepath_unit)
@@ -274,6 +282,7 @@ class mainConfig:
         self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_global)
         self.make_configfile(nightsession_params, filename = 'nightsession.config', savepath= self.path_global)
         self.make_configfile(multitelescopes_params, filename = 'multitelescopes.config', savepath= self.path_global)
+        self.make_configfile(appscheduler_params, filename = 'appscheduler.config', savepath= self.path_global)
         
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)

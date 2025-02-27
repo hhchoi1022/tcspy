@@ -268,7 +268,11 @@ class AlertBroker(mainConfig):
                 for mail_dict in maillist:
                     try:
                         alert = Alert()
-                        alert.decode_mail(mail_dict, match_to_tiles = match_to_tiles, match_tolerance_minutes = match_tolerance_minutes)
+                        try:
+                            alert.decode_mail(mail_dict, match_to_tiles = match_to_tiles, match_tolerance_minutes = match_tolerance_minutes)
+                        except:
+                            # When there is no matched 7DS tiles
+                            alert.decode_mail(mail_dict, match_to_tiles = False, match_tolerance_minutes = 3)
                         alert.historypath = os.path.join(self.config['ALERTBROKER_PATH'], alert.alert_type, get_mail_generated_time(mail_dict))
                         # If new alert, save the alert
                         if not self.is_history_saved(history_path = alert.historypath):
@@ -665,9 +669,9 @@ class AlertBroker(mainConfig):
         self._set_slack()
         try:
             slack_message = format_slack_body(alert = alert, scheduled_time = scheduled_time)
-            self.slack.post_message(blocks = slack_message)            
+            result = self.slack.post_message(blocks = slack_message)            
             time.sleep(5)
-            message_ts = self.slack.get_message_ts(match_string = alert.formatted_data['id'][0])
+            message_ts = result['ts']
             print('Slack message is sent.')
             return message_ts
         except:

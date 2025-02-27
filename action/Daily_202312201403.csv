@@ -1,4 +1,0 @@
-"idx","objname","RA","De","exptime","filter","count","binning","priority","deep_n_tel","mode","note","obs_status","obstime_start","risetime","transittime","settime","maxalt","moonsep","obs_project","id"
-1,Tile_03072,348.079,-57.7358,"60",g,"3","1",1.0,1,Search,,unscheduled,,,,,,,ToO,"259add5f55af44f08b771719f72d5152"
-2,Tile_03073,350.464,-57.7358,"60",r,"3","1",1.0,1,Search,,unscheduled,,,,,,,ToO,df144ca6ce9344c88062147e42a426bd
-3,Tile_03074,352.848,-57.7358,"60",i,"3","1",1.0,1,Search,,unscheduled,,,,,,,ToO,"20b6f2de11934cd8849dd18a7c5291c7"

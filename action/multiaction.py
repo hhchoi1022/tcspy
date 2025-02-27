@@ -113,21 +113,12 @@ if __name__ == '__main__':
     from threading import Thread
     from multiprocessing import Event
     from tcspy.action.level2 import *
-    list_telescope = [SingleTelescope(1),
-                      SingleTelescope(2),
-                      SingleTelescope(3),
-                      SingleTelescope(5),
-                      SingleTelescope(6),
-                      SingleTelescope(7),
-                      SingleTelescope(8),
-                      SingleTelescope(9),
-                      SingleTelescope(10),
-                      SingleTelescope(11),
-                      ]
+    from tcspy.devices import MultiTelescopes
+    m = MultiTelescopes()
 #%%
 if __name__ == '__main__':
     abort_action = Event()
-    m = MultiAction(list_telescope, dict(alt = 80, az =180), SlewAltAz, abort_action)
+    m = MultiAction(list(m.devices.values()), dict(), FansOn, abort_action)
     p = Thread(target = m.run, kwargs = dict())
     p.start()
     #m.abort()

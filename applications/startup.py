@@ -4,6 +4,7 @@
 from multiprocessing import Event, Lock
 import time
 from threading import Thread
+from astropy.time import Time
 
 from tcspy.configuration import mainConfig
 from tcspy.devices import MultiTelescopes
@@ -133,10 +134,9 @@ class Startup(mainConfig):
             multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
 
             if '7DT02' in self.multitelescopes.devices.keys():
-                multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
-                multitelescopes_except_unit2.pop('7DT02')
-            multi_fanson = MultiAction(array_telescope= multitelescopes_except_unit2.values(), array_kwargs= params_fanson[:-1], function = FansOn, abort_action = self.abort_action)
-            
+               multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
+               multitelescopes_except_unit2.pop('7DT02')
+            multi_fanson = MultiAction(array_telescope= multitelescopes_except_unit2.values(), array_kwargs= params_fanson[:-1], function = FansOn, abort_action = self.abort_action)            
             #multi_fanson = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_fanson, function = FansOn, abort_action = self.abort_action)
             result_multi_fanson = multi_fanson.shared_memory
             
@@ -272,10 +272,26 @@ class Startup(mainConfig):
 # %%
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
+    from tcspy.utils.connector import SlackConnector
+    from tcspy.utils import NightSession
+    
     M = MultiTelescopes()
-    Startup(M, Event()).run(connect = False,
-                            fanon = True,                    
-                            home = True,
-                            slew = True,
-                            cool = True)
+    abort_aciton = Event()
+    S = Startup(M, abort_aciton)
+    slack = SlackConnector(token_path= S.config['SLACK_TOKEN'], default_channel_id= S.config['SLACK_DEFAULT_CHANNEL'])
+    obsnight = NightSession().obsnight_utc
+    tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
+    message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
+    if message_ts:
+        slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    S.run(connect = False,
+          fanon = True,                    
+          home = True,
+          slew = True,
+          cool = True)
+    while S.is_running:
+        time.sleep(0.1)
+    if message_ts:
+        slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+
 # %%

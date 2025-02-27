@@ -576,8 +576,8 @@ class mainCamera(mainConfig):
     def _update_gain(self,
                     gain : int = 0):
         try:
-            if self.device.Gain != gain:
-                self.device.Gain = gain
+            if self.device.Gain != int(gain):
+                self.device.Gain = int(gain)
             else:
                 pass
         except NotImplementedException as e:

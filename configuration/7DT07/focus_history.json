@@ -1,14 +1,14 @@
 {
     "7DT07": {
         "g": {
-            "update_time": "2025-02-10T04:47:10.163",
+            "update_time": "2025-02-13T08:25:08.745",
             "succeeded": true,
-            "focusval": 7202.8
+            "focusval": 7289.0
         },
         "r": {
-            "update_time": "2025-02-09T02:37:23.927",
+            "update_time": "2025-02-26T05:38:05.196",
             "succeeded": true,
-            "focusval": 7252.0
+            "focusval": 7206.6
         },
         "i": {
             "update_time": "2025-01-16T01:55:21.014",
@@ -16,14 +16,14 @@
             "focusval": 7173.2
         },
         "m650": {
-            "update_time": "2025-02-10T02:01:41.720",
+            "update_time": "2025-02-27T03:27:45.721",
             "succeeded": true,
-            "focusval": 7340.1
+            "focusval": 7321.1
         },
         "m675": {
-            "update_time": "2025-02-10T02:08:44.391",
+            "update_time": "2025-02-27T02:51:23.819",
             "succeeded": true,
-            "focusval": 7362.0
+            "focusval": 7305.6
         },
         "m525": {
             "update_time": "2025-01-16T02:10:35.280",

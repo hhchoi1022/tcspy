@@ -26,25 +26,26 @@ class NightSession(mainConfig):
         horizon_flat = self.config['NIGHTSESSION_SUNALT_AUTOFLAT']
         horizon_startup = self.config['NIGHTSESSION_SUNALT_STARTUP']
         horizon_observation = self.config['NIGHTSESSION_SUNALT_OBSERVATION']
-        horizon_shutdown = 0
+        horizon_shutdown = self.config['NIGHTSESSION_SUNALT_SHUTDOWN']
         obsnight = obsnight()
                     
         # Celestial information
-        obsnight.sunrise_civil = self.observer.tonight(utctime, horizon = 0)[1]
-        obsnight.sunset_civil = self.observer.sun_settime(obsnight.sunrise_civil, mode = 'previous', horizon= 0)        
-        obsnight.sunrise_nautical = self.observer.sun_risetime(obsnight.sunrise_civil, mode = 'previous', horizon= -6)
-        obsnight.sunset_nautical = self.observer.sun_settime(obsnight.sunrise_civil, mode = 'previous', horizon= -6)
-        obsnight.sunrise_astro = self.observer.sun_risetime(obsnight.sunrise_civil, mode = 'previous', horizon= -12)
-        obsnight.sunset_astro = self.observer.sun_settime(obsnight.sunrise_civil, mode = 'previous', horizon= -12)
-        obsnight.sunrise_night = self.observer.sun_risetime(obsnight.sunrise_civil, mode = 'previous', horizon= -18)
-        obsnight.sunset_night = self.observer.sun_settime(obsnight.sunrise_civil, mode = 'previous', horizon= -18)        
+        obsnight.sunrise_shutdown = self.observer.tonight(utctime, horizon = horizon_shutdown)[1]
+        obsnight.sunrise_civil = self.observer.sun_risetime(obsnight.sunrise_shutdown, mode = 'previous', horizon = 0)
+        obsnight.sunset_civil = self.observer.sun_settime(obsnight.sunrise_shutdown, mode = 'previous', horizon= 0)        
+        obsnight.sunrise_nautical = self.observer.sun_risetime(obsnight.sunrise_shutdown, mode = 'previous', horizon= -6)
+        obsnight.sunset_nautical = self.observer.sun_settime(obsnight.sunrise_shutdown, mode = 'previous', horizon= -6)
+        obsnight.sunrise_astro = self.observer.sun_risetime(obsnight.sunrise_shutdown, mode = 'previous', horizon= -12)
+        obsnight.sunset_astro = self.observer.sun_settime(obsnight.sunrise_shutdown, mode = 'previous', horizon= -12)
+        obsnight.sunrise_night = self.observer.sun_risetime(obsnight.sunrise_shutdown, mode = 'previous', horizon= -18)
+        obsnight.sunset_night = self.observer.sun_settime(obsnight.sunrise_shutdown, mode = 'previous', horizon= -18)        
         # Observation information
-        obsnight.sunrise_flat = self.observer.tonight(time = utctime, horizon = horizon_flat)[1]
-        obsnight.sunset_flat = self.observer.sun_settime(obsnight.sunrise_civil, mode = 'previous', horizon= horizon_flat)        
-        obsnight.sunrise_startup = self.observer.sun_risetime(obsnight.sunrise_civil, mode = 'previous', horizon= horizon_startup)
-        obsnight.sunset_startup = self.observer.sun_settime(obsnight.sunrise_civil, mode = 'previous', horizon= horizon_startup)
-        obsnight.sunrise_observation = self.observer.sun_risetime(obsnight.sunrise_civil, mode = 'previous', horizon= horizon_observation)
-        obsnight.sunset_observation = self.observer.sun_settime(obsnight.sunrise_civil, mode = 'previous', horizon= horizon_observation)       
+        obsnight.sunrise_flat = self.observer.sun_risetime(obsnight.sunrise_shutdown, mode = 'previous', horizon= horizon_flat)
+        obsnight.sunset_flat = self.observer.sun_settime(obsnight.sunrise_shutdown, mode = 'previous', horizon= horizon_flat)        
+        obsnight.sunrise_startup = self.observer.sun_risetime(obsnight.sunrise_shutdown, mode = 'previous', horizon= horizon_startup)
+        obsnight.sunset_startup = self.observer.sun_settime(obsnight.sunrise_shutdown, mode = 'previous', horizon= horizon_startup)
+        obsnight.sunrise_observation = self.observer.sun_risetime(obsnight.sunrise_shutdown, mode = 'previous', horizon= horizon_observation)
+        obsnight.sunset_observation = self.observer.sun_settime(obsnight.sunrise_shutdown, mode = 'previous', horizon= horizon_observation)       
         obsnight.midnight = Time((obsnight.sunset_astro.jd + obsnight.sunrise_astro.jd)/2, format = 'jd')
         obsnight.observable_hour = (obsnight.sunrise_observation - obsnight.sunset_observation).jd * 24
         obsnight.time_inputted = utctime

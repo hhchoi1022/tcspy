@@ -248,13 +248,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 self.is_running = False
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
             except AbortionException:
-                print('ABCABC')
                 while action_slew.shared_memory['is_running']:
                     time.sleep(0.1)
                 self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted: slewing is aborted.')
                 self.shared_memory['exception'] = 'AbortionException'
                 self.shared_memory['is_running'] = False
                 self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted: Slewing is aborted.')
             except ActionFailedException:
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
                 self.shared_memory['exception'] = 'ActionFailedException'
@@ -273,8 +273,6 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 self.is_running = False
                 raise ConnectionException(f'[{type(self).__name__}] is failed: telescope is disconnected.')
             except AbortionException:
-                print('ABCABC')
-
                 while action_slew.shared_memory['is_running']:
                     print(action_slew.shared_memory['is_running'])
                     time.sleep(0.1)
@@ -282,6 +280,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 self.shared_memory['exception'] = 'AbortionException'
                 self.shared_memory['is_running'] = False
                 self.is_running = False
+                raise AbortionException(f'[{type(self).__name__}] is aborted: Autofocus is aborted.')
             except ActionFailedException:
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: slewing failure.')
                 self.shared_memory['exception'] = 'ActionFailedException'
@@ -340,7 +339,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 self.shared_memory['exception'] = 'AbortionException'
                 self.shared_memory['is_running'] = False
                 self.is_running = False
-                #self.abort()
+                raise AbortionException(f'[{type(self).__name__}] is aborted: Autofocus is aborted.')
             except ActionFailedException:
                 self.telescope.log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                 pass
@@ -367,10 +366,11 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 except AbortionException:
                     while action_changefocus.shared_memory['is_running']:
                         time.sleep(0.1)
-                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted: Autofocus is aborted.')
+                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted: Focuser movement is aborted.')
                     self.shared_memory['exception'] = 'AbortionException'
                     self.shared_memory['is_running'] = False
                     self.is_running = False
+                    raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')
                 except ActionFailedException:
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
                     self.shared_memory['exception'] = 'ActionFailedException'
@@ -391,10 +391,11 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 except AbortionException:
                     while action_filterchange.shared_memory['is_running']:
                         time.sleep(0.1)
-                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted: Autofocus is aborted.')
+                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted: Filterwheel movement is aborted.')
                     self.shared_memory['exception'] = 'AbortionException'
                     self.shared_memory['is_running'] = False
                     self.is_running = False
+                    raise AbortionException(f'[{type(self).__name__}] is aborted: Filterwheel movement is aborted.')
                 except ActionFailedException:
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Filterwheel movement failure.')
                     self.shared_memory['exception'] = 'ActionFailedException'
@@ -419,6 +420,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                         self.shared_memory['exception'] = 'AbortionException'
                         self.shared_memory['is_running'] = False
                         self.is_running = False
+                        raise AbortionException(f'[{type(self).__name__}] is aborted: Autofocus is aborted.')
                     except ActionFailedException:
                         self.telescope.log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                         pass
@@ -446,6 +448,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                             self.shared_memory['exception'] = 'AbortionException'
                             self.shared_memory['is_running'] = False  
                             self.is_running = False
+                            raise AbortionException(f'[{type(self).__name__}] is aborted: Autofocus is aborted.')
                         except ActionFailedException:
                             self.telescope.log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                             
@@ -470,7 +473,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                                                           name = name,
                                                           objtype = objtype,
                                                           id_ = id_,
-                                                          note = note)
+                                                          note = note,
+                                                          comment = comment,
+                                                          is_ToO = is_ToO)
 
                     # Update self.observation_status
                     observation_status[filter_]['observed'] += 1
@@ -485,10 +490,11 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 except AbortionException:
                     while action_exposure.shared_memory['is_running']:
                         time.sleep(0.1)
-                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted: Autofocus is aborted.')
+                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted: Exposure is aborted.')
                     self.shared_memory['exception'] = 'AbortionException'
                     self.shared_memory['is_running'] = False
                     self.is_running = False
+                    raise AbortionException(f'[{type(self).__name__}] is aborted: Autofocus is aborted.')
                 except ActionFailedException:
                     self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: exposure failure.')
                     self.shared_memory['exception'] = 'ActionFailedException'

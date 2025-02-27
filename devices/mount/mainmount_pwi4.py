@@ -108,21 +108,21 @@ class mainMount_pwi4(mainConfig):
                 status['update_time'] = PWI_status.response.timestamp_utc
                 status['jd'] = "{:.6f}".format(PWI_status.mount.julian_date)
                 coordinates = SkyCoord(PWI_status.mount.ra_j2000_hours, PWI_status.mount.dec_j2000_degs, unit = (u.hourangle, u.deg) )
-                status['ra'] =  float("{:.4f}".format(coordinates.ra.deg))
-                status['dec'] =  float("{:.4f}".format(coordinates.dec.deg))
-                status['ra_hour'] = "{:.4f}".format(PWI_status.mount.ra_j2000_hours)
-                status['dec_dec'] = "{:.4f}".format(PWI_status.mount.dec_j2000_degs)
-                status['alt'] = "{:.3f}".format(PWI_status.mount.altitude_degs)
-                status['az'] = "{:.3f}".format(PWI_status.mount.azimuth_degs)
+                status['ra'] =  float("{:.6f}".format(coordinates.ra.deg))
+                status['dec'] =  float("{:.6f}".format(coordinates.dec.deg))
+                status['ra_hour'] = "{:.6f}".format(PWI_status.mount.ra_j2000_hours)
+                status['dec_dec'] = "{:.6f}".format(PWI_status.mount.dec_j2000_degs)
+                status['alt'] = "{:.6f}".format(PWI_status.mount.altitude_degs)
+                status['az'] = "{:.6f}".format(PWI_status.mount.azimuth_degs)
                 status['at_parked'] = (PWI_status.mount.axis0.is_enabled == False) & (PWI_status.mount.axis1.is_enabled == False)
                 status['is_connected'] = PWI_status.mount.is_connected
                 status['is_tracking'] = PWI_status.mount.is_tracking
                 status['is_slewing'] = PWI_status.mount.is_slewing 
                 status['is_stationary'] = (PWI_status.mount.axis0.rms_error_arcsec < self.config['MOUNT_RMSRA']) & (PWI_status.mount.axis1.rms_error_arcsec < self.config['MOUNT_RMSDEC']) & (not PWI_status.mount.is_slewing)
-                status['axis1_rms'] = "{:.4f}".format(PWI_status.mount.axis0.rms_error_arcsec)
-                status['axis2_rms'] = "{:.4f}".format(PWI_status.mount.axis1.rms_error_arcsec)
-                status['axis1_maxvel'] = "{:.4f}".format(PWI_status.mount.axis0.max_velocity_degs_per_sec)
-                status['axis2_maxvel'] = "{:.4f}".format(PWI_status.mount.axis1.max_velocity_degs_per_sec)
+                status['axis1_rms'] = "{:.6f}".format(PWI_status.mount.axis0.rms_error_arcsec)
+                status['axis2_rms'] = "{:.6f}".format(PWI_status.mount.axis1.rms_error_arcsec)
+                status['axis1_maxvel'] = "{:.6f}".format(PWI_status.mount.axis0.max_velocity_degs_per_sec)
+                status['axis2_maxvel'] = "{:.6f}".format(PWI_status.mount.axis1.max_velocity_degs_per_sec)
         except:
             pass
         return status
@@ -281,23 +281,14 @@ class mainMount_pwi4(mainConfig):
         """
         Unpark the telescope.
         """
-        self.is_idle.clear()
-        self.device_lock.acquire()
-        exception_raised = None
-        
         try:
             self._log.info('Unparking telescope...')
             self.enable()
             self._log.info('Mount unparked')
             
         except:
-            exception_raised = ParkingFailedException('Mount unparking is failed')
-        
-        finally:
-            self.device_lock.release()
-            self.is_idle.set()
-            if exception_raised:
-                raise exception_raised
+            raise ParkingFailedException('Mount unparking is failed')
+
     
     def find_home(self, abort_action : Event):
         """

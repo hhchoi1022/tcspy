@@ -315,7 +315,9 @@ class mainFocuser_pwi4(mainConfig):
                     while status['is_moving']:
                         status =  self.get_status()
                     self._log.warning('Autofocus is aborted. Move back to the previous position')
+                    self.device_lock.release()
                     self.move(position = current_position, abort_action= Event())
+                    self.device_lock.acquire() 
                     raise AbortionException('Autofocus is aborted. Move back to the previous position')
             status =  self.get_status()
             while status['is_moving']:
@@ -326,12 +328,14 @@ class mainFocuser_pwi4(mainConfig):
                 self._log.info('Autofocus complete! (Best position : %s (%s))'%(status['autofocus_bestposition'], status['autofocus_tolerance']))
                 return status['is_autofocus_success'], status['autofocus_bestposition'], status['autofocus_tolerance']
             else:
+                self.device_lock.release()
                 self.move(position = current_position, abort_action= Event())
+                self.device_lock.acquire()
                 self._log.warning('Autofocus failed. Move back to the previous position')
                 raise AutofocusFailedException('Autofocus failed. Move back to the previous position')
-            
         except Exception as e:
             exception_raised = e
+            print(exception_raised)
         
         finally:
             self.device_lock.release()
@@ -341,3 +345,9 @@ class mainFocuser_pwi4(mainConfig):
             
     def wait_idle(self):
         self.is_idle.wait()
+
+# %%
+if __name__ == '__main__':
+    F = mainFocuser_pwi4(1)
+    F.autofocus_start(Event())
+# %%

@@ -392,3 +392,49 @@ if __name__ == '__main__':
     print(f'{current_obscount}/{tot_tilecount}')
 
 # %%
+if __name__ == '__main__':
+    import numpy as np
+    import matplotlib.pyplot as plt
+    all_data = db.data
+    obs_data = all_data[all_data['obs_count'] > 0]
+    high_data = all_data[all_data['obs_count'] > 3]
+    intense_data = all_data[all_data['obs_count'] > 10]
+
+    # Convert RA to radians and shift to [-180, 180] range
+    def convert_ra(ra):
+        return np.radians((ra + 180) % 360 - 180)
+
+    # Convert Dec to radians
+    def convert_dec(dec):
+        return np.radians(dec)
+
+    plt.figure(figsize=(10, 5), dpi=300)
+    ax = plt.subplot(111, projection="mollweide")
+
+    # Convert RA and Dec for plotting
+    all_ra = convert_ra(all_data['RA'])
+    all_dec = convert_dec(all_data['De'])
+
+    obs_ra = convert_ra(obs_data['RA'])
+    obs_dec = convert_dec(obs_data['De'])
+
+    high_ra = convert_ra(high_data['RA'])
+    high_dec = convert_dec(high_data['De'])
+
+    intense_ra = convert_ra(intense_data['RA'])
+    intense_dec = convert_dec(intense_data['De'])
+
+    # Plot data
+    ax.scatter(all_ra, all_dec, s=1, c='k', alpha=0.2, label="All Data")
+    ax.scatter(obs_ra, obs_dec, s=1, c='r', alpha=0.5, label="Observed")
+    ax.scatter(high_ra, high_dec, s=5, c='orange', alpha=0.5, label="N_obs >3")
+    ax.scatter(intense_ra, intense_dec, s=10, c='b', alpha=0.5, label="N_obs >10")
+
+    # Labels and grid
+    ax.set_xticklabels(['14h', '16h', '18h', '20h', '22h', '0h', '2h', '4h', '6h', '8h', '10h'])
+    ax.grid(True)
+    plt.legend()
+    plt.title(f"7DT RIS Observations on {Time.now().datetime.strftime('%Y-%m-%d')}")
+    plt.show()
+
+# %%
