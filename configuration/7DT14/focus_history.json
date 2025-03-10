@@ -11,19 +11,19 @@
             "focusval": 9360.8
         },
         "i": {
-            "update_time": "2025-02-26T05:38:18.751",
+            "update_time": "2025-03-10T04:27:09.401",
             "succeeded": true,
-            "focusval": 9404.7
+            "focusval": 9427.8
         },
         "m600": {
-            "update_time": "2025-02-27T03:28:00.732",
+            "update_time": "2025-03-10T04:11:50.208",
             "succeeded": true,
-            "focusval": 9541.7
+            "focusval": 9582.4
         },
         "m625": {
-            "update_time": "2025-02-27T03:01:07.574",
+            "update_time": "2025-03-10T04:19:17.240",
             "succeeded": true,
-            "focusval": 9682.8
+            "focusval": 9689.0
         },
         "m500": {
             "update_time": "2025-01-16T02:11:50.548",

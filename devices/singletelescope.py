@@ -10,6 +10,7 @@ from tcspy.devices.safetymonitor import mainSafetyMonitor
 from tcspy.utils.error import *
 from tcspy.devices.mount import mainMount_Alpaca
 from tcspy.devices.mount import mainMount_pwi4
+from tcspy.devices.switch import mainSwitch
 from tcspy.utils.logger import mainLogger
 import json
 from astropy.time import Time
@@ -66,6 +67,7 @@ class SingleTelescope(mainConfig):
         self.filterwheel = None
         self.weather = None
         self.safetymonitor = None
+        #self.switch = None
         self.observer = self._get_observer()
         self._set_devices()
         self.log = self.register_logfile()
@@ -93,6 +95,7 @@ class SingleTelescope(mainConfig):
         status['weather'] = self.weather.status
         status['safetymonitor'] = self.safetymonitor.status
         status['observer'] = self.observer.status
+        #status['switch'] = self.switch.status
         return status
 
     @property
@@ -112,6 +115,7 @@ class SingleTelescope(mainConfig):
         devices['filterwheel'] = self.filterwheel
         devices['weather'] = self.weather
         devices['safetymonitor'] = self.safetymonitor
+        #devices['switch'] = self.switch
         return devices
     
     def update_statusfile(self, 
@@ -157,6 +161,7 @@ class SingleTelescope(mainConfig):
         self.filterwheel.status = self.filterwheel.get_status()
         self.weather.status = self.weather.get_status()
         self.safetymonitor.status = self.safetymonitor.get_status()
+        #self.switch.status = self.switch.get_status()
     
     def _set_devices(self):
         self.camera = self._get_camera()
@@ -165,6 +170,7 @@ class SingleTelescope(mainConfig):
         self.filterwheel = self._get_filterwheel()
         self.weather = self._get_weather()
         self.safetymonitor = self._get_safetymonitor()
+        #self.switch = self._get_switch()
     
     def _get_camera(self):
         return mainCamera(unitnum= self.unitnum)
@@ -196,3 +202,11 @@ class SingleTelescope(mainConfig):
     
     def _get_safetymonitor(self):
         return mainSafetyMonitor()
+    
+    #def _get_switch(self):
+    #    return mainSwitch(unitnum = self.unitnum)
+
+# %%
+if __name__ == '__main__':
+    S = SingleTelescope(1)
+# %%

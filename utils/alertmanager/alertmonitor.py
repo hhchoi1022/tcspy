@@ -15,6 +15,7 @@ import json
 from astropy.time import Time
 import shutil
 from tcspy.utils.databases import DB_Daily
+
 #%%
 
 class AlertMonitor(mainConfig):

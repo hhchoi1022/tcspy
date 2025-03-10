@@ -276,12 +276,11 @@ class mainCamera(mainConfig):
         """
         self._log.info('Connecting to the Camera...')
         try:
-            if not self.device.Connected:
-                self.device.Connected = True
-                time.sleep(float(self.config['CAMERA_CHECKTIME']))
+            self.device.Connected = True
+            time.sleep(float(self.config['CAMERA_CHECKTIME']))
             while not self.device.Connected:
                 time.sleep(float(self.config['CAMERA_CHECKTIME']))
-            if  self.device.Connected:
+            if self.device.Connected:
                 self._log.info('Camera connected')
         except:
             self._log.critical('Connection failed')

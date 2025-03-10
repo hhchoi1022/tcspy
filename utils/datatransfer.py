@@ -125,7 +125,7 @@ class DataTransferManager(mainConfig):
             source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.archive_homedir, output_file_name)}', compress = False)
         else:
             source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
-        command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} -rst-retries 30 -rst-interval 120 -stall-timeout 1800 -continue-on-error -sync -sync-level 3 file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir}"
+        command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} -rst-retries {self.gridftp.numretries} -rst-interval {self.gridftp.retryinterval} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir}"
         #try:
         if transfer:
             print('GRIDFTP PROTOCOL WITH THE COMMAND:',command)
@@ -333,11 +333,11 @@ class DataTransferManager(mainConfig):
 
         
     
-# %%
+#%%
 if __name__ == '__main__':
     A = DataTransferManager()
     import time
-    A.run(key = '*/2025-02-23_gain2750', save_hash = True, 
+    A.run(key = '*/2025-02-21_gain2750', save_hash = True, 
           tar = True, transfer = True, 
           move_and_clean = True, from_archive = True)
     time.sleep(600)
@@ -345,20 +345,13 @@ if __name__ == '__main__':
           tar = True, transfer = True, 
           move_and_clean = True, from_archive = True)
     time.sleep(600)
-    A.run(key = '*/2025-02-21_gain2750', save_hash = True, 
+    A.run(key = '*/2025-02-24_gain2750', save_hash = True, 
           tar = True, transfer = True, 
           move_and_clean = True, from_archive = True)
     time.sleep(600)
-    # A.run(key = '*/2025-02-22_gain0', save_hash = True, 
-    #       tar = True, transfer = True, 
-    #       move_and_clean = False, from_archive = True)
-    # time.sleep(600)
-    # A.run(key = '*/2025-02-22_gain2750', save_hash = True, 
-    #       tar = True, transfer = True, 
-    #       move_and_clean = False, from_archive = True)
-    # time.sleep(600)
-
-
+    A.run(key = '*/2025-02-25_gain2750', save_hash = True, 
+          tar = True, transfer = True, 
+          move_and_clean = True, from_archive = True)
 
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     # A.start_monitoring(

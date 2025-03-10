@@ -7,6 +7,7 @@ from tcspy.utils.connector import SlackConnector
 from tcspy.applications import BiasAcquisition
 from tcspy.applications import DarkAcquisition
 from tcspy.applications import NightObservation
+from tcspy.applications import FilterCheck
 from tcspy.applications import Startup
 from tcspy.applications import Shutdown
 from tcspy.applications import FlatAcquisition
@@ -149,7 +150,25 @@ class AppScheduler(mainConfig):
             self.slack_alert_sender.post_thread_message(message_ts = self.slack_message_ts, text = message)
         else:
             return 
-        
+
+    def run_filtercheck(self,
+                        exptime = 1,
+                        alert_slack : bool = True):
+        with self.thread_lock:
+            start_time = time.strftime("%H:%M:%S", time.localtime())
+            self.post_slack_thread(message = f'Filtercheck is triggered: {start_time}', alert_slack = alert_slack)
+            action = FilterCheck(self.multitelescopes, abort_action = self.abort_action)
+            result = action.run(exptime = exptime)
+            while action.is_running:
+                time.sleep(1)
+            end_time = time.strftime("%H:%M:%S", time.localtime())
+            self.post_slack_thread(message = f'Filtercheck is finished: {end_time}', alert_slack = alert_slack)
+            # Convert result[0] dictionary to a formatted string
+            skylevel_str = '\n'.join([f'{band}: ' + ', '.join([f'{telescope}: {value}' for telescope, value in telescopes.items()])
+                                    for band, telescopes in result[0].items()])
+            self.post_slack_thread(message=f'Skylevel:\n{skylevel_str}', alert_slack=alert_slack)
+            return self.schedule.CancelJob  # Remove this job after execution
+ 
     def run_startup(self,
                     home = True,
                     slew = True,
@@ -287,6 +306,9 @@ if __name__ == '__main__':
     A = AppScheduler(M, abort_action)
     A.clear_schedule()
     alert_slack = True
+    # Filtercheck
+    if Time.now() < A.obsnight_utc.sunset_flat:
+        A.schedule_app(A.run_filtercheck, A.obsnight.sunset_flat, exptime = 1)
     
     # # Startup
     if Time.now() < A.obsnight_utc.sunset_startup:

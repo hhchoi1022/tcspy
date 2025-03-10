@@ -1,5 +1,8 @@
 #%%
 from alpaca.switch import Switch
 # %%
-Switch('10.0.10.6:', 0)
+S = Switch('10.0.106.6:11111', 0)
+# %%
+S.SwitchStep(1)
+
 # %%

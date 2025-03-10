@@ -109,6 +109,15 @@ class mainConfig:
                               FOCUSER_MAXSTEP= 14000,
                               FOCUSER_CHECKTIME=0.5)
         
+        switch_params = dict(SWITCH_HOSTIP= ip_address,
+                             SWITCH_PORTNUM=portnum,
+                             SWITCH_DEVICENUM = 0,
+                             SWITCH_TYPES = ['MOUNT', 'FOCUSER', 'CAMERA'],
+                             SWITCH_KEY_MOUNT = 'MOUNT',
+                             SWITCH_KEY_FOCUSER = 'FOCUS',
+                             SWITCH_KEY_CAMERA = 'CAM',
+                             SWITCH_KEY_FILTERWHEEL = 'CAM')
+        
         observer_params = dict(OBSERVER_LONGITUDE= -70.7804,
                                OBSERVER_LATITUDE= -30.4704,
                                OBSERVER_ELEVATION= 1580,
@@ -258,7 +267,8 @@ class mainConfig:
         self.make_configfile(focuser_params, filename='focuser.config', savepath = savepath_unit)
         self.make_configfile(logger_params, filename='logger.config', savepath = savepath_unit)
         self.make_configfile(image_params, filename='image.config', savepath = savepath_unit)
-
+        self.make_configfile(switch_params, filename='switch.config', savepath = savepath_unit)
+        
         # Global params
         self.make_configfile(gmail_params, filename='gmail.config', savepath= self.path_global)
         self.make_configfile(slack_params, filename='slack.config', savepath= self.path_global)
@@ -297,7 +307,7 @@ class mainConfig:
 
 #%%
 if __name__ == '__main__':
-    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
     addresslist = ['10.0.106.6',
                    '10.0.106.7',
                    '10.0.106.8',
@@ -312,10 +322,11 @@ if __name__ == '__main__':
                    '10.0.106.17',
                    '10.0.106.18',
                    '10.0.106.19',
-                   '10.0.106.20']
+                   '10.0.106.20',
+                   '10.0.106.21']
     for unitnum, address in zip(unitnumlist, addresslist):
         A = mainConfig(unitnum=unitnum)
-        A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = True)
+        A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = False, calc_focusmodel = False)
 
 # %%
 if __name__ == '__main__':

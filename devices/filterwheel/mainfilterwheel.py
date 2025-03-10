@@ -115,8 +115,7 @@ class mainFilterwheel(mainConfig):
         """
         self._log.info('Connecting to the filterwheel...')
         try:
-            if not self.device.Connected:
-                self.device.Connected = True
+            self.device.Connected = True
             time.sleep(float(self.config['FTWHEEL_CHECKTIME']))
             while not self.device.Connected:
                 time.sleep(float(self.config['FTWHEEL_CHECKTIME']))

@@ -665,7 +665,7 @@ if __name__ == '__main__':
     # tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
     # tbl_to_insert['obsmode'] = 'Sepc'
     # tbl_to_insert['exptime'] = '60,60,60,100,100,100,100'
-    # tbl_to_insert['specmode'] = ['calspec']*len(tbl_to_insert)
+    # tbl_to_insert['specmode'] = ['calspec]*len(tbl_to_insert)
     # tbl_to_insert['priority'] = 15
     # tbl_to_insert['note'] = tbl['name']
     # Daily.insert(tbl_to_insert)

@@ -703,7 +703,8 @@ if __name__ == '__main__':
                      count = 5, 
                      binning=  1, 
                      obsmode ='Spec',
-                     specmode = 'calspec')
+                     specmode = 'specall',
+                     colormode = 'gri')
     #S.status
     #S#.staralt()
     #print(time.time() - start)

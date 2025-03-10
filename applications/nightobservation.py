@@ -153,16 +153,16 @@ class NightObservation(mainConfig):
             if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 telescopes = self.multitelescopes
                 action = ColorObservation(multitelescopes= telescopes, abort_action = abort_action)
-                del kwargs['specmode']
-                del kwargs['filter_']
+                kwargs.get('specmode', None)
+                kwargs.get('filter_', None)
                 kwargs['ntelescope'] = len(telescopes.devices)
                 do_trigger = True
-        if obsmode == 'SPEC':
+        elif obsmode == 'SPEC':
             if set(self.multitelescopes.devices.keys()) == set(self.tel_queue.keys()): ####################################################
                 telescopes = self.multitelescopes
                 action = SpecObservation(multitelescopes= telescopes, abort_action = abort_action)
-                del kwargs['colormode']
-                del kwargs['filter_']
+                kwargs.get('colormode', None)
+                kwargs.get('filter_', None)
                 kwargs['ntelescope'] = len(telescopes.devices)
                 do_trigger = True
         elif obsmode == 'DEEP':
@@ -170,22 +170,22 @@ class NightObservation(mainConfig):
             if len(self.tel_queue) >= ntelescope:
                 telescopes = MultiTelescopes(SingleTelescope_list = [self.tel_queue.popitem()[1] for i in range(ntelescope)])
                 action = DeepObservation(multitelescopes= telescopes, abort_action = abort_action)
-                del kwargs['colormode']
-                del kwargs['specmode']
+                kwargs.get('colormode', None)
+                kwargs.get('specmode', None)
                 do_trigger = True
         elif obsmode == 'SEARCH':
             if len(self.tel_queue) >= 1:
                 _, telescopes = self.tel_queue.popitem()
                 action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
-                del kwargs['colormode']
-                del kwargs['specmode']
+                kwargs.get('colormode', None)
+                kwargs.get('specmode', None)
                 kwargs['ntelescope'] = 1
                 do_trigger = True
         else:
             if len(self.tel_queue) >= 1:
                 _, telescopes = self.tel_queue.popitem()
-                del kwargs['colormode']
-                del kwargs['specmode']
+                kwargs.get('colormode')
+                kwargs.get('specmode')
                 kwargs['ntelescope'] = 1
                 action = SingleObservation(singletelescope= telescopes, abort_action = abort_action)
                 do_trigger = True
@@ -221,6 +221,7 @@ class NightObservation(mainConfig):
         self._put_action(target = target, action = action, telescopes = telescopes, action_id = action_id, kwargs = kwargs)
         
         # Run observation
+        print(telescopes)
         process = Process(target = action.run, kwargs = kwargs)
         process.start()
         while process.is_alive():
