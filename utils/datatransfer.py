@@ -360,13 +360,17 @@ if __name__ == '__main__':
     #       tar = True, transfer = True, 
     #       move_and_clean = True, from_archive = True)
     # time.sleep(600)
-    # A.run(key = '*/image/2025-03-23_gain0', save_hash = True, 
-    #       tar = True, transfer = True, 
-    #       move_and_clean = True, from_archive = False)
-    # time.sleep(600)
-    # A.run(key = '*/image/2025-03-23_gain2750', save_hash = True, 
-    #       tar = True, transfer = True, 
-    #       move_and_clean = True, from_archive = False)
+    A.run(key = '*/image/2025-03-24_gain2750', save_hash = False, 
+          tar = False, transfer = True, 
+          move_and_clean = True, from_archive = False)
+    time.sleep(600)
+    A.run(key = '*/image/2025-03-25_gain2750', save_hash = True, 
+          tar = True, transfer = True, 
+          move_and_clean = True, from_archive = False)
+    time.sleep(600)
+    A.run(key = '*/image/2025-03-26_gain0', save_hash = True, 
+          tar = True, transfer = True, 
+          move_and_clean = True, from_archive = False)
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     A.start_monitoring(
         ordinary_file_key='*/image/*',   # Adjust these parameters as needed
