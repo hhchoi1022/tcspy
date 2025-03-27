@@ -145,9 +145,10 @@ class mainConfig:
                                TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
-                               TRANSFER_GRIDFTP_NUMPARALLEL = 8,
+                               TRANSFER_SYNC = f'{os.path.join(self.path_home,".tcspy", "sync","transfer.txt")}',
+                               TRANSFER_GRIDFTP_NUMPARALLEL = 32,
                                TRANSFER_GRIPFTP_VERBOSE = True,
-                               TRANSFER_GRIDFTP_RETRIES = 10,
+                               TRANSFER_GRIDFTP_RETRIES = 30,
                                TRANSFER_GRIDFTP_RTINTERVAL = 60
                                )
         
@@ -233,9 +234,9 @@ class mainConfig:
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m375w','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250108/")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250313/")}')
 
-        colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250108/")}')
+        colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250313/")}')
         
         startup_params = dict(STARTUP_ALT = 30,
                               STARTUP_AZ = 90,
@@ -326,7 +327,7 @@ if __name__ == '__main__':
                    '10.0.106.21']
     for unitnum, address in zip(unitnumlist, addresslist):
         A = mainConfig(unitnum=unitnum)
-        A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = False, calc_focusmodel = False)
+        A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = False)
 
 # %%
 if __name__ == '__main__':

@@ -196,6 +196,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self.is_running = False
             raise ConnectionException(f'==========LV2[{type(self).__name__}] is failed: devices are disconnected.')
         # Done
+        self.telescope.log.info(f'==========LV2[{type(self).__name__}] is ready.')
         
         # Set target
         target = SingleTarget(observer = self.telescope.observer, 
@@ -220,8 +221,10 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                               colormode = colormode,
                               ntelescope = ntelescope
                               )
+        self.telescope.log.info(f'==========LV2[{type(self).__name__}] Target is set.')
         target_info = target.target_info
         exposure_info = target.exposure_info
+        self.telescope.log.info(f'==========LV2[{type(self).__name__}] Exposure information is set.')
 
         if exposure_info['filter_'] == 'None':
             try:
@@ -261,7 +264,9 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 self.shared_memory['is_running'] = False
                 self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is failed: slewing failure.')
-
+            except Exception as e:
+                raise RuntimeError(f'Error occured: {e}')
+            
         elif target.status['coordtype'] == 'altaz':
             try:
                 action_slew = SlewAltAz(singletelescope = self.telescope, abort_action= self.abort_action)
@@ -424,6 +429,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     except ActionFailedException:
                         self.telescope.log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                         pass
+
             # Exposure
             action_exposure = Exposure(singletelescope = self.telescope, abort_action = self.abort_action)
             for frame_number in range(int(count)):
@@ -559,15 +565,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 if __name__ == '__main__':
     from threading import Thread
     kwargs = dict(
-    exptime= '5,5',
+    exptime= '100,100',
     count= '1,1',
     filter_ = 'g,r',
     binning= '2,2',
     imgtype = 'Light',
-    ra= None,
-    dec= None,
-    alt = 40,
-    az = 300,
+    ra= 196.109,
+    dec= -23.774,
     name = "COSMOS",
     objtype = 'Commissioning',
     autofocus_before_start= True,

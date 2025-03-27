@@ -152,7 +152,7 @@ class AppScheduler(mainConfig):
             return 
 
     def run_filtercheck(self,
-                        exptime = 1,
+                        exptime = 60,
                         alert_slack : bool = True):
         with self.thread_lock:
             start_time = time.strftime("%H:%M:%S", time.localtime())
@@ -164,7 +164,7 @@ class AppScheduler(mainConfig):
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'Filtercheck is finished: {end_time}', alert_slack = alert_slack)
             # Convert result[0] dictionary to a formatted string
-            skylevel_str = '\n'.join([f'{band}: ' + ', '.join([f'{telescope}: {value}' for telescope, value in telescopes.items()])
+            skylevel_str = '\n'.join([f'{band}: ' + ', '.join([f'{telescope}: {value} \n' for telescope, value in telescopes.items()])
                                     for band, telescopes in result[0].items()])
             self.post_slack_thread(message=f'Skylevel:\n{skylevel_str}', alert_slack=alert_slack)
             return self.schedule.CancelJob  # Remove this job after execution
@@ -308,7 +308,7 @@ if __name__ == '__main__':
     alert_slack = True
     # Filtercheck
     if Time.now() < A.obsnight_utc.sunset_flat:
-        A.schedule_app(A.run_filtercheck, A.obsnight.sunset_flat, exptime = 1)
+        A.schedule_app(A.run_filtercheck, A.obsnight.sunset_flat, exptime = 60)
     
     # # Startup
     if Time.now() < A.obsnight_utc.sunset_startup:

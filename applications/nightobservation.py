@@ -299,6 +299,8 @@ class NightObservation(mainConfig):
         
         aborted_action_ToO = None
         unsafe_weather_count = 0
+        is_shutdown_triggered = False
+
         # Trigger observation until sunrise
         while now < obs_end_time:
             if self.abort_action.is_set():
@@ -315,7 +317,6 @@ class NightObservation(mainConfig):
             
             # Check weather status
             is_weather_safe = self.is_safe()
-            is_shutdown_triggered = False
             # If weather is safe
             if is_weather_safe:    
                 is_shutdown_triggered = False
@@ -392,6 +393,8 @@ class NightObservation(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
         
         aborted_action = None
+        is_shutdown_triggered = False
+
         # Trigger observation until sunrise
         while now < obs_end_time:
             if self.abort_action.is_set():
@@ -405,7 +408,6 @@ class NightObservation(mainConfig):
             
             # Check weather status
             is_weather_safe = self.is_safe()
-            is_shutdown_triggered = False
             # If weather is safe
             if is_weather_safe:
                 is_shutdown_triggered = False

@@ -606,7 +606,7 @@ if __name__ == '__main__':
     Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
     Daily.clear(clear_only_7ds= True, clear_only_observed = False)
     Daily.from_IMS()
-    Daily.from_RIS(size = 300)
+    Daily.from_RIS(size = 100)
     # #from astropy.io import ascii
     # #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
     # #tbl_input = tbl[tbl['note'] == 'GW190814']

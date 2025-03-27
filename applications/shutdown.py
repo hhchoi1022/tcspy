@@ -155,7 +155,7 @@ if __name__ == '__main__':
     if message_ts:
         slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
     S.run(fanoff = True,                    
-          slew = False,
+          slew = True,
           warm = True)
     while S.is_running:
         time.sleep(0.1)

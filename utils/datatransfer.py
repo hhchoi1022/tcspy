@@ -43,7 +43,7 @@ class DataTransferManager(mainConfig):
             # Sleep for a minute before checking again
             time.sleep(60)
 
-    def transfer_ordinary_files(self, ordinary_file_key = '*/image/*', save_hash = True, tar = True, transfer = True, move_and_clean = True, protocol = 'gridftp'):
+    def transfer_ordinary_files(self, ordinary_file_key = '*/image/*', save_hash = True, tar = True, sync_log = True, transfer = True, move_and_clean = True, protocol = 'gridftp'):
         """Transfer ordinary files at 8 AM."""
         # Transfer all files with ordinary criteria
         print(f"Ordinary file transfer triggered at {Time.now().isot}")
@@ -53,7 +53,7 @@ class DataTransferManager(mainConfig):
             for folder in folder_list:
                 key = os.path.join(os.path.dirname(ordinary_file_key), folder)
                 print('Transferring folder:', key)
-                self.run(key = key, save_hash = save_hash, tar = tar, transfer = True, move_and_clean = True, protocol = protocol)
+                self.run(key = key, save_hash = save_hash, tar = tar, sync_log = sync_log, transfer = True, move_and_clean = True, protocol = protocol)
         
     def transfer_ToO_files(self, inactivity_period, ToO_file_key = '*/image/*_ToO', save_hash = True, tar = True, transfer = True, move_and_clean = True, protocol = 'gridftp'):
         """Transfer ToO files after 30 minutes of inactivity."""
@@ -71,7 +71,7 @@ class DataTransferManager(mainConfig):
                 for folder in folder_list:
                     key = os.path.join(os.path.dirname(ToO_file_key), folder)
                     print(f"Transferring ToO folder: {key}")
-                    self.run(key=key, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean, protocol = protocol)
+                    self.run(key=key, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean, protocol = protocol, sync_log = True)
                     self.too_last_seen = None
         
     def run(self, 
@@ -79,6 +79,7 @@ class DataTransferManager(mainConfig):
             output_file_name: str = None, 
             save_hash : bool = True,
             tar : bool = True,
+            sync_log : bool = True,
             transfer : bool = True,
             move_and_clean : bool = True,
             protocol : str = 'gridftp',
@@ -87,9 +88,9 @@ class DataTransferManager(mainConfig):
         if from_archive:
             self.source_homedir = self.archive_homedir 
         if protocol == 'hpnscp':
-            self.hpnscp_transfer(key = key, output_file_name= output_file_name, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean)
+            self.hpnscp_transfer(key = key, output_file_name= output_file_name, save_hash = save_hash, tar = tar, sync_log = sync_log, transfer = transfer, move_and_clean = move_and_clean)
         else:
-            self.gridFTP_transfer(key = key, output_file_name= output_file_name, save_hash = save_hash, tar = tar, transfer = transfer, move_and_clean = move_and_clean)
+            self.gridFTP_transfer(key = key, output_file_name= output_file_name, save_hash = save_hash, tar = tar, sync_log = sync_log, transfer = transfer, move_and_clean = move_and_clean)
         self.source_homedir = source_dir
         
     def abort(self):
@@ -111,6 +112,7 @@ class DataTransferManager(mainConfig):
                          output_file_name : str =  None,
                          save_hash: bool = True,
                          tar : bool = True,
+                         sync_log: bool = True,
                          transfer : bool = True,
                          move_and_clean : bool = True):
         self.is_running = True
@@ -122,10 +124,11 @@ class DataTransferManager(mainConfig):
         if self.gridftp.verbose:
             verbose_command = '-vb'
         if tar:
-            source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.archive_homedir, output_file_name)}', compress = False)
+            source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.archive_homedir, output_file_name)}', compress = False, sync_log = sync_log)
         else:
             source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
-        command = f"globus-url-copy {verbose_command} -p {self.gridftp.numparallel} -rst-retries {self.gridftp.numretries} -rst-interval {self.gridftp.retryinterval} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir}"
+        logfile = f'/data2/obsdata/transfer_history/{Time.now().isot}.log'
+        command = f"globus-url-copy {verbose_command} -fast -dbg -p {self.gridftp.numparallel} -rst-retries {self.gridftp.numretries} -rst-interval {self.gridftp.retryinterval} file:{source_path} sshftp://{self.server.username}@{self.server.ip}:{self.server.portnum}{self.server_homedir} > {logfile}"
         #try:
         if transfer:
             print('GRIDFTP PROTOCOL WITH THE COMMAND:',command)
@@ -149,6 +152,7 @@ class DataTransferManager(mainConfig):
                         output_file_name : str = None,
                         save_hash: bool = True,
                         tar : bool = True,
+                        sync_log: bool = True,
                         transfer : bool = True,
                         move_and_clean : bool = True
                         ):
@@ -158,7 +162,7 @@ class DataTransferManager(mainConfig):
         if not output_file_name:
             output_file_name = os.path.basename(key)+'.tar'
         if tar:
-            source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.archive_homedir, output_file_name)}', compress = False)
+            source_path = self.tar(source_file_key= key, output_file_key = f'{os.path.join(self.archive_homedir, output_file_name)}', compress = False, sync_log = sync_log)
         else:
             source_path = f'{os.path.join(self.archive_homedir, output_file_name)}'
         command = f"hpnscp -P {self.server.portnum} {source_path} {self.server.username}@{self.server.ip}:{self.server_homedir}"
@@ -238,7 +242,8 @@ class DataTransferManager(mainConfig):
     def tar(self,
             source_file_key : str,
             output_file_key : str,
-            compress : bool = False):
+            compress : bool = False,
+            sync_log: bool = True):
         compress_command = '-cvf'
         if compress:
             compress_command = '-cvjf'
@@ -255,6 +260,19 @@ class DataTransferManager(mainConfig):
             print(f"Error during Tarball: {e.stderr.decode()}")
         finally:
             self.process = None
+            
+        # Step 3: Log tar file name and size
+        if sync_log:
+            try:
+                tar_full_path = os.path.abspath(output_file_key)
+                tar_size = os.path.getsize(tar_full_path)
+                log_file = self.config['TRANSFER_SYNC']
+                with open(log_file, 'a') as f:
+                    f.write(f"{os.path.basename(tar_full_path)}\t{tar_size} bytes\t {Time.now().isot}\n")
+                print(f"Tar file info logged at: {log_file}")
+            except Exception as e:
+                print(f"Failed to log tar file info: {e}")
+                
         return output_file_key
         
     def move_to_archive_and_cleanup(self, key, tar_path):
@@ -337,30 +355,26 @@ class DataTransferManager(mainConfig):
 if __name__ == '__main__':
     A = DataTransferManager()
     import time
-    A.run(key = '*/2025-02-21_gain2750', save_hash = True, 
-          tar = True, transfer = True, 
-          move_and_clean = True, from_archive = True)
-    time.sleep(600)
-    A.run(key = '*/2025-02-22_gain2750', save_hash = True, 
-          tar = True, transfer = True, 
-          move_and_clean = True, from_archive = True)
-    time.sleep(600)
-    A.run(key = '*/2025-02-24_gain2750', save_hash = True, 
-          tar = True, transfer = True, 
-          move_and_clean = True, from_archive = True)
-    time.sleep(600)
-    A.run(key = '*/2025-02-25_gain2750', save_hash = True, 
-          tar = True, transfer = True, 
-          move_and_clean = True, from_archive = True)
 
+    # A.run(key = '*/2025-03-23_gain0', save_hash = True, 
+    #       tar = True, transfer = True, 
+    #       move_and_clean = True, from_archive = True)
+    # time.sleep(600)
+    # A.run(key = '*/image/2025-03-23_gain0', save_hash = True, 
+    #       tar = True, transfer = True, 
+    #       move_and_clean = True, from_archive = False)
+    # time.sleep(600)
+    # A.run(key = '*/image/2025-03-23_gain2750', save_hash = True, 
+    #       tar = True, transfer = True, 
+    #       move_and_clean = True, from_archive = False)
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
-    # A.start_monitoring(
-    #     ordinary_file_key='*/image/*',   # Adjust these parameters as needed
-    #     ToO_file_key='*/image/*_ToO',
-    #     inactivity_period=1800,             # 30 minutes of inactivity
-    #     tar=True,                        # Compress files into tar
-    #     protocol='gridftp'               # File transfer protocol
-    # )
+    A.start_monitoring(
+        ordinary_file_key='*/image/*',   # Adjust these parameters as needed
+        ToO_file_key='*/image/*_ToO',
+        inactivity_period=1800,             # 30 minutes of inactivity
+        tar=True,                        # Compress files into tar
+        protocol='gridftp'               # File transfer protocol
+    )
 
 # # %%
 

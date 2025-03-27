@@ -1,19 +1,19 @@
 {
     "7DT16": {
         "g": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2025-03-26T09:36:44.805",
+            "succeeded": true,
+            "focusval": 8900.2
         },
         "r": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000
+            "update_time": "2025-03-26T09:43:48.618",
+            "succeeded": true,
+            "focusval": 8888.8
         },
         "i": {
-            "update_time": "2025-03-10T04:26:52.712",
+            "update_time": "2025-03-26T02:50:39.346",
             "succeeded": true,
-            "focusval": 8734.8
+            "focusval": 8861.7
         },
         "z": {
             "update_time": "2000-01-01T00:00:00.000",

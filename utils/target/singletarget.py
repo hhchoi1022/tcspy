@@ -370,7 +370,7 @@ class SingleTarget(mainConfig):
                 utctime = Time(utctime)
             moon_coord = self._observer.moon_radec(utctime)
             target_coord = self.coordinate
-            moonsep = np.round(self.coordinate.separation(moon_coord).value,2)
+            moonsep = np.round(moon_coord.separation(target_coord).value,2)
             return moonsep
         else:
             return None
@@ -690,10 +690,10 @@ if __name__ == '__main__':
     unitnum = 21
     import time
     observer = mainObserver()
-    ra = 37.88467
-    dec = -56.66531
+    ra = 196.109
+    dec = -23.774
     objname = 'GRB 241127A'
-    start = time.time()
+    uctime = Time('2025-03-23T05:46:10.144')
     S = SingleTarget(observer = observer, 
                      ra = ra, 
                      dec = dec, 

@@ -156,8 +156,11 @@ class DB_Annual(mainConfig):
     def select_best_targets(self,
                             utcdate : Time = Time.now(),
                             size : int = 300,
-                            observable_minimum_hour : float = 2,
-                            n_time_grid : float = 10
+                            observable_minimum_hour: float = 2,
+                            n_time_grid : float = 10,
+                            galactic_latitude_limit: float = 20,
+                            declination_upper_limit: float = -20,
+                            declination_lower_limit: float = -90
                             ):
         obsnight = self.nightsession.set_obsnight(utctime = utcdate)
         observable_fraction_criteria = observable_minimum_hour / obsnight.observable_hour 
@@ -173,7 +176,16 @@ class DB_Annual(mainConfig):
         if len(target_tbl_to_update) > 0:
             self.initialize(initialize_all= True)
         
-        target_tbl = self.data
+        all_target_tbl = self.data
+        all_coords = SkyCoord(all_target_tbl['RA'], all_target_tbl['De'], unit ='deg', frame = 'icrs')
+        # galactic latitude cut
+        highb_idx = np.abs(all_coords.galactic.b.value) > galactic_latitude_limit
+        # declination cut
+        decl_idx = (all_coords.dec.value < declination_upper_limit) & (all_coords.dec.value > declination_lower_limit)
+        # all cut
+        total_idx = highb_idx & decl_idx
+        target_tbl = all_target_tbl[total_idx]
+        
         print('Checking Observability of the targets...')
         obs_tbl = observability_table(constraints = self.constraints.astroplan, 
                                       observer = self.observer._observer,
@@ -384,7 +396,7 @@ class DB_Annual(mainConfig):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     db = DB_Annual(tbl_name = 'RIS')
-    tbl = db.select_best_targets()
+    #tbl = db.select_best_targets()
     current_obscount = len(db.data[db.data['obs_count']>  0])
     tot_tilecount = len(db.data)
     print('Current_obscount = ', current_obscount)
@@ -395,10 +407,27 @@ if __name__ == '__main__':
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
+        
+    survey_data = db.data
+    all_coords = SkyCoord(survey_data['RA'], survey_data['De'], unit ='deg', frame = 'icrs')
+    # galactic latitude cut
+    highb_idx = np.abs(all_coords.galactic.b.value) > 20
+    # declination cut
+    decl_idx = (all_coords.dec.value < -20) & (all_coords.dec.value > -90)
+    # all cut
+    total_idx1 = highb_idx# & decl_idx
+    total_idx2 = highb_idx & decl_idx
+
+    survey_tbl = survey_data[total_idx1]
+    survey_tbl2 = survey_data[total_idx2]
+
+    
     all_data = db.data
     obs_data = all_data[all_data['obs_count'] > 0]
     high_data = all_data[all_data['obs_count'] > 3]
     intense_data = all_data[all_data['obs_count'] > 10]
+    tonight_data = db.select_best_targets(size = 100)
+
 
     # Convert RA to radians and shift to [-180, 180] range
     def convert_ra(ra):
@@ -412,8 +441,10 @@ if __name__ == '__main__':
     ax = plt.subplot(111, projection="mollweide")
 
     # Convert RA and Dec for plotting
-    all_ra = convert_ra(all_data['RA'])
-    all_dec = convert_dec(all_data['De'])
+    all_ra = convert_ra(survey_tbl['RA'])
+    all_dec = convert_dec(survey_tbl['De'])
+    survey_ra = convert_ra(survey_tbl2['RA'])
+    survey_dec = convert_dec(survey_tbl2['De'])
 
     obs_ra = convert_ra(obs_data['RA'])
     obs_dec = convert_dec(obs_data['De'])
@@ -423,12 +454,17 @@ if __name__ == '__main__':
 
     intense_ra = convert_ra(intense_data['RA'])
     intense_dec = convert_dec(intense_data['De'])
+    
+    tonight_ra = convert_ra(tonight_data['RA'])
+    tonight_dec = convert_dec(tonight_data['De'])
 
     # Plot data
-    ax.scatter(all_ra, all_dec, s=1, c='k', alpha=0.2, label="All Data")
+    ax.scatter(all_ra, all_dec, s=1, c='k', alpha=0.2, label="|l| > 20")
+    ax.scatter(survey_ra, survey_dec, s=1, c='k', alpha=0.3, label="|l| > 20 & Decl < -20")
     ax.scatter(obs_ra, obs_dec, s=1, c='r', alpha=0.5, label="Observed")
     ax.scatter(high_ra, high_dec, s=5, c='orange', alpha=0.5, label="N_obs >3")
-    ax.scatter(intense_ra, intense_dec, s=10, c='b', alpha=0.5, label="N_obs >10")
+    ax.scatter(intense_ra, intense_dec, s=10, c='r', alpha=1.0, label="N_obs >10")
+    #ax.scatter(tonight_ra, tonight_dec, s=1, c='b', alpha=1, label="Tonight scheduled")
 
     # Labels and grid
     ax.set_xticklabels(['14h', '16h', '18h', '20h', '22h', '0h', '2h', '4h', '6h', '8h', '10h'])

@@ -63,7 +63,7 @@ class FilterCheck(mainConfig):
         params_slew_all = []
         
         for telescope_name, telescope in self.multitelescopes.devices.items():
-            params_slew = dict(alt = 40, az = 300) 
+            params_slew = dict(alt = 80, az = 300) 
             params_slew_all.append(params_slew)
         self.multiaction = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_slew_all, function = SlewAltAz, abort_action = self.abort_action)    
         self.shared_memory = self.multiaction.shared_memory
@@ -126,6 +126,8 @@ class FilterCheck(mainConfig):
                 os.remove(fits_file[0])
                 os.remove(header_file[0])                
                 skylevel_dict[filter_][telescope_name] = mean
+                if os.listdir(os.path.dirname(fits_file[0])) == []:
+                    os.rmdir(os.path.dirname(fits_file[0]))
         
         all_problematic_units = np.array([])
         for filter_, skylevel_info in skylevel_dict.items():
@@ -156,5 +158,22 @@ if __name__ == '__main__':
     multitelescopes = MultiTelescopes()
     abort_action = Event()
     application = FilterCheck(multitelescopes, abort_action)
-    result= application.run(exptime = 10)
+    slack = SlackConnector(token_path= application.config['SLACK_TOKEN'], default_channel_id= application.config['SLACK_DEFAULT_CHANNEL'])
+    obsnight = NightSession(Time.now()).obsnight_utc
+    tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
+    #message_ts = None
+    message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
+    if message_ts:
+        slack.post_thread_message(message_ts,f'{type(application).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    result= application.run(exptime = 100)
+    while application.is_running:
+        time.sleep(0.1)
+    if message_ts:
+        slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+    if message_ts:
+        slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+        skylevel_str = '\n'.join([f'*{band}*: ' + ', '.join([f'{telescope}: {value} \n' for telescope, value in telescopes.items()])
+                                for band, telescopes in result[0].items()])
+        slack.post_thread_message(message_ts, f'Skylevel:\n{skylevel_str}')
+
 # %%
