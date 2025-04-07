@@ -2,6 +2,7 @@
 from astropy.time import Time
 from astropy.io import fits
 import numpy as np
+import portalocker
 
 import astropy.units as u
 from astropy.visualization import ImageNormalize
@@ -120,7 +121,7 @@ class mainImage(mainConfig):
         """
         return self.hdu.data
     
-    def save(self):
+    def save(self, save_log: bool = True):
         """
         Save the image.
         
@@ -149,6 +150,16 @@ class mainImage(mainConfig):
             headerpath = os.path.join(self._configinfo['IMAGE_PATH'], foldername, headername)
             with open(headerpath, 'w') as f:
                 f.write(self.hdu.header.tostring(sep = '\n'))
+        
+        if save_log:    
+            if self._configinfo['IMAGE_SAVELOG']:
+                logdir = self._configinfo['IMAGE_LOGPATH']
+                os.makedirs(logdir, exist_ok = True)
+                logpath = os.path.join(logdir, foldername)
+                savetime = Time.now().isot
+                with portalocker.Lock(logpath, 'a', timeout=10) as f:
+                    f.write(f"{filename}, {savetime}\n")            
+                
         return filepath
     
     def show(self):
@@ -384,6 +395,7 @@ class mainImage(mainConfig):
     
     def _add_imginfo_to_hdr(self):
         info = dict()
+        info['IMAGEID'] = self._format_header(self._imginfo['imgid'], 'Unique ID of the image')
         info['IMAGETYP'] = self._format_header(self._imginfo['imgtype'], 'Type of the image')
         info['EXPTIME'] = self._format_header(self._imginfo['exptime'], '[seconds] Duration of exposure time')
         info['EXPOSURE'] = self._format_header(self._imginfo['exptime'], '[seconds] Duration of exposure time')

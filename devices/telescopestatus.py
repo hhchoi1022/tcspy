@@ -33,6 +33,7 @@ class TelescopeStatus(Interface):
         """
         status = 'disconnected'
         try:
+            
             if self.telescope.camera.device.Connected:
                 status = 'idle'
                 if self.telescope.camera.device.CameraState.name == 'cameraIdle':
@@ -40,6 +41,32 @@ class TelescopeStatus(Interface):
                 else:
                     status = 'busy'    
         except:
+            pass
+        return status
+    
+    @property
+    def camera(self):
+        status = 'disconnected'
+        try:
+            cam = self.telescope.camera.device
+            if cam.Connected:
+                print('[DEBUG, Camera Status] Connection passed')
+                state = cam.CameraState
+                print(f'[DEBUG, Camera Status] Camstate passed: {state}')
+
+                if isinstance(state, int):
+                    status = 'idle' if state == 0 else 'busy'  # 0 = cameraIdle
+                else:
+                    # fallback: try to use .name safely
+                    try:
+                        if state.name == 'cameraIdle':
+                            status = 'idle'
+                        else:
+                            status = 'busy'
+                    except:
+                        status = 'idle'
+        except Exception as e:
+            print(f'[DEBUG][Camera Status] Error: {e}')
             pass
         return status
 
@@ -89,8 +116,8 @@ class TelescopeStatus(Interface):
         """
         status = 'disconnected'
         try:
-            if self.telescope.filterwheel.device.Connected:
-                status = 'idle'
+            #if self.telescope.filterwheel.device.Connected:
+            status = 'idle'
         except:
             pass
         return status
@@ -192,6 +219,9 @@ class TelescopeStatus(Interface):
 
 # %%
 if __name__ == '__main__':
-    t = TelescopeStatus(SingleTelescope(2))
-    t.weather
+    for unitnum in [2,4,5,7,8,9,10,11,12,13,14,15,16]:
+        t = TelescopeStatus(SingleTelescope(unitnum))
+        print(t.camera)
+    
+
 # %%

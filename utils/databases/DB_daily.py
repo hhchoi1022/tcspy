@@ -611,15 +611,16 @@ if __name__ == '__main__':
     # #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
     # #tbl_input = tbl[tbl['note'] == 'GW190814']
     # #tbl_input['ntelescope'] = 10
-    # #Daily.insert(tbl_input)
+
 
     from tcspy.utils.databases import DB_Annual
+    tbl_input = Table(DB_Annual().data[[22956, 2595, 15434]])
+    Daily.insert(tbl_input)
     # from astropy.io import ascii
     # tbl = ascii.read('./S240422ed.ascii')
-    #RIS = DB_Annual('RIS').data
     # data = Daily.data
     #Daily.from_GSheet('20250208_235342_GECKO')
-    Daily.from_GSheet('WASP121b_monitoring')
+    #Daily.from_GSheet('S250328ae_update')
 
     # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
     # tbl_to_insert['filter_'][:] = 'r'
@@ -630,7 +631,6 @@ if __name__ == '__main__':
     
     # tbl_to_insert['ntelescope'][:] = 1
     # tbl_to_insert['priority'][:] = 40
-    #Daily.insert(tbl_to_insert)
     # tbl_to_insert = RIS[[1637,
     # 1753,
     # 1872,

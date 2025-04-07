@@ -12,7 +12,7 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 from astroplan import observability_table
 from astroplan import AltitudeConstraint, MoonSeparationConstraint
-import tqdm
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from astropy.io import ascii
 
@@ -104,7 +104,7 @@ class DB_Annual(mainConfig):
         target_tbl_all = self.data
         
         # If there is targets with no "id", set ID for each target
-        rows_to_update_id = [any(row[name] is None for name in ['id']) for row in target_tbl_all]
+        rows_to_update_id = [any(row[name] in (None, '') for name in ['id']) for row in target_tbl_all]
         if np.sum(rows_to_update_id) > 0:
             self.sql.set_data_id(tbl_name = self.tblname, update_all = False)
             target_tbl_all = self.data
@@ -396,13 +396,16 @@ class DB_Annual(mainConfig):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     db = DB_Annual(tbl_name = 'RIS')
-    #tbl = db.select_best_targets()
-    current_obscount = len(db.data[db.data['obs_count']>  0])
-    tot_tilecount = len(db.data)
-    print('Current_obscount = ', current_obscount)
-    print('Total_obscount_sum = ', np.sum(db.data['obs_count']))
-    print(f'{current_obscount}/{tot_tilecount}')
+    db_IMS = DB_Annual(tbl_name = 'IMS')
 
+    #tbl = db.select_best_targets()
+    # current_obscount = len(db.data[db.data['obs_count']>  0])
+    # tot_tilecount = len(db.data)
+    # print('Current_obscount = ', current_obscount)
+    # print('Total_obscount_sum = ', np.sum(db.data['obs_count']))
+    # print(f'{current_obscount}/{tot_tilecount}')
+    tbl_to_insert = db.data[[2665, 2666, 2523, 2524, 2385, 2386, 2252]]
+    db_IMS.insert(tbl_to_insert)
 # %%
 if __name__ == '__main__':
     import numpy as np

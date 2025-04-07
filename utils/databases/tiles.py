@@ -85,7 +85,8 @@ class Tiles:
                     list_distance_to_boundary.append([distance_to_boundary])
                     list_overlapped_areas.append([1])
             else:  # Aperture-based matching
-                target_circle = target_point.buffer(aperture)
+                target_circle = self.make_sky_circle_polygon(ra, dec, aperture)
+
                 overlapped_tiles, overlapped_areas = self._find_overlapped_tiles(polygons_by_id = RIS_polygons_nearby, target_circle = target_circle, fraction_overlap_lower = fraction_overlap_lower)
                 if overlapped_tiles:
                     list_matched_tiles.extend([overlapped_tiles])
@@ -161,7 +162,13 @@ class Tiles:
         cols = visualize_ncols
         rows = (n_coords + cols - 1) // cols
 
-        fig, axes = plt.subplots(rows, cols, figsize=(15, rows * 3), subplot_kw={'aspect': 'equal'})
+        #fig, axes = plt.subplots(rows, cols, figsize=(15, rows * 3), subplot_kw={'aspect': 'equal'})
+        panel_size = 5  # size in inches per subplot
+        fig, axes = plt.subplots(
+            rows, cols,
+            figsize=(panel_size * cols, panel_size * rows),
+            subplot_kw={'aspect': 'equal'}
+        )
         if rows == 1 and cols == 1:
             axes = [axes]
         elif isinstance(axes, np.ndarray):
@@ -187,12 +194,20 @@ class Tiles:
 
             # Draw the aperture if applicable
             if aperture > 0:
-                aperture_circle = plt.Circle((ra, dec), aperture, color='red', fill=True, linestyle='--', label='Aperture', lw =3, alpha = 0.2)
-                ax.add_patch(aperture_circle)
-                ax.text(ra, dec, rf'N_tiles ={len(matched_tile_id)}', fontsize=8, ha='center', va='center', color='black',
-                        bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
-                ax.set_xlim(ra - 1.2* aperture , ra + 1.2* aperture)
-                ax.set_ylim(dec - 1.2* aperture , dec + 1.2* aperture)
+                #aperture_circle = plt.Circle((ra, dec), aperture, color='red', fill=True, linestyle='--', label='Aperture', lw =3, alpha = 0.2)
+                #ax.add_patch(aperture_circle)
+                poly = self.make_sky_circle_polygon(ra, dec, aperture)
+                x, y = poly.exterior.xy
+                ax.plot(x, y, color='red', lw=2, linestyle='--')
+                ax.fill(x, y, color='red', alpha=0.2)
+
+                ax.text(ra, dec, rf'N_tiles ={len(matched_tile_id)}', fontsize=8, ha='center', va='center', color='black', bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
+                # Adjust plot limits based on the actual polygon
+                margin = aperture * 0.5  # degree margin
+                ax.set_xlim(min(x) - margin, max(x) + margin)
+                ax.set_ylim(min(y) - margin, max(y) + margin)
+                #ax.set_xlim(ra - 1.2* aperture , ra + 1.2* aperture)
+                #ax.set_ylim(dec - 1.2* aperture , dec + 1.2* aperture)
             else:
                 ax.scatter(ra, dec, color='green', marker='o', s=50, label='Target Point' if i == 0 else None)
                 ax.set_xlim(ra - 2, ra + 2)
@@ -283,20 +298,50 @@ class Tiles:
         return polygons_by_id
 
 
+    def make_sky_circle_polygon(self, ra_deg, dec_deg, radius_deg, n_points=100):
+        from astropy.coordinates import Angle
+
+        """Create a shapely polygon that represents a sky circle at high Dec."""
+        center = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg)
+        position_angle = np.linspace(0, 2*np.pi, n_points)
+        sep = Angle(radius_deg * u.deg)
+
+        circle_coords = center.directional_offset_by(position_angle * u.rad, sep)
+        ra_list = circle_coords.ra.wrap_at(360 * u.deg).deg
+        dec_list = circle_coords.dec.deg
+        return Polygon(zip(ra_list, dec_list))
+
 
 # %%
 # Example usage
 if __name__ == "__main__":
-    from tcspy.utils.databases.DB_daily import DB_Daily
+    from astropy.coordinates import SkyCoord, GeocentricTrueEcliptic
+    import astropy.units as u
+
     #tbl = ascii.read('./Subset_White_Dwarfs_with_Matched_Tiles.csv')
     T = Tiles()
     #data = ascii.read('./7DT_observed_Tile')
     #list_ra = data['ra']
     #list_dec = data['dec']
-    list_ra = [260.03428]#tbl['ra']#[350.1]
-    list_dec = [-60.15669]#bl['dec']
+    list_ra = [145.15137]#tbl['ra']#[350.1]
+    list_dec = [-15.01586]#bl['dec']
+    coord = SkyCoord(lon = 44 * u.deg, lat = -82 * u.deg, frame = GeocentricTrueEcliptic, obstime = 'J2000')
+    icrs_coord = coord.transform_to('icrs')
+    list_ra = [icrs_coord.ra.value]
+    list_dec = [icrs_coord.dec.value]
     
     #tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, 0.5, visualize = False, visualize_ncols=5, match_tolerance_minutes= 11)  
-    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 0, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
+    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 1.75, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
+    # tbl_filtered.rename_column('id', 'objname')
+    # tbl_filtered.rename_column('ra', 'RA')
+    # tbl_filtered.rename_column('dec', 'De')
+    # tbl_filtered['obsmode'] = 'Spec'
+    # tbl_filtered['specmode'] = 'specall'
+    # tbl_filtered['note'] = 'S250328ae'
+    # tbl_filtered['exptime'] = 100
+    # tbl_filtered['count'] = 3
+    
     #print(tbl_filtered['distance_to_boundary'])
+    # db.insert(target_tbl = tbl_filtered)
 # %%
+

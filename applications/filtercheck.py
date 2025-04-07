@@ -92,7 +92,7 @@ class FilterCheck(mainConfig):
             #Prepare for MultiAction for Exposure
             params_exposure_all = []
             for telescope_name, telescope in self.multitelescopes.devices.items():
-                params_exposure = dict(frame_number = 0, exptime = exptime, filter_ = filter_, gain = 0, alt = 40, az = 300, name = 'filtercheck', objtype = 'test')
+                params_exposure = dict(frame_number = 0, exptime = exptime, filter_ = filter_, gain = 2750, alt = 40, az = 300, name = 'filtercheck', objtype = 'test')
                 params_exposure_all.append(params_exposure)
             self.multiaction = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_exposure_all, function = Exposure, abort_action = self.abort_action)
             self.shared_memory = self.multiaction.shared_memory
@@ -151,10 +151,24 @@ class FilterCheck(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    
+    import argparse
     from tcspy.devices import MultiTelescopes
     from tcspy.utils.connector import SlackConnector
     from tcspy.utils import NightSession
+    from tcspy.configuration import mainConfig
+    # Argument parser for command-line exptime input
+    parser = argparse.ArgumentParser(description="Run FilterCheck with specified exposure time.")
+    parser.add_argument("--exptime", type=float, required=True, help="Exposure time in seconds.")
+    args = parser.parse_args()
+    
+    M = MultiTelescopes()
+    # Update config not to return log file
+    original_config = []
+    for tel in M.devices.values():
+        config = mainConfig(tel.unitnum)
+        original_config.append(config.config['IMAGE_SAVELOG'])
+        config.update_config('IMAGE_SAVELOG', False)
+        
     multitelescopes = MultiTelescopes()
     abort_action = Event()
     application = FilterCheck(multitelescopes, abort_action)
@@ -165,7 +179,7 @@ if __name__ == '__main__':
     message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
     if message_ts:
         slack.post_thread_message(message_ts,f'{type(application).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
-    result= application.run(exptime = 100)
+    result= application.run(exptime = args.exptime)
     while application.is_running:
         time.sleep(0.1)
     if message_ts:
@@ -176,4 +190,8 @@ if __name__ == '__main__':
                                 for band, telescopes in result[0].items()])
         slack.post_thread_message(message_ts, f'Skylevel:\n{skylevel_str}')
 
+    # Update config to original
+    for tel, config_value in zip(M.devices.values(), original_config):
+        config = mainConfig(tel.unitnum)
+        config.update_config('IMAGE_SAVELOG', config_value)
 # %%

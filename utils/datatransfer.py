@@ -8,6 +8,8 @@ import re
 import hashlib
 from tqdm import tqdm
 from astropy.time import Time
+from astropy.table import Table, vstack
+from astropy.io import ascii
 from typing import Optional
 from threading import Thread
 from datetime import datetime
@@ -240,14 +242,16 @@ class DataTransferManager(mainConfig):
             raise RuntimeError(f"An error occurred while generating and saving hashes: {str(e)}")
 
     def tar(self,
-            source_file_key : str,
-            output_file_key : str,
-            compress : bool = False,
+            source_file_key: str,
+            output_file_key: str,
+            compress: bool = False,
             sync_log: bool = True):
         compress_command = '-cvf'
         if compress:
             compress_command = '-cvjf'
+
         command = f'cd {self.source_homedir} && tar {compress_command} {output_file_key} -C {self.source_homedir} {source_file_key}'
+
         try:
             print(f"Tarball started: {Time.now().isot}")
             self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -256,25 +260,67 @@ class DataTransferManager(mainConfig):
                 print(f"Tarball successful: {stdout.decode()}")
             else:
                 print(f"Error during Tarball: {stderr.decode()}")
+                return  # stop if tar fails
         except subprocess.CalledProcessError as e:
             print(f"Error during Tarball: {e.stderr.decode()}")
+            return
         finally:
             self.process = None
-            
-        # Step 3: Log tar file name and size
+
         if sync_log:
             try:
                 tar_full_path = os.path.abspath(output_file_key)
                 tar_size = os.path.getsize(tar_full_path)
-                log_file = self.config['TRANSFER_SYNC']
-                with open(log_file, 'a') as f:
-                    f.write(f"{os.path.basename(tar_full_path)}\t{tar_size} bytes\t {Time.now().isot}\n")
-                print(f"Tar file info logged at: {log_file}")
-            except Exception as e:
-                print(f"Failed to log tar file info: {e}")
+                timestamp = Time.now()
+                time_str = timestamp.strftime('%Y%m%d%H%M%S')
+                iso_time = timestamp.isot
+                log_folder = self.config['TRANSFER_SYNCFOLDER']
+                log_file = os.path.join(log_folder, 'transfer_history.ascii_fixed_width')
+
+                # 1. Create filelist
+                filelist_filename = f"{time_str}.filelist"
+                filelist_path = os.path.join(log_folder, filelist_filename)
                 
+                list_command = f"tar -tf {tar_full_path}"
+                result = subprocess.run(list_command, shell=True, capture_output=True, text=True)
+
+                # Extract only basenames (ignore directory paths)
+                filelist = [
+                    os.path.basename(line.strip())
+                    for line in result.stdout.strip().split('\n')
+                    if line.strip()  # skip empty lines
+                ]
+
+                # Save to file
+                with open(filelist_path, 'w') as flist:
+                    flist.write('\n'.join(filelist) + '\n')
+
+                # 2. Check existing log
+                if os.path.exists(log_file):
+                    sync_history = ascii.read(log_file, format='fixed_width')
+                    existing_names = sync_history['Filename'].tolist()
+                else:
+                    sync_history = Table(names=['Filename', 'Size', 'Time', 'File_folder'],
+                                        dtype=['str', 'str', 'str', 'str'])
+                    existing_names = []
+
+                # 3. Append if not already in log
+                basename = os.path.basename(tar_full_path)
+                if basename not in existing_names:
+                    new_row = Table(
+                        [[basename], [f"{tar_size} bytes"], [iso_time], [filelist_filename]],
+                        names=['Filename', 'Size', 'Time', 'File_folder']
+                    )
+                    updated_table = vstack([sync_history, new_row])
+                    ascii.write(updated_table, log_file, format='fixed_width', overwrite=True)
+                    print(f"Tar file info logged at: {log_file}")
+                    print(f"File list saved at: {filelist_path}")
+                else:
+                    print(f"{basename} already exists in log. Skipping log update.")
+            except Exception as e:
+                print(f"Failed to log tar file info or save file list: {e}")
         return output_file_key
-        
+                        
     def move_to_archive_and_cleanup(self, key, tar_path):
 
         source_pattern = os.path.join(self.source_homedir, key)
@@ -356,21 +402,17 @@ if __name__ == '__main__':
     A = DataTransferManager()
     import time
 
-    # A.run(key = '*/2025-03-23_gain0', save_hash = True, 
-    #       tar = True, transfer = True, 
-    #       move_and_clean = True, from_archive = True)
+    # A.run(key = '*/image/2025-04-04_gain2750', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = True,
+    #       from_archive = False)
     # time.sleep(600)
-    A.run(key = '*/image/2025-03-24_gain2750', save_hash = False, 
-          tar = False, transfer = True, 
-          move_and_clean = True, from_archive = False)
-    time.sleep(600)
-    A.run(key = '*/image/2025-03-25_gain2750', save_hash = True, 
-          tar = True, transfer = True, 
-          move_and_clean = True, from_archive = False)
-    time.sleep(600)
-    A.run(key = '*/image/2025-03-26_gain0', save_hash = True, 
-          tar = True, transfer = True, 
-          move_and_clean = True, from_archive = False)
+    # A.run(key = '*/image/2025-04-05_gain0', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = True,
+    #       from_archive = False)
+    # time.sleep(600)
+    # A.run(key = '*/image/2025-04-05_gain2750', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = True,
+    #       from_archive = False)
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     A.start_monitoring(
         ordinary_file_key='*/image/*',   # Adjust these parameters as needed

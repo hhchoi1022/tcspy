@@ -166,16 +166,22 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         # Check condition of the instruments for this Action
         trigger_abort_disconnected = False
         try:        
+            self.telescope.log.info(f'Checking mount status...')
+
             status_mount = self.telescope_status.mount
         except:
             trigger_abort_disconnected = True
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: mount status cannot be loaded.')
         try:
+            self.telescope.log.info(f'Checking camera status...')
+
             status_camera = self.telescope_status.camera
         except Exception as e:
             trigger_abort_disconnected = True
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera status cannot be loaded. Exception: {e}')
         try:
+            self.telescope.log.info(f'Checking filterwheel status...')
+
             status_filterwheel = self.telescope_status.filterwheel
         except Exception as e:
             trigger_abort_disconnected = True

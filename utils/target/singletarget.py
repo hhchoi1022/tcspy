@@ -690,10 +690,10 @@ if __name__ == '__main__':
     unitnum = 21
     import time
     observer = mainObserver()
-    ra = 196.109
-    dec = -23.774
+    ra = 204.923
+    dec = 22.076
     objname = 'GRB 241127A'
-    uctime = Time('2025-03-23T05:46:10.144')
+    uctime = Time('2025-03-27T06:02:17.762')
     S = SingleTarget(observer = observer, 
                      ra = ra, 
                      dec = dec, 

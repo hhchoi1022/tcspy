@@ -1,0 +1,18 @@
+{
+    "requester": "jmk5040@gmail.com",
+    "target": "GRB250402A",
+    "ra": "14:13:38.20",
+    "dec": "-05:55:48.5",
+    "exposure": 300.0,
+    "imageCount": "3",
+    "obsmode": "Spec",
+    "comments": "",
+    "abortObservation": false,
+    "priority": 50,
+    "gain": 2750,
+    "binning": 1,
+    "obsStartTime": "",
+    "radius": 0,
+    "selectedSpecFile": "specall.specmode",
+    "singleExposure": "100"
+}

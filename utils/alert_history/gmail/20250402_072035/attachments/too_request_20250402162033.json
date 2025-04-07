@@ -1,0 +1,18 @@
+{
+    "requester": "test@gmail.com",
+    "target": "test",
+    "ra": "23",
+    "dec": "11",
+    "exposure": 300.0,
+    "imageCount": "3",
+    "obsmode": "Spec",
+    "comments": "",
+    "abortObservation": false,
+    "priority": 50,
+    "gain": 2750,
+    "binning": 1,
+    "obsStartTime": "",
+    "radius": 0,
+    "selectedSpecFile": "specall.specmode",
+    "singleExposure": "100"
+}

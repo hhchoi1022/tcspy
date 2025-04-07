@@ -87,9 +87,27 @@ class BiasAcquisition(mainConfig):
 # %%
 if __name__ == '__main__':
     
+    import argparse
     from tcspy.devices import MultiTelescopes
     from tcspy.utils.connector import SlackConnector
     from tcspy.utils import NightSession
+    from tcspy.configuration import mainConfig
+    
+    # Argument parser for command-line exptime input
+    parser = argparse.ArgumentParser(description="Run Bias Acquisition.")
+    parser.add_argument("--count", type=int, required=True, help="Number of images to acquire.")
+    parser.add_argument("--gain", type=int, default=2750, help="Gain value (default: 2750).")
+    parser.add_argument("--binning", type=int, default=1, help="Binning value (default: 1).")
+
+    args = parser.parse_args()
+    
+    M = MultiTelescopes()
+    # Update config not to return log file
+    original_config = []
+    for tel in M.devices.values():
+        config = mainConfig(tel.unitnum)
+        original_config.append(config.config['IMAGE_SAVELOG'])
+        config.update_config('IMAGE_SAVELOG', False)
     M = MultiTelescopes()
     abort_action = Event()
     application = BiasAcquisition(M, abort_action)
@@ -99,10 +117,14 @@ if __name__ == '__main__':
     message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
     if message_ts:
         slack.post_thread_message(message_ts,f'{type(application).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
-    application.run(count = 3, binning = 1, gain =2750)
+    application.run(count = args.count, binning = 1, gain =2750)
     while application.is_running:
         time.sleep(0.1)
     if message_ts:
         slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
 
+    # Update config to original
+    for tel, config_value in zip(M.devices.values(), original_config):
+        config = mainConfig(tel.unitnum)
+        config.update_config('IMAGE_SAVELOG', config_value)
 # %%

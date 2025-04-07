@@ -85,7 +85,9 @@ class AlertBroker(mainConfig):
         alert_status['alert_type'] = alert.alert_type
         alert_status['alert_sender'] = alert.alert_sender
         alert_status['is_inputted'] = alert.is_inputted
+        alert_status['trigger_time'] = alert.trigger_time
         alert_status['is_observed'] = alert.is_observed
+        alert_status['observation_time'] = alert.observation_time
         alert_status['num_observed_targets'] = alert.num_observed_targets
         alert_status['is_matched_to_tiles'] = alert.is_matched_to_tiles
         alert_status['distance_to_tile_boundary'] = alert.distance_to_tile_boundary
@@ -119,7 +121,9 @@ class AlertBroker(mainConfig):
                 alert.alert_type = alert_status['alert_type']
                 alert.alert_sender = alert_status['alert_sender']
                 alert.is_inputted = alert_status['is_inputted']
+                alert.trigger_time = alert_status['trigger_time']
                 alert.is_observed = alert_status['is_observed']
+                alert.observation_time = alert_status['observation_time']
                 alert.is_matched_to_tiles = alert_status['is_matched_to_tiles']
                 alert.distance_to_tile_boundary = alert_status['distance_to_tile_boundary']
                 alert.update_time = alert_status['update_time']
@@ -277,6 +281,7 @@ class AlertBroker(mainConfig):
                         # If new alert, save the alert
                         if not self.is_history_saved(history_path = alert.historypath):
                             self.save_alerthistory(alert = alert, history_path = alert.historypath)
+
                         # Else, load the alert from the history 
                         else:
                             alert = self.load_alerthistory(history_path = alert.historypath)
@@ -835,6 +840,7 @@ class AlertBroker(mainConfig):
             self.DB_Daily.insert(target_tbl = formatted_data)
             alert.is_inputted = True
             alert.update_time = Time.now().isot
+            alert.trigger_time = Time.now().isot
             print(f'Targets are inserted to the database.')
             return alert
         except:

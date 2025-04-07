@@ -208,5 +208,5 @@ class SingleTelescope(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    S = SingleTelescope(1)
+    S = SingleTelescope(14)
 # %%

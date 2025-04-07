@@ -3,6 +3,7 @@
 import time
 import pytz
 import numpy as np
+import uuid
 from astropy.time import Time
 from datetime import datetime
 from multiprocessing import Event
@@ -200,6 +201,7 @@ class mainCamera(mainConfig):
         """
         status = self.get_status()
         imginfo = dict()
+        imginfo['imgid'] = None
         imginfo['data'] = None
         imginfo['imgtype'] = None
         imginfo['numX'] = None
@@ -226,6 +228,10 @@ class mainCamera(mainConfig):
             elif imginfo_alpaca.ImageElementType == ImageArrayElementTypes.Double:
                 img_dtype = np.float64
             data = np.array(imgdata_alpaca, dtype=img_dtype).transpose()
+            try:
+                imginfo['imgid'] = uuid.uuid4().hex
+            except:
+                pass
             try:
                 imginfo['data'] = data
             except:
@@ -594,3 +600,4 @@ class mainCamera(mainConfig):
         self.device.BinX = self.device.BinY = binning
         self.device.NumX = self.device.CameraXSize // self.device.BinX
         self.device.NumY = self.device.CameraYSize // self.device.BinY
+#%%

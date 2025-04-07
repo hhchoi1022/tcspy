@@ -161,6 +161,7 @@ class AlertMonitor(mainConfig):
         # Set the maximum waiting time for the alert to be observed
         maximum_waiting_time = 86400  # Maximum waiting time in seconds (48 hours)
         is_alert_observed = False
+        observed_time = None
         print(f"[{datetime.datetime.now()}] Waiting for the alert to be observed. Maximum wait: 48 hours.")
 
         while maximum_waiting_time > 0:
@@ -174,13 +175,15 @@ class AlertMonitor(mainConfig):
             print(f"[{datetime.datetime.now()}] {alert.num_observed_targets}/{len(alert_observable_targets)} targets observed.")
             
             if is_alert_observed:
-                observed_time = alert_observation_status['obs_endtime'][0]
+                observed_time = np.max(Time(alert_observation_status['obs_endtime']))
                 print(f"[{datetime.datetime.now()}] All targets observed at {observed_time}.")
                 break
 
             maximum_waiting_time -= 15
 
         alert.is_observed = is_alert_observed
+        alert.observation_time = observed_time
+        
         self.alertbroker.save_alerthistory(alert = alert, history_path = alert.historypath)
         self.update_alertstatus(alert, alert.statuspath)
 
@@ -205,41 +208,38 @@ class AlertMonitor(mainConfig):
     def update_alertstatus(self, 
                            alert : Alert,
                            status_path : str):
-        if alert.is_observed == False:
-            if not alert.alert_data:
-                raise ValueError('The alert data is not read or received yet')
+        if not alert.alert_data:
+            raise ValueError('The alert data is not read or received yet')
             
-            if not os.path.exists(status_path):
-                os.makedirs(status_path)
+        if not os.path.exists(status_path):
+            os.makedirs(status_path)
 
-            # Save formatted_data (Optional)
-            if alert.formatted_data:
-                alert.formatted_data.write(os.path.join(status_path, 'alert_formatted.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
+        # Save formatted_data (Optional)
+        if alert.formatted_data:
+            alert.formatted_data.write(os.path.join(status_path, 'alert_formatted.ascii_fixed_width'), format = 'ascii.fixed_width', overwrite = True)
             
-            # Save alert_data
-            with open(os.path.join(status_path, 'alert_rawdata.json'), 'w') as f:
-                json.dump(alert.alert_data, f, indent = 4)
+        # Save alert_data
+        with open(os.path.join(status_path, 'alert_rawdata.json'), 'w') as f:
+            json.dump(alert.alert_data, f, indent = 4)
 
-            # Save the alert status as json
-            alert_status = dict()
-            alert_status['alert_type'] = alert.alert_type
-            alert_status['alert_sender'] = alert.alert_sender
-            alert_status['is_inputted'] = alert.is_inputted
-            alert_status['is_observed'] = alert.is_observed
-            alert_status['num_observed_targets'] = alert.num_observed_targets
-            alert_status['is_matched_to_tiles'] = alert.is_matched_to_tiles
-            alert_status['distance_to_tile_boundary'] = alert.distance_to_tile_boundary
-            alert_status['update_time'] = Time.now().isot
-            alert_status['key'] = alert.key
-            with open(os.path.join(status_path, 'alert_status.json'), 'w') as f:
-                json.dump(alert_status, f, indent = 4)
+        # Save the alert status as json
+        alert_status = dict()
+        alert_status['alert_type'] = alert.alert_type
+        alert_status['alert_sender'] = alert.alert_sender
+        alert_status['is_inputted'] = alert.is_inputted
+        alert_status['trigger_time'] = alert.trigger_time
+        alert_status['is_observed'] = alert.is_observed
+        alert_status['observation_time'] = alert.observation_time
+        alert_status['num_observed_targets'] = alert.num_observed_targets
+        alert_status['is_matched_to_tiles'] = alert.is_matched_to_tiles
+        alert_status['distance_to_tile_boundary'] = alert.distance_to_tile_boundary
+        alert_status['update_time'] = Time.now().isot
+        alert_status['key'] = alert.key
+        with open(os.path.join(status_path, 'alert_status.json'), 'w') as f:
+            json.dump(alert_status, f, indent = 4)
             
-            print(f'Alert status is saved: {status_path}')
-        else:
-            if os.path.exists(status_path):
-                shutil.rmtree(status_path)
-                print(f"Alert status is removed: {status_path}")
-            
+        print(f'Alert status is saved: {status_path}')
+
     def check_new_mail(self,
                        mailbox = 'inbox',
                        since_days : int = 3,
@@ -299,8 +299,8 @@ if __name__ == "__main__":
     alertmonitor = AlertMonitor()
 #%%
 if __name__ == "__main__":
-    alertmonitor.monitor_alert(send_slack = True,
-                               send_email = True,
+    alertmonitor.monitor_alert(send_slack = False,
+                               send_email = False,
                                check_interval = 30,
                                since_days = 3,
                                max_email_alerts = 10,

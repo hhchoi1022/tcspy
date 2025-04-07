@@ -1,0 +1,18 @@
+{
+    "requester": "gregorypaek94@gmail.com",
+    "target": "SN2025fvw",
+    "ra": "233.857430764",
+    "dec": "12.0577222937",
+    "exposure": 300.0,
+    "imageCount": "3",
+    "obsmode": "Spec",
+    "comments": "",
+    "abortObservation": false,
+    "priority": 0,
+    "gain": 2750,
+    "binning": 1,
+    "obsStartTime": "",
+    "radius": 0,
+    "selectedSpecFile": "specall.specmode",
+    "singleExposure": "100"
+}

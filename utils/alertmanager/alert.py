@@ -24,7 +24,9 @@ class Alert:
         self.alert_sender = 'Undefined' # sender of the alert
         self.formatted_data = None # formatted data of the alert
         self.is_inputted = False # after inputting the alert data to the scheduler, set it to True
+        self.trigger_time = None # after inputting the alert data to the scheduler, set the time
         self.is_observed = False # after observing the alert, set it to True
+        self.observation_time = None # after observing the alert, set the time
         self.num_observed_targets = 0 # number of observed targets
         self.is_matched_to_tiles = False
         self.distance_to_tile_boundary = None
@@ -204,13 +206,7 @@ class Alert:
         for key, value in self.default_config.items():
             formatted_tbl[key] = [value] * len(tbl)
         
-        # Update values from alert_data if the key exists         
-        # for key in tbl.keys():
-        #     noramlized_key = self._normalize_required_keys(key)
-        #     if noramlized_key:
-        #         formatted_tbl[noramlized_key] = tbl[key]
-        #     else:
-        #         print('The key is not found in the key variants: ', key)
+
 
         # Convert the RA, Dec to degrees
         formatted_tbl['RA'], formatted_tbl['De'] = self._convert_to_deg(tbl['ra'].tolist(), tbl['dec'].tolist())
@@ -423,7 +419,7 @@ class Alert:
             'RA': ['right ascension (ra)', 'right ascension (r.a.)', 'ra', 'r.a.'],
             'De': ['de', 'dec', 'dec.', 'declination', 'declination (dec)', 'declination (dec.)'],
             'exptime': ['exptime', 'exposure', 'exposuretime', 'exposure time', 'singleexposure', 'singleframeexposure', 'single frame exposure', 'single exposure time (seconds)'],
-            'count': ['count', 'counts', 'imagecount', 'numbercount', 'image count', 'number count'],
+            'count': ['count', 'counts', 'imagecount', 'numbercount', 'image count', 'number count', '# of images'],
             'obsmode': ['obsmode', 'observationmode', 'mode'],
             'specmode': ['specmode', 'spectralmode', 'spectral mode', 'selectedspecfile'],
             'filter_': ['filter', 'filters', 'selectedfilters'],
@@ -436,9 +432,10 @@ class Alert:
             'note': ['note', 'notes'],
             'comments': ['comment', 'comments'],
             'is_ToO': ['is_too', 'is too', 'abortobservation', 'abort current observation'],
-            'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime'],
+            'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime', 'observation start time'],
             'id': ['id', 'uuid', 'uniqueid', 'unique id', 'unique identifier'],
-            'is_observable': ['is_observable']
+            'is_observable': ['is_observable'],
+            'radius': ['radius', 'radius (arcmin)']
         }
         # Sort each list in the dictionary by string length (descending order)
         sorted_required_key_variants = {

@@ -57,6 +57,32 @@ class mainConfig:
             json.dump(dict_params, f, indent=4)
         print('New configuration file made : %s' % (filepath))
         
+    def update_config(self, key: str, value):
+        """
+        Update a specific configuration parameter and save it to the corresponding config file.
+        """
+        if key not in self.config:
+            print(f"[WARNING] Key '{key}' not found in configuration.")
+            return
+
+        # Update the in-memory config
+        self.config[key] = value
+
+        # Find the config file containing this key
+        is_found = False
+        configfiles = self._configfiles_unit + self._configfiles_global
+        for configfile in configfiles:
+            with open(configfile, 'r') as f:
+                config_data = json.load(f)
+            if key in config_data:
+                is_found = True
+                config_data[key] = value
+                with open(configfile, 'w') as f:
+                    json.dump(config_data, f, indent=4)
+                print(f"[INFO] Key '{key}' updated to '{value}' in '{configfile}'")
+        if not is_found:
+            print(f"[WARNING] Key '{key}' found in config but no matching config file found to update.")
+        
     @property
     def tcspy_params(self):
         tcspy_params = dict(TCSPY_VERSION='Version 1.0',
@@ -129,7 +155,9 @@ class mainConfig:
                             FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$",
                             IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/',
                             IMAGE_SAVEHEADER = True,
-                            IMAGE_FORMAT = 'FITS'
+                            IMAGE_FORMAT = 'FITS',
+                            IMAGE_SAVELOG = True,
+                            IMAGE_LOGPATH = f'{self.path_home}/.tcspy/sync/rawdata/',
                             )
         
         logger_params = dict(LOGGER_SAVE=True,
@@ -145,7 +173,7 @@ class mainConfig:
                                TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
-                               TRANSFER_SYNC = f'{os.path.join(self.path_home,".tcspy", "sync","transfer.txt")}',
+                               TRANSFER_SYNCFOLDER = f'{os.path.join(self.path_home,".tcspy", "sync","transfer")}',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 32,
                                TRANSFER_GRIPFTP_VERBOSE = True,
                                TRANSFER_GRIDFTP_RETRIES = 30,
@@ -208,10 +236,10 @@ class mainConfig:
         alertbroker_params = dict(ALERTBROKER_AUTHUSERS = ['hhchoi1022@gmail.com',
                                                            'jhkim.astrosnu@gmail.com', # Ji hoon Kim
                                                            'myungshin.im@gmail.com',  # Myungshin Im
-                                                           'takdg123@gmail.com',
-                                                           'seowon.chang@gmail.com',
-                                                           'gregorypaek94@gmail.com',
-                                                           ''
+                                                           'takdg123@gmail.com', # Donggeun Dong
+                                                           'seowon.chang@gmail.com', # Seowon Chang
+                                                           'gregorypaek94@gmail.com', # Gregory Paek
+                                                           'jmk5040@gmail.com' # Mankeun Jeong
                                                            ],
                                   ALERTBROKER_NORMUSERS = ['hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
                                                            ],
