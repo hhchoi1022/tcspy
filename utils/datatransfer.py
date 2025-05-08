@@ -402,17 +402,23 @@ if __name__ == '__main__':
     A = DataTransferManager()
     import time
 
-    # A.run(key = '*/image/2025-04-04_gain2750', save_hash = True, tar = True,
+    # A.run(key = '*/image/2025-04-09_gain2750', save_hash = True, tar = True,
     #       sync_log = True, transfer = True, move_and_clean = True,
     #       from_archive = False)
+
     # time.sleep(600)
-    # A.run(key = '*/image/2025-04-05_gain0', save_hash = True, tar = True,
-    #       sync_log = True, transfer = True, move_and_clean = True,
-    #       from_archive = False)
-    # time.sleep(600)
-    # A.run(key = '*/image/2025-04-05_gain2750', save_hash = True, tar = True,
-    #       sync_log = True, transfer = True, move_and_clean = True,
-    #       from_archive = False)
+    # A.run(key = '*/2025-03-23_gain2750', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = False,
+    #       from_archive = True)
+    # A.run(key = '*/2025-04-03_gain2750', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = False,
+    #       from_archive = True)
+    # A.run(key = '*/2025-04-03_gain0', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = False,
+    #       from_archive = True)
+    # A.run(key = '*/2025-04-13_gain2750', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = False,
+    #       from_archive = True)
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     A.start_monitoring(
         ordinary_file_key='*/image/*',   # Adjust these parameters as needed

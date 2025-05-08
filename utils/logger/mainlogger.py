@@ -37,6 +37,7 @@ class mainLogger(mainConfig):
         from tcspy.devices.observer import mainObserver
         super().__init__(unitnum= unitnum)
         self.observer = mainObserver()
+        self.path = None
         self._log = self.createlogger(logger_name)
     
     def log(self):
@@ -86,7 +87,8 @@ class mainLogger(mainConfig):
             #sunrise_astro = self.observer.tonight(time = Time.now(), horizon = -18)[1]
             #filename =  (self.observer.tonight(time = Time.now(), horizon = -18)[1] - 12 * u.hour).datetime.strftime('%Y%m%d') + '.log'
             filename =  (Time.now() - 12 * u.hour).datetime.strftime('%Y%m%d') + '.log'
-            fileHandler = logging.FileHandler(filename = self.config['LOGGER_PATH']+filename)
+            self.path = os.path.join(self.config['LOGGER_PATH'],filename)
+            fileHandler = logging.FileHandler(filename = self.path)
             fileHandler.setLevel(self.config['LOGGER_LEVEL'])
             fileHandler.setFormatter(formatter)
             logger.addHandler(fileHandler)

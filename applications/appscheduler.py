@@ -248,7 +248,7 @@ class AppScheduler(mainConfig):
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'FlatAcquisition is finished: {end_time}', alert_slack = alert_slack)
             return self.schedule.CancelJob  # Remove this job after execution
-
+    
     def run_shutdown(self,
                      fanoff : bool = True,
                      slew : bool = True,
@@ -332,18 +332,15 @@ if __name__ == '__main__':
     
     # Flat
     if Time.now() < A.obsnight_utc.sunrise_flat:
-        if A.obsnight.sunrise_startup.datetime.day % 3 == 0:
-            A.schedule_app(A.run_flat, A.obsnight.sunrise_flat, count = 9, binning = 1, gain = 2750, alert_slack = alert_slack)
-        else:
-            A.schedule_app(A.run_flat, A.obsnight.sunrise_flat, count = 9, binning = 1, gain = 0, alert_slack = alert_slack)
+        A.schedule_app(A.run_flat, A.obsnight.sunrise_flat, count = 9, binning = 1, gain = 2750, alert_slack = alert_slack)
 
     # Dark
     utcdate12 = (A.obsnight.sunset_observation - 12 * u.hour).datetime
     tonight_str = '%.4d-%.2d-%.2d'%(utcdate12.year, utcdate12.month, utcdate12.day)
     all_obsinfo = A.get_obsinfo_tonight(tonight_str, return_only_set= True, key_for_set = ['exptime', 'xbinning', 'gain'])
     dark_count = 9
-    dark_starttime = A.obsnight.sunrise_flat + 40 * u.minute
-    dark_starttime_utc = A.obsnight_utc.sunrise_flat + 40 * u.minute
+    dark_starttime = A.obsnight.sunrise_shutdown + 10 * u.minute
+    dark_starttime_utc = A.obsnight_utc.sunrise_shutdown + 10 * u.minute
     if Time.now() < dark_starttime_utc:
         for obsinfo in all_obsinfo:
             exptected_duration = float(obsinfo['exptime'][0]) * dark_count * 1.3
@@ -362,9 +359,10 @@ if __name__ == '__main__':
             bias_starttime += 10 * u.minute
 
     # Shutdown
-    shutdown_starttime = A.obsnight_utc.sunrise_shutdown
-    if Time.now() < shutdown_starttime:
-        A.schedule_app(A.run_shutdown, A.obsnight.sunrise_shutdown, fanoff = True, slew = True, warm = True, alert_slack = alert_slack)
+    shutdown_starttime = bias_starttime + 20 * u.minute
+    shutdown_starttime_utc = bias_starttime_utc + 10 * u.minute
+    if Time.now() < shutdown_starttime_utc:
+        A.schedule_app(A.run_shutdown, shutdown_starttime, fanoff = True, slew = True, warm = True, alert_slack = alert_slack)
 
     A.post_schedule(subject = '*Scheduled TCSpy apploication after nightly observation*')
     A.show_schedule()

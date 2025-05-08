@@ -134,10 +134,16 @@ class Shutdown(mainConfig):
             if len(self.multitelescopes.devices) == 0:
                 self.is_running = False
                 raise ActionFailedException(f'[{type(self).__name__}] is Failed. Telescopes are not specified')
-            
+
+        
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
         self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
+        
+        # Move log file
+        
         self.is_running = False
+        
+        
 
 # %%
 if __name__ == '__main__':
@@ -154,7 +160,7 @@ if __name__ == '__main__':
     message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
     if message_ts:
         slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
-    S.run(fanoff = True,                    
+    S.run(fanoff = False,                    
           slew = True,
           warm = True)
     while S.is_running:

@@ -1,6 +1,7 @@
 #%%
 from astropy.io import ascii
 import time
+import json, os
 from astropy.time import Time
 import numpy as np
 from multiprocessing import Event
@@ -85,8 +86,9 @@ class mainFocuser_pwi4(mainConfig):
         status['is_moving'] = None
         status['is_autofocusing'] = None
         status['is_autofocus_success'] = None
-        status['is_autofocus_bestposition'] = None
-        status['is_autofocus_tolerance'] = None
+        status['autofocus_bestposition'] = None
+        status['autofocus_tolerance'] = None
+        status['autofocus_history'] = self._get_autofocus_history()
         
         try:
             if self.PWI_status.mount.is_connected:
@@ -116,6 +118,15 @@ class mainFocuser_pwi4(mainConfig):
             The PWI status of the device.
         """
         return self.device.status()
+    
+    def _get_autofocus_history(self):
+        af_path = os.path.join(self.config['AUTOFOCUS_FOCUSHISTORY_PATH'], self.tel_name, 'focus_history.json')
+        if os.path.exists(af_path):
+            with open(af_path, 'r') as f:
+                data = json.load(f)
+            return data
+        else:
+            return None
     
     @Timeout(5, 'Timeout')
     def connect(self):
@@ -348,6 +359,5 @@ class mainFocuser_pwi4(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    F = mainFocuser_pwi4(1)
-    F.autofocus_start(Event())
+    F = mainFocuser_pwi4(2)
 # %%

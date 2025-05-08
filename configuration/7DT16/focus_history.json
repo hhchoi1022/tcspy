@@ -1,49 +1,58 @@
 {
     "7DT16": {
         "g": {
-            "update_time": "2025-04-07T06:17:17.395",
+            "update_time": "2025-05-08T06:49:07.071",
             "succeeded": true,
-            "focusval": 8884.5
+            "focusval": 8941.7,
+            "focuserr": 15.51
         },
         "r": {
-            "update_time": "2025-04-07T06:36:13.858",
+            "update_time": "2025-05-08T06:56:14.048",
             "succeeded": true,
-            "focusval": 8866.5
+            "focusval": 8926.8,
+            "focuserr": 15.66
         },
         "i": {
-            "update_time": "2025-03-28T04:02:31.181",
-            "succeeded": true,
-            "focusval": 8880.3
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         },
         "z": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
-            "focusval": 10000
+            "focusval": 10000,
+            "focuserr": 999
         },
         "Slot5": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
-            "focusval": 10000
+            "focusval": 10000,
+            "focuserr": 999
         },
         "Slot6": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
-            "focusval": 10000
+            "focusval": 10000,
+            "focuserr": 999
         },
         "Slot7": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
-            "focusval": 10000
+            "focusval": 10000,
+            "focuserr": 999
         },
         "Slot8": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
-            "focusval": 10000
+            "focusval": 10000,
+            "focuserr": 999
         },
         "Slot9": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
-            "focusval": 10000
+            "focusval": 10000,
+            "focuserr": 999
         }
     }
 }

@@ -221,7 +221,6 @@ class NightObservation(mainConfig):
         self._put_action(target = target, action = action, telescopes = telescopes, action_id = action_id, kwargs = kwargs)
         
         # Run observation
-        print(telescopes)
         process = Process(target = action.run, kwargs = kwargs)
         process.start()
         while process.is_alive():
@@ -323,6 +322,8 @@ class NightObservation(mainConfig):
                 self.last_ToO_trigger_time = now.isot
                 # If there is any aborted_action due to unsafe weather, resume the observation
                 if aborted_action_ToO:
+                    self.multitelescopes.log.info(f'[{type(self).__name__}] Telescope is waiting 600s for the dome opened...')
+                    time.sleep(600)
                     for action, observation_status in zip(aborted_action_ToO, aborted_observation_status_ToO):
                         time.sleep(0.5)
                         self.execute_observation(action = action['action'], telescopes = action['telescope'], kwargs = action['kwargs'], target = action['target'], observation_status = observation_status, check_visibility = True)
@@ -413,6 +414,8 @@ class NightObservation(mainConfig):
                 is_shutdown_triggered = False
                 # If there is any aborted_action due to unsafe weather, resume the observation
                 if aborted_action:
+                    self.multitelescopes.log.info(f'[{type(self).__name__}] Telescope is waiting 600s for the dome opened...')
+                    time.sleep(600)
                     for action, observation_status in zip(aborted_action, aborted_observation_status):
                         time.sleep(0.5)
                         self.execute_observation(action = action['action'], telescopes = action['telescope'], kwargs = action['kwargs'], target = action['target'], observation_status = observation_status, check_visibility= True)

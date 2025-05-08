@@ -571,22 +571,21 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 if __name__ == '__main__':
     from threading import Thread
     kwargs = dict(
-    exptime= '100,100',
-    count= '1,1',
-    filter_ = 'g,r',
-    binning= '2,2',
+    exptime= '1',
+    count= '1',
+    filter_ = 'm450',
+    binning= '1',
     imgtype = 'Light',
-    ra= 196.109,
-    dec= -23.774,
-    name = "COSMOS",
-    objtype = 'Commissioning',
-    autofocus_before_start= True,
-    autofocus_when_filterchange= True)              
+    alt = 30,
+    az= 90,
+    name = "Test",
+    objtype = 'Testt',
+    autofocus_before_start= False,
+    autofocus_when_filterchange= False)              
     from multiprocessing import Process
     abort_action = Event()
     s = SingleObservation(SingleTelescope(2),abort_action)
-    p = Process(target = s.run, kwargs = kwargs)
-    p.start()
+    s.run(**kwargs)
 # %%
 if __name__ == '__main__':
     s.abort()

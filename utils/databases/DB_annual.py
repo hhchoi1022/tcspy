@@ -158,8 +158,8 @@ class DB_Annual(mainConfig):
                             size : int = 300,
                             observable_minimum_hour: float = 2,
                             n_time_grid : float = 10,
-                            galactic_latitude_limit: float = 20,
-                            declination_upper_limit: float = -20,
+                            galactic_latitude_limit: float = 15,
+                            declination_upper_limit: float = -10,
                             declination_lower_limit: float = -90
                             ):
         obsnight = self.nightsession.set_obsnight(utctime = utcdate)
@@ -398,14 +398,14 @@ if __name__ == '__main__':
     db = DB_Annual(tbl_name = 'RIS')
     db_IMS = DB_Annual(tbl_name = 'IMS')
 
-    #tbl = db.select_best_targets()
-    # current_obscount = len(db.data[db.data['obs_count']>  0])
-    # tot_tilecount = len(db.data)
-    # print('Current_obscount = ', current_obscount)
-    # print('Total_obscount_sum = ', np.sum(db.data['obs_count']))
-    # print(f'{current_obscount}/{tot_tilecount}')
-    tbl_to_insert = db.data[[2665, 2666, 2523, 2524, 2385, 2386, 2252]]
-    db_IMS.insert(tbl_to_insert)
+    tbl = db.select_best_targets()
+    current_obscount = len(db.data[db.data['obs_count']>  0])
+    tot_tilecount = len(db.data)
+    print('Current_obscount = ', current_obscount)
+    print('Total_obscount_sum = ', np.sum(db.data['obs_count']))
+    print(f'{current_obscount}/{tot_tilecount}')
+    #tbl_to_insert = db.data[[2665, 2666, 2523, 2524, 2385, 2386, 2252]]
+    #db_IMS.insert(tbl_to_insert)
 # %%
 if __name__ == '__main__':
     import numpy as np
@@ -414,9 +414,9 @@ if __name__ == '__main__':
     survey_data = db.data
     all_coords = SkyCoord(survey_data['RA'], survey_data['De'], unit ='deg', frame = 'icrs')
     # galactic latitude cut
-    highb_idx = np.abs(all_coords.galactic.b.value) > 20
+    highb_idx = np.abs(all_coords.galactic.b.value) > 15
     # declination cut
-    decl_idx = (all_coords.dec.value < -20) & (all_coords.dec.value > -90)
+    decl_idx = (all_coords.dec.value < -10) & (all_coords.dec.value > -90)
     # all cut
     total_idx1 = highb_idx# & decl_idx
     total_idx2 = highb_idx & decl_idx

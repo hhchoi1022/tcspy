@@ -110,6 +110,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         objtype : str = None
         id_ : str = None
         note : str = None
+        is_ToO = False,
+        comment = None
         """
         # Check condition of the instruments for this Action
         self.telescope.register_logfile()
@@ -253,6 +255,14 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             
             status = self.telescope.status
             try:
+                autofocus_dict = status['focuser']['autofocus_history'][self.telescope.tel_name]
+                if filter_ is None:
+                    autofocus_info = {'update_time': None,
+                                      'succeeded': None,
+                                      'focusval': None,
+                                      'focuserr': None}
+                else:
+                    autofocus_info = autofocus_dict[filter_]
                 img = mainImage(frame_number = int(frame_number),
                                 config_info = self.telescope.config,
                                 image_info = imginfo,
@@ -262,7 +272,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                                 focuser_info = status['focuser'],
                                 observer_info = status['observer'],
                                 target_info = target.status,
-                                weather_info = status['weather'])
+                                weather_info = status['weather'],
+                                autofocus_info = autofocus_info)
                 filepath = img.save()
                 self.telescope.log.info(f'[{type(self).__name__}] Image Saved: %s'%(filepath))
                 self.shared_memory['succeeded'] = True
@@ -288,3 +299,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         self.shared_memory['is_running'] = False
         self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')      
+# %%
+if __name__ == '__main__':
+    self = Exposure(SingleTelescope(2), Event())
+# %%

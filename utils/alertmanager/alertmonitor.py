@@ -299,8 +299,8 @@ if __name__ == "__main__":
     alertmonitor = AlertMonitor()
 #%%
 if __name__ == "__main__":
-    alertmonitor.monitor_alert(send_slack = False,
-                               send_email = False,
+    alertmonitor.monitor_alert(send_slack = True,
+                               send_email = True,
                                check_interval = 30,
                                since_days = 3,
                                max_email_alerts = 10,

@@ -279,7 +279,11 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                                         focuser_info = status['focuser'],
                                         observer_info = status['observer'],
                                         target_info = target.status,
-                                        weather_info = status['weather'])
+                                        weather_info = status['weather'],
+                                        autofocus_info = {'update_time': None,
+                                                          'succeeded': None,
+                                                          'focusval': None,
+                                                          'focuserr': None})
                         filepath = img.save()
                         self.telescope.log.info(f'[{type(self).__name__}] Image saved: %s'%(filepath))
                         obs_count += 1

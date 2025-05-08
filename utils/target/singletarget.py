@@ -347,7 +347,7 @@ class SingleTarget(mainConfig):
             pass
         return targetinfo
     
-    def moon_sep(self,
+    def moon_sep(self, 
                  utctime : datetime or Time or np.array = None):
         """
         Calculate the separation between the Moon and the target.
@@ -363,7 +363,6 @@ class SingleTarget(mainConfig):
             The separation between the Moon and the target.
         """
         if self._coordtype == 'radec':
-            
             if utctime is None:
                 utctime = Time.now()
             if not isinstance(utctime, Time):

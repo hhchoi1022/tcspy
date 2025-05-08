@@ -99,9 +99,11 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         
         # Check device status
         status_camera = self.telescope_status.camera
+        print('111')
         status_focuser = self.telescope_status.focuser
         status_mount = self.telescope_status.mount
         status_filterwheel = self.telescope_status.filterwheel
+        print('222')
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -140,6 +142,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         
         # Apply focus offset
         if use_offset:
+            print('333333')
             info_filterwheel = self.telescope.filterwheel.get_status()
             current_filter = info_filterwheel['filter_']
             if not current_filter == filter_:
@@ -235,7 +238,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             
         # When succeeded
         if result_autofocus:
-            self.update_focus_history(filter_ = filter_, focusval =autofocus_position, is_succeeded = result_autofocus)
+            self.update_focus_history(filter_ = filter_, focusval =autofocus_position, focuserr= autofocus_error, is_succeeded = result_autofocus)
             self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')
             self.shared_memory['succeeded'] = True
             self.shared_memory['is_running'] = False
@@ -275,7 +278,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
                 # When succeeded
                 if result_autofocus:
-                    self.update_focus_history(filter_ = filter_, focusval =autofocus_position, is_succeeded = result_autofocus)
+                    self.update_focus_history(filter_ = filter_, focusval =autofocus_position, focuserr = autofocus_error, is_succeeded = result_autofocus)
                     self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')
                     self.shared_memory['succeeded'] = True
                     self.shared_memory['is_running'] = False
@@ -290,7 +293,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.') 
  
             except AutofocusFailedException:
-                self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 2nd try failed. Search focus with the range of {search_focus_range}.')
+                self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 2nd try failed.')
 
         # If autofocus process is still failed, grid search
         if search_focus_when_failed:
@@ -329,7 +332,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                     result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
                     # When succeeded
                     if result_autofocus:
-                        self.update_focus_history(filter_ = filter_, focusval =autofocus_position, is_succeeded = result_autofocus)
+                        self.update_focus_history(filter_ = filter_, focusval =autofocus_position, focuserr = autofocus_error, is_succeeded = result_autofocus)
                         self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')
                         self.shared_memory['succeeded'] = True
                         self.shared_memory['is_running'] = False
@@ -379,7 +382,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
     def write_default_focus_history(self):
         with open(self.config['AUTOFOCUS_FILTINFO_FILE'], 'r') as f:
             filtinfo = json.load(f)
-        default_focus_history_filter = dict(zip(['update_time', 'succeeded', 'focusval'], [Time('2000-01-01').isot, False, 10000]))
+        default_focus_history_filter = dict(zip(['update_time', 'succeeded', 'focusval', 'focuserr'], [Time('2000-01-01').isot, False, 10000, 999]))
         focus_history_default = dict()
         tel_name = self.telescope.tel_name
         filt_list = filtinfo[tel_name]
@@ -390,7 +393,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         with open(self.focus_history_file, 'w') as f:
             json.dump(focus_history_default, f, indent=4)
 
-    def update_focus_history(self, filter_ : str, focusval : float, is_succeeded : bool):
+    def update_focus_history(self, filter_ : str, focusval : float, focuserr: float, is_succeeded : bool):
         if not os.path.isfile(self.focus_history_file):
             print('No focus_hostory file exists. Default format is generated.')
             self.write_default_focus_history()
@@ -399,6 +402,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         focus_history_data[self.telescope.tel_name][filter_]['update_time'] = Time.now().isot
         focus_history_data[self.telescope.tel_name][filter_]['succeeded'] = is_succeeded
         focus_history_data[self.telescope.tel_name][filter_]['focusval'] = focusval
+        focus_history_data[self.telescope.tel_name][filter_]['focuserr'] = focuserr
         with open(self.focus_history_file, 'w') as f:
             json.dump(focus_history_data, f, indent=4)
     

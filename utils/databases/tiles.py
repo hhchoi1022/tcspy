@@ -323,15 +323,15 @@ if __name__ == "__main__":
     #data = ascii.read('./7DT_observed_Tile')
     #list_ra = data['ra']
     #list_dec = data['dec']
-    list_ra = [145.15137]#tbl['ra']#[350.1]
-    list_dec = [-15.01586]#bl['dec']
-    coord = SkyCoord(lon = 44 * u.deg, lat = -82 * u.deg, frame = GeocentricTrueEcliptic, obstime = 'J2000')
-    icrs_coord = coord.transform_to('icrs')
-    list_ra = [icrs_coord.ra.value]
-    list_dec = [icrs_coord.dec.value]
+    list_ra = [78.528]#tbl['ra']#[350.1]
+    list_dec = [-40.046]#bl['dec']
+    # coord = SkyCoord(lon = 44 * u.deg, lat = -82 * u.deg, frame = GeocentricTrueEcliptic, obstime = 'J2000')
+    # icrs_coord = coord.transform_to('icrs')
+    # list_ra = [icrs_coord.ra.value]
+    # list_dec = [icrs_coord.dec.value]
     
     #tbl_filtered, tbl_idx, fig_path =T.find_overlapping_tiles(list_ra, list_dec, 0.5, visualize = False, visualize_ncols=5, match_tolerance_minutes= 11)  
-    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 1.75, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
+    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 0, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
     # tbl_filtered.rename_column('id', 'objname')
     # tbl_filtered.rename_column('ra', 'RA')
     # tbl_filtered.rename_column('dec', 'De')
@@ -345,3 +345,5 @@ if __name__ == "__main__":
     # db.insert(target_tbl = tbl_filtered)
 # %%
 
+
+# %%

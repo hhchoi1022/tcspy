@@ -59,7 +59,8 @@ class mainImage(mainConfig):
                  focuser_info : dict = None,
                  observer_info : dict = None,
                  target_info : dict = None,
-                 weather_info : dict = None
+                 weather_info : dict = None,
+                 autofocus_info : dict = None
                  ):
 
         self._framenum = frame_number
@@ -72,6 +73,7 @@ class mainImage(mainConfig):
         self._obsinfo = observer_info
         self._targetinfo = target_info
         self._weatherinfo = weather_info
+        self._autofocusinfo = autofocus_info
         self.hdu = fits.PrimaryHDU()
         self._construct_hdu()
         self._construct_header()
@@ -105,7 +107,8 @@ class mainImage(mainConfig):
         configinfo = self._add_configinfo_to_hdr()
         obsinfo = self._add_obsinfo_to_hdr()
         weatherinfo = self._add_weatinfo_to_hdr()
-        all_info = {**telinfo,**caminfo,**focusinfo,**filtinfo,**imginfo,**targetinfo,**configinfo,**obsinfo,**weatherinfo}
+        autofocusinfo = self._add_autofocusinfo_to_hdr()
+        all_info = {**telinfo,**caminfo,**focusinfo,**autofocusinfo,**filtinfo,**imginfo,**targetinfo,**configinfo,**obsinfo,**weatherinfo}
         for key, value in all_info.items():
             self.hdu.header[key] = (value['value'],str(value['note']))
     
@@ -179,15 +182,17 @@ class mainImage(mainConfig):
         
         dt_ut = Time(key_data['DATE-OBS']).datetime
         dt_ut_12 = (Time(key_data['DATE-OBS']) - 12 * u.hour).datetime
+        dt_ut_15 = (Time(key_data['DATE-OBS']) - 15 * u.hour).datetime
         dt_lt = Time(key_data['DATE-LOC']).datetime
         dt_lt_12 = (Time(key_data['DATE-LOC']) - 12 * u.hour).datetime
+        dt_lt_15 = (Time(key_data['DATE-LOC']) - 15 * u.hour).datetime
 
         key_data['UTCDATE'] = '%.4d%.2d%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
         key_data['LTCDATE'] = '%.4d%.2d%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
         
         key_data['UTCDATE_'] = '%.4d_%.2d_%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
         key_data['LTCDATE_'] = '%.4d_%.2d_%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
-
+ 
         key_data['UTCDATE-'] = '%.4d-%.2d-%.2d' % (dt_ut.year, dt_ut.month, dt_ut.day)
         key_data['LTCDATE-'] = '%.4d-%.2d-%.2d' % (dt_lt.year, dt_lt.month, dt_lt.day)
         
@@ -200,6 +205,15 @@ class mainImage(mainConfig):
         key_data['UTCDATE12-'] = '%.4d-%.2d-%.2d' % (dt_ut_12.year, dt_ut_12.month, dt_ut_12.day)
         key_data['LTCDATE12-'] = '%.4d-%.2d-%.2d' % (dt_lt_12.year, dt_lt_12.month, dt_lt_12.day)
 
+        key_data['UTCDATE15'] = '%.4d%.2d%.2d' % (dt_ut_15.year, dt_ut_15.month, dt_ut_15.day)
+        key_data['LTCDATE15'] = '%.4d%.2d%.2d' % (dt_lt_15.year, dt_lt_15.month, dt_lt_15.day)
+        
+        key_data['UTCDATE15_'] = '%.4d_%.2d_%.2d' % (dt_ut_15.year, dt_ut_15.month, dt_ut_15.day)
+        key_data['LTCDATE15_'] = '%.4d_%.2d_%.2d' % (dt_lt_15.year, dt_lt_15.month, dt_lt_15.day)
+        
+        key_data['UTCDATE15-'] = '%.4d-%.2d-%.2d' % (dt_ut_15.year, dt_ut_15.month, dt_ut_15.day)
+        key_data['LTCDATE15-'] = '%.4d-%.2d-%.2d' % (dt_lt_15.year, dt_lt_15.month, dt_lt_15.day)
+        
         key_dict = dict()
         for key in key_data.keys():
             key_dict[key] = str(key_data[key])
@@ -294,6 +308,18 @@ class mainImage(mainConfig):
         # logger
         info['LOGPATH'] = self._format_header(self._configinfo['LOGGER_PATH'], 'Log file path')######################3
         return info
+
+    def _add_autofocusinfo_to_hdr(self):
+        info = dict()
+        info['AFTIME'] = None
+        info['AFVALUE'] = None
+        info['AFERROR'] = None
+        
+        if self._autofocusinfo:
+            info['AFTIME'] = self._format_header(self._autofocusinfo['update_time'], '[UTC] UTC of the latest succeeded AF run')
+            info['AFVALUE'] = self._format_header(self._autofocusinfo['focusval'], '[um] Autofocus position of the latest succeeeded run')
+            info['AFERROR'] = self._format_header(self._autofocusinfo['focuserr'], '[um] Autofocus error of the latest succeeded run')
+        return info
     
     def _add_weatinfo_to_hdr(self):
         info = dict()
@@ -313,18 +339,18 @@ class mainImage(mainConfig):
 
         if self._weatherinfo:
             info['DATE-WEA'] = self._format_header(self._weatherinfo['update_time'], '[UTC] UTC of the latest weather update')
-            info['AMBTEMP'] = self._format_header(self._weatherinfo['temperature'], '[deg C] Ambient temperature at the observatory')
-            info['HUMIDITY'] = self._format_header(self._weatherinfo['humidity'], '[%] Atmospheric relative humidity at the observatory')
-            info['PRESSURE'] = self._format_header(self._weatherinfo['pressure'], '[hPa] Atmospheric pressure at the observatory altitude')
-            info['DEWPOINT'] = self._format_header(self._weatherinfo['dewpoint'], '[deg C] Atmospheric dew point temperature at the observatory')
-            info['WINDSPED'] = self._format_header(self._weatherinfo['windspeed'], '[m/s] Wind speed at the observatory')
+            info['AMBTEMP'] = self._format_header(self._weatherinfo['temperature'], '[deg C] Ambient temperature')
+            info['HUMIDITY'] = self._format_header(self._weatherinfo['humidity'], '[%] Atmospheric relative humidity')
+            info['PRESSURE'] = self._format_header(self._weatherinfo['pressure'], '[hPa] Atmospheric pressure')
+            info['DEWPOINT'] = self._format_header(self._weatherinfo['dewpoint'], '[deg C] Atmospheric dew point temperature')
+            info['WINDSPED'] = self._format_header(self._weatherinfo['windspeed'], '[m/s] Wind speed')
             info['WINDDIR'] = self._format_header(self._weatherinfo['winddirection'], '[deg] Wind direction: 0=N, 90 = E, 180=S, 270=W')
-            info['WINDGUST'] = self._format_header(self._weatherinfo['windgust'], '[m/s] Peak 3 second wind gust (m/s) at the observatory over the last 2 minutes')
-            info['SKYBRGHT'] = self._format_header(self._weatherinfo['skybrightness'], '[mag/arcsec^2] Sky quality at the observatory')
-            info['SKYTEMP'] = self._format_header(self._weatherinfo['skytemperature'], '[deg C] Sky temperature at the observatory')
-            info['SKYFWHM'] = self._format_header(self._weatherinfo['fwhm'], '[arcsec] Seeing at the observatory')
+            info['WINDGUST'] = self._format_header(self._weatherinfo['windgust'], '[m/s] 3 second wind gust over last 2 minutes')
+            info['SKYBRGHT'] = self._format_header(self._weatherinfo['skybrightness'], '[mag/arcsec^2] Sky brightness')
+            info['SKYTEMP'] = self._format_header(self._weatherinfo['skytemperature'], '[deg C] Sky temperature')
+            info['SKYFWHM'] = self._format_header(self._weatherinfo['fwhm'], '[arcsec] Seeing')
             info['CLUDFRAC'] = self._format_header(self._weatherinfo['cloudfraction'], '[%] Amount of sky obscured by cloud')
-            info['RAINRATE'] = self._format_header(self._weatherinfo['rainrate'], '[mm/hr] Rain rate at the observatory')
+            info['RAINRATE'] = self._format_header(self._weatherinfo['rainrate'], '[mm/hr] Rain rate')
         return info
     
     def _add_caminfo_to_hdr(self):
@@ -390,7 +416,7 @@ class mainImage(mainConfig):
             info['SITELAT'] = self._format_header(self._obsinfo['latitude'], '[deg] Latitude of the observatory') 
             info['SITELONG'] = self._format_header(self._obsinfo['longitude'], '[deg] Longitude of the observatory') 
             info['SITEELEV'] = self._format_header(self._obsinfo['elevation'], '[m] Elevation of the observatory')
-            info['MOONPHAS'] = self._format_header(self._obsinfo['moonphase'], '[0-1] Illuminated fraction of the moon (0=new, 1=full)')
+            info['MOONPHAS'] = self._format_header(self._obsinfo['moonphase'], 'Illuminated fraction of the moon (0=N, 1=F)')
         return info
     
     def _add_imginfo_to_hdr(self):

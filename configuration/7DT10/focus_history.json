@@ -1,49 +1,58 @@
 {
     "7DT10": {
         "g": {
-            "update_time": "2025-02-13T08:25:18.315",
-            "succeeded": true,
-            "focusval": 7156.5
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         },
         "r": {
-            "update_time": "2025-03-28T04:02:46.712",
-            "succeeded": true,
-            "focusval": 7144.2
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         },
         "i": {
-            "update_time": "2025-03-03T04:49:08.303",
-            "succeeded": true,
-            "focusval": 7088.2
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         },
         "z": {
-            "update_time": "2025-01-16T02:00:16.432",
-            "succeeded": true,
-            "focusval": 7022.0
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         },
         "m800": {
-            "update_time": "2025-04-07T06:17:29.822",
+            "update_time": "2025-05-08T06:49:14.371",
             "succeeded": true,
-            "focusval": 7203.1
+            "focusval": 7238.6,
+            "focuserr": 17.63
         },
         "m825": {
-            "update_time": "2025-04-07T06:36:29.510",
+            "update_time": "2025-05-08T06:56:34.060",
             "succeeded": true,
-            "focusval": 7186.3
+            "focusval": 7235.6,
+            "focuserr": 17.82
         },
         "m600": {
-            "update_time": "2025-01-16T02:16:16.577",
-            "succeeded": true,
-            "focusval": 7183.9
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         },
         "Slot8": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
-            "focusval": 10000
+            "focusval": 10000,
+            "focuserr": 999
         },
         "m425w": {
-            "update_time": "2024-12-05T03:29:16.719",
-            "succeeded": true,
-            "focusval": 6833.9
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         }
     }
 }

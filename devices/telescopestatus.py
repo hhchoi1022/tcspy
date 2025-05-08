@@ -2,6 +2,7 @@
 from tcspy.interfaces import *
 from tcspy.devices import SingleTelescope
 from tcspy.utils import Timeout
+import time
 
 class TelescopeStatus(Interface):
     
@@ -26,45 +27,38 @@ class TelescopeStatus(Interface):
     
     @property
     def camera(self):
-        """return camera status
-
-        Returns:
-            status : str = camera's status [disconnected, idle, busy]
-        """
+        cam = self.telescope.camera.device
+        from multiprocessing.pool import ThreadPool
+        def call_with_timeout(func, timeout=5):
+            pool = ThreadPool(processes=1)
+            async_result = pool.apply_async(func)
+            try:
+                return async_result.get(timeout)
+            except Exception:
+                return 'disconnected'
+        
+        def get_state():
+            return cam.CameraState
+        
         status = 'disconnected'
         try:
-            
-            if self.telescope.camera.device.Connected:
-                status = 'idle'
-                if self.telescope.camera.device.CameraState.name == 'cameraIdle':
-                    status = 'idle'
-                else:
-                    status = 'busy'    
-        except:
-            pass
-        return status
-    
-    @property
-    def camera(self):
-        status = 'disconnected'
-        try:
-            cam = self.telescope.camera.device
-            if cam.Connected:
-                print('[DEBUG, Camera Status] Connection passed')
-                state = cam.CameraState
-                print(f'[DEBUG, Camera Status] Camstate passed: {state}')
 
-                if isinstance(state, int):
-                    status = 'idle' if state == 0 else 'busy'  # 0 = cameraIdle
-                else:
-                    # fallback: try to use .name safely
-                    try:
-                        if state.name == 'cameraIdle':
-                            status = 'idle'
-                        else:
-                            status = 'busy'
-                    except:
+            print('[DEBUG, Camera Status] Connection passed')
+            state = call_with_timeout(get_state, timeout=5)
+
+            print(f'[DEBUG, Camera Status] Camstate passed: {state}')
+
+            if isinstance(state, int):
+                status = 'idle' if state == 0 else 'busy'  # 0 = cameraIdle
+            else:
+                # fallback: try to use .name safely
+                try:
+                    if state.name == 'cameraIdle':
                         status = 'idle'
+                    else:
+                        status = 'busy'
+                except:
+                    status = 'idle'
         except Exception as e:
             print(f'[DEBUG][Camera Status] Error: {e}')
             pass

@@ -112,7 +112,7 @@ class mainConfig:
                             MOUNT_APAREA=0.196,
                             MOUNT_FOCALLENGTH=1537.0,
                             MOUNT_FOCALRATIO=3,
-                            MOUNT_SETTLETIME=3, #seconds
+                            MOUNT_SETTLETIME=5, #seconds
                             MOUNT_NAME= self.tel_name
                             )
         camera_params = dict(CAMERA_HOSTIP= ip_address,
@@ -151,7 +151,7 @@ class mainConfig:
                                OBSERVER_NAME='Hyeonho Choi'
                                )
         
-        image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE12-$$_gain$$GAIN$$",
+        image_params = dict(FOLDERNAME_FORMAT = "$$UTCDATE15-$$_gain$$GAIN$$",
                             FILENAME_FORMAT= "$$TELESCOP$$_$$UTCDATE$$_$$UTCTIME$$_$$OBJECT$$_$$FILTER$$_$$XBINNING$$x$$YBINNING$$_$$EXPTIME$$s_$$FRAMENUM$$",
                             IMAGE_PATH=f'/data2/obsdata/{self.tel_name}/image/',
                             IMAGE_SAVEHEADER = True,
@@ -163,8 +163,7 @@ class mainConfig:
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT=f'[%(levelname)s,{self.tel_name}]%(asctime)-15s |%(message)s',
-                             LOGGER_PATH= f'/data2/obsdata/{self.tel_name}/log/')
-        
+                             LOGGER_PATH= os.path.join(self.path_home, ".tcspy", 'sync', 'log', self.tel_name))       
         # Share configuration
 
         transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
@@ -204,8 +203,8 @@ class mainConfig:
                                     SAFEMONITOR_UPDATETIME=60,
                                     SAFEMONITOR_PATH= f'/data2/obsdata/safetymonitor_history/')
         
-        target_params = dict(TARGET_MINALT=25,
-                             TARGET_MAXALT=90,
+        target_params = dict(TARGET_MINALT=30,
+                             TARGET_MAXALT=88,
                              TARGET_MOONSEP=40,
                              TARGET_WEIGHT_ALT = 0.5,
                              TARGET_WEIGHT_PRIORITY = 0.5)
