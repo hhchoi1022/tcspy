@@ -1,16 +1,16 @@
 {
     "7DT16": {
         "g": {
-            "update_time": "2025-05-08T06:49:07.071",
+            "update_time": "2025-07-03T10:11:32.096",
             "succeeded": true,
-            "focusval": 8941.7,
-            "focuserr": 15.51
+            "focusval": 8856.4,
+            "focuserr": 19.11
         },
         "r": {
-            "update_time": "2025-05-08T06:56:14.048",
+            "update_time": "2025-07-03T10:18:32.275",
             "succeeded": true,
-            "focusval": 8926.8,
-            "focuserr": 15.66
+            "focusval": 8838.1,
+            "focuserr": 19.76
         },
         "i": {
             "update_time": "2000-01-01T00:00:00.000",

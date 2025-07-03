@@ -175,6 +175,7 @@ class AlertMonitor(mainConfig):
             print(f"[{datetime.datetime.now()}] {alert.num_observed_targets}/{len(alert_observable_targets)} targets observed.")
             
             if is_alert_observed:
+                time.sleep(5)
                 observed_time = np.max(Time(alert_observation_status['obs_endtime']))
                 print(f"[{datetime.datetime.now()}] All targets observed at {observed_time}.")
                 break

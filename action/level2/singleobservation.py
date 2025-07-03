@@ -336,7 +336,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         if autofocus_before_start:
             try:
                 filter_ = observation_trigger['filter_'][0]
-                result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = True, use_history= autofocus_use_history, history_duration = autofocus_history_duration)
+                result_autofocus = action_autofocus.run(filter_ = filter_, use_history= autofocus_use_history, history_duration = autofocus_history_duration)
             except ConnectionException:
                 self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
                 self.shared_memory['exception'] = 'ConnectionException'
@@ -361,34 +361,6 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             is_filter_changed = (current_filter != filter_)
             
             if is_filter_changed:
-
-                # Apply offset
-                offset = self.telescope.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
-                self.telescope.log.info(f'[{type(self).__name__}] Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
-                try:
-                    action_changefocus = ChangeFocus(singletelescope = self.telescope, abort_action = self.abort_action)
-                    result_changefocus = action_changefocus.run(position = offset, is_relative= True)
-                except ConnectionException:
-                    self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')      
-                    self.shared_memory['exception'] = 'ConnectionException'          
-                    self.shared_memory['is_running'] = False
-                    self.is_running = False
-                    raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-                except AbortionException:
-                    while action_changefocus.shared_memory['is_running']:
-                        time.sleep(0.1)
-                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted: Focuser movement is aborted.')
-                    self.shared_memory['exception'] = 'AbortionException'
-                    self.shared_memory['is_running'] = False
-                    self.is_running = False
-                    raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')
-                except ActionFailedException:
-                    self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
-                    self.shared_memory['exception'] = 'ActionFailedException'
-                    self.shared_memory['is_running'] = False
-                    self.is_running = False
-                    raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-                
                 # Filterchange
                 try:    
                     action_filterchange = ChangeFilter(singletelescope= self.telescope, abort_action= self.abort_action)
@@ -417,7 +389,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                 # Autofocus when filter changed
                 if autofocus_when_filterchange:
                     try:
-                        result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history= autofocus_use_history, history_duration= autofocus_history_duration)
+                        result_autofocus = action_autofocus.run(filter_ = filter_, use_history= autofocus_use_history, history_duration= autofocus_history_duration)
                     except ConnectionException:
                         self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
                         self.shared_memory['exception'] = 'ConnectionException'
@@ -446,7 +418,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     now = Time.now()
                     if ((Time(history['update_time']) + autofocus_elapsed_duration * u.minute) < now) | (not history['succeeded']):
                         try:
-                            result_autofocus = action_autofocus.run(filter_ = filter_, use_offset = False, use_history = False)
+                            result_autofocus = action_autofocus.run(filter_ = filter_, use_history = False)
                         except ConnectionException:
                             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Device connection is lost.')
                             self.shared_memory['exception'] = 'ConnectionException'

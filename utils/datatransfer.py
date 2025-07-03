@@ -402,11 +402,14 @@ if __name__ == '__main__':
     A = DataTransferManager()
     import time
 
-    # A.run(key = '*/image/2025-04-09_gain2750', save_hash = True, tar = True,
+    # A.run(key = '*/image/2025-05-24_gain2750', save_hash = False, tar = False,
     #       sync_log = True, transfer = True, move_and_clean = True,
     #       from_archive = False)
 
     # time.sleep(600)
+    # A.run(key = '*/image/2025-05-23_gain2750', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = True,
+    #       from_archive = False)
     # A.run(key = '*/2025-03-23_gain2750', save_hash = True, tar = True,
     #       sync_log = True, transfer = True, move_and_clean = False,
     #       from_archive = True)
@@ -428,6 +431,6 @@ if __name__ == '__main__':
         protocol='gridftp'               # File transfer protocol
     )
 
-# # %%
+# # # %%
 
 # %%

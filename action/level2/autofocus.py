@@ -44,7 +44,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
 
     Methods
     -------
-    run(filter_: str, use_offset: bool)
+    run(filter_: str)
         Performs the action of starting autofocus for the telescope.
     abort()
         Stops any autofocus action currently being carried out by the telescope.
@@ -67,8 +67,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
 
     def run(self,
             filter_ : str = None,
-            use_offset : bool = True,
-            use_history : bool = False,
+            use_history : bool = True,
             history_duration : float = 60,
             search_focus_when_failed : bool = False,
             search_focus_range : int = 2000):
@@ -79,8 +78,6 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         ----------
         filter_ : str
             The name of the filter to use during autofocus.
-        use_offset : bool
-            Whether or not to use offset during autofocus.
 
         Raises
         ------
@@ -99,11 +96,9 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         
         # Check device status
         status_camera = self.telescope_status.camera
-        print('111')
         status_focuser = self.telescope_status.focuser
         status_mount = self.telescope_status.mount
         status_filterwheel = self.telescope_status.filterwheel
-        print('222')
         trigger_abort_disconnected = False
         if status_camera.lower() == 'disconnected':
             trigger_abort_disconnected = True
@@ -140,37 +135,6 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             filter_ = info_filterwheel['filter_']
         focus_history = self.history[filter_]
         
-        # Apply focus offset
-        if use_offset:
-            print('333333')
-            info_filterwheel = self.telescope.filterwheel.get_status()
-            current_filter = info_filterwheel['filter_']
-            if not current_filter == filter_:
-                offset = self.telescope.filterwheel.get_offset_from_currentfilt(filter_ = filter_)
-                self.telescope.log.info(f'[{type(self).__name__}] Focuser is moving with the offset of {offset}[{current_filter} >>> {filter_}]')
-                try:
-                    result_changefocus = action_changefocus.run(position = offset, is_relative= True)
-                except ConnectionException:
-                    self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')
-                    self.shared_memory['exception'] = 'ConnectionException'
-                    self.shared_memory['is_running'] = False
-                    self.is_running = False                    
-                    raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')
-                except AbortionException:
-                    while action_changefocus.shared_memory['is_running']:
-                        time.sleep(0.1)
-                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
-                    self.shared_memory['exception'] = 'AbortionException'
-                    self.shared_memory['is_running'] = False
-                    self.is_running = False
-                    raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')
-                except ActionFailedException:
-                    self.telescope.log.critical(f'========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
-                    self.shared_memory['exception'] = 'ActionFailedException'
-                    self.shared_memory['is_running'] = False
-                    self.is_running = False
-                    raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-            
         # Change filter
         info_filterwheel = self.telescope.filterwheel.get_status()
         current_filter = info_filterwheel['filter_']

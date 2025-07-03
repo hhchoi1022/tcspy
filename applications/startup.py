@@ -77,7 +77,7 @@ class Startup(mainConfig):
         self.abort_action.set()
         self.is_running = False
     
-    def _process(self, connect = False, fanon = True, home = True, slew = True, cool = True):
+    def _process(self, connect = True, fanon = True, home = True, slew = True, cool = True):
         """
         Performs the necessary steps to startup the telescopes.
 
@@ -134,10 +134,10 @@ class Startup(mainConfig):
             #multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
 
             #if '7DT02' in self.multitelescopes.devices.keys():
-            #   multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
-            #   multitelescopes_except_unit2.pop('7DT02')
-            #multi_fanson = MultiAction(array_telescope= multitelescopes_except_unit2.values(), array_kwargs= params_fanson[:-1], function = FansOn, abort_action = self.abort_action)            
-            multi_fanson = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_fanson, function = FansOn, abort_action = self.abort_action)
+            multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
+            multitelescopes_except_unit2.pop('7DT06')
+            multi_fanson = MultiAction(array_telescope= multitelescopes_except_unit2.values(), array_kwargs= params_fanson[:-1], function = FansOn, abort_action = self.abort_action)            
+            #multi_fanson = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_fanson, function = FansOn, abort_action = self.abort_action)
             result_multi_fanson = multi_fanson.shared_memory
             
             ## Run

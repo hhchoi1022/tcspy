@@ -170,6 +170,7 @@ class AppScheduler(mainConfig):
             return self.schedule.CancelJob  # Remove this job after execution
  
     def run_startup(self,
+                    connect = True,
                     home = True,
                     slew = True,
                     cool = True,
@@ -178,7 +179,7 @@ class AppScheduler(mainConfig):
             start_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'StartUp is triggered: {start_time}', alert_slack = alert_slack)
             action = Startup(self.multitelescopes, abort_action = self.abort_action)
-            action.run(home = home, slew = slew, cool = cool)
+            action.run(connect = connect, home = home, slew = slew, cool = cool)
             while action.is_running:
                 time.sleep(1)
             end_time = time.strftime("%H:%M:%S", time.localtime())
@@ -312,7 +313,7 @@ if __name__ == '__main__':
     
     # # Startup
     if Time.now() < A.obsnight_utc.sunset_startup:
-        A.schedule_app(A.run_startup, A.obsnight.sunset_startup, home = True, slew = True, cool = True, alert_slack = alert_slack)
+        A.schedule_app(A.run_startup, A.obsnight.sunset_startup, connect = True, home = True, slew = True, cool = True, alert_slack = alert_slack)
     # NightObservation
     if Time.now() < A.obsnight_utc.sunset_observation:
         A.schedule_app(A.run_nightobs, A.obsnight.sunset_observation, alert_slack = alert_slack)

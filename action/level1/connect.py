@@ -109,3 +109,5 @@ class Connect(Interface_Runnable):
         self.shared_memory['is_running'] = False
         self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
+
+# %%

@@ -24,13 +24,12 @@ class AutofocusInitializer(mainConfig):
     
     def run(self,
             filter_ : str = 'r',
-            use_offset : bool = True,
             use_history : bool = False, 
             history_duration : float = 60,
             search_focus_when_failed : bool = True, 
             search_focus_range : int = 3000,
             slew : bool = True):
-        startup_thread = Thread(target=self._process, kwargs = dict(filter_ = filter_, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range, slew = slew))
+        startup_thread = Thread(target=self._process, kwargs = dict(filter_ = filter_, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range, slew = slew))
         startup_thread.start()
     
     def abort(self):
@@ -54,8 +53,7 @@ class AutofocusInitializer(mainConfig):
        
     def _process(self,
                  filter_ : str = 'r',
-                 use_offset : bool = True,
-                 use_history : bool = True, 
+                 use_history : bool = False, 
                  history_duration : float = 60,
                  search_focus_when_failed : bool = True, 
                  search_focus_range : int = 3000,
@@ -104,7 +102,7 @@ class AutofocusInitializer(mainConfig):
             kwargs_autofocus_all = []
             for tel_name in self.multitelescopes.devices.keys():
                 filter_ = autofocus_filtinfo[tel_name][idx_filter]
-                kwargs_autofocus_single = dict(filter_ = filter_, use_offset = use_offset, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range)
+                kwargs_autofocus_single = dict(filter_ = filter_, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range)
                 kwargs_autofocus_all.append(kwargs_autofocus_single)
             action_autofocus = MultiAction(self.multitelescopes.devices.values(), kwargs_autofocus_all, AutoFocus, self.abort_action)
             try:
@@ -123,7 +121,6 @@ if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
     AutofocusInitializer(M, Event()).run(filter_ = 'specall',
-                                         use_offset = False,
                                          use_history = False, 
                                          history_duration = 60,
                                          search_focus_when_failed = False, 

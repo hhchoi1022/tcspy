@@ -1,5 +1,5 @@
 {
-    "updated_date": "2025-04-19T03:08:21.636",
+    "updated_date": "2025-06-26T14:41:04.365",
     "g": {
         "offset": 999,
         "error": 999
@@ -12,11 +12,11 @@
         "offset": 999,
         "error": 999
     },
-    "Slot4": {
+    "m450": {
         "offset": 999,
         "error": 999
     },
-    "Slot5": {
+    "m475": {
         "offset": 999,
         "error": 999
     },
@@ -24,7 +24,7 @@
         "offset": 999,
         "error": 999
     },
-    "Slot7": {
+    "m700": {
         "offset": 999,
         "error": 999
     },

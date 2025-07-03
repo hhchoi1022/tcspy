@@ -5,6 +5,7 @@ from tcspy.utils.target import MultiTargets
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.connector import SQLConnector
 from tcspy.utils.nightsession import NightSession
+from tcspy.utils.databases.tiles import Tiles
 
 from astropy.table import Table  
 from astropy.time import Time
@@ -77,6 +78,7 @@ class DB_Daily(mainConfig):
         self.utctime = utctime
         self.obsinfo = self._set_obs_info(utctime = utctime)
         self.obsnight = NightSession(utctime = utctime).obsnight_utc
+        self._tiles = None
     '''
     @property    
     def connected(self):
@@ -281,7 +283,7 @@ class DB_Daily(mainConfig):
     
     def update_7DS_obscount(self,
                             remove : bool = False,
-                            reset_status: bool = True,
+                            reset_status: bool = False,
                             update_RIS : bool = True,
                             update_IMS : bool = True,
                             update_WFS : bool = False):
@@ -315,19 +317,51 @@ class DB_Daily(mainConfig):
 
         DB_annual.disconnect()
         
+    def _match_RIS_tile(self, ra : list or str, dec : list or str, match_tolerance_minutes = 3):
+        if not self._tiles:
+            self._tiles = Tiles(tile_path = None)
+        if not isinstance(ra, list):
+            ra = [ra]
+        if not isinstance(dec, list):
+            dec = [dec]
+        tile, matched_indices, _ = self._tiles.find_overlapping_tiles(ra, dec, visualize = False, match_tolerance_minutes= match_tolerance_minutes)
+        return tile, matched_indices
+    
     def from_GSheet(self,
                     sheet_name : str,
-                    update: bool = True
+                    update: bool = True,
+                    match_to_tiles: bool = True,
+                    match_tolerance_minutes: float = 5
                     ):
         from tcspy.utils.connector import GoogleSheetConnector
+
         print('Connecting to DB...')
         gsheet = GoogleSheetConnector(spreadsheet_url = self.config['GOOGLESHEET_URL'], 
                                       authorize_json_file = self.config['GOOGLESHEET_AUTH'],
                                       scope = self.config['GOOGLESHEET_SCOPE'])  
         tbl_sheet = gsheet.read_sheet(sheet_name = sheet_name, format_ = 'Table')
+        if match_to_tiles:
+            tile_info, matched_indices = self._match_RIS_tile(tbl_sheet['RA'].tolist(), tbl_sheet['De'].tolist(), match_tolerance_minutes = match_tolerance_minutes)
+        unmatched_mask = np.ones(len(tbl_sheet), dtype=bool)
+        unmatched_mask[matched_indices] = False
         # Insert data
         print('Inserting GoogleSheet data to DB...')
-        insertion_result = self.insert(tbl_sheet)
+        matched_tbl = tbl_sheet[matched_indices]
+        
+        # Update only rows where is_within_boundary is True
+        within_boundary_mask = tile_info['is_within_boundary']
+        if np.any(within_boundary_mask):  # Ensure there are rows within boundary to update
+            within_boundary_indices = np.where(within_boundary_mask)[0]
+            objname = matched_tbl['objname'][within_boundary_indices]
+            matched_tbl['objname'][within_boundary_indices] = tile_info['id'][within_boundary_indices]
+            matched_tbl['RA'][within_boundary_indices] = tile_info['ra'][within_boundary_indices]
+            matched_tbl['De'][within_boundary_indices] = tile_info['dec'][within_boundary_indices]
+            matched_tbl['note'][within_boundary_indices] = objname
+        
+        unmatched_tbl = tbl_sheet[unmatched_mask]  
+        final_tbl = vstack([matched_tbl, unmatched_tbl])
+
+        insertion_result = self.insert(final_tbl)
         # Update google sheet 
         if update:
             tbl_sheet['is_inputted'] = insertion_result
@@ -603,7 +637,7 @@ class DB_Daily(mainConfig):
 # %%
 if __name__ == '__main__':
     Daily = DB_Daily(Time.now())
-    Daily.update_7DS_obscount(remove = True, update_RIS = True, update_IMS = True)
+    Daily.update_7DS_obscount(remove = False, update_RIS = True, update_IMS = True)
     Daily.clear(clear_only_7ds= True, clear_only_observed = False)
     Daily.from_IMS()
     Daily.from_RIS(size = 150)
@@ -612,13 +646,13 @@ if __name__ == '__main__':
     # #tbl_input = tbl[tbl['note'] == 'GW190814']
     # #tbl_input['ntelescope'] = 10
     from tcspy.utils.databases import DB_Annual
-    tbl_input = Table(DB_Annual().data[[22956]])# ,15434]])#, 2595]])
-    Daily.insert(tbl_input)
+    #tbl_input = Table(DB_Annual().data[[22956, 15434]])# ,15434]])#, 2595]])
+    #Daily.insert(tbl_input)
     # from astropy.io import ascii
     # tbl = ascii.read('./S240422ed.ascii')
     # data = Daily.data
     #Daily.from_GSheet('20250208_235342_GECKO')
-    #Daily.from_GSheet('S250328ae_update')
+    Daily.from_GSheet('250619_TDEHOST_ToO')
 
     # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
     # tbl_to_insert['filter_'][:] = 'r'
@@ -652,7 +686,7 @@ if __name__ == '__main__':
     # for i in range(6):
     #     notelist.append('Antlia')
     
-    # from tcspy.utils.databases.tiles import Tiles
+# from tcspy.utils.databases.tiles import Tiles
     # from astropy.io import ascii
     # tbl = ascii.read('./Subset_White_Dwarfs_with_Matched_Tiles.csv')
     # T = Tiles()

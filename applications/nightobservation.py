@@ -80,8 +80,10 @@ class NightObservation(mainConfig):
         # Set device for safety check
         if self.config['NIGHTOBS_SAFETYPE'].upper() == 'WEATHER':
             self.is_safe = self._is_weather_safe
-        else:
+        elif self.config['NIGHTOBS_SAFETYPE'].upper() == 'SAFETYMONITOR':
             self.is_safe = self._is_safetymonitor_safe
+        else:
+            self.is_safe = lambda: True
 
         # Get status of all telescopes
         status_devices = self.multitelescopes.status

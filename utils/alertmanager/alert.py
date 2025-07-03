@@ -128,6 +128,7 @@ class Alert:
         
         # Check visibility 
         formatted_tbl['is_observable'] = self._check_visibility(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
+        formatted_tbl['id'] = [uuid.uuid4().hex for i in range(len(formatted_tbl))]
         
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.update_time = Time.now().isot
@@ -183,7 +184,8 @@ class Alert:
             
         # Check visibility 
         formatted_tbl['is_observable'] = self._check_visibility(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
-        
+        formatted_tbl['id'] = [uuid.uuid4().hex for i in range(len(formatted_tbl))]
+
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
@@ -219,7 +221,8 @@ class Alert:
         
         # Check visibility 
         formatted_tbl['is_observable'] = self._check_visibility(formatted_tbl['RA'].tolist(), formatted_tbl['De'].tolist())
-        
+        formatted_tbl['id'] = [uuid.uuid4().hex for i in range(len(formatted_tbl))]
+
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.update_time = Time.now().isot
         self.formatted_data = formatted_tbl[existing_columns]
@@ -320,6 +323,7 @@ class Alert:
         formatted_tbl = Table()
         for key, value in formatted_dict.items():
             formatted_tbl[key] = [value]
+        formatted_tbl['id'] = [uuid.uuid4().hex for i in range(len(formatted_tbl))]
             
         existing_columns = [col for col in self.required_key_variants.keys() if col in formatted_tbl.colnames]
         self.update_time = Time.now().isot

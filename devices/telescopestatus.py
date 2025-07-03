@@ -43,11 +43,7 @@ class TelescopeStatus(Interface):
         status = 'disconnected'
         try:
 
-            print('[DEBUG, Camera Status] Connection passed')
             state = call_with_timeout(get_state, timeout=5)
-
-            print(f'[DEBUG, Camera Status] Camstate passed: {state}')
-
             if isinstance(state, int):
                 status = 'idle' if state == 0 else 'busy'  # 0 = cameraIdle
             else:
@@ -60,7 +56,6 @@ class TelescopeStatus(Interface):
                 except:
                     status = 'idle'
         except Exception as e:
-            print(f'[DEBUG][Camera Status] Error: {e}')
             pass
         return status
 

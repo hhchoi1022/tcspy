@@ -93,7 +93,6 @@ class mainMount_pwi4(mainConfig):
         status['alt'] = None
         status['az'] = None
         status['at_parked'] = None
-        status['at_home'] = None
         status['is_connected'] = None
         status['is_tracking'] = None
         status['is_slewing'] = None
@@ -284,6 +283,7 @@ class mainMount_pwi4(mainConfig):
         try:
             self._log.info('Unparking telescope...')
             self.enable()
+            time.sleep(5)
             self._log.info('Mount unparked')
             
         except:

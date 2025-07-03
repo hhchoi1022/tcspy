@@ -160,7 +160,7 @@ if __name__ == '__main__':
     message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
     if message_ts:
         slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
-    S.run(fanoff = False,                    
+    S.run(fanoff = True,                    
           slew = True,
           warm = True)
     while S.is_running:

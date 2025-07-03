@@ -19,10 +19,10 @@
             "focuserr": 999
         },
         "m875": {
-            "update_time": "2025-05-08T06:34:44.376",
+            "update_time": "2025-07-03T10:11:27.314",
             "succeeded": true,
-            "focusval": 8537.8,
-            "focuserr": 22.19
+            "focusval": 8444.0,
+            "focuserr": 21.82
         },
         "m375w": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -31,10 +31,10 @@
             "focuserr": 999
         },
         "m400": {
-            "update_time": "2025-05-08T06:41:48.462",
+            "update_time": "2025-07-03T10:18:24.461",
             "succeeded": true,
-            "focusval": 8631.2,
-            "focuserr": 18.49
+            "focusval": 8537.6,
+            "focuserr": 21.39
         },
         "m425": {
             "update_time": "2000-01-01T00:00:00.000",

@@ -256,12 +256,12 @@ class mainConfig:
                                AUTOFLAT_MINCOUNT = 20000,
                                AUTOFLAT_MAXCOUNT = 40000,
                                AUTOFLAT_MINEXPTIME = 0.1,
-                               AUTOFLAT_MAXEXPTIME = 20,
+                               AUTOFLAT_MAXEXPTIME = 10,
                                AUTOFLAT_WAITDURATION = 10,
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m375w','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250313/")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250607/")}')
 
         colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250313/")}')
         

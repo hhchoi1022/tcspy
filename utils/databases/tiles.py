@@ -323,8 +323,8 @@ if __name__ == "__main__":
     #data = ascii.read('./7DT_observed_Tile')
     #list_ra = data['ra']
     #list_dec = data['dec']
-    list_ra = [78.528]#tbl['ra']#[350.1]
-    list_dec = [-40.046]#bl['dec']
+    list_ra = [191.1875000]#tbl['ra']#[350.1]
+    list_dec = [-54.5197222]#bl['dec']
     # coord = SkyCoord(lon = 44 * u.deg, lat = -82 * u.deg, frame = GeocentricTrueEcliptic, obstime = 'J2000')
     # icrs_coord = coord.transform_to('icrs')
     # list_ra = [icrs_coord.ra.value]
