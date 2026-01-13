@@ -75,3 +75,6 @@ class ObsModeRegisterException(Exception):
 
 class DeviceNotReadyException(Exception):
     pass
+
+class TimeoutException(Exception):
+    pass

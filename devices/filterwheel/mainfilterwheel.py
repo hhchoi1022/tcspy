@@ -51,13 +51,49 @@ class mainFilterwheel(mainConfig):
                  **kwargs):
         super().__init__(unitnum = unitnum)
         self.device = FilterWheel(f"{self.config['FTWHEEL_HOSTIP']}:{self.config['FTWHEEL_PORTNUM']}",self.config['FTWHEEL_DEVICENUM'])        
-        self.status = self.get_status()
         self.is_idle = Event()
         self.is_idle.set()
         self.device_lock = Lock()
         self.filtnames = self._get_all_filt_names()
         self.offsets = self._get_all_filt_offset()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
+        
+        self._id = None
+        self._id_update_time = None
+        self.status = self.get_status()
+
+        
+    @property
+    def id(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Filterwheel']['name']
+        if self._id is None:
+            try:
+                self._id = load_id(self)
+            except:
+                pass
+        return self._id
+    
+    @property
+    def id_update_time(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Filterwheel']['timestamp']
+        if self._id_update_time is None:
+            try:
+                self._id_update_time = load_id(self)
+            except:
+                pass
+        return self._id_update_time
 
     def get_status(self) -> dict:
         """
@@ -68,43 +104,56 @@ class mainFilterwheel(mainConfig):
         status : dict
             A dictionary containing the current status of the filter wheel.
         """
-        status = dict()
-        status['update_time'] = Time.now().isot
-        status['jd'] = round(Time.now().jd,6)
-        status['is_connected'] = False
-        status['name'] = None
-        status['filter_'] = None
-        status['offset'] = None
+        @Timeout(5, 'Timeout')
+        def _get_status():
+            status = dict()
+            status['update_time'] = Time.now().isot
+            status['jd'] = round(Time.now().jd,6)
+            status['is_connected'] = False
+            status['name'] = None
+            status['filter_'] = None
+            status['offset'] = None
+            status['filterwheel_id'] = self.id
+            status['filterwheel_id_update_time'] = self.id_update_time
 
-        if self.device.Connected:
-            try:              
-                filtinfo = self._get_current_filtinfo()
-            except:
-                pass
+            if self.device.Connected:
+                try:              
+                    filtinfo = self._get_current_filtinfo()
+                except:
+                    pass
+                try:
+                    status['update_time'] = Time.now().isot
+                except:
+                    pass
+                try:
+                    status['jd'] = round(Time.now().jd,6)
+                except:
+                    pass
+                try:
+                    status['name'] = self.device.Name
+                except:
+                    pass
+                try:
+                    status['filter_'] = filtinfo['name']
+                except:
+                    pass
+                try:
+                    status['offset'] = filtinfo['offset']
+                except:
+                    pass
+                try:
+                    status['is_connected'] = self.device.Connected
+                except:
+                    pass
+                return status
+                
+        for i in range(3):
             try:
-                status['update_time'] = Time.now().isot
-            except:
-                pass
-            try:
-                status['jd'] = round(Time.now().jd,6)
-            except:
-                pass
-            try:
-                status['name'] = self.device.Name
-            except:
-                pass
-            try:
-                status['filter_'] = filtinfo['name']
-            except:
-                pass
-            try:
-                status['offset'] = filtinfo['offset']
-            except:
-                pass
-            try:
-                status['is_connected'] = self.device.Connected
-            except:
-                pass
+                status = _get_status()
+                break
+            except TimeoutException:
+                self._log.warning('Timeout while getting filterwheel status. Retrying...')
+                time.sleep(10)
 
         return status
 
@@ -289,3 +338,5 @@ class mainFilterwheel(mainConfig):
         filtname = self._position_to_filtname(position = position)
         return dict( position = position, name = self.filtnames[position], offset = self.offsets[filtname]['offset'])
     
+
+# %%

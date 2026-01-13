@@ -19,28 +19,34 @@ class DB(mainConfig):
 
     Attributes
     ----------
-    Daily : DB_Daily
-        An instance of the DB_Daily class updated at utctime.
-    RIS : DB_Annual
-        An instance of the DB_AFIS class updated at utcdate.
+    Dynamic : DB_Dynamic
+        An instance of the DB_Dynamic class updated at utctime.
+    RIS : DB_Survey
+        An instance of the DB_Survey class updated at utcdate.
+    IMS : DB_Survey
+        An instance of the DB_Survey class updated at utcdate.
 
     Methods
     -------
-    update_Daily(utctime)
-        Returns an instance of DB_Daily updated at utctime.
+    update_Dynamic(utctime)
+        Returns an instance of DB_Dynamic updated at utctime.
     update_RIS(utcdate)
-        Returns an instance of DB_Annual updated at utcdate.
+        Returns an instance of DB_Survey updated at utcdate.
+    update_IMS(utcdate)
+        Returns an instance of DB_Survey updated at utcdate.
     """
     
     def __init__(self,
                  utctime = Time.now()):
         super().__init__()
-        self.Daily = self.update_Daily(utctime = utctime)
+        self.Dynamic = self.update_Dynamic(utctime = utctime)
         self.RIS = self.update_RIS()
+        self.IMS = self.update_IMS()
+        
     
-    def update_Daily(self, utctime):
+    def update_Dynamic(self, utctime):
         """
-        Returns an instance of DB_Daily updated at utctime.
+        Returns an instance of DB_Dynamic updated at utctime.
 
         Parameters
         ----------
@@ -49,15 +55,15 @@ class DB(mainConfig):
 
         Returns
         -------
-        DB_Daily
-            An instance of the DB_Daily class updated at utctime.
+        DB_Dynamic
+            An instance of the DB_Dynamic class updated at utctime.
         """
-        Daily = DB_Daily(utctime = utctime, tbl_name = 'Daily')
-        return Daily
+        Dynamic = DB_Dynamic(utctime = utctime, tbl_name = 'Dynamic')
+        return Dynamic
 
     def update_RIS(self):
         """
-        Returns an instance of DB_Annual updated at utcdate.
+        Returns an instance of DB_Survey updated at utcdate.
 
         Parameters
         ----------
@@ -66,8 +72,24 @@ class DB(mainConfig):
 
         Returns
         -------
-        DB_Annual
-            An instance of the DB_Annual class updated at utcdate.
+        DB_Survey
+            An instance of the DB_Survey class updated at utcdate.
         """
-        return DB_Annual(tbl_name = 'RIS')
+        return DB_Survey(tbl_name = 'RIS')
+    
+    def update_IMS(self):
+        """
+        Returns an instance of DB_Survey updated at utcdate.
+
+        Parameters
+        ----------
+        utcdate : Time
+            Representing the current time.
+
+        Returns
+        -------
+        DB_Survey
+            An instance of the DB_Survey class updated at utcdate.
+        """
+        return DB_Survey(tbl_name = 'IMS')
 # %%

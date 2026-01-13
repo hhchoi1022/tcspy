@@ -18,7 +18,7 @@ from astropy.io import ascii
 
 # %%
 
-class DB_Annual(mainConfig):
+class DB_Survey(mainConfig):
     """
     A class representing data from the RIS database.
 
@@ -58,8 +58,8 @@ class DB_Annual(mainConfig):
     	Initializes the target table to update.
     select_best_targets()
     	Select the best observable targets for observation.
-    to_Daily()
-    	Inserts rows to the 'Daily' table.
+    to_Dynamic()
+    	Inserts rows to the 'Dynamic' table.
     update_targets_count()
     	Update observation counts for target.
     """
@@ -159,7 +159,7 @@ class DB_Annual(mainConfig):
                             observable_minimum_hour: float = 2,
                             n_time_grid : float = 10,
                             galactic_latitude_limit: float = 15,
-                            declination_upper_limit: float = -10,
+                            declination_upper_limit: float = 0,
                             declination_lower_limit: float = -90
                             ):
         obsnight = self.nightsession.set_obsnight(utctime = utcdate)
@@ -252,17 +252,17 @@ class DB_Annual(mainConfig):
         # Return the selected targets
         return best_targets[:size]
 
-    def to_Daily(self,
+    def to_Dynamic(self,
                  target_tbl : Table):
         """
-        Insert targets to daily.
+        Insert targets to Dynamic.
 
         Parameters
         ----------
         target_tbl : Table
         	The table containing the targets.
         """
-        self.sql.insert_rows(tbl_name = 'Daily', data = target_tbl)
+        self.sql.insert_rows(tbl_name = 'Dynamic', data = target_tbl)
     
     def update_target(self,
                      target_id : str,
@@ -395,8 +395,8 @@ class DB_Annual(mainConfig):
 # %%
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    db = DB_Annual(tbl_name = 'RIS')
-    db_IMS = DB_Annual(tbl_name = 'IMS')
+    db = DB_Survey(tbl_name = 'RIS')
+    db_IMS = DB_Survey(tbl_name = 'IMS')
 
     tbl = db.select_best_targets()
     current_obscount = len(db.data[db.data['obs_count']>  0])
@@ -414,12 +414,15 @@ if __name__ == '__main__':
     survey_data = db.data
     all_coords = SkyCoord(survey_data['RA'], survey_data['De'], unit ='deg', frame = 'icrs')
     # galactic latitude cut
-    highb_idx = np.abs(all_coords.galactic.b.value) > 15
+    survey_data['l'] = all_coords.galactic.l.value
+    survey_data['b'] = all_coords.galactic.b.value
+    highb_idx = np.abs(all_coords.galactic.b.value) > 85
+    galcenter_idx = np.abs(all_coords.galactic.l.value) < 3
     # declination cut
     decl_idx = (all_coords.dec.value < -10) & (all_coords.dec.value > -90)
     # all cut
-    total_idx1 = highb_idx# & decl_idx
-    total_idx2 = highb_idx & decl_idx
+    total_idx1 = highb_idx & galcenter_idx# & decl_idx 
+    total_idx2 = highb_idx & decl_idx & galcenter_idx
 
     survey_tbl = survey_data[total_idx1]
     survey_tbl2 = survey_data[total_idx2]
@@ -462,11 +465,11 @@ if __name__ == '__main__':
     tonight_dec = convert_dec(tonight_data['De'])
 
     # Plot data
-    ax.scatter(all_ra, all_dec, s=1, c='k', alpha=0.2, label="|l| > 20")
-    ax.scatter(survey_ra, survey_dec, s=1, c='k', alpha=0.3, label="|l| > 20 & Decl < -20")
+    ax.scatter(all_ra, all_dec, s=1, c='k', alpha=0.2)
+    #ax.scatter(survey_ra, survey_dec, s=1, c='k', alpha=0.3, label="Curren|l| > 20 & Decl < -10")
     ax.scatter(obs_ra, obs_dec, s=1, c='r', alpha=0.5, label="Observed")
-    ax.scatter(high_ra, high_dec, s=5, c='orange', alpha=0.5, label="N_obs >3")
-    ax.scatter(intense_ra, intense_dec, s=10, c='r', alpha=1.0, label="N_obs >10")
+    ax.scatter(high_ra, high_dec, s=5, c='g', alpha=0.5, label="N_obs >3")
+    ax.scatter(intense_ra, intense_dec, s=5, c='b', alpha=1.0, label="N_obs >10")
     #ax.scatter(tonight_ra, tonight_dec, s=1, c='b', alpha=1, label="Tonight scheduled")
 
     # Labels and grid

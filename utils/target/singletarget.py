@@ -122,6 +122,7 @@ class SingleTarget(mainConfig):
                  note : str = None,
                  comment : str = None,
                  is_ToO : bool = False,
+                 is_rapidToO : bool = False,
                  
                  # Exposure information
                  exptime : float or str = None,
@@ -144,6 +145,12 @@ class SingleTarget(mainConfig):
         self.dec = dec
         self.alt = alt
         self.az = az
+        if ' ' in name:
+            name = name.replace(' ', '')
+        if '/' in name:
+            name = name.replace('/', '-')
+        if '_' in name:
+            name = name.replace('_', '-')
         self.name = name
         self.objtype = objtype
         self._target = None
@@ -154,6 +161,7 @@ class SingleTarget(mainConfig):
         self.note = note
         self.comment = comment
         self.is_ToO = is_ToO
+        self.is_rapidToO = is_rapidToO
         
         
         if (not isinstance(alt, type(None))) & (not isinstance(az, type(None))):
@@ -323,6 +331,7 @@ class SingleTarget(mainConfig):
         targetinfo['note'] = self.note
         targetinfo['comment'] = self.comment
         targetinfo['is_ToO'] = self.is_ToO
+        targetinfo['is_rapidToO'] = self.is_rapidToO
         
         if self._coordtype == 'altaz':
             targetinfo['alt'] = self.alt

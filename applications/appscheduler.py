@@ -198,7 +198,7 @@ class AppScheduler(mainConfig):
                 time.sleep(1)
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'NightObservation is finished: {end_time}', alert_slack = alert_slack)
-            DB().Daily.export_to_csv(save_type= 'history')
+            DB().Dynamic.export_to_csv(save_type= 'history')
             return self.schedule.CancelJob  # Remove this job after execution
 
     def run_bias(self,
@@ -344,15 +344,14 @@ if __name__ == '__main__':
     dark_starttime_utc = A.obsnight_utc.sunrise_shutdown + 10 * u.minute
     if Time.now() < dark_starttime_utc:
         for obsinfo in all_obsinfo:
-            exptected_duration = float(obsinfo['exptime'][0]) * dark_count * 1.3
+            exptected_duration = float(obsinfo['exptime']) * dark_count * 1.3
             A.schedule_app(A.run_dark, dark_starttime, count = int(dark_count), exptime = float(obsinfo['exptime']), binning = int(obsinfo['binning']), gain = int(obsinfo['gain']), alert_slack = alert_slack)
             dark_starttime += exptected_duration * u.second
 
     # Bias
-    
     all_obsinfo = A.get_obsinfo_tonight(tonight_str, return_only_set= True, key_for_set= ['xbinning', 'gain'])
     bias_count = 9
-    bias_starttime = dark_starttime + 10 * u.minute
+    bias_starttime = dark_starttime + 15 * u.minute
     bias_starttime_utc = dark_starttime_utc + 10 * u.minute
     if Time.now() < bias_starttime_utc:
         for obsinfo in all_obsinfo:

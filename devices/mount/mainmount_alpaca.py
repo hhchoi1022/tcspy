@@ -73,7 +73,41 @@ class mainMount_Alpaca(mainConfig):
         self._checktime = float(self.config['MOUNT_CHECKTIME'])
         self.observer = mainObserver()
         self.device = Telescope(f"{self.config['MOUNT_HOSTIP']}:{self.config['MOUNT_PORTNUM']}",self.config['MOUNT_DEVICENUM'])
+        self._id = None
+        self._id_update_time = None
         self.status = self.get_status()
+        
+    @property
+    def id(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Mount']['name']
+        if self._id is None:
+            try:
+                self._id = load_id(self)
+            except:
+                pass
+        return self._id
+    
+    @property
+    def id_update_time(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Mount']['timestamp']
+        if self._id_update_time is None:
+            try:
+                self._id_update_time = load_id(self)
+            except:
+                pass
+        return self._id_update_time
         
     def get_status(self):
         """
@@ -91,6 +125,8 @@ class mainMount_Alpaca(mainConfig):
         status['is_tracking'] = None
         status['is_slewing'] = None
         status['is_stationary'] = None
+        status['mount_id'] = self.id
+        status['mount_id_update_time'] = self.id_update_time
 
         if self.device.Connected:
             try:

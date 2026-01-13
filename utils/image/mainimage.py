@@ -110,7 +110,10 @@ class mainImage(mainConfig):
         autofocusinfo = self._add_autofocusinfo_to_hdr()
         all_info = {**telinfo,**caminfo,**focusinfo,**autofocusinfo,**filtinfo,**imginfo,**targetinfo,**configinfo,**obsinfo,**weatherinfo}
         for key, value in all_info.items():
-            self.hdu.header[key] = (value['value'],str(value['note']))
+            try:
+                self.hdu.header[key] = (value['value'],str(value['note']))
+            except:
+                self.hdu.header[key] = (None, None)
     
     @property
     def data(self):
@@ -274,6 +277,8 @@ class mainImage(mainConfig):
         
         info = dict()
         # telescope
+        info['MNT_ID'] = self._format_header(self._mountinfo['mount_id'],'Serial number of mount device')
+        info['MID_TIME'] = self._format_header(self._mountinfo['mount_id_update_time'],'[UTC] UTC of the latest mount ID update')
         info['MNT_IP'] = self._format_header(self._configinfo['MOUNT_HOSTIP'],'Hosting IP for TCSpy mount device')
         info['MNT_PRT'] =self._format_header(self._configinfo['MOUNT_PORTNUM'],'Port number of TCSpy mount device')
         info['MNT_NUM'] = self._format_header(self._configinfo['MOUNT_DEVICENUM'],'Device number of TCSpy mount device')
@@ -284,29 +289,41 @@ class mainImage(mainConfig):
         info['TELESCOP'] = self._format_header(self._configinfo['MOUNT_NAME'], 'Name of the telescope')
 
         # camera
+        info['CAM_ID'] = self._format_header(self._caminfo['camera_id'],'Serial number of camera device')
+        info['CID_TIME'] = self._format_header(self._caminfo['camera_id_update_time'],'[UTC] UTC of the latest camera ID update')
         info['CAM_IP'] = self._format_header(self._configinfo['CAMERA_HOSTIP'],'Hosting IP for ALPACA camera device')
         info['CAM_PRT'] = self._format_header(self._configinfo['CAMERA_PORTNUM'],'Port number of ALPACA camera device')
         info['CAM_NUM'] = self._format_header(self._configinfo['CAMERA_DEVICENUM'],'Device number of ALPACA camera device')
         info['XPIXSZ'] = self._format_header(self._configinfo['CAMERA_PIXSIZE'], '[um] Pixel width')
         info['YPIXSZ'] = self._format_header(self._configinfo['CAMERA_PIXSIZE'], '[um] Pixel height')
+        
         # filterwheel 
+        info['FILT_ID'] = self._format_header(self._filtinfo['filterwheel_id'],'Serial number of filterwheel device')
+        info['FWIDTIME'] = self._format_header(self._filtinfo['filterwheel_id_update_time'],'[UTC] UTC of the latest filterwheel ID update')
         info['FILT_IP'] = self._format_header(self._configinfo['FTWHEEL_HOSTIP'],'Hosting IP for ALPACA filterwheel device')
         info['FILT_PRT'] = self._format_header(self._configinfo['FTWHEEL_PORTNUM'],'Port number of ALPACA filterwheel device')
         info['FILT_NUM'] = self._format_header(self._configinfo['FTWHEEL_DEVICENUM'],'Device number of ALPACA filterwheel device')
+        
         # focuser
+        info['FOC_ID'] = self._format_header(self._focusinfo['focuser_id'],'Serial number of focuser device')
+        info['FID_TIME'] = self._format_header(self._focusinfo['focuser_id_update_time'],'[UTC] UTC of the latest focuser ID update')
         info['FOC_IP'] = self._format_header(self._configinfo['FOCUSER_HOSTIP'],'Hosting IP for ALPACA focuser device')
         info['FOC_PRT'] = self._format_header(self._configinfo['FOCUSER_PORTNUM'],'Port number of ALPACA focuser device')
         info['FOC_NUM'] = self._format_header(self._configinfo['FOCUSER_DEVICENUM'],'Device number of ALPACA focuser device')
+        
         # weather
         info['WTER_IP'] = self._format_header(self._configinfo['WEATHER_HOSTIP'],'Hosting IP for ALPACA weather device')
         info['WTER_PRT'] = self._format_header(self._configinfo['WEATHER_PORTNUM'],'Port number of ALPACA weather device')
         info['WTER_NUM'] = self._format_header(self._configinfo['WEATHER_DEVICENUM'],'Device number of ALPACA weather device')
+        
         # safetymonitor
         info['SAFE_IP'] = self._format_header(self._configinfo['SAFEMONITOR_HOSTIP'],'Hosting IP for ALPACA weather device')
         info['SAFE_PRT'] = self._format_header(self._configinfo['SAFEMONITOR_PORTNUM'],'Port number of ALPACA weather device')
         info['SAFE_NUM'] = self._format_header(self._configinfo['SAFEMONITOR_DEVICENUM'],'Device number of ALPACA weather device')
+        
         # logger
         info['LOGPATH'] = self._format_header(self._configinfo['LOGGER_PATH'], 'Log file path')######################3
+        
         return info
 
     def _add_autofocusinfo_to_hdr(self):
@@ -451,6 +468,7 @@ class mainImage(mainConfig):
         info['NTELSCOP'] = None
         info['NOTE'] = None
         info['IS_ToO'] = None
+        info['RAPIDToO'] = None
         if self._targetinfo:
             info['OBJECT'] = self._format_header(self._targetinfo['name'], 'Name of the target')            
             info['OBJTYPE'] = self._format_header(self._targetinfo['objtype'], 'Type of the target')
@@ -469,6 +487,9 @@ class mainImage(mainConfig):
             info['NOTE'] = self._format_header(self._targetinfo['note'], 'Note of the target')
             is_ToO_str = str(True) if self._targetinfo['is_ToO'] else str(False)
             info['IS_ToO'] = self._format_header(is_ToO_str, 'Is the target a ToO?')
+            is_rapidToO_str = str(True) if self._targetinfo['is_rapidToO'] else str(False)
+            info['RAPIDToO'] = self._format_header(is_rapidToO_str, 'Is the target a rapid ToO?')
+
         return info
 
 

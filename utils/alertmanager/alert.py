@@ -54,7 +54,9 @@ class Alert:
         default_config['binning'] = 1
         default_config['gain'] = 2750
         default_config['objtype'] = 'Request'
-        default_config['is_ToO'] = 0
+        default_config['is_ToO'] = 1
+        default_config['is_rapidToO'] = 0
+        default_config['cadence'] = 1
         default_config['id'] = self.key
         
         return default_config
@@ -312,6 +314,11 @@ class Alert:
         else:
             formatted_dict['is_ToO'] = 0
             
+        if str(formatted_dict['is_rapidToO']).upper() == 'TRUE':
+            formatted_dict['is_rapidToO'] = 1
+        else:
+            formatted_dict['is_rapidToO'] = 0
+            
         # If specmode is defined, remove the extension
         if 'specmode' in alert_dict_normalized.keys():
             formatted_dict['specmode'] = alert_dict_normalized['specmode'].split('.')[0]    
@@ -435,8 +442,12 @@ class Alert:
             'objtype': ['objtype', 'objecttype'],
             'note': ['note', 'notes'],
             'comments': ['comment', 'comments'],
-            'is_ToO': ['is_too', 'is too', 'abortobservation', 'abort current observation'],
+            'is_ToO': ['is_too', 'is too'],
+            'is_rapidToO': ['is_rapidtoo', 'is rapid too', 'abortobservation', 'abort current observation'],
+            'cadence': ['cadence'],
             'obs_starttime': ['obsstarttime', 'starttime', 'start time', 'obs_starttime', 'observation start time'],
+            'too_starttime': ['too start time', 'toostarttime', 'too_starttime'],
+            'too_endtime': ['too end time', 'toodendtime', 'too_endtime'],
             'id': ['id', 'uuid', 'uniqueid', 'unique id', 'unique identifier'],
             'is_observable': ['is_observable'],
             'radius': ['radius', 'radius (arcmin)']

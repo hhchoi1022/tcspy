@@ -14,7 +14,7 @@ import threading
 import json
 from astropy.time import Time
 import shutil
-from tcspy.utils.databases import DB_Daily
+from tcspy.utils.databases import DB_Dynamic
 
 #%%
 
@@ -24,7 +24,7 @@ class AlertMonitor(mainConfig):
         super().__init__()
         self.alertbroker = AlertBroker()
         self.alert_queue = queue.Queue()
-        self.DB_daily = DB_Daily(Time.now())
+        self.DB_dynamic = DB_Dynamic(Time.now())
         self.active_alerts = {}
 
     def monitor_alert(self, 
@@ -33,10 +33,10 @@ class AlertMonitor(mainConfig):
                       check_interval: int = 30,  # seconds
                       # Mail configuration
                       since_days : int = 3,
-                      max_email_alerts: int = 5, 
+                      max_email_alerts: int = 20, 
                       # Google Sheets configuration
-                      max_sheet_alerts: int = 5, 
-                      match_to_tiles: bool = False, 
+                      max_sheet_alerts: int = 20, 
+                      match_to_tiles: bool = True, 
                       match_tolerance_minutes: int = 5):
         """
         Automatically monitors for new alerts (email and Google Sheets), and
@@ -154,21 +154,18 @@ class AlertMonitor(mainConfig):
         print(f"[{datetime.datetime.now()}] Monitoring alert status for observability.")
         alert_targets = alert.formatted_data
         alert_observable_targets = alert_targets[alert_targets['is_observable'].astype(str) == 'True']
-        DB_status_path = os.path.join(self.config['DB_STATUSPATH'], f'DB_Daily.{self.config["DB_STATUSFORMAT"]}')
-        observation_status = Table.read(DB_status_path, format=self.config['DB_STATUSFORMAT'])
-        alert_observation_status = observation_status[np.isin(observation_status['id'], alert_observable_targets['id'])]
-        
+
         # Set the maximum waiting time for the alert to be observed
-        maximum_waiting_time = 86400  # Maximum waiting time in seconds (48 hours)
+        maximum_waiting_time = 2*86400  # Maximum waiting time in seconds (48 hours)
         is_alert_observed = False
         observed_time = None
         print(f"[{datetime.datetime.now()}] Waiting for the alert to be observed. Maximum wait: 48 hours.")
 
         while maximum_waiting_time > 0:
             time.sleep(15)
-            observation_status = self.DB_daily.data
-            #observation_status = Table.read(DB_status_path, format=self.config['DB_STATUSFORMAT'])
-            alert_observation_status = observation_status[np.isin(observation_status['id'], alert_observable_targets['id'])]
+            observation_status = self.DB_dynamic.data
+            # observation_status = Table.read(DB_status_path, format=self.config['DB_STATUSFORMAT'])
+            alert_observation_status = observation_status[np.isin(observation_status['id'], alert_observable_targets['id'][0])]
             is_observed_each_target = [status.lower() == 'observed' for status in alert_observation_status['status']]
             is_alert_observed = all(is_observed_each_target)
             alert.num_observed_targets = sum(is_observed_each_target)
@@ -176,14 +173,15 @@ class AlertMonitor(mainConfig):
             
             if is_alert_observed:
                 time.sleep(5)
-                observed_time = np.max(Time(alert_observation_status['obs_endtime']))
+                all_observed_time = [Time(str(t)) for t in alert_observation_status['obs_endtime']]
+                observed_time = np.max(all_observed_time)
+                alert.observation_time = observed_time.isot
                 print(f"[{datetime.datetime.now()}] All targets observed at {observed_time}.")
                 break
 
             maximum_waiting_time -= 15
 
         alert.is_observed = is_alert_observed
-        alert.observation_time = observed_time
         
         self.alertbroker.save_alerthistory(alert = alert, history_path = alert.historypath)
         self.update_alertstatus(alert, alert.statuspath)
@@ -192,18 +190,18 @@ class AlertMonitor(mainConfig):
         requester = alert.alert_sender if alert.alert_sender != '7dt.observation.broker@gmail.com' else None
         if is_alert_observed:
             print(f"[{datetime.datetime.now()}] Observation successful. Sending observed notifications.")
-            if requester:
-                self.alertbroker.send_observedmail(alert=alert, users=requester, cc_users=self.users['admin'], observed_time=observed_time)
-            else:
-                self.alertbroker.send_observedmail(alert=alert, users=self.users['admin'], observed_time=observed_time)
+            # if requester:
+            #     self.alertbroker.send_observedmail(alert=alert, users=requester, cc_users=self.users['admin'], observed_time=observed_time)
+            # else:
+            #     self.alertbroker.send_observedmail(alert=alert, users=self.users['admin'], observed_time=observed_time)
             
             self.alertbroker.send_observedslack(alert=alert, message_ts=slack_message_ts, observed_time=observed_time)
         else:
             print(f"[{datetime.datetime.now()}] Observation failed. Sending failure notifications.")
-            if requester:
-                self.alertbroker.send_failedmail(alert=alert, users=requester, cc_users=self.users['admin'])
-            else:
-                self.alertbroker.send_failedmail(alert=alert, users=self.users['admin'])
+            # if requester:
+            #     self.alertbroker.send_failedmail(alert=alert, users=requester, cc_users=self.users['admin'])
+            # else:
+            #     self.alertbroker.send_failedmail(alert=alert, users=self.users['admin'])
             self.alertbroker.send_failedslack(alert=alert, message_ts=slack_message_ts)
 
     def update_alertstatus(self, 
@@ -304,7 +302,7 @@ if __name__ == "__main__":
                                send_email = True,
                                check_interval = 30,
                                since_days = 3,
-                               max_email_alerts = 10,
+                               max_email_alerts = 20,
                                max_sheet_alerts = 5,
                                match_to_tiles = True,
                                match_tolerance_minutes = 3)

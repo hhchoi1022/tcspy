@@ -121,7 +121,7 @@ class FilterCheck(mainConfig):
                 header_key = os.path.join(telescope.config['IMAGE_PATH'], folder_key, '*filtercheck*.head')
                 header_file = glob.glob(header_key)
                 data = fits.getdata(fits_file[0])
-                mean = int(np.mean(data))
+                mean = int(np.median(data))
                 print(f'{telescope_name} : {mean}')
                 os.remove(fits_file[0])
                 os.remove(header_file[0])                
@@ -172,26 +172,31 @@ if __name__ == '__main__':
     multitelescopes = MultiTelescopes()
     abort_action = Event()
     application = FilterCheck(multitelescopes, abort_action)
-    slack = SlackConnector(token_path= application.config['SLACK_TOKEN'], default_channel_id= application.config['SLACK_DEFAULT_CHANNEL'])
-    obsnight = NightSession(Time.now()).obsnight_utc
-    tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
-    #message_ts = None
-    message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
-    if message_ts:
-        slack.post_thread_message(message_ts,f'{type(application).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    try:
+        slack = SlackConnector(token_path= application.config['SLACK_TOKEN'], default_channel_id= application.config['SLACK_DEFAULT_CHANNEL'])
+        obsnight = NightSession(Time.now()).obsnight_utc
+        tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
+        #message_ts = None
+        message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
+        if message_ts:
+            slack.post_thread_message(message_ts,f'{type(application).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    except:
+        pass
     result= application.run(exptime = args.exptime)
     while application.is_running:
         time.sleep(0.1)
-    if message_ts:
-        slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
-    if message_ts:
-        slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
-        skylevel_str = '\n'.join([f'*{band}*: ' + ', '.join([f'{telescope}: {value} \n' for telescope, value in telescopes.items()])
-                                for band, telescopes in result[0].items()])
-        slack.post_thread_message(message_ts, f'Skylevel:\n{skylevel_str}')
-
+    try:
+        if message_ts:
+            slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+        if message_ts:
+            slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+            skylevel_str = '\n'.join([f'*{band}*: ' + ', '.join([f'{telescope}: {value} \n' for telescope, value in telescopes.items()])
+                                    for band, telescopes in result[0].items()])
+            slack.post_thread_message(message_ts, f'Skylevel:\n{skylevel_str}')
+    except:
+        pass
     # Update config to original
     for tel, config_value in zip(M.devices.values(), original_config):
         config = mainConfig(tel.unitnum)
-        config.update_config('IMAGE_SAVELOG', config_value)
+        config.update_config('IMAGE_SAVELOG', True)
 # %%

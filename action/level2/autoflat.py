@@ -257,6 +257,7 @@ class AutoFlat(Interface_Runnable, Interface_Abortable):
                                           note = None,
                                           comment = None,
                                           is_ToO = False,
+                                          is_rapidToO = False,
                                         
                                           exptime = exptime,
                                           count = 1,

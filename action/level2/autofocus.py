@@ -258,7 +258,6 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
  
             except AutofocusFailedException:
                 self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 2nd try failed.')
-
         # If autofocus process is still failed, grid search
         if search_focus_when_failed:
             relative_position = 500
@@ -315,7 +314,6 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                 relative_position = np.abs(relative_position) + 500
                 sign *= -1
                 relative_position *= sign
-
         # If autofocus process is still failed, return ActionFailedException
         try:
             self.action = action_changefocus

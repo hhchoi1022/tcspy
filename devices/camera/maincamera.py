@@ -67,12 +67,77 @@ class mainCamera(mainConfig):
         super().__init__(unitnum=unitnum)
         self._unitnum = unitnum
         self.device = Camera(f"{self.config['CAMERA_HOSTIP']}:{self.config['CAMERA_PORTNUM']}",self.config['CAMERA_DEVICENUM'])
-        self.status = self.get_status()
         self.is_idle = Event()
         self.is_idle.set()
         self.device_lock = Lock()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
-
+        
+        self._camera_name = None
+        self._id = None
+        self._id_update_time = None
+        self._sensor_name = None
+        self._sensor_type = None
+        self.status = self.get_status()
+    
+    @property
+    def camera_name(self):
+        if self._camera_name is None:
+            try:
+                self._camera_name = self.device.Name
+            except:
+                pass
+        return self._camera_name
+    
+    @property
+    def id(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Camera']['name']
+        if self._id is None:
+            try:
+                self._id = load_id(self)
+            except:
+                pass
+        return self._id
+    
+    @property
+    def id_update_time(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Camera']['timestamp']
+        if self._id_update_time is None:
+            try:
+                self._id_update_time = load_id(self)
+            except:
+                pass
+        return self._id_update_time
+    
+    @property
+    def sensor_name(self):
+        if self._sensor_name is None:
+            try:
+                self._sensor_name = self.device.SensorName
+            except:
+                pass
+        return self._sensor_name
+    
+    @property
+    def sensor_type(self):
+        if self._sensor_type is None:
+            try:
+                self._sensor_type = self.device.SensorType.name
+            except:
+                pass
+        return self._sensor_type
+            
     def get_status(self) -> dict:
         """
         Get the current status of the connected camera.
@@ -88,7 +153,6 @@ class mainCamera(mainConfig):
         status['is_imgReady'] = None
         status['is_connected'] = False
         status['state'] = None
-        status['name_cam'] = None
         status['numX'] = None
         status['numY'] = None
         status['maxADU'] = None
@@ -100,8 +164,11 @@ class mainCamera(mainConfig):
         status['ccdtemp'] = None
         status['set_ccdtemp'] = None
         status['power_cooler'] = None
-        status['name_sensor'] = None
-        status['type_sensor'] = None
+        status['name_cam'] = self.camera_name
+        status['camera_id'] = self.id
+        status['camera_id_update_time'] = self.id_update_time
+        status['sensor_name'] = self.sensor_name
+        status['sensor_type'] = self.sensor_type
         
         # Update status
         if self.device.Connected:
@@ -123,10 +190,6 @@ class mainCamera(mainConfig):
                 pass
             try:
                 status['state'] = self.device.CameraState.name
-            except:
-                pass
-            try:
-                status['name_cam'] = self.device.Name
             except:
                 pass
             try:
@@ -175,14 +238,6 @@ class mainCamera(mainConfig):
                 pass
             try:
                 status['power_cooler'] = round(self.device.CoolerPower,1)
-            except:
-                pass
-            try:
-                status['name_sensor'] = self.device.SensorName
-            except:
-                pass
-            try:
-                status['type_sensor'] = self.device.SensorType.name
             except:
                 pass
 
@@ -600,4 +655,8 @@ class mainCamera(mainConfig):
         self.device.BinX = self.device.BinY = binning
         self.device.NumX = self.device.CameraXSize // self.device.BinX
         self.device.NumY = self.device.CameraYSize // self.device.BinY
-#%%
+
+# %%
+if __name__ == '__main__':
+    cam = mainCamera(unitnum=1)
+# %%

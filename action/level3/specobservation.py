@@ -81,6 +81,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             note : str = None,
             comment : str = None,
             is_ToO : bool = False,
+            is_rapidToO : bool = False,
             
             # Auxiliary parameters
             force_slewing : bool = False,
@@ -200,6 +201,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                                     note = note,
                                     comment = comment,
                                     is_ToO = is_ToO,
+                                    is_rapidToO = is_rapidToO,
                                     
                                     exptime = exptime,
                                     count = count,

@@ -55,8 +55,44 @@ class mainFocuser_Alpaca(mainConfig):
         
         super().__init__(unitnum = unitnum)
         self.device = Focuser(f"{self.config['FOCUSER_HOSTIP']}:{self.config['FOCUSER_PORTNUM']}",self.config['FOCUSER_DEVICENUM'])
-        self.status = self.get_status()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
+        self.status = self.get_status()
+        self._id = None
+        self._id_update_time = None
+        self.status = self.get_status()
+        
+ 
+    @property
+    def id(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Focuser']['name']
+        if self._id is None:
+            try:
+                self._id = load_id(self)
+            except:
+                pass
+        return self._id
+    
+    @property
+    def id_update_time(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Focuser']['timestamp']
+        if self._id_update_time is None:
+            try:
+                self._id_update_time = load_id(self)
+            except:
+                pass
+        return self._id_update_time
     
     def get_status(self) -> dict:
         """
@@ -81,6 +117,8 @@ class mainFocuser_Alpaca(mainConfig):
         status['step_warn'] = None
         status['is_abs_positioning'] = None
         status['is_tempcomp'] = None
+        status['focuser_id'] = self.id
+        status['focuser_id_update_time'] = self.id_update_time
         
         if self.device.Connected:
             try:

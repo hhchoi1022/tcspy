@@ -25,16 +25,16 @@
             "focuserr": 999
         },
         "m800": {
-            "update_time": "2025-07-03T10:26:42.086",
+            "update_time": "2025-11-06T07:56:48.537",
             "succeeded": true,
-            "focusval": 7231.3,
-            "focuserr": 20.83
+            "focusval": 7264.2,
+            "focuserr": 19.06
         },
         "m825": {
-            "update_time": "2025-07-03T09:30:02.302",
+            "update_time": "2025-11-06T08:04:05.200",
             "succeeded": true,
-            "focusval": 7200.8,
-            "focuserr": 22.83
+            "focusval": 7262.7,
+            "focuserr": 20.94
         },
         "m600": {
             "update_time": "2000-01-01T00:00:00.000",

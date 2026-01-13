@@ -19,16 +19,16 @@
             "focuserr": 999
         },
         "m850": {
-            "update_time": "2025-07-03T10:11:28.914",
+            "update_time": "2025-11-06T07:56:32.313",
             "succeeded": true,
-            "focusval": 4721.7,
-            "focuserr": 20.61
+            "focusval": 5848.3,
+            "focuserr": 16.65
         },
         "m875": {
-            "update_time": "2025-07-03T10:18:25.622",
+            "update_time": "2025-11-06T08:03:35.376",
             "succeeded": true,
-            "focusval": 4708.1,
-            "focuserr": 19.61
+            "focusval": 5852.7,
+            "focuserr": 20.11
         },
         "Slot6": {
             "update_time": "2000-01-01T00:00:00.000",

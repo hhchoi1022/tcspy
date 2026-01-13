@@ -62,12 +62,47 @@ class mainFocuser_pwi4(mainConfig):
         
         super().__init__(unitnum = unitnum)
         self.device = PWI4(self.config['FOCUSER_HOSTIP'], self.config['FOCUSER_PORTNUM'])
-        self.status = self.get_status()
         self.is_idle = Event()
         self.is_idle.set()
         self.device_lock = Lock()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
+        self._id = None
+        self._id_update_time = None
+        self.status = self.get_status()
         
+ 
+    @property
+    def id(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Focuser']['name']
+        if self._id is None:
+            try:
+                self._id = load_id(self)
+            except:
+                pass
+        return self._id
+    
+    @property
+    def id_update_time(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Focuser']['timestamp']
+        if self._id_update_time is None:
+            try:
+                self._id_update_time = load_id(self)
+            except:
+                pass
+        return self._id_update_time
+    
     def get_status(self) -> dict:
         """
         Get the status of the Focuser device.
@@ -89,6 +124,8 @@ class mainFocuser_pwi4(mainConfig):
         status['autofocus_bestposition'] = None
         status['autofocus_tolerance'] = None
         status['autofocus_history'] = self._get_autofocus_history()
+        status['focuser_id'] = self.id
+        status['focuser_id_update_time'] = self.id_update_time
         
         try:
             if self.PWI_status.mount.is_connected:

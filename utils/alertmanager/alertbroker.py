@@ -19,7 +19,7 @@ class AlertBroker(mainConfig):
         super().__init__()
         self.googlesheet = None
         self.gmail = None
-        self.DB_Daily = None
+        self.DB_Dynamic = None
         self.slack = None
 
     # Setting up the connectors
@@ -52,9 +52,9 @@ class AlertBroker(mainConfig):
                                         user_token_path = self.config['GMAIL_TOKENPATH'])
             
     def _set_DB(self):
-        if not self.DB_Daily:
+        if not self.DB_Dynamic:
             print('Setting up DatabaseConnector...')
-            self.DB_Daily = DB().Daily   
+            self.DB_Dynamic = DB().Dynamic   
     
     def is_history_saved(self,
                          history_path : str):
@@ -281,7 +281,6 @@ class AlertBroker(mainConfig):
                         # If new alert, save the alert
                         if not self.is_history_saved(history_path = alert.historypath):
                             self.save_alerthistory(alert = alert, history_path = alert.historypath)
-
                         # Else, load the alert from the history 
                         else:
                             alert = self.load_alerthistory(history_path = alert.historypath)
@@ -342,7 +341,7 @@ class AlertBroker(mainConfig):
                 single_target_targetinfo_body += "<p><b>RA:</b> %.5f </p>" %float(single_target_info['RA'])
                 single_target_targetinfo_body += "<p><b>Dec:</b> %.5f </p>" %float(single_target_info['De'])
                 single_target_targetinfo_body += "<p><b>Priority:</b> %f </p>" %float(single_target_info['priority'])
-                single_target_targetinfo_body += "<p><b>Immediate start?:</b> %s </p>" %str(bool(single_target_info['is_ToO']))
+                single_target_targetinfo_body += "<p><b>Immediate start?:</b> %s </p>" %str(bool(single_target_info['is_rapidToO']))
                 single_target_targetinfo_body += "<p><b>ID:</b> %s </p>" %single_target_info['id']  
                 if 'note' in single_target_info.keys() and single_target_info['note']:
                     single_target_targetinfo_body += "<p><b>Note:</b> %s </p>" %single_target_info['note']
@@ -586,7 +585,7 @@ class AlertBroker(mainConfig):
                     f"*RA:* {float(single_target_info['RA']):.5f}\n"
                     f"*Dec:* {float(single_target_info['De']):.5f}\n"
                     f"*Priority:* {single_target_info['priority']}\n"
-                    f"*Immediate start?* {'Yes' if single_target_info['is_ToO'] else 'No'}\n"
+                    f"*Immediate start?* {'Yes' if single_target_info['is_rapidToO'] else 'No'}\n"
                     f"*Note:* {single_target_info['note'] if 'note' in single_target_info.keys() and single_target_info['note'] else 'N/A'}\n"
                     f"*Comments:* {single_target_info['comments'] if 'comments' in single_target_info.keys() and single_target_info['comments'] else 'N/A'}\n"
                     f"*Requested obstime:* {single_target_info['obs_starttime'] if 'obs_starttime' in single_target_info.keys() and single_target_info['obs_starttime'] else 'N/A'}\n"
@@ -837,7 +836,7 @@ class AlertBroker(mainConfig):
         formatted_data.sort('priority')
         self._set_DB()  
         try:
-            self.DB_Daily.insert(target_tbl = formatted_data)
+            self.DB_Dynamic.insert(target_tbl = formatted_data)
             alert.is_inputted = True
             alert.update_time = Time.now().isot
             alert.trigger_time = Time.now().isot
@@ -851,17 +850,6 @@ class AlertBroker(mainConfig):
       
 #%%
 if __name__ == '__main__':
-    ab = AlertBroker()
-    file_path = '/Users/hhchoi1022/SkyGridCatalog_7DT_90.csv'
-    tbl = ascii.read(file_path)
-    a = Alert()
-    #file_path  = '/Users/hhchoi1022/code/tcspy/utils/alertmanager/20241128_164230_GECKO.ascii_fixed_width'
-    ab.write_gwalert(file_path)
-    #alert = ab.read_gwalert(path_alert = file_path)
-    #alert = ab.read_sheet(sheet_name = '241219', match_to_tiles= True)
-    #alertlist = ab.read_mail(since_days = 3, match_to_tiles = True)
-    #alert = alertlist[0]
-    #message_ts = ab.send_alertslack(alert = alert)
-    #ab.send_resultmail(alert = alert, users = 'hhchoi1022@gmail.com', observed_time = '2024-12-26')
-    #ab.read_gwalert(path_alert = file_path)#, match_to_tiles = True)
+    self = AlertBroker()
+
 # %%

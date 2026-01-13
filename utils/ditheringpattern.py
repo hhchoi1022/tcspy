@@ -9,7 +9,7 @@ def generate_dithering_pattern(ra_center, dec_center, n_points, offset_arcsec):
     """Generate an outward spiral dithering pattern in RA/Dec coordinates."""
 
     max_points = 25  # 5x5 grid including center
-    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Up, Right, Down, Left
+    directions = [(1, 0), (0, -1), (-1, 0), (0, 1)]  # Up, Right, Down, Left
     pattern = [(0, 0)]  # Start at the center (offsets in arcsec)
     visited = set(pattern)
 
@@ -65,7 +65,7 @@ def generate_dithering_pattern(ra_center, dec_center, n_points, offset_arcsec):
 ra_center = 150.0  # in degrees
 dec_center = 87.0  # in degrees (high declination case)
 n_points = 25  # Number of dithering points
-offset_arcsec = 3  # Offset in arcseconds
+offset_arcsec = 15  # Offset in arcseconds
 
 # Generate dithering pattern
 dithering_pattern = generate_dithering_pattern(ra_center, dec_center, n_points, offset_arcsec)

@@ -7,7 +7,7 @@ from tcspy.utils.connector import SQLConnector
 from tcspy.utils.nightsession import NightSession
 from tcspy.utils.databases.tiles import Tiles
 
-from astropy.table import Table  
+from astropy.table import Table, vstack 
 from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -16,11 +16,12 @@ from astroplan import observability_table
 from astroplan import AltitudeConstraint, MoonSeparationConstraint
 from tqdm import tqdm
 import os
+import re
 # %%
 
-class DB_Daily(mainConfig):
+class DB_Dynamic(mainConfig):
     """
-    class of Daily target table for the observation of each night.
+    class of Dynamic target table for the observation of each night.
 
     Parameters
     ----------
@@ -68,7 +69,7 @@ class DB_Daily(mainConfig):
     
     def __init__(self,
                  utctime : Time = Time.now(),
-                 tbl_name : str = 'Daily'):
+                 tbl_name : str = 'Dynamic'):
 
         super().__init__()       
         self.observer = mainObserver()
@@ -202,7 +203,7 @@ class DB_Daily(mainConfig):
             target_all = self.initialize(initialize_all= False)
         else:
             target_all = self.data
-        idx_ToO = target_all['is_ToO'] == 1
+        idx_ToO = target_all['is_rapidToO'] == 1
         target_ToO = target_all[idx_ToO]
         target_ordinary = target_all[~idx_ToO]
         
@@ -267,46 +268,73 @@ class DB_Daily(mainConfig):
                  size : int = 300,
                  observable_minimum_hour : float = 2,
                  n_time_grid : float = 10,
+                 galactic_latitude_limit: float = 15,
+                 declination_upper_limit: float = 0,
+                 declination_lower_limit: float = -90
                  ):
-        from tcspy.utils.databases import DB_Annual
-        RIS = DB_Annual(tbl_name = 'RIS')
-        best_targets = RIS.select_best_targets(utcdate = utcdate, size = size, observable_minimum_hour = observable_minimum_hour, n_time_grid = n_time_grid)
+        from tcspy.utils.databases import DB_Survey
+        RIS = DB_Survey(tbl_name = 'RIS')
+        best_targets = RIS.select_best_targets(utcdate = utcdate, 
+                                               size = size, 
+                                               observable_minimum_hour = observable_minimum_hour, 
+                                               n_time_grid = n_time_grid,
+                                               galactic_latitude_limit= galactic_latitude_limit,
+                                               declination_upper_limit= declination_upper_limit,
+                                               declination_lower_limit= declination_lower_limit
+                                               )
         self.insert(best_targets)
         print(f'{len(best_targets)} RIS targets are inserted')
         
     def from_IMS(self):
-        from tcspy.utils.databases import DB_Annual
-        IMS = DB_Annual(tbl_name = 'IMS')
+        from tcspy.utils.databases import DB_Survey
+        IMS = DB_Survey(tbl_name = 'IMS')
         best_targets = IMS.data
         self.insert(best_targets)
         print(f'{len(best_targets)} IMS targets are inserted')
+        
+    def from_Program(self,
+                     utcdate : Time = Time.now(),
+                     observable_minimum_hour: float = 0.1,
+                     n_time_grid: float = 10):
+        from tcspy.utils.databases import DB_Program
+        DB_program = DB_Program(tbl_name = 'Program')
+        best_targets = DB_program.select_best_targets(utcdate = utcdate, observable_minimum_hour = observable_minimum_hour, n_time_grid = n_time_grid)
+        self.insert(best_targets)
+        print(f'{len(best_targets)} Program targets are inserted')
     
     def update_7DS_obscount(self,
                             remove : bool = False,
                             reset_status: bool = False,
                             update_RIS : bool = True,
                             update_IMS : bool = True,
-                            update_WFS : bool = False):
-        daily_tbl = self.data
-        obs_tbl = daily_tbl[daily_tbl['status'] == 'observed']
-        from tcspy.utils.databases import DB_Annual
-        DB_annual = DB_Annual()
+                            update_WFS : bool = False,
+                            tile_key: str = "^T\d+$"):
+        dynamic_tbl = self.data
+        obs_tbl = dynamic_tbl[dynamic_tbl['status'] == 'observed']
+        survey_pattern = re.compile(tile_key)
+        obs_tbl_survey_idx = [
+            bool(survey_pattern.match(row['objname']))
+            for row in obs_tbl
+        ]        
+        survey_tbl = obs_tbl[obs_tbl_survey_idx]
+        from tcspy.utils.databases import DB_Survey
+        DB_survey = DB_Survey()
         
         observed_ids = []
         update_survey_list = [tbl_name for tbl_name, do_update in zip(['RIS', 'IMS', 'WFS'],[update_RIS, update_IMS, update_WFS]) if do_update]
         for tbl_name in update_survey_list:
             try:
-                DB_annual.change_table(tbl_name)
-                DB_data = DB_annual.data
+                DB_survey.change_table(tbl_name)
+                DB_data = DB_survey.data
                 obscount = 0
                 for target in obs_tbl:    
                     count_before = DB_data[DB_data['objname'] == target['objname']]['obs_count']
                     if len(count_before) == 1:
                         today_str = Time.now().isot[:10]
-                        DB_annual.update_target(target_id = target['objname'], update_keys = ['obs_count','note','last_obsdate'], update_values = [count_before[0]+1, target['note'], today_str], id_key = 'objname')
+                        DB_survey.update_target(target_id = target['objname'], update_keys = ['obs_count','note','last_obsdate'], update_values = [count_before[0]+1, target['note'], today_str], id_key = 'objname')
                         obscount +=1
                         observed_ids.append(target['id'])
-                print(f'{obscount} {DB_annual.tblname} tiles are updated')
+                print(f'{obscount} {DB_survey.tblname} tiles are updated')
             except:
                 pass
         if reset_status:
@@ -315,7 +343,48 @@ class DB_Daily(mainConfig):
         if remove:
             self.sql.remove_rows(tbl_name = self.tblname, ids = observed_ids)
 
-        DB_annual.disconnect()
+        DB_survey.disconnect()
+        
+    def update_program_obscount(self,
+                                remove : bool = True,
+                                reset_status: bool = False,
+                                update_program : bool = True):
+        dynamic_tbl = self.data
+        nonsurvey_target_idices = [row['objtype'] not in ['IMS', 'RIS', 'WFS'] for row in dynamic_tbl]
+        nonsurvey_dynamic_tbl = dynamic_tbl[nonsurvey_target_idices]
+        nonsurvey_dynamic_tbl_observed = nonsurvey_dynamic_tbl[nonsurvey_dynamic_tbl['status'] == 'observed']
+        
+        observed_ids = []
+        if update_program:
+            from tcspy.utils.databases import DB_Program
+            DB_program = DB_Program()
+            DB_program.change_table('Program')
+            program_tbl = DB_program.data
+            for row in nonsurvey_dynamic_tbl_observed:
+                # When there is no such target in Program DB, insert new row
+                if row['id'] not in program_tbl['id']:
+                    table_to_insert = Table(row)
+                    table_to_insert.rename_column('obs_endtime', 'last_obstime')
+                    table_to_insert.remove_column('obs_starttime')
+                    table_to_insert['obs_count'] = 1
+                    DB_program.insert(table_to_insert)
+                # When there is such target in Program DB, update obs_count
+                else:
+                    table_in_program = program_tbl[program_tbl['id'] == row['id']]
+                    if row['obs_endtime'] == table_in_program['last_obstime']:
+                        observed_ids.append(row['id'])
+                        continue
+                    obs_count_program = table_in_program['obs_count'][0]
+                    DB_program.update_target(target_id = row['id'], update_keys = ['last_obstime', 'obs_count'], update_values = [row['obs_endtime'], obs_count_program + 1], id_key = 'id')
+                observed_ids.append(row['id'])
+                
+        if reset_status:
+            if len(observed_ids) > 0:
+                for id_ in observed_ids:
+                    self.update_target(update_values = ['unscheduled'], update_keys = ['status'], id_value = id_, id_key = 'id')
+        if remove:
+            if len(observed_ids) > 0:
+                self.sql.remove_rows(tbl_name = self.tblname, ids = observed_ids)
         
     def _match_RIS_tile(self, ra : list or str, dec : list or str, match_tolerance_minutes = 3):
         if not self._tiles:
@@ -342,24 +411,27 @@ class DB_Daily(mainConfig):
         tbl_sheet = gsheet.read_sheet(sheet_name = sheet_name, format_ = 'Table')
         if match_to_tiles:
             tile_info, matched_indices = self._match_RIS_tile(tbl_sheet['RA'].tolist(), tbl_sheet['De'].tolist(), match_tolerance_minutes = match_tolerance_minutes)
-        unmatched_mask = np.ones(len(tbl_sheet), dtype=bool)
-        unmatched_mask[matched_indices] = False
-        # Insert data
-        print('Inserting GoogleSheet data to DB...')
-        matched_tbl = tbl_sheet[matched_indices]
-        
-        # Update only rows where is_within_boundary is True
-        within_boundary_mask = tile_info['is_within_boundary']
-        if np.any(within_boundary_mask):  # Ensure there are rows within boundary to update
-            within_boundary_indices = np.where(within_boundary_mask)[0]
-            objname = matched_tbl['objname'][within_boundary_indices]
-            matched_tbl['objname'][within_boundary_indices] = tile_info['id'][within_boundary_indices]
-            matched_tbl['RA'][within_boundary_indices] = tile_info['ra'][within_boundary_indices]
-            matched_tbl['De'][within_boundary_indices] = tile_info['dec'][within_boundary_indices]
-            matched_tbl['note'][within_boundary_indices] = objname
-        
-        unmatched_tbl = tbl_sheet[unmatched_mask]  
-        final_tbl = vstack([matched_tbl, unmatched_tbl])
+            
+            unmatched_mask = np.ones(len(tbl_sheet), dtype=bool)
+            unmatched_mask[matched_indices] = False
+            # Insert data
+            print('Inserting GoogleSheet data to DB...')
+            
+            # Update only rows where is_within_boundary is True
+            matched_tbl = tbl_sheet[matched_indices]
+            within_boundary_mask = tile_info['is_within_boundary']
+            if np.any(within_boundary_mask):  # Ensure there are rows within boundary to update
+                within_boundary_indices = np.where(within_boundary_mask)[0]
+                objname = matched_tbl['objname'][within_boundary_indices]
+                matched_tbl['objname'][within_boundary_indices] = tile_info['id'][within_boundary_indices]
+                matched_tbl['RA'][within_boundary_indices] = tile_info['ra'][within_boundary_indices]
+                matched_tbl['De'][within_boundary_indices] = tile_info['dec'][within_boundary_indices]
+                matched_tbl['note'][within_boundary_indices] = objname
+            
+            unmatched_tbl = tbl_sheet[unmatched_mask]  
+            final_tbl = vstack([matched_tbl, unmatched_tbl])
+        else:
+            final_tbl = tbl_sheet
 
         insertion_result = self.insert(final_tbl)
         # Update google sheet 
@@ -437,16 +509,16 @@ class DB_Daily(mainConfig):
                 dt_ut = Time.now().datetime     
                 if not os.path.exists(self.config['DB_HISTORYPATH']):
                     os.makedirs(self.config['DB_HISTORYPATH'], exist_ok = True) 
-                file_abspath =  os.path.join(self.config['DB_HISTORYPATH'], f'Daily_%.4d%.2d%.2d.{self.config["DB_HISTORYFORMAT"]}' % (dt_ut.year, dt_ut.month, dt_ut.day))
+                file_abspath =  os.path.join(self.config['DB_HISTORYPATH'], f'Dynamic_%.4d%.2d%.2d.{self.config["DB_HISTORYFORMAT"]}' % (dt_ut.year, dt_ut.month, dt_ut.day))
                 tbl.write(file_abspath, format = self.config['DB_HISTORYFORMAT'], overwrite = True)
-                print(f"Exported Daily table to {file_abspath}")
+                print(f"Exported Dynamic table to {file_abspath}")
 
             elif save_type.lower() == 'status':
                 if not os.path.exists(self.config['DB_STATUSPATH']):
                     os.makedirs(self.config['DB_STATUSPATH'], exist_ok = True)
-                file_abspath = os.path.join(self.config['DB_STATUSPATH'], f'DB_Daily.{self.config["DB_STATUSFORMAT"]}')
+                file_abspath = os.path.join(self.config['DB_STATUSPATH'], f'DB_Dynamic.{self.config["DB_STATUSFORMAT"]}')
                 tbl.write(file_abspath, format= self.config['DB_STATUSFORMAT'], overwrite=True)
-                print(f"Exported Daily table to {file_abspath}")
+                print(f"Exported Dynamic table to {file_abspath}")
             
             else:
                 raise ValueError(f"Invalid save_type: {save_type}")
@@ -636,77 +708,20 @@ class DB_Daily(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    Daily = DB_Daily(Time.now())
-    Daily.update_7DS_obscount(remove = False, update_RIS = True, update_IMS = True)
-    Daily.clear(clear_only_7ds= True, clear_only_observed = False)
-    Daily.from_IMS()
-    Daily.from_RIS(size = 150)
-    # #from astropy.io import ascii
-    # #tbl = ascii.read('/data2/obsdata/DB_history/Daily_20241107.ascii_fixed_width', format = 'fixed_width')
-    # #tbl_input = tbl[tbl['note'] == 'GW190814']
-    # #tbl_input['ntelescope'] = 10
-    from tcspy.utils.databases import DB_Annual
-    #tbl_input = Table(DB_Annual().data[[22956, 15434]])# ,15434]])#, 2595]])
-    #Daily.insert(tbl_input)
-    # from astropy.io import ascii
-    # tbl = ascii.read('./S240422ed.ascii')
-    # data = Daily.data
-    #Daily.from_GSheet('20250208_235342_GECKO')
-    Daily.from_GSheet('250619_TDEHOST_ToO')
-
-    # tbl_to_insert = RIS[np.isin(RIS['objname'],tbl['id'])]
-    # tbl_to_insert['filter_'][:] = 'r'
-    # tbl_to_insert['obsmode'] = tbl_to_insert['obsmode'].astype('U20')
-    # tbl_to_insert['obsmode'][:] = 'Search'
-    # tbl_to_insert['exptime'][:] = 120
-    # tbl_to_insert['count'][:] = 3
+    Dynamic = DB_Dynamic(Time.now())
+    Dynamic.update_7DS_obscount(remove = False, update_RIS = True, update_IMS = True)
+    Dynamic.update_program_obscount(remove = True, reset_status= False, update_program = True)
+    Dynamic.clear(clear_only_7ds= True, clear_only_observed = False)
+    Dynamic.from_IMS()
+    Dynamic.from_RIS(size = 150)
+    Dynamic.from_Program()
+    # Dynamic.initialize(True)
+    from tcspy.utils.databases import DB_Survey, DB_Program
+    ris = DB_Survey(tbl_name = 'RIS')
+    program = DB_Program()
+    program.export_to_csv()
     
-    # tbl_to_insert['ntelescope'][:] = 1
-    # tbl_to_insert['priority'][:] = 40
-    # tbl_to_insert = RIS[[1637,
-    # 1753,
-    # 1872,
-    # 1873,
-    # 3259,
-    # 3260,
-    # 3418,
-    # 3580,
-    # 3581,
-    # 7756,
-    # 7757,
-    # 7983,
-    # 7984,
-    # 8212,
-    # 8213]]
-    # notelist = []
-    # for i in range(4):
-    #     notelist.append('FRB010312A')
-    # for i in range(5):
-    #     notelist.append('4hr')
-    # for i in range(6):
-    #     notelist.append('Antlia')
-    
-# from tcspy.utils.databases.tiles import Tiles
-    # from astropy.io import ascii
-    # tbl = ascii.read('./Subset_White_Dwarfs_with_Matched_Tiles.csv')
-    # T = Tiles()
-    # list_ra = tbl['ra']
-    # list_dec = tbl['dec']
-    # tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(list_ra, list_dec, list_aperture = 0, visualize=True, visualize_ncols=5, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
-
-    # tbl_to_insert = RIS[[9545, 3265, 3120, 7304, 7988, 13500, 10395, 1268, 4198, 10014 ]]
-    # tbl_to_insert['obsmode'] = 'Sepc'
-    # tbl_to_insert['exptime'] = '60,60,60,100,100,100,100'
-    # tbl_to_insert['specmode'] = ['calspec]*len(tbl_to_insert)
-    # tbl_to_insert['priority'] = 15
-    # tbl_to_insert['note'] = tbl['name']
-    # Daily.insert(tbl_to_insert)
-
-    # tbl_to_insert = RIS[[21177]]
-    # tbl_to_insert['note'] = 'EP241223a'
-    # Daily.insert(tbl_to_insert)
-    
-    Daily.initialize(True)
-    #Daily.write()
+    #input_tbl = ris.data[ris.data['objname'] == 'T19992']
+    #Dynamic.insert(input_tbl)
 
 # %%

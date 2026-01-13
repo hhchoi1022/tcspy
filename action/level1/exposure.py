@@ -49,7 +49,8 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             id_ : str = None,
             note : str = None,
             comment : str = None,
-            is_ToO : bool = False
+            is_ToO : bool = False,
+            is_rapidToO: bool = False,
             ):
         """
         Performs the action to expose the camera, saves the image, and returns True if successful.
@@ -155,6 +156,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
                               note = note,
                               comment = comment,
                               is_ToO=is_ToO,
+                              is_rapidToO=is_rapidToO,
                               exptime = exptime,
                               count = 1,
                               filter_ = filter_,
@@ -301,5 +303,5 @@ class Exposure(Interface_Runnable, Interface_Abortable):
         raise AbortionException(f'[{type(self).__name__}] is aborted.')      
 # %%
 if __name__ == '__main__':
-    self = Exposure(SingleTelescope(2), Event())
+    self = Exposure(SingleTelescope(8), Event())
 # %%

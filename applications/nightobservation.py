@@ -31,7 +31,7 @@ class NightObservation(mainConfig):
         super().__init__()
         self.multitelescopes = MultiTelescopes
         self.abort_action = abort_action
-        self.DB = DB(utctime = Time.now()).Daily
+        self.DB = DB(utctime = Time.now()).Dynamic
         self.obsnight = NightSession(Time.now()).obsnight_utc
         self.weather = next(iter(self.multitelescopes.devices.values())).devices['weather']
         self.safetymonitor = next(iter(self.multitelescopes.devices.values())).devices['safetymonitor']
@@ -45,8 +45,8 @@ class NightObservation(mainConfig):
         self.is_running = False
         self.is_obs_triggered = False
         self.is_shutdown_triggered = False
-        self.is_ToO_triggered = False
-        self.last_ToO_trigger_time = Time.now().isot
+        self.is_rapidToO_triggered = False
+        self.last_rapidToO_trigger_time = Time.now().isot
         self._ToO_abort = Event()
         self._observation_abort = Event()
         self.initialize()
@@ -69,7 +69,7 @@ class NightObservation(mainConfig):
         
     def initialize(self):
         
-        # Initialize Daily target table 
+        # Initialize Dynamic target table 
         self.DB.initialize(initialize_all= True)
         
         # Connect Weather Updater
@@ -83,6 +83,7 @@ class NightObservation(mainConfig):
         elif self.config['NIGHTOBS_SAFETYPE'].upper() == 'SAFETYMONITOR':
             self.is_safe = self._is_safetymonitor_safe
         else:
+            self.multitelescopes.log.warning(f'[{type(self).__name__}]Unknown safety type. Always return True.')
             self.is_safe = lambda: True
 
         # Get status of all telescopes
@@ -123,7 +124,8 @@ class NightObservation(mainConfig):
                       note = target['note'],
                       comment = target['comment'],
                       is_ToO = target['is_ToO'],
-                      force_slewing = True,
+                      is_rapidToO = target['is_rapidToO'],
+                      force_slewing = False,
                       autofocus_use_history = self.autofocus.use_history,
                       autofocus_history_duration = self.autofocus.history_duration,
                       autofocus_before_start = self.autofocus.before_start,
@@ -251,7 +253,7 @@ class NightObservation(mainConfig):
         # Abort NightObservation
         self.abort_action.set()
         aborted_action, aborted_observation_status = None
-        if self.is_ToO_triggered:
+        if self.is_rapidToO_triggered:
             aborted_action, aborted_observation_status = self._abort_ToO()
         else:
             aborted_action, aborted_observation_status = self._abort_observation()
@@ -280,7 +282,7 @@ class NightObservation(mainConfig):
             return False
     
     def _ToOobservation(self):
-        self.is_ToO_triggered = True
+        self.is_rapidToO_triggered = True
         aborted_action, aborted_observation_status = self._abort_observation()
         self.multitelescopes.log.info('ToO is triggered.================================')
         obs_start_time = self.obsnight.sunset_observation
@@ -309,7 +311,7 @@ class NightObservation(mainConfig):
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
             now = Time.now()
             
-            # Initialize the Daily target tbl
+            # Initialize the Dynamic target tbl
             self.DB.initialize(initialize_all = False)
             time.sleep(0.5)  
             
@@ -321,7 +323,7 @@ class NightObservation(mainConfig):
             # If weather is safe
             if is_weather_safe:    
                 is_shutdown_triggered = False
-                self.last_ToO_trigger_time = now.isot
+                self.last_rapidToO_trigger_time = now.isot
                 # If there is any aborted_action due to unsafe weather, resume the observation
                 if aborted_action_ToO:
                     self.multitelescopes.log.info(f'[{type(self).__name__}] Telescope is waiting 600s for the dome opened...')
@@ -335,11 +337,11 @@ class NightObservation(mainConfig):
                     break
                 
                 # If ToO is aborted manually
-                if not self.is_ToO_triggered:
+                if not self.is_rapidToO_triggered:
                     break
                 
                 # If target is not ToO, finish loop
-                if not best_target['is_ToO']:
+                if not best_target['is_rapidToO']:
                     break
                 
                 # Else; trigger observation
@@ -351,7 +353,7 @@ class NightObservation(mainConfig):
                 aborted_action_ToO, aborted_observation_status_ToO = self._abort_ToO()
                 self.multitelescopes.log.info(f'[{type(self).__name__} ToO is aborted: Unsafe weather]')
                 self._ToO_abort = Event()
-                #self.is_ToO_triggered = True
+                #self.is_rapidToO_triggered = True
                 if not is_shutdown_triggered:
                     Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
                     is_shutdown_triggered = True
@@ -361,7 +363,7 @@ class NightObservation(mainConfig):
         while len(self.action_queue) > 0:
             print('Waiting for ToO to be finished')
             time.sleep(1)
-        self.is_ToO_triggered = False
+        self.is_rapidToO_triggered = False
         print('ToO observation finished', Time.now())
         self.multitelescopes.log.info(f'[{type(self).__name__}] ToO observation is finished')
         self._observation_abort = Event()
@@ -405,7 +407,7 @@ class NightObservation(mainConfig):
                 raise AbortionException (f'[{type(self).__name__}] is aborted.')
             now = Time.now() 
             
-            # Initialize the Daily target tbl
+            # Initialize the Dynamic target tbl
             self.DB.initialize(initialize_all = False)
             time.sleep(0.5)  
             
@@ -426,8 +428,8 @@ class NightObservation(mainConfig):
                     # Retrieve best target
                     best_target, score = self.DB.best_target(utctime = now)
                     if best_target:
-                        if bool(best_target['is_ToO']):
-                            since_last_ToO = (now - Time(self.last_ToO_trigger_time)).jd * 86400
+                        if bool(best_target['is_rapidToO']):
+                            since_last_ToO = (now - Time(self.last_rapidToO_trigger_time)).jd * 86400
                             if since_last_ToO > 1800:
                                 self._ToOobservation()
                             else:
@@ -462,7 +464,6 @@ class NightObservation(mainConfig):
             is_shutdown_triggered = True
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished')
         
-            
     def _put_action(self, target, action, telescopes, action_id, kwargs):
         # Acquire the lock before putting action into the action queue
         self.action_lock.acquire()
@@ -565,7 +566,7 @@ class NightObservation(mainConfig):
                 self._put_telescope(telescope = action['telescope'])   
                 self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = action['target']['id'], id_key = 'id')
                 self.DB.export_to_csv()
-        self.is_ToO_triggered = False
+        self.is_rapidToO_triggered = False
         return action_history, observation_status_history
 
 
@@ -577,17 +578,24 @@ if __name__ == '__main__':
     M = MultiTelescopes()
     abort_action = Event()
     application = NightObservation(M, abort_action)
-    slack = SlackConnector(token_path= application.config['SLACK_TOKEN'], default_channel_id= application.config['SLACK_DEFAULT_CHANNEL'])
-    obsnight = NightSession().obsnight_utc
-    tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
-    message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
-    if message_ts:
-        slack.post_thread_message(message_ts,f'{type(application).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    try:
+        slack = SlackConnector(token_path= application.config['SLACK_TOKEN'], default_channel_id= application.config['SLACK_DEFAULT_CHANNEL'])
+        obsnight = NightSession().obsnight_utc
+        tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
+        message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
+        if message_ts:
+            slack.post_thread_message(message_ts,f'{type(application).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    except:
+        pass
     application.run()
     while application.is_running:
         time.sleep(0.1)
-    if message_ts:
-        slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
-
+    try:
+        if message_ts:
+            slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+    except:
+        pass
     
+# %%
+
 # %%

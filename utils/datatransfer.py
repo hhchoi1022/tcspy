@@ -402,10 +402,12 @@ if __name__ == '__main__':
     A = DataTransferManager()
     import time
 
-    # A.run(key = '*/image/2025-05-24_gain2750', save_hash = False, tar = False,
+    # A.run(key = '*/image/2025-07-25_gain2750', save_hash = True, tar = True,
     #       sync_log = True, transfer = True, move_and_clean = True,
     #       from_archive = False)
-
+    # A.run(key = '*/image/2025-07-08_gain2750', save_hash = True, tar = True,
+    #       sync_log = True, transfer = True, move_and_clean = True,
+    #       from_archive = False)
     # time.sleep(600)
     # A.run(key = '*/image/2025-05-23_gain2750', save_hash = True, tar = True,
     #       sync_log = True, transfer = True, move_and_clean = True,
@@ -419,14 +421,14 @@ if __name__ == '__main__':
     # A.run(key = '*/2025-04-03_gain0', save_hash = True, tar = True,
     #       sync_log = True, transfer = True, move_and_clean = False,
     #       from_archive = True)
-    # A.run(key = '*/2025-04-13_gain2750', save_hash = True, tar = True,
-    #       sync_log = True, transfer = True, move_and_clean = False,
+    # A.run(key = '*/2025-11-21_gain2750', save_hash = True, tar = True,
+    #       sync_log = False, transfer = False, move_and_clean = False,
     #       from_archive = True)
     #A.move_to_archive_and_cleanup(key = '*/image/2024-10-24_gain2750', tar_path = '/data1/obsdata_archive/2024-10-25_gain2750.tar')
     A.start_monitoring(
         ordinary_file_key='*/image/*',   # Adjust these parameters as needed
         ToO_file_key='*/image/*_ToO',
-        inactivity_period=1800,             # 30 minutes of inactivity
+        inactivity_period=600,             # 30 minutes of inactivity
         tar=True,                        # Compress files into tar
         protocol='gridftp'               # File transfer protocol
     )

@@ -18,25 +18,25 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "m700": {
-            "update_time": "2025-07-03T10:11:30.286",
+        "m850": {
+            "update_time": "2026-01-03T08:01:49.722",
             "succeeded": true,
-            "focusval": 8033.9,
-            "focuserr": 17.93
+            "focusval": 7265.4,
+            "focuserr": 17.76
         },
-        "m725": {
-            "update_time": "2025-07-03T10:18:27.627",
+        "m425": {
+            "update_time": "2026-01-03T08:08:44.986",
             "succeeded": true,
-            "focusval": 8015.4,
-            "focuserr": 20.46
+            "focusval": 7194.8,
+            "focuserr": 18.06
         },
-        "m550": {
+        "m625": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,
             "focuserr": 999
         },
-        "Slot7": {
+        "m400": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,

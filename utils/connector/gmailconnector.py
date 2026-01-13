@@ -2,6 +2,7 @@
 import smtplib
 import imaplib
 import email
+from email.utils import parsedate_to_datetime
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
@@ -12,7 +13,7 @@ import os
 from datetime import datetime, timedelta, timezone
 import json
 import time
-
+#%%
 class GmailConnector:
     def __init__(self, user_account: str, user_token_path: str = None):
         self.user_account = user_account
@@ -180,7 +181,13 @@ class GmailConnector:
         except Exception as e:
             print(f"Failed to send email: {e}")
     
-    def read_mail(self, mailbox: str = 'inbox', max_numbers: int = 10, since_days : float = 5, save : bool = True, save_dir : str = '../alert_history/gmail') -> List[Dict]:
+    def read_mail(self, 
+                  mailbox: str = 'inbox',
+                  max_numbers: int = 10, 
+                  since_days : float = 5, 
+                  save : bool = True, 
+                  save_dir : str = '../alert_history/gmail'
+                  ) -> List[Dict]:
         """
         Read emails and save attachments.
         
@@ -242,8 +249,7 @@ class GmailConnector:
                     'Body': self._get_email_body(msg),
                     'Attachments': []  # To store attachment info
                 }
-                
-                parsed_date = datetime.strptime(email_data['Date'], '%a, %d %b %Y %H:%M:%S %z')
+                parsed_date = parsedate_to_datetime(email_data['Date'])
                 utc_date = parsed_date.astimezone(timezone.utc)
                 date_str = utc_date.strftime('%Y%m%d_%H%M%S')
                 
@@ -337,3 +343,5 @@ class GmailConnector:
                     decoded_subject += part
             return decoded_subject.strip()
         return "No Subject"
+
+# %%

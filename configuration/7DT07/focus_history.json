@@ -18,19 +18,19 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "m650": {
-            "update_time": "2025-07-03T10:11:29.860",
+        "m800": {
+            "update_time": "2026-01-03T08:01:55.518",
             "succeeded": true,
-            "focusval": 7348.8,
-            "focuserr": 18.17
+            "focusval": 7910.5,
+            "focuserr": 16.3
         },
-        "m675": {
-            "update_time": "2025-07-03T10:18:27.291",
+        "m825": {
+            "update_time": "2026-01-03T08:08:51.022",
             "succeeded": true,
-            "focusval": 7330.2,
-            "focuserr": 18.53
+            "focusval": 7912.6,
+            "focuserr": 17.67
         },
-        "m525": {
+        "m600": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,
@@ -48,7 +48,7 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "Slot9": {
+        "m425w": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,

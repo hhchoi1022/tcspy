@@ -29,7 +29,7 @@ sql.update_data(tbl_name = 'RIS', update_value = 'observed', update_key='obs_sta
 observed_num = sql.select_data(tbl_name = 'RIS', select_key= 'obs_number', where_value = id_)['obs_number'][0]
 sql.update_data(tbl_name = 'RIS', update_value = observed_num+1, update_key='obs_number', id_value = id_)
 # %% Select data
-id_data = sql.select_data(tbl_name = 'Daily', select_key = 'id')['id']
+id_data = sql.select_data(tbl_name = 'Dynamic', select_key = 'id')['id']
 # %% Set ID
 sql.set_data_id('Daily')
 # %%

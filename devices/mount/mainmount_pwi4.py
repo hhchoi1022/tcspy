@@ -67,12 +67,46 @@ class mainMount_pwi4(mainConfig):
         
         super().__init__(unitnum = unitnum)
         self.device = PWI4(self.config['MOUNT_HOSTIP'], self.config['MOUNT_PORTNUM'])
-        self.status = self.get_status()
         self.is_idle = Event()
         self.device_lock = Lock()
         self.observer = mainObserver()
         self.is_idle.set()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
+        self._id = None
+        self._id_update_time = None
+        self.status = self.get_status()
+        
+    @property
+    def id(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Mount']['name']
+        if self._id is None:
+            try:
+                self._id = load_id(self)
+            except:
+                pass
+        return self._id
+    
+    @property
+    def id_update_time(self):
+        ### SPECIFIC for 7DT
+        def load_id(self):
+            dict_file = self.config['MULTITELESCOPES_FILE']
+            with open(dict_file, 'r') as f:
+                import json
+                data_dict = json.load(f)
+            return data_dict[self.tel_name]['Mount']['timestamp']
+        if self._id_update_time is None:
+            try:
+                self._id_update_time = load_id(self)
+            except:
+                pass
+        return self._id_update_time
     
     def get_status(self):
         """
@@ -101,6 +135,8 @@ class mainMount_pwi4(mainConfig):
         status['axis2_rms'] = None
         status['axis1_maxvel'] = None
         status['axis2_maxvel'] = None
+        status['mount_id'] = self.id
+        status['mount_id_update_time'] = self.id_update_time
         try:
             if self.PWI_status.mount.is_connected:
                 PWI_status = self.PWI_status
@@ -568,4 +604,5 @@ class mainMount_pwi4(mainConfig):
     
     def wait_idle(self):
         self.is_idle.wait()
+
 # %%

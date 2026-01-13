@@ -238,7 +238,8 @@ class mainConfig:
                                                            'takdg123@gmail.com', # Donggeun Dong
                                                            'seowon.chang@gmail.com', # Seowon Chang
                                                            'gregorypaek94@gmail.com', # Gregory Paek
-                                                           'jmk5040@gmail.com' # Mankeun Jeong
+                                                           'jmk5040@gmail.com', # Mankeun Jeong
+                                                           'evan77333@gmail.com'
                                                            ],
                                   ALERTBROKER_NORMUSERS = ['hhchoi1022@snu.ac.kr' # Hyeonho Choi (2)
                                                            ],
@@ -261,7 +262,7 @@ class mainConfig:
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m375w','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250607/")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250914/")}')
 
         colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250313/")}')
         

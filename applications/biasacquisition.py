@@ -121,7 +121,7 @@ if __name__ == '__main__':
     while application.is_running:
         time.sleep(0.1)
     if message_ts:
-        slack.post_thread_message(message_tsma,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+        slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
 
     # Update config to original
     for tel, config_value in zip(M.devices.values(), original_config):

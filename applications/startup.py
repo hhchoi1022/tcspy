@@ -136,6 +136,8 @@ class Startup(mainConfig):
             #if '7DT02' in self.multitelescopes.devices.keys():
             multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
             multitelescopes_except_unit2.pop('7DT06')
+            multitelescopes_except_unit2.pop('7DT02')
+
             multi_fanson = MultiAction(array_telescope= multitelescopes_except_unit2.values(), array_kwargs= params_fanson[:-1], function = FansOn, abort_action = self.abort_action)            
             #multi_fanson = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_fanson, function = FansOn, abort_action = self.abort_action)
             result_multi_fanson = multi_fanson.shared_memory
@@ -278,12 +280,15 @@ if __name__ == '__main__':
     M = MultiTelescopes()
     abort_aciton = Event()
     S = Startup(M, abort_aciton)
-    slack = SlackConnector(token_path= S.config['SLACK_TOKEN'], default_channel_id= S.config['SLACK_DEFAULT_CHANNEL'])
-    obsnight = NightSession().obsnight_utc
-    tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
-    message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
-    if message_ts:
-        slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    try:
+        slack = SlackConnector(token_path= S.config['SLACK_TOKEN'], default_channel_id= S.config['SLACK_DEFAULT_CHANNEL'])
+        obsnight = NightSession().obsnight_utc
+        tonight_str = '%.4d-%.2d-%.2d'%(obsnight.sunrise_civil.datetime.year, obsnight.sunrise_civil.datetime.month, obsnight.sunrise_civil.datetime.day)
+        message_ts = slack.get_message_ts(match_string = f'7DT Observation on {tonight_str}')
+        if message_ts:
+            slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is triggered: {time.strftime("%H:%M:%S", time.localtime())}')
+    except:
+        pass
     S.run(connect = True,
           fanon = True,                    
           home = True,
