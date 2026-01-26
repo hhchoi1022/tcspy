@@ -9,7 +9,7 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = f'{os.path.expanduser("~")}/.tcspy/configuration/',
+                 configpath : str = f'{os.path.expanduser("~")}/TCSpy/configuration/',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
