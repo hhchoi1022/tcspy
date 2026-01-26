@@ -392,6 +392,6 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
 if __name__ == "__main__":
     tel = SingleTelescope(1)
     af = AutoFocus(tel, Event())
-    af.run(filter_ = 'specall', use_history = True, search_focus_when_failed= True)
+    # af.run(filter_ = 'specall', use_history = True, search_focus_when_failed= True)
     
 # %%
