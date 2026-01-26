@@ -5,6 +5,7 @@ import glob
 import os
 from astropy.io import ascii
 import json
+from astropy.time import Time
 #%%
 class mainConfig:
     def __init__(self,
@@ -32,7 +33,7 @@ class mainConfig:
         if self.unitnum:
             # Specified units config params
             self.tel_name = self.config["TCSPY_TEL_NAME"] + '%.2d' % self.unitnum
-            self.path_unit = os.path.join(configpath, self.tel_name)
+            self.path_unit = os.path.join(self.path_config, self.tel_name)
             self._configfilekey_unit = os.path.join(self.path_unit, '*.config')
             self._configfiles_unit = glob.glob(self._configfilekey_unit)
             if len(self._configfiles_unit) == 0:
@@ -93,7 +94,8 @@ class mainConfig:
 
     def _initialize_config(self,
                            ip_address: str = '10.0.106.6',
-                           portnum : int = '11111'):
+                           portnum : int = '11111',
+                           reset_autofocusinfo: bool = False):
         savepath_unit = self.path_unit
         if not os.path.exists(savepath_unit):
             os.makedirs(savepath_unit, exist_ok=True)
@@ -330,11 +332,41 @@ class mainConfig:
         
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
+        
+        
+        if reset_autofocusinfo:
+            filtinfo_path = filterwheel_params['FTWHEEL_FILTINFOPATH']
+            with open(filtinfo_path, 'r') as f:
+                filtinfo = json.load(f)
+            filtnames = filtinfo[self.tel_name]
+            autofocus_offset = dict()
+            for filtname in filtnames:
+                autofocus_offset[filtname] = dict()
+                autofocus_offset[filtname]['update_time'] = Time('2000-01-01').isot
+                autofocus_offset[filtname]['offset'] = 999
+                autofocus_offset[filtname]['error'] = 999
+            self.make_configfile(autofocus_offset, filename='autofocus.offset', savepath= savepath_unit)
+            # with open(offset_path, 'w') as f:
+            #     json.dump(autofocus_offset, f, indent=4)
+            
+            autofocus_history = dict()
+            for filtname in filtnames:
+                autofocus_history[filtname] = dict()
+                autofocus_history[filtname]['update_time'] = Time('2000-01-01').isot
+                autofocus_history[filtname]['succeeded'] = False
+                autofocus_history[filtname]['focusval'] = 10000
+                autofocus_history[filtname]['focuserr'] = 999
+            self.make_configfile(autofocus_history, filename='autofocus.history', savepath= savepath_unit)
+            # with open(history_path, 'w') as f:
+            #     json.dump(autofocus_history, f, indent=4)
+            
+            
 
 
 #%%
 if __name__ == '__main__':
     self = mainConfig(unitnum = 1)
+    self._initialize_config(reset_autofocusinfo = True)
     # unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
     # addresslist = ['10.0.106.6',
     #                '10.0.106.7',
