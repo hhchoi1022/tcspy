@@ -157,7 +157,7 @@ class mainFocuser_pwi4(mainConfig):
         return self.device.status()
     
     def _get_autofocus_history(self):
-        af_path = os.path.join(self.config['AUTOFOCUS_FOCUSHISTORY_PATH'], self.tel_name, 'focus_history.json')
+        af_path = os.path.join(self.config['AUTOFOCUS_HISTORYPATH'], self.tel_name, 'focus_history.json')
         if os.path.exists(af_path):
             with open(af_path, 'r') as f:
                 data = json.load(f)

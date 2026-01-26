@@ -6,6 +6,7 @@ import os
 from astropy.io import ascii
 import json
 from astropy.time import Time
+from pathlib import Path
 #%%
 class mainConfig:
     def __init__(self,
@@ -304,7 +305,8 @@ class mainConfig:
         self.make_configfile(logger_params, filename='logger.config', savepath = savepath_unit)
         self.make_configfile(image_params, filename='image.config', savepath = savepath_unit)
         self.make_configfile(switch_params, filename='switch.config', savepath = savepath_unit)
-        
+        self.make_configfile(autofocus_params, filename = 'autofocus.config', savepath= savepath_unit)
+
         # Global params
         self.make_configfile(gmail_params, filename='gmail.config', savepath= self.path_config)
         self.make_configfile(slack_params, filename='slack.config', savepath= self.path_config)
@@ -319,7 +321,6 @@ class mainConfig:
         self.make_configfile(dome_params, filename='dome.config', savepath= self.path_config)
         self.make_configfile(safetymonitor_params, filename='safetymonitor.config', savepath= self.path_config)
         self.make_configfile(DB_params, filename = 'db.config', savepath= self.path_config)
-        self.make_configfile(autofocus_params, filename = 'autofocus.config', savepath= self.path_config)
         self.make_configfile(autoflat_params, filename = 'autoflat.config', savepath= self.path_config)
         self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self.path_config)
         self.make_configfile(colormode_params, filename = 'colormode.config', savepath= self.path_config)
@@ -345,7 +346,10 @@ class mainConfig:
                 autofocus_offset[filtname]['update_time'] = Time('2000-01-01').isot
                 autofocus_offset[filtname]['offset'] = 999
                 autofocus_offset[filtname]['error'] = 999
-            self.make_configfile(autofocus_offset, filename='autofocus.offset', savepath= savepath_unit)
+                offset_filepath = autofocus_params['AUTOFOCUS_OFFSETPATH']
+                offset_dir = Path(offset_filepath).parent
+                offset_filename = Path(offset_filepath).name
+            self.make_configfile(autofocus_offset, filename=offset_filename, savepath= offset_dir)
             # with open(offset_path, 'w') as f:
             #     json.dump(autofocus_offset, f, indent=4)
             
@@ -356,7 +360,10 @@ class mainConfig:
                 autofocus_history[filtname]['succeeded'] = False
                 autofocus_history[filtname]['focusval'] = 10000
                 autofocus_history[filtname]['focuserr'] = 999
-            self.make_configfile(autofocus_history, filename='autofocus.history', savepath= savepath_unit)
+                history_filepath = autofocus_params['AUTOFOCUS_HISTORYPATH']
+                history_dir = Path(history_filepath).parent
+                history_filename = Path(history_filepath).name
+            self.make_configfile(autofocus_history, filename=history_filename, savepath= history_dir)
             # with open(history_path, 'w') as f:
             #     json.dump(autofocus_history, f, indent=4)
             
@@ -366,27 +373,27 @@ class mainConfig:
 #%%
 if __name__ == '__main__':
     self = mainConfig(unitnum = 1)
-    self._initialize_config(reset_autofocusinfo = True)
-    # unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
-    # addresslist = ['10.0.106.6',
-    #                '10.0.106.7',
-    #                '10.0.106.8',
-    #                '10.0.106.16',
-    #                '10.0.106.10',
-    #                '10.0.106.11',
-    #                '10.0.106.12',
-    #                '10.0.106.13',
-    #                '10.0.106.14',
-    #                '10.0.106.15',
-    #                '10.0.106.9',
-    #                '10.0.106.17',
-    #                '10.0.106.18',
-    #                '10.0.106.19',
-    #                '10.0.106.20',
-    #                '10.0.106.21']
-    # for unitnum, address in zip(unitnumlist, addresslist):
-    #     A = mainConfig(unitnum=unitnum)
-    #     A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = False)
+    # self._initialize_config(reset_autofocusinfo = True)
+    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+    addresslist = ['10.0.106.6',
+                   '10.0.106.7',
+                   '10.0.106.8',
+                   '10.0.106.16',
+                   '10.0.106.10',
+                   '10.0.106.11',
+                   '10.0.106.12',
+                   '10.0.106.13',
+                   '10.0.106.14',
+                   '10.0.106.15',
+                   '10.0.106.9',
+                   '10.0.106.17',
+                   '10.0.106.18',
+                   '10.0.106.19',
+                   '10.0.106.20',
+                   '10.0.106.21']
+    for unitnum, address in zip(unitnumlist, addresslist):
+        A = mainConfig(unitnum=unitnum)
+        A._initialize_config(ip_address=address, portnum = 11111, reset_autofocusinfo = True)
 
 # %%
 if __name__ == '__main__':

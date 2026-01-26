@@ -56,7 +56,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         super().__init__(singletelescope.unitnum)
         self.telescope = singletelescope
         self.telescope_status = TelescopeStatus(self.telescope)
-        self.focus_history_file = os.path.join(self.config['AUTOFOCUS_FOCUSHISTORY_PATH'], self.tel_name, 'focus_history.json')
+        self.focus_history_file = os.path.join(self.config['AUTOFOCUS_HISTORYPATH'], self.tel_name, 'focus_history.json')
         self.abort_action = abort_action
         self.shared_memory_manager = Manager()
         self.shared_memory = self.shared_memory_manager.dict()
