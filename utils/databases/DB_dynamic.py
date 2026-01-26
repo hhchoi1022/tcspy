@@ -514,9 +514,9 @@ class DB_Dynamic(mainConfig):
                 print(f"Exported Dynamic table to {file_abspath}")
 
             elif save_type.lower() == 'status':
-                if not os.path.exists(self.config['DB_STATUSPATH']):
-                    os.makedirs(self.config['DB_STATUSPATH'], exist_ok = True)
-                file_abspath = os.path.join(self.config['DB_STATUSPATH'], f'DB_Dynamic.{self.config["DB_STATUSFORMAT"]}')
+                if not os.path.exists(self.config['DB_STATUSDIR']):
+                    os.makedirs(self.config['DB_STATUSDIR'], exist_ok = True)
+                file_abspath = os.path.join(self.config['DB_STATUSDIR'], f'DB_Dynamic.{self.config["DB_STATUSFORMAT"]}')
                 tbl.write(file_abspath, format= self.config['DB_STATUSFORMAT'], overwrite=True)
                 print(f"Exported Dynamic table to {file_abspath}")
             

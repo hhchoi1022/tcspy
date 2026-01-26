@@ -12,6 +12,7 @@ import os
 import numpy as np
 from multiprocessing import Event
 import portalocker
+from pathlib import Path
 
 # Alpaca modules
 from alpaca.observingconditions import ObservingConditions
@@ -156,28 +157,16 @@ class mainWeather(mainConfig):
         os.makedirs(name = directory, exist_ok = True)
         
         file_abspath = os.path.join(directory, filename)
-        #temp_file_abspath = file_abspath + ".tmp"
-        
-        # Write the status file to a temporary file with a lock
-        #with portalocker.Lock(temp_file_abspath, 'w', timeout=10) as f:
-        #    json.dump(current_status, f, indent=4)
-
-        # Atomically rename the temporary file to the final file
-        #os.rename(temp_file_abspath, file_abspath)
-        #os.remove(temp_file_abspath)
         
         # Write the status file to a temporary file with a lock
         with portalocker.Lock(file_abspath, 'w', timeout=10) as f:
             json.dump(current_status, f, indent=4)
             
         # [241220] Added for synching 7DT weather status to the SNU server (proton) 
-        filename_status = f'weatherinfo.dict'
-        foldername_status = self.config['WEATHER_STATUSPATH']
-        statusfile_abspath = os.path.join(foldername_status, filename_status)
-        os.makedirs(name = foldername_status, exist_ok = True)
+        statusfile_abspath = self.config['WEATHER_STATUSPATH']
+        Path(statusfile_abspath).mkdir(parents=True, exist_ok=True)
         with portalocker.Lock(statusfile_abspath, 'w', timeout=10) as f:
             json.dump(current_status, f, indent=4)
-        # [241220]
 
         # Return the status if requested
         if return_status:

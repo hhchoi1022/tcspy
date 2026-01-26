@@ -9,20 +9,22 @@ import json
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = f'{os.path.expanduser("~")}/TCSpy/configuration/',
-                 **kwargs):
+                 path : str = f'{os.path.expanduser("~")}/TCSpy/'
+                 ):
         self.unitnum = unitnum
         self.config = dict()
                 
         # global config params
-        self.path_global = configpath
+        self.path = path
+        self.path_config = os.path.join(path, 'configuration')
+        self.path_sync = os.path.join(path, 'sync')
         self.path_home = os.path.expanduser('~')
-        self._configfilekey_global = os.path.join(self.path_global, '*.config')
+        self._configfilekey_global = os.path.join(self.path_config, '*.config')
         self._configfiles_global = glob.glob(self._configfilekey_global)
             
-        if not os.path.isfile(os.path.join(self.path_global, 'TCSpy.config')):
-            self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_global)
-            raise RuntimeError(f'TCSpy.config must be located in the configuration folder. \n New TCSpy.config file is created: {os.path.join(self.path_global, "TCSpy.config")} ')
+        if not os.path.isfile(os.path.join(self.path_config, 'TCSpy.config')):
+            self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_config)
+            raise RuntimeError(f'TCSpy.config must be located in the configuration folder. \n New TCSpy.config file is created: {os.path.join(self.path_config, "TCSpy.config")} ')
         else:
             config_global = self._load_configuration(self._configfiles_global)
             self.config.update(config_global)
@@ -91,9 +93,7 @@ class mainConfig:
 
     def _initialize_config(self,
                            ip_address: str = '10.0.106.6',
-                           portnum : int = '11111',
-                           update_focusmodel : bool = True,
-                           **kwargs):
+                           portnum : int = '11111'):
         savepath_unit = self.path_unit
         if not os.path.exists(savepath_unit):
             os.makedirs(savepath_unit, exist_ok=True)
@@ -125,7 +125,7 @@ class mainConfig:
                                   FTWHEEL_PORTNUM=portnum,
                                   FTWHEEL_DEVICENUM=0,
                                   FTWHEEL_CHECKTIME=0.5,
-                                  FTWHEEL_FILTINFOPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "filtinfo.dict")}'
+                                  FTWHEEL_FILTINFOPATH = f'{os.path.join(self.path_config, "filtinfo.dict")}'
                                   )
 
         focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
@@ -159,13 +159,13 @@ class mainConfig:
                             IMAGE_SAVEHEADER = True,
                             IMAGE_FORMAT = 'FITS',
                             IMAGE_SAVELOG = True,
-                            IMAGE_LOGPATH = f'{self.path_home}/.tcspy/sync/rawdata/',
+                            IMAGE_LOGPATH = f'{self.path_sync}/rawdata/',
                             )
         
         logger_params = dict(LOGGER_SAVE=True,
                              LOGGER_LEVEL='INFO', 
                              LOGGER_FORMAT=f'[%(levelname)s,{self.tel_name}]%(asctime)-15s |%(message)s',
-                             LOGGER_PATH= os.path.join(self.path_home, ".tcspy", 'sync', 'log', self.tel_name))       
+                             LOGGER_PATH= os.path.join(self.path_sync, 'log', self.tel_name))       
         # Share configuration
 
         transfer_params = dict(TRANSFER_SERVER_IP= '210.117.217.71',
@@ -174,7 +174,7 @@ class mainConfig:
                                TRANSFER_SOURCE_HOMEDIR = '/data2/obsdata/',
                                TRANSFER_ARCHIVE_HOMEDIR = '/data1/obsdata_archive/',
                                TRANSFER_SERVER_HOMEDIR = '/data/data1/obsdata/obsdata_from_mcs/',
-                               TRANSFER_SYNCFOLDER = f'{os.path.join(self.path_home,".tcspy", "sync","transfer")}',
+                               TRANSFER_SYNCFOLDER = f'{os.path.join(self.path_sync, "transfer")}',
                                TRANSFER_GRIDFTP_NUMPARALLEL = 32,
                                TRANSFER_GRIPFTP_VERBOSE = True,
                                TRANSFER_GRIDFTP_RETRIES = 30,
@@ -186,7 +186,7 @@ class mainConfig:
                               WEATHER_DEVICENUM=0,
                               WEATHER_UPDATETIME=60,
                               WEATHER_PATH= f'/data2/obsdata/weather_history/',
-                              WEATHER_STATUSPATH = f'{os.path.join(self.path_home,".tcspy", "sync")}',
+                              WEATHER_STATUSPATH = f'{os.path.join(self.path_sync, "weatherinfo.dict")}',
                               WEATHER_HUMIDITY=85,
                               WEATHER_RAINRATE=80,
                               WEATHER_SKYMAG=10,
@@ -217,19 +217,19 @@ class mainConfig:
                          DB_NAME='target',
                          DB_HISTORYPATH= f'/data2/obsdata/DB_history',
                          DB_HISTORYFORMAT = 'ascii.fixed_width',
-                         DB_STATUSPATH = f'{os.path.join(self.path_home,".tcspy", "sync")}',
+                         DB_STATUSDIR = f'{self.path_sync}',
                          DB_STATUSFORMAT = 'ascii')
         
         gmail_params = dict(GMAIL_USERNAME= '7dt.observation.alert@gmail.com',
-                            GMAIL_TOKENPATH = os.path.join(self.path_home, '.tcspy', f'gmail/python/token_7dt.observation.alert@gmail.com.txt')
+                            GMAIL_TOKENPATH = os.path.join(self.path, 'credential', f'gmail/python/token_7dt.observation.alert@gmail.com.txt')
                             )
         
-        slack_params = dict(SLACK_TOKEN = os.path.join(self.path_home, '.tcspy', f'slack/slack_token_7dt_obseration_alert.txt'),
+        slack_params = dict(SLACK_TOKEN = os.path.join(self.path, 'credential', f'slack/slack_token_7dt_obseration_alert.txt'),
                             SLACK_DEFAULT_CHANNEL = 'C07SREPTWFM',
                             SLACK_ALERT_CHANNEL = 'C07SREPTWFM')
         
         googlesheet_params = dict(GOOGLESHEET_URL = 'https://docs.google.com/spreadsheets/d/1UorU7P_UMr22Luw6q6GLQYk4-YicGRATwCePRxkx2Ms/edit#gid=0',
-                                  GOOGLESHEET_AUTH = os.path.join(self.path_home, '.tcspy', f'googlesheet/targetdb-423908-ee7bb8c14ff3.json'),
+                                  GOOGLESHEET_AUTH = os.path.join(self.path, 'credential', f'googlesheet/targetdb-423908-ee7bb8c14ff3.json'),
                                   GOOGLESHEET_SCOPE = ['https://spreadsheets.google.com/feeds',
                                                        'https://www.googleapis.com/auth/drive',
                                                        'https://www.googleapis.com/auth/spreadsheets'])
@@ -247,7 +247,7 @@ class mainConfig:
                                                            ],
                                   ALERTBROKER_ADMINUSERS = ['hhchoi1022@gmail.com'], # Hyeonho Choi
                                   ALERTBROKER_PATH = f'/data2/obsdata/alert_history',
-                                  ALERTBROKER_STATUSPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "alert")}',
+                                  ALERTBROKER_STATUSPATH = f'{os.path.join(self.path_sync, "alert")}', 
                                 )
         
         autofocus_params = dict(AUTOFOCUS_TOLERANCE_LOWER = 8,
@@ -266,9 +266,9 @@ class mainConfig:
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m375w','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20260120/")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_config, "specmode/20260120/")}')
 
-        colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250313/")}')
+        colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_config, "colormode/20250313/")}')
         
         startup_params = dict(STARTUP_ALT = 30,
                               STARTUP_AZ = 90,
@@ -285,7 +285,7 @@ class mainConfig:
                                    NIGHTSESSION_SUNALT_OBSERVATION = -15,
                                    NIGHTSESSION_SUNALT_SHUTDOWN = 10)
         
-        multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_home, ".tcspy", "sync", "multitelescopes.dict")}')
+        multitelescopes_params = dict(MULTITELESCOPES_FILE = f'{os.path.join(self.path_sync, "multitelescopes.dict")}')
         
         nightobs_params = dict(NIGHTOBS_SAFETYPE = 'safetymonitor',)        
         
@@ -304,29 +304,29 @@ class mainConfig:
         self.make_configfile(switch_params, filename='switch.config', savepath = savepath_unit)
         
         # Global params
-        self.make_configfile(gmail_params, filename='gmail.config', savepath= self.path_global)
-        self.make_configfile(slack_params, filename='slack.config', savepath= self.path_global)
-        self.make_configfile(googlesheet_params, filename='googleSheet.config', savepath= self.path_global)
-        self.make_configfile(alertbroker_params, filename='alertbroker.config', savepath= self.path_global)
-        self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_global)
-        self.make_configfile(observer_params, filename='observer.config', savepath= self.path_global)
-        self.make_configfile(target_params, filename='target.config', savepath= self.path_global)
-        self.make_configfile(transfer_params, filename='transfer.config', savepath= self.path_global)
+        self.make_configfile(gmail_params, filename='gmail.config', savepath= self.path_config)
+        self.make_configfile(slack_params, filename='slack.config', savepath= self.path_config)
+        self.make_configfile(googlesheet_params, filename='googleSheet.config', savepath= self.path_config)
+        self.make_configfile(alertbroker_params, filename='alertbroker.config', savepath= self.path_config)
+        self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_config)
+        self.make_configfile(observer_params, filename='observer.config', savepath= self.path_config)
+        self.make_configfile(target_params, filename='target.config', savepath= self.path_config)
+        self.make_configfile(transfer_params, filename='transfer.config', savepath= self.path_config)
         
-        self.make_configfile(weather_params, filename='weather.config', savepath= self.path_global)
-        self.make_configfile(dome_params, filename='dome.config', savepath= self.path_global)
-        self.make_configfile(safetymonitor_params, filename='safetymonitor.config', savepath= self.path_global)
-        self.make_configfile(DB_params, filename = 'db.config', savepath= self.path_global)
-        self.make_configfile(autofocus_params, filename = 'autofocus.config', savepath= self.path_global)
-        self.make_configfile(autoflat_params, filename = 'autoflat.config', savepath= self.path_global)
-        self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self.path_global)
-        self.make_configfile(colormode_params, filename = 'colormode.config', savepath= self.path_global)
-        self.make_configfile(startup_params, filename = 'startup.config', savepath= self.path_global)
-        self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_global)
-        self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_global)
-        self.make_configfile(nightsession_params, filename = 'nightsession.config', savepath= self.path_global)
-        self.make_configfile(multitelescopes_params, filename = 'multitelescopes.config', savepath= self.path_global)
-        self.make_configfile(appscheduler_params, filename = 'appscheduler.config', savepath= self.path_global)
+        self.make_configfile(weather_params, filename='weather.config', savepath= self.path_config)
+        self.make_configfile(dome_params, filename='dome.config', savepath= self.path_config)
+        self.make_configfile(safetymonitor_params, filename='safetymonitor.config', savepath= self.path_config)
+        self.make_configfile(DB_params, filename = 'db.config', savepath= self.path_config)
+        self.make_configfile(autofocus_params, filename = 'autofocus.config', savepath= self.path_config)
+        self.make_configfile(autoflat_params, filename = 'autoflat.config', savepath= self.path_config)
+        self.make_configfile(specmode_params, filename = 'specmode.config', savepath= self.path_config)
+        self.make_configfile(colormode_params, filename = 'colormode.config', savepath= self.path_config)
+        self.make_configfile(startup_params, filename = 'startup.config', savepath= self.path_config)
+        self.make_configfile(shutdown_params, filename = 'shutdown.config', savepath= self.path_config)
+        self.make_configfile(nightobs_params, filename = 'nightobs.config', savepath= self.path_config)
+        self.make_configfile(nightsession_params, filename = 'nightsession.config', savepath= self.path_config)
+        self.make_configfile(multitelescopes_params, filename = 'multitelescopes.config', savepath= self.path_config)
+        self.make_configfile(appscheduler_params, filename = 'appscheduler.config', savepath= self.path_config)
         
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
