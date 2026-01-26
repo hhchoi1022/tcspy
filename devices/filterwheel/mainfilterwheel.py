@@ -55,7 +55,7 @@ class mainFilterwheel(mainConfig):
         self.is_idle.set()
         self.device_lock = Lock()
         self.filtnames = self._get_all_filt_names()
-        self.offsets = self._get_all_filt_offset()
+        # self.offsets = self._get_all_filt_offset()
         self._log = mainLogger(unitnum = unitnum, logger_name = __name__+str(unitnum)).log()
         
         self._id = None
@@ -112,7 +112,7 @@ class mainFilterwheel(mainConfig):
             status['is_connected'] = False
             status['name'] = None
             status['filter_'] = None
-            status['offset'] = None
+            # status['offset'] = None
             status['filterwheel_id'] = self.id
             status['filterwheel_id_update_time'] = self.id_update_time
 
@@ -137,10 +137,10 @@ class mainFilterwheel(mainConfig):
                     status['filter_'] = filtinfo['name']
                 except:
                     pass
-                try:
-                    status['offset'] = filtinfo['offset']
-                except:
-                    pass
+                # try:
+                #     status['offset'] = filtinfo['offset']
+                # except:
+                #     pass
                 try:
                     status['is_connected'] = self.device.Connected
                 except:
@@ -244,57 +244,57 @@ class mainFilterwheel(mainConfig):
             if exception_raised:
                 raise exception_raised            
 
-    def get_offset_from_currentfilt(self,
-                                    filter_ : str):
-        """
-        Calculates the offset between the current filter and the specified filter.
+    # def get_offset_from_currentfilt(self,
+    #                                 filter_ : str):
+    #     """
+    #     Calculates the offset between the current filter and the specified filter.
 
-        Parameters
-        ----------
-        filter_ : str
-            The filter name for which the offset is calculated.
+    #     Parameters
+    #     ----------
+    #     filter_ : str
+    #         The filter name for which the offset is calculated.
 
-        Returns
-        -------
-        pffset : int
-            The offset between the current filter and the specified filter.
-        """
-        current_filter = self._get_current_filtinfo()['name']
-        offset = self.calc_offset(current_filt= current_filter, changed_filt = filter_)
-        return offset 
+    #     Returns
+    #     -------
+    #     pffset : int
+    #         The offset between the current filter and the specified filter.
+    #     """
+    #     current_filter = self._get_current_filtinfo()['name']
+    #     offset = self.calc_offset(current_filt= current_filter, changed_filt = filter_)
+    #     return offset 
     
-    def calc_offset(self,
-                    current_filt : str,
-                    changed_filt : str) -> int:
-        """
-        Calculates the offset between two filters.
+    # def calc_offset(self,
+    #                 current_filt : str,
+    #                 changed_filt : str) -> int:
+    #     """
+    #     Calculates the offset between two filters.
 
-        Parameters
-        ----------
-        current_filt : str
-            The name of the current filter.
-        changed_filt : str
-            The name of the filter that will be changed to.
+    #     Parameters
+    #     ----------
+    #     current_filt : str
+    #         The name of the current filter.
+    #     changed_filt : str
+    #         The name of the filter that will be changed to.
 
-        Returns
-        -------
-        offset : int
-            The offset between the two filters.
+    #     Returns
+    #     -------
+    #     offset : int
+    #         The offset between the two filters.
 
-        Raises
-        ------
-        FilterRegisterException
-            If either the current filter or the changed filter is not registered.
-        """
-        try:
-            offset_current = self.offsets[current_filt]['offset']
-            offset_changed = self.offsets[changed_filt]['offset']
-            offset = offset_changed - offset_current
-            if (offset_changed == -999) | (offset_current == -999):
-                offset = 0 
-            return offset
-        except:
-            raise FilterRegisterException(f'Filter: one of {current_filt}, {changed_filt} is not registered')
+    #     Raises
+    #     ------
+    #     FilterRegisterException
+    #         If either the current filter or the changed filter is not registered.
+    #     """
+    #     try:
+    #         offset_current = self.offsets[current_filt]['offset']
+    #         offset_changed = self.offsets[changed_filt]['offset']
+    #         offset = offset_changed - offset_current
+    #         if (offset_changed == -999) | (offset_current == -999):
+    #             offset = 0 
+    #         return offset
+    #     except:
+    #         raise FilterRegisterException(f'Filter: one of {current_filt}, {changed_filt} is not registered')
 
     def wait_idle(self):
         self.is_idle.wait()
@@ -304,18 +304,32 @@ class mainFilterwheel(mainConfig):
 
         if self.device.Names is None:
             raise FilterRegisterException("No filter information is registered")
-        filtnames = self.device.Names
-        return filtnames
+        filtnames_from_device = self.device.Names
+        filtinfo_path = self.config['FTWHEEL_FILTINFOPATH']
+        autofocus_offset_path = self.config['AUTOFOCUS_OFFSETPATH']
+        autofocus_history_path = self.config['AUTOFOCUS_HISTORYPATH']
+        with open(filtinfo_path, 'r') as f:
+            filtnames_from_config = json.load(f)
+        with open(autofocus_offset_path, 'r') as f:
+            filtnames_from_autofocus_offset = json.load(f)
+        with open(autofocus_history_path, 'r') as f:
+            filtnames_from_autofocus_history = json.load(f)
         
-    def _get_all_filt_offset(self) -> list:
-        with open(self.config['FTWHEEL_OFFSETFILE'], 'r') as f:
-            info_offset = json.load(f)
-            del info_offset['updated_date']
-        filters_in_config = set(info_offset.keys())
-        filters_in_device = set(self._get_all_filt_names())
-        if not filters_in_config.issubset(filters_in_device):
-            raise FilterRegisterException(f'Registered filters are not matched with configured filters \n Configured = [{filters_in_config}] \n Registered = [{filters_in_device}]')
-        return info_offset
+        # Check all filtnames are consistent
+        if not set(filtnames_from_device) == set(filtnames_from_config) == set(filtnames_from_autofocus_offset) == set(filtnames_from_autofocus_history):
+            raise FilterRegisterException("Filternames are not consistent between device, config, autofocus offset, and autofocus history")
+        
+        return list(set(filtnames_from_device))
+        
+    # def _get_all_filt_offset(self) -> list:
+    #     with open(self.config['FTWHEEL_OFFSETFILE'], 'r') as f:
+    #         info_offset = json.load(f)
+    #         del info_offset['updated_date']
+    #     filters_in_config = set(info_offset.keys())
+    #     filters_in_device = set(self._get_all_filt_names())
+    #     if not filters_in_config.issubset(filters_in_device):
+    #         raise FilterRegisterException(f'Registered filters are not matched with configured filters \n Configured = [{filters_in_config}] \n Registered = [{filters_in_device}]')
+    #     return info_offset
     
     def _position_to_filtname(self,
                               position : int) -> str:
@@ -336,7 +350,7 @@ class mainFilterwheel(mainConfig):
     def _get_current_filtinfo(self) -> str:
         position = self.device.Position
         filtname = self._position_to_filtname(position = position)
-        return dict( position = position, name = self.filtnames[position], offset = self.offsets[filtname]['offset'])
+        return dict(position = position, name = self.filtnames[position])#, offset = self.offsets[filtname]['offset'])
     
 
 # %%

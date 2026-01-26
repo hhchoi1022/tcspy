@@ -5,11 +5,11 @@ import glob
 import os
 from astropy.io import ascii
 import json
-#%%
+
 class mainConfig:
     def __init__(self,
                  unitnum: int = None,
-                 configpath : str = f'{os.path.expanduser("~")}/.tcspy/configuration/',
+                 configpath : str = f'{os.path.dirname(os.path.abspath(__file__))}',
                  **kwargs):
         self.unitnum = unitnum
         self.config = dict()
@@ -125,8 +125,7 @@ class mainConfig:
                                   FTWHEEL_PORTNUM=portnum,
                                   FTWHEEL_DEVICENUM=0,
                                   FTWHEEL_CHECKTIME=0.5,
-                                  FTWHEEL_FILTINFOPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "filtinfo.dict")}'
-                                  )
+                                  FTWHEEL_OFFSETFILE =f"{os.path.join(savepath_unit,'filter.offset')}")
 
         focuser_params = dict(FOCUSER_DEVICETYPE='PWI4',  # Alpaca or PWI4
                               FOCUSER_HOSTIP= ip_address,
@@ -134,8 +133,7 @@ class mainConfig:
                               FOCUSER_DEVICENUM=0,
                               FOCUSER_MINSTEP= 2000,
                               FOCUSER_MAXSTEP= 14000,
-                              FOCUSER_CHECKTIME=0.5,
-                              )
+                              FOCUSER_CHECKTIME=0.5)
         
         switch_params = dict(SWITCH_HOSTIP= ip_address,
                              SWITCH_PORTNUM=portnum,
@@ -250,11 +248,9 @@ class mainConfig:
                                   ALERTBROKER_STATUSPATH = f'{os.path.join(self.path_home, ".tcspy", "sync", "alert")}',
                                 )
         
-        autofocus_params = dict(AUTOFOCUS_TOLERANCE_LOWER = 8,
-                                AUTOFOCUS_TOLERANCE_UPPER = 45,
-                                AUTOFOCUS_OFFSETPATH =f"{os.path.join(savepath_unit,'autofocus.offset')}",
-                                AUTOFOCUS_HISTORYPATH =f"{os.path.join(savepath_unit,'autofocus.history')}",
-                                )
+        autofocus_params = dict(AUTOFOCUS_FILTINFO_FILE=f'{os.path.join(self.path_home, ".tcspy", "sync", "filtinfo.dict")}',
+                                AUTOFOCUS_FOCUSHISTORY_PATH = self.path_global,
+                                AUTOFOCUS_TOLERANCE = 45)
         
         autoflat_params = dict(AUTOFLAT_ALTITUDE = 40,
                                AUTOFLAT_AZIMUTH = 270,
@@ -266,7 +262,7 @@ class mainConfig:
                                AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m375w','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
-        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20260120/")}')
+        specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","specmode/20250914/")}')
 
         colormode_params = dict(COLORMODE_FOLDER=f'{os.path.join(self.path_home, ".tcspy", "sync","colormode/20250313/")}')
         
@@ -294,7 +290,6 @@ class mainConfig:
                                    APPSCHEDULER_AUTOFLAT = True,
                                    APPSCHEDULER_SEARCHKEY = '/data2/obsdata/7DT??/image/$$TONIGHT$$/*.fits',
                                    )
-        
         self.make_configfile(mount_params, filename='mount.config', savepath = savepath_unit)
         self.make_configfile(camera_params, filename='camera.config', savepath = savepath_unit)
         self.make_configfile(filterwheel_params, filename='filterWheel.config', savepath = savepath_unit)
@@ -330,31 +325,37 @@ class mainConfig:
         
         os.makedirs(image_params['IMAGE_PATH'], exist_ok=True)
         os.makedirs(logger_params['LOGGER_PATH'], exist_ok=True)
+        
+        if update_focusmodel:
+            from tcspy.configuration import FocusModel
+            F = FocusModel(unitnum = self.unitnum, configpath = self.path_global, filtinfo_file = f'{os.path.join(self.path_home, ".tcspy", "sync", "filtinfo.dict")}', offset_file = "filter.offset")
+            F.update_params()
+        
+
 
 
 #%%
 if __name__ == '__main__':
-    self = mainConfig(unitnum = 1)
-    # unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
-    # addresslist = ['10.0.106.6',
-    #                '10.0.106.7',
-    #                '10.0.106.8',
-    #                '10.0.106.16',
-    #                '10.0.106.10',
-    #                '10.0.106.11',
-    #                '10.0.106.12',
-    #                '10.0.106.13',
-    #                '10.0.106.14',
-    #                '10.0.106.15',
-    #                '10.0.106.9',
-    #                '10.0.106.17',
-    #                '10.0.106.18',
-    #                '10.0.106.19',
-    #                '10.0.106.20',
-    #                '10.0.106.21']
-    # for unitnum, address in zip(unitnumlist, addresslist):
-    #     A = mainConfig(unitnum=unitnum)
-    #     A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = False)
+    unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+    addresslist = ['10.0.106.6',
+                   '10.0.106.7',
+                   '10.0.106.8',
+                   '10.0.106.16',
+                   '10.0.106.10',
+                   '10.0.106.11',
+                   '10.0.106.12',
+                   '10.0.106.13',
+                   '10.0.106.14',
+                   '10.0.106.15',
+                   '10.0.106.9',
+                   '10.0.106.17',
+                   '10.0.106.18',
+                   '10.0.106.19',
+                   '10.0.106.20',
+                   '10.0.106.21']
+    for unitnum, address in zip(unitnumlist, addresslist):
+        A = mainConfig(unitnum=unitnum)
+        A._initialize_config(ip_address=address, portnum = 11111, update_focusmodel = True, calc_focusmodel = False)
 
 # %%
 if __name__ == '__main__':
