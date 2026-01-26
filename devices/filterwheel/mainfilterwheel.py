@@ -319,7 +319,7 @@ class mainFilterwheel(mainConfig):
         if not set(filtnames_from_device) == set(filtnames_from_config) == set(filtnames_from_autofocus_offset) == set(filtnames_from_autofocus_history):
             raise FilterRegisterException("Filternames are not consistent between device, config, autofocus offset, and autofocus history.\nCurrent configuration:\nDevice: {}\nConfig: {}\nOffset: {}\nHistory: {}".format(filtnames_from_device, filtnames_from_config, filtnames_from_autofocus_offset, filtnames_from_autofocus_history))
         
-        return list(set(filtnames_from_device))
+        return list(filtnames_from_device)
         
     # def _get_all_filt_offset(self) -> list:
     #     with open(self.config['FTWHEEL_OFFSETFILE'], 'r') as f:

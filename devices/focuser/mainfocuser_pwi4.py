@@ -69,7 +69,6 @@ class mainFocuser_pwi4(mainConfig):
         self._id = None
         self._id_update_time = None
         self.status = self.get_status()
-        
  
     @property
     def id(self):
