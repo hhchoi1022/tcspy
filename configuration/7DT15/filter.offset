@@ -1,5 +1,5 @@
 {
-    "updated_date": "2025-09-14T03:20:14.004",
+    "updated_date": "2026-01-25T04:16:55.172",
     "g": {
         "offset": 999,
         "error": 999
@@ -12,11 +12,7 @@
         "offset": 999,
         "error": 999
     },
-    "m500": {
-        "offset": 999,
-        "error": 999
-    },
-    "m525": {
+    "m750": {
         "offset": 999,
         "error": 999
     },
@@ -24,7 +20,11 @@
         "offset": 999,
         "error": 999
     },
-    "m725": {
+    "m600": {
+        "offset": 999,
+        "error": 999
+    },
+    "Slot7": {
         "offset": 999,
         "error": 999
     },
@@ -32,7 +32,7 @@
         "offset": 999,
         "error": 999
     },
-    "Slot9": {
+    "m692w": {
         "offset": 999,
         "error": 999
     }

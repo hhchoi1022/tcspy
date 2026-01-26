@@ -188,6 +188,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
                         self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')
                         return True
                     else:
+                        result_changefocus = action_changefocus.run(position = focus_history['focusval'], is_relative = False)
+                        self.telescope.log.info(f'[{type(self).__name__}] Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')
                         result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)                
                 else:
                     result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)                
@@ -387,3 +389,11 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         self.shared_memory['is_running'] = False
         self.is_running = False
         raise AbortionException(f'[{type(self).__name__}] is aborted.')
+# %%
+
+if __name__ == "__main__":
+    tel = SingleTelescope(1)
+    af = AutoFocus(tel, Event())
+    af.run(filter_ = 'specall', use_history = True, search_focus_when_failed= True)
+    
+# %%

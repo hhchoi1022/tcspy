@@ -1,10 +1,10 @@
 {
     "7DT12": {
         "g": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000,
-            "focuserr": 999
+            "update_time": "2026-01-25T04:36:06.413",
+            "succeeded": true,
+            "focusval": 6724.5,
+            "focuserr": 17.45
         },
         "r": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -18,25 +18,25 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "m850": {
-            "update_time": "2025-11-06T07:56:32.313",
-            "succeeded": true,
-            "focusval": 5848.3,
-            "focuserr": 16.65
-        },
-        "m875": {
-            "update_time": "2025-11-06T08:03:35.376",
-            "succeeded": true,
-            "focusval": 5852.7,
-            "focuserr": 20.11
-        },
-        "Slot6": {
+        "m675": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,
             "focuserr": 999
         },
-        "Slot7": {
+        "z": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
+        },
+        "m525": {
+            "update_time": "2026-01-25T04:57:10.404",
+            "succeeded": true,
+            "focusval": 6976.5,
+            "focuserr": 8.299
+        },
+        "m825": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,
@@ -48,11 +48,11 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "Slot9": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000,
-            "focuserr": 999
+        "m661": {
+            "update_time": "2026-01-25T05:02:54.162",
+            "succeeded": true,
+            "focusval": 6372.8,
+            "focuserr": 15.76
         }
     }
 }

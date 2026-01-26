@@ -476,7 +476,7 @@ if __name__ == '__main__':
     ax.set_xticklabels(['14h', '16h', '18h', '20h', '22h', '0h', '2h', '4h', '6h', '8h', '10h'])
     ax.grid(True)
     plt.legend()
-    plt.title(f"7DT RIS Observations on {Time.now().datetime.strftime('%Y-%m-%d')}")
+    plt.title(f"7DS Status on {Time.now().datetime.strftime('%Y-%m-%d')}")
     plt.show()
 
 # %%

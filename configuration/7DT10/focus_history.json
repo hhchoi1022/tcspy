@@ -1,10 +1,10 @@
 {
     "7DT10": {
         "g": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000,
-            "focuserr": 999
+            "update_time": "2026-01-25T04:36:18.538",
+            "succeeded": true,
+            "focusval": 7010.2,
+            "focuserr": 19.61
         },
         "r": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -18,25 +18,25 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "z": {
+        "m625": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,
             "focuserr": 999
         },
-        "m800": {
-            "update_time": "2025-11-06T07:56:48.537",
+        "m875": {
+            "update_time": "2026-01-25T04:57:19.264",
             "succeeded": true,
-            "focusval": 7264.2,
-            "focuserr": 19.06
+            "focusval": 7061.9,
+            "focuserr": 18.19
         },
-        "m825": {
-            "update_time": "2025-11-06T08:04:05.200",
-            "succeeded": true,
-            "focusval": 7262.7,
-            "focuserr": 20.94
+        "Slot6": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         },
-        "m600": {
+        "Slot7": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,
@@ -48,11 +48,11 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "m425w": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000,
-            "focuserr": 999
+        "m615": {
+            "update_time": "2026-01-25T05:01:13.801",
+            "succeeded": true,
+            "focusval": 6633.0,
+            "focuserr": 6.586
         }
     }
 }

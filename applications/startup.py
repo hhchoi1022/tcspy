@@ -131,12 +131,12 @@ class Startup(mainConfig):
             for telescope_name, telescope in self.multitelescopes.devices.items():
                 params_fanson.append(dict())
             ##### MODIFICATION FOR 7DT02 FAN OFF
-            #multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
+            multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
 
             #if '7DT02' in self.multitelescopes.devices.keys():
-            multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
-            multitelescopes_except_unit2.pop('7DT06')
-            multitelescopes_except_unit2.pop('7DT02')
+            # multitelescopes_except_unit2 = self.multitelescopes.devices.copy()
+            # multitelescopes_except_unit2.pop('7DT06')
+            # multitelescopes_except_unit2.pop('7DT02')
 
             multi_fanson = MultiAction(array_telescope= multitelescopes_except_unit2.values(), array_kwargs= params_fanson[:-1], function = FansOn, abort_action = self.abort_action)            
             #multi_fanson = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_fanson, function = FansOn, abort_action = self.abort_action)
@@ -299,4 +299,3 @@ if __name__ == '__main__':
     if message_ts:
         slack.post_thread_message(message_ts = message_ts, text = f'{type(S).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
 
-# %%

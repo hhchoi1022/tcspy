@@ -282,13 +282,3 @@ class mainFocuser_Alpaca(mainConfig):
         Abort the movement of the Focuser device
         """
         self.device.Halt()   
-
-        
-        
-# %% Test
-if __name__ == '__main__':
-    #Focus = Focuser('192.168.0.4:11111', 0)
-    F = mainFocuser(unitnum = 2)
-    F.connect()
-    F.move(8000, Event())
-# %%

@@ -23,7 +23,7 @@ class FocusModel:
     def __init__(self, 
                  unitnum : int,
                  configpath : str = '/home/kds/tcspy/configuration/',
-                 filtinfo_file : str = './filtinfo.data',
+                 filtinfo_file : str = '/home/kds/.tcspy/sync/filtinfo.dict',
                  offset_file : str = 'filter.offset'):
         self.unitnum = unitnum
         self.name_telescope = '7DT%.2d' % self.unitnum
@@ -255,8 +255,10 @@ class FocusModel:
         print(f'{self._offset_file} is updated')
 # %%
 if __name__ == '__main__':
-    unitnum = 3
     FModel = FocusModel(unitnum)
+    for unitnum in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]:
+        FModel = FocusModel(unitnum)
+        FModel.update_params()
     #folder = '/large_data/obsdata/7DT%.2d' %unitnum
     #offset_vallist, offset_stdlist = FModel.calc_model_params(folder, start_obsdate = Time('2024-02-20'))
     #FModel.update_params(None, None)

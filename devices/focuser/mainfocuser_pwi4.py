@@ -393,8 +393,3 @@ class mainFocuser_pwi4(mainConfig):
             
     def wait_idle(self):
         self.is_idle.wait()
-
-# %%
-if __name__ == '__main__':
-    F = mainFocuser_pwi4(2)
-# %%

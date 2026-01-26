@@ -18,23 +18,23 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "m700": {
-            "update_time": "2026-01-03T08:01:56.448",
-            "succeeded": true,
-            "focusval": 9658.2,
-            "focuserr": 16.04
-        },
-        "m725": {
+        "m475": {
             "update_time": "2000-01-01T00:00:00.000",
             "succeeded": false,
             "focusval": 10000,
             "focuserr": 999
         },
-        "m550": {
-            "update_time": "2026-01-03T08:08:56.666",
+        "m725": {
+            "update_time": "2026-01-25T04:59:09.648",
             "succeeded": true,
-            "focusval": 9841.2,
-            "focuserr": 18.7
+            "focusval": 8529.7,
+            "focuserr": 16.13
+        },
+        "Slot6": {
+            "update_time": "2000-01-01T00:00:00.000",
+            "succeeded": false,
+            "focusval": 10000,
+            "focuserr": 999
         },
         "Slot7": {
             "update_time": "2000-01-01T00:00:00.000",
@@ -48,11 +48,11 @@
             "focusval": 10000,
             "focuserr": 999
         },
-        "Slot9": {
-            "update_time": "2000-01-01T00:00:00.000",
-            "succeeded": false,
-            "focusval": 10000,
-            "focuserr": 999
+        "m438": {
+            "update_time": "2026-01-25T05:02:54.607",
+            "succeeded": true,
+            "focusval": 9176.8,
+            "focuserr": 15.9
         }
     }
 }
