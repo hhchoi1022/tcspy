@@ -415,7 +415,7 @@ if __name__ == '__main__':
     # A.run(key = '*/2025-03-23_gain2750', save_hash = True, tar = True,
     #       sync_log = True, transfer = True, move_and_clean = False,
     #       from_archive = True)
-    # A.run(key = '*/2025-04-03_gain2750', save_hash = True, tar = True,
+    # A.run(key = '*/2025-12-23_gain2750', save_hash = True, tar = True,
     #       sync_log = True, transfer = True, move_and_clean = False,
     #       from_archive = True)
     # A.run(key = '*/2025-04-03_gain0', save_hash = True, tar = True,

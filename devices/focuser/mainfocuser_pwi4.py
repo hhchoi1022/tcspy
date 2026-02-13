@@ -156,7 +156,7 @@ class mainFocuser_pwi4(mainConfig):
         return self.device.status()
     
     def _get_autofocus_history(self):
-        af_path = os.path.join(self.config['AUTOFOCUS_HISTORYPATH'], self.tel_name, 'focus_history.json')
+        af_path = self.config['AUTOFOCUS_HISTORYPATH']
         if os.path.exists(af_path):
             with open(af_path, 'r') as f:
                 data = json.load(f)
@@ -371,7 +371,7 @@ class mainFocuser_pwi4(mainConfig):
                 status =  self.get_status()
             time.sleep(3 * float(self.config['FOCUSER_CHECKTIME']))
             status =  self.get_status()
-            if (status['is_autofocus_success']) & (status['autofocus_tolerance'] < self.config['AUTOFOCUS_TOLERANCE']):
+            if (status['is_autofocus_success']) & (status['autofocus_tolerance'] < self.config['AUTOFOCUS_TOLERANCE_UPPER']) & (status['autofocus_tolerance'] > self.config['AUTOFOCUS_TOLERANCE_LOWER'] ):
                 self._log.info('Autofocus complete! (Best position : %s (%s))'%(status['autofocus_bestposition'], status['autofocus_tolerance']))
                 return status['is_autofocus_success'], status['autofocus_bestposition'], status['autofocus_tolerance']
             else:
@@ -392,3 +392,5 @@ class mainFocuser_pwi4(mainConfig):
             
     def wait_idle(self):
         self.is_idle.wait()
+
+# %%

@@ -220,6 +220,7 @@ class mainConfig:
                          DB_NAME='target',
                          DB_HISTORYPATH= f'/data2/obsdata/DB_history',
                          DB_HISTORYFORMAT = 'ascii.fixed_width',
+                         DB_PROGRAMPATH= f'/data2/obsdata/DB_program',
                          DB_STATUSDIR = f'{self.path_sync}',
                          DB_STATUSFORMAT = 'ascii')
         
@@ -257,6 +258,7 @@ class mainConfig:
                                 AUTOFOCUS_TOLERANCE_UPPER = 45,
                                 AUTOFOCUS_OFFSETPATH =f"{os.path.join(savepath_unit,'autofocus.offset')}",
                                 AUTOFOCUS_HISTORYPATH =f"{os.path.join(savepath_unit,'autofocus.history')}",
+                                AUTOFOCUS_FILTINFOPATH = f'{os.path.join(self.path_config, "filtinfo.dict")}'
                                 )
         
         autoflat_params = dict(AUTOFLAT_ALTITUDE = 40,
@@ -266,7 +268,7 @@ class mainConfig:
                                AUTOFLAT_MINEXPTIME = 0.1,
                                AUTOFLAT_MAXEXPTIME = 10,
                                AUTOFLAT_WAITDURATION = 10,
-                               AUTOFLAT_FILTERORDER = ['g','r','i','m500','m525','m550','m575','m475','m450','m600','m625','m650','m675','m425','m700','m725','z','m400','m375w','m750','m775','m800','m825','m850','m875','u'] # Descending order (Brightest first)
+                               AUTOFLAT_FILTERORDER = ['g','r','i','m466w','m500','m512','m525','m534','m550','m561','m575','m586','m692w','m483','m475','m450','m710w','m600','m615','m625','m640','m650','m661','m675','m438','m425','m700','m725','z','m400','m375w','m769w','m386','m376','m750','m775','m800','m832w','m825','m850','m875','u'] # Descending order (Brightest first)
                                )
         
         specmode_params = dict(SPECMODE_FOLDER=f'{os.path.join(self.path_config, "specmode/20260120/")}')
@@ -372,7 +374,6 @@ class mainConfig:
 
 #%%
 if __name__ == '__main__':
-    self = mainConfig(unitnum = 1)
     # self._initialize_config(reset_autofocusinfo = True)
     unitnumlist = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
     addresslist = ['10.0.106.6',

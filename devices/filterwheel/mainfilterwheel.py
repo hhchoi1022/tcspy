@@ -355,5 +355,6 @@ class mainFilterwheel(mainConfig):
 
 # %%
 if __name__ == '__main__':
-    self = mainFilterwheel(1)
+    self = mainFilterwheel(11)
+    print(self.device.Position)
 # %%

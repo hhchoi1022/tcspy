@@ -167,7 +167,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         result_autofocus = False
         info_focuser = self.telescope.focuser.get_status()
         original_position = info_focuser['position']
-        self.telescope.log.info(f'[{type(self).__name__}] Start autofocus [Central focus position: {info_focuser["position"]}, filter: {filter_}]')
+        self.telescope.log.info(f'[{type(self).__name__}] Start autofocus [Filter: {filter_}]')
         try:
             # If use_history == False, run Autofocus
             if not use_history:
@@ -200,8 +200,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             self.is_running = False
             raise AbortionException(f'[{type(self).__name__}] is aborted.') 
         except AutofocusFailedException:
-            self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 1st try failed. Try autofocus with the focus history')
-            
+            pass
+                    
         # When succeeded
         if result_autofocus:
             self.update_focus_history(filter_ = filter_, focusval =autofocus_position, focuserr= autofocus_error, is_succeeded = result_autofocus)
@@ -263,6 +263,8 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         
         # If autofocus process is still failed, grid search
         if search_focus_when_failed:
+            self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 1st try failed. Try grid search methods..')
+
             relative_position = 500
             n_focus_search = 2*search_focus_range//relative_position
             sign = 1
@@ -391,7 +393,7 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
 
 if __name__ == "__main__":
     tel = SingleTelescope(1)
-    af = AutoFocus(tel, Event())
+    self = AutoFocus(tel, Event())
     # af.run(filter_ = 'specall', use_history = True, search_focus_when_failed= True)
     
 # %%

@@ -11,6 +11,7 @@ from tcspy.applications import FilterCheck
 from tcspy.applications import Startup
 from tcspy.applications import Shutdown
 from tcspy.applications import FlatAcquisition
+from tcspy.applications import AutofocusInitializer
 
 from ccdproc import ImageFileCollection
 from threading import Event
@@ -169,6 +170,32 @@ class AppScheduler(mainConfig):
             self.post_slack_thread(message=f'Skylevel:\n{skylevel_str}', alert_slack=alert_slack)
             return self.schedule.CancelJob  # Remove this job after execution
  
+    def run_autofocus_init(self,
+                           filter_ = 'specall',
+                           use_history = True,
+                           history_duration = 0,
+                           search_focus_when_failed = True,
+                           search_focus_range = 3000,
+                           slew = True,
+                           alert_slack : bool = True):
+        with self.thread_lock:
+            start_time = time.strftime("%H:%M:%S", time.localtime())
+            self.post_slack_thread(message = f'Autofocus_initialization is triggered: {start_time}', alert_slack = alert_slack)
+            action = AutofocusInitializer(self.multitelescopes, abort_action = self.abort_action)
+            result = action.run(filter_ = filter_,
+                                use_history = use_history, 
+                                history_duration = history_duration,
+                                search_focus_when_failed = search_focus_when_failed, 
+                                search_focus_range = search_focus_range,
+                                slew = slew) 
+            while action.is_running:
+                time.sleep(1)
+            end_time = time.strftime("%H:%M:%S", time.localtime())
+            self.post_slack_thread(message = f'Autofocus_initialization is finished: {end_time}', alert_slack = alert_slack)
+            # Convert result[0] dictionary to a formatted string
+            return self.schedule.CancelJob  # Remove this job after execution
+ 
+ 
     def run_startup(self,
                     connect = True,
                     home = True,
@@ -307,13 +334,33 @@ if __name__ == '__main__':
     A = AppScheduler(M, abort_action)
     A.clear_schedule()
     alert_slack = True
-    # Filtercheck
-    if Time.now() < A.obsnight_utc.sunset_flat:
-        A.schedule_app(A.run_filtercheck, A.obsnight.sunset_flat, exptime = 60)
-    
+
     # # Startup
     if Time.now() < A.obsnight_utc.sunset_startup:
         A.schedule_app(A.run_startup, A.obsnight.sunset_startup, connect = True, home = True, slew = True, cool = True, alert_slack = alert_slack)
+    # Filtercheck
+    if Time.now() < A.obsnight_utc.sunset_flat:
+        A.schedule_app(A.run_filtercheck, A.obsnight.sunset_flat, exptime = 60)
+    # Autofocus_init
+    autofocus_start_time = A.obsnight.sunset_flat + 15*u.minute
+    if Time.now() < autofocus_start_time:
+        A.schedule_app(A.run_autofocus_init, autofocus_start_time, 
+                       filter_ = 'specall',
+                       use_history = True,
+                       history_duration = 0,
+                       search_focus_when_failed = True,
+                       search_focus_range = 3000,
+                       slew = True,
+                       alert_slack = True)
+        autofocus_start_time += 10*u.minute
+        A.schedule_app(A.run_autofocus_init, autofocus_start_time,
+                       filter_ = 'specall',
+                       use_history = True,
+                       history_duration = 0,
+                       search_focus_when_failed = True,
+                       search_focus_range = 3000,
+                       slew = True,
+                       alert_slack = True)
     # NightObservation
     if Time.now() < A.obsnight_utc.sunset_observation:
         A.schedule_app(A.run_nightobs, A.obsnight.sunset_observation, alert_slack = alert_slack)

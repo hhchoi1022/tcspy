@@ -257,7 +257,7 @@ class Exposure(Interface_Runnable, Interface_Abortable):
             
             status = self.telescope.status
             try:
-                autofocus_dict = status['focuser']['autofocus_history'][self.telescope.tel_name]
+                autofocus_dict = status['focuser']['autofocus_history']
                 if filter_ is None:
                     autofocus_info = {'update_time': None,
                                       'succeeded': None,

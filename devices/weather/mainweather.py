@@ -163,8 +163,11 @@ class mainWeather(mainConfig):
             json.dump(current_status, f, indent=4)
             
         # [241220] Added for synching 7DT weather status to the SNU server (proton) 
-        statusfile_abspath = self.config['WEATHER_STATUSPATH']
-        Path(statusfile_abspath).mkdir(parents=True, exist_ok=True)
+        statusfile_abspath = Path(self.config['WEATHER_STATUSPATH'])
+
+        # Create parent directory only
+        statusfile_abspath.parent.mkdir(parents=True, exist_ok=True)
+
         with portalocker.Lock(statusfile_abspath, 'w', timeout=10) as f:
             json.dump(current_status, f, indent=4)
 

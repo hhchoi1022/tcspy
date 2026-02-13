@@ -315,10 +315,10 @@ class DB_Program(mainConfig):
         """
         try:
             tbl = self.data
-            if not os.path.exists(self.config['DB_PROGRAMPATH']):
-                os.makedirs(self.config['DB_PROGRAMPATH'], exist_ok = True)
-            file_abspath = os.path.join(self.config['DB_PROGRAMPATH'], f'DB_Program.{self.config["DB_PROGRAMFORMAT"]}')
-            tbl.write(file_abspath, format= self.config['DB_PROGRAMFORMAT'], overwrite=True)
+            if not os.path.exists(self.config['DB_STATUSDIR']):
+                os.makedirs(self.config['DB_STATUSDIR'], exist_ok = True)
+            file_abspath = os.path.join(self.config['DB_STATUSDIR'], f'DB_Program.{self.config["DB_STATUSFORMAT"]}')
+            tbl.write(file_abspath, format= self.config['DB_STATUSFORMAT'], overwrite=True)
             print(f"Exported Program table to {file_abspath}")
         except Exception as e:
             print(f"Failed to export data: {e}")

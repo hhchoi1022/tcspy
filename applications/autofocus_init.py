@@ -9,6 +9,7 @@ from threading import Thread
 from tcspy.utils.exception import *
 import json, os
 #%%
+FILTINFO_FILE = '/home/kds/TCSpy/configuration/filtinfo.dict'
 
 class AutofocusInitializer(mainConfig):
     
@@ -23,9 +24,9 @@ class AutofocusInitializer(mainConfig):
         self.is_running = False
     
     def run(self,
-            filter_ : str = 'r',
-            use_history : bool = False, 
-            history_duration : float = 60,
+            filter_ : str = 'specall',
+            use_history : bool = True, 
+            history_duration : float = 0,
             search_focus_when_failed : bool = True, 
             search_focus_range : int = 3000,
             slew : bool = True):
@@ -36,7 +37,7 @@ class AutofocusInitializer(mainConfig):
         self.abort_action.set()
         
     def _get_filtinfo(self):
-        with open(self.config['AUTOFOCUS_FILTINFO_FILE'], 'r') as f:
+        with open(FILTINFO_FILE, 'r') as f:
             filtinfo_all = json.load(f)
         filtinfo = {key : filtinfo_all[key] for key in self.multitelescopes.devices.keys()}
         return filtinfo
@@ -121,9 +122,9 @@ if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     M = MultiTelescopes()
     AutofocusInitializer(M, Event()).run(filter_ = 'specall',
-                                         use_history = False, 
-                                         history_duration = 60,
-                                         search_focus_when_failed = False, 
-                                         search_focus_range = 200,
+                                         use_history = True, 
+                                         history_duration = 0,
+                                         search_focus_when_failed = True, 
+                                         search_focus_range = 1000,
                                          slew = True) 
 # %%
