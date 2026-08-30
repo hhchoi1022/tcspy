@@ -33,16 +33,19 @@ class FilterCheck(mainConfig):
         self.multitelescopes = multitelescopes
         self.abort_action = abort_action
         self.is_running = False
+        self.result = None
         
     def run(self, exptime : int  = 1):
         """
-        Starts the startup process in a separate thread and waits for the result.
+        Starts the filtercheck process in a separate thread (non-blocking).
+        Poll is_running to wait for completion, then read self.result
+        ((skylevel_dict, problematic_units); None means the check failed).
         """
-        startup_thread = Thread(target=self._process, kwargs = dict(exptime = exptime))
-        startup_thread.start()
-        startup_thread.join()  # Wait for the thread to complete
-        return self.result  # Return the result after completion
-        
+        # Set BEFORE starting the thread so a supervisor polling is_running
+        # right after run() cannot see a not-yet-started state.
+        self.is_running = True
+        filtercheck_thread = Thread(target=self._process, kwargs = dict(exptime = exptime))
+        filtercheck_thread.start()
         
     def abort(self):
         """
@@ -55,51 +58,22 @@ class FilterCheck(mainConfig):
     
     def _process(self, exptime : int = 1):
         self.is_running = True
-        self.multitelescopes.register_logfile()
-        self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
-        self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
-        
-        #Prepare for MultiAction for Slew
-        params_slew_all = []
-        
-        for telescope_name, telescope in self.multitelescopes.devices.items():
-            params_slew = dict(alt = 80, az = 300) 
-            params_slew_all.append(params_slew)
-        self.multiaction = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_slew_all, function = SlewAltAz, abort_action = self.abort_action)    
-        self.shared_memory = self.multiaction.shared_memory
-        
-        # Slew
         try:
-            self.multiaction.run()
-        except AbortionException:
-            self.abort()
-        except ActionFailedException:
-            for tel_name, result in self.shared_memory.items():
-                is_succeeded = self.shared_memory[tel_name]['succeeded']
-                if is_succeeded:
-                    self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
-                else:
-                    self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
-            self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
-            self.is_running = False
-            raise ActionFailedException(f'[{type(self).__name__}] is failed.')    
+            self.multitelescopes.register_logfile()
+            self.multitelescopes.update_statusfile(status = 'busy', do_trigger = True)
+            self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
 
-        filterset = ['g','r','i']
-        expset = [exptime] * len(filterset)
-        skylevel_dict = {}
-        for filter_, exptime in zip(filterset, expset):
-            skylevel_dict[filter_] = {}
-            #Prepare for MultiAction for Exposure
-            params_exposure_all = []
+            #Prepare for MultiAction for Slew
+            params_slew_all = []
+
             for telescope_name, telescope in self.multitelescopes.devices.items():
-                params_exposure = dict(frame_number = 0, exptime = exptime, filter_ = filter_, gain = 2750, alt = 40, az = 300, name = 'filtercheck', objtype = 'test')
-                params_exposure_all.append(params_exposure)
-            self.multiaction = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_exposure_all, function = Exposure, abort_action = self.abort_action)
+                params_slew = dict(alt = 80, az = 300)
+                params_slew_all.append(params_slew)
+            self.multiaction = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_slew_all, function = SlewAltAz, abort_action = self.abort_action)
             self.shared_memory = self.multiaction.shared_memory
-            
-            # Exposure
+
+            # Slew
             try:
-                folder_key = (Time.now() - 12 * u.hour).datetime.strftime('%Y-%m-%d*')
                 self.multiaction.run()
             except AbortionException:
                 self.abort()
@@ -111,42 +85,89 @@ class FilterCheck(mainConfig):
                     else:
                         self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
                 self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
-                self.is_running = False
-                raise ActionFailedException(f'[{type(self).__name__}] is failed.')    
-            
-            # Get the image count for each telescope
-            for telescope_name, telescope in self.multitelescopes.devices.items():
-                key = os.path.join(telescope.config['IMAGE_PATH'], folder_key, '*filtercheck*.fits')
-                fits_file = glob.glob(key)
-                header_key = os.path.join(telescope.config['IMAGE_PATH'], folder_key, '*filtercheck*.head')
-                header_file = glob.glob(header_key)
-                data = fits.getdata(fits_file[0])
-                mean = int(np.median(data))
-                print(f'{telescope_name} : {mean}')
-                os.remove(fits_file[0])
-                os.remove(header_file[0])                
-                skylevel_dict[filter_][telescope_name] = mean
-                if os.listdir(os.path.dirname(fits_file[0])) == []:
-                    os.rmdir(os.path.dirname(fits_file[0]))
-        
-        all_problematic_units = np.array([])
-        for filter_, skylevel_info in skylevel_dict.items():
-            telnames = list(skylevel_info.keys())
-            skylevels = list(skylevel_info.values())
-            std = np.std(skylevels)
-            idx = np.where(np.abs(np.array(skylevels) - np.mean(skylevels)) > 5 * std)
-            problem_units = np.array(telnames)[idx]
-            if problem_units.size > 0:
-                self.multitelescopes.log.critical(f'{filter_} band level is wired for the units: {problem_units}')
-                self.multitelescopes.log.critical(f'SKYLEVEL = {skylevel_dict[filter_]}')
-            all_problematic_units = np.concatenate((all_problematic_units, problem_units))
-        final_problematic_units = set(all_problematic_units)
-        
-        self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
-        self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
-        self.is_running = False
-        self.result = skylevel_dict, problem_units
-        return skylevel_dict, final_problematic_units
+                raise ActionFailedException(f'[{type(self).__name__}] is failed.')
+
+            filterset = ['g','r','i']
+            expset = [exptime] * len(filterset)
+            skylevel_dict = {}
+            for filter_, exptime in zip(filterset, expset):
+                skylevel_dict[filter_] = {}
+                #Prepare for MultiAction for Exposure
+                params_exposure_all = []
+                for telescope_name, telescope in self.multitelescopes.devices.items():
+                    params_exposure = dict(frame_number = 0, exptime = exptime, filter_ = filter_, gain = 2750, alt = 40, az = 300, name = 'filtercheck', objtype = 'test')
+                    params_exposure_all.append(params_exposure)
+                self.multiaction = MultiAction(array_telescope= self.multitelescopes.devices.values(), array_kwargs= params_exposure_all, function = Exposure, abort_action = self.abort_action)
+                self.shared_memory = self.multiaction.shared_memory
+
+                # Exposure
+                try:
+                    folder_key = (Time.now() - 12 * u.hour).datetime.strftime('%Y-%m-%d*')
+                    self.multiaction.run()
+                except AbortionException:
+                    self.abort()
+                except ActionFailedException:
+                    for tel_name, result in self.shared_memory.items():
+                        is_succeeded = self.shared_memory[tel_name]['succeeded']
+                        if is_succeeded:
+                            self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is finished')
+                        else:
+                            self.multitelescopes.log_dict[tel_name].info(f'[{type(self).__name__}] is failed')
+                    self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
+                    raise ActionFailedException(f'[{type(self).__name__}] is failed.')
+
+                # Get the image count for each telescope
+                for telescope_name, telescope in self.multitelescopes.devices.items():
+                    # Filter-qualified pattern: leftover files from another filter
+                    # (or a previous crashed run) must not be picked up.
+                    key = os.path.join(telescope.config['IMAGE_PATH'], folder_key, f'*filtercheck_{filter_}_*.fits')
+                    fits_file = glob.glob(key)
+                    header_key = os.path.join(telescope.config['IMAGE_PATH'], folder_key, f'*filtercheck_{filter_}_*.head')
+                    header_file = glob.glob(header_key)
+                    if len(fits_file) == 0:
+                        self.multitelescopes.log_dict[telescope_name].warning(f'[{type(self).__name__}] No filtercheck image found for {telescope_name} (pattern: {key}). This unit is skipped.')
+                        continue
+                    data = fits.getdata(fits_file[0])
+                    mean = int(np.median(data))
+                    print(f'{telescope_name} : {mean}')
+                    os.remove(fits_file[0])
+                    if len(header_file) > 0:
+                        os.remove(header_file[0])
+                    skylevel_dict[filter_][telescope_name] = mean
+                    if os.listdir(os.path.dirname(fits_file[0])) == []:
+                        os.rmdir(os.path.dirname(fits_file[0]))
+
+            all_problematic_units = np.array([])
+            for filter_, skylevel_info in skylevel_dict.items():
+                telnames = list(skylevel_info.keys())
+                skylevels = list(skylevel_info.values())
+                if len(skylevels) == 0:
+                    continue
+                std = np.std(skylevels)
+                idx = np.where(np.abs(np.array(skylevels) - np.mean(skylevels)) > 5 * std)
+                problem_units = np.array(telnames)[idx]
+                if problem_units.size > 0:
+                    self.multitelescopes.log.critical(f'{filter_} band level is wired for the units: {problem_units}')
+                    self.multitelescopes.log.critical(f'SKYLEVEL = {skylevel_dict[filter_]}')
+                all_problematic_units = np.concatenate((all_problematic_units, problem_units))
+            final_problematic_units = set(all_problematic_units)
+
+            self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
+            self.result = skylevel_dict, final_problematic_units
+            return skylevel_dict, final_problematic_units
+        except AbortionException:
+            raise
+        except Exception as e:
+            self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed: {e}')
+            raise
+        finally:
+            # Guarantee state recovery on EVERY exit path: a supervisor polling
+            # is_running must never wait forever on a dead thread.
+            try:
+                self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
+            except Exception:
+                pass
+            self.is_running = False
 
 
 # %%

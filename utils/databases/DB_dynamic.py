@@ -131,8 +131,8 @@ class DB_Dynamic(mainConfig):
             target_tbl_to_update =  target_tbl_all[rows_to_update]
         
         if len(target_tbl_to_update) == 0:
-            return 
-        
+            return target_tbl_all
+
         multitargets = MultiTargets(observer = self.observer,
                                    targets_ra = target_tbl_to_update['RA'],
                                    targets_dec = target_tbl_to_update['De'],

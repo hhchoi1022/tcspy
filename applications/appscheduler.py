@@ -14,7 +14,9 @@ from tcspy.applications import FlatAcquisition
 from tcspy.applications import AutofocusInitializer
 
 from ccdproc import ImageFileCollection
-from threading import Event
+# multiprocessing.Event (NOT threading.Event): abort must propagate to the
+# MultiAction child processes forked by each application.
+from multiprocessing import Event
 import astropy.units as u
 from astropy.time import Time
 import uuid
@@ -31,6 +33,7 @@ class AppScheduler(mainConfig):
     def __init__(self,
                  multitelescopes : MultiTelescopes,
                  abort_action : Event,
+                 interrupt = None,
                  ):
         super().__init__()
         self.multitelescopes = multitelescopes
@@ -41,6 +44,27 @@ class AppScheduler(mainConfig):
         self.schedule = schedule
         self.thread_lock = threading.Lock()
         self.abort_action = abort_action
+        self.interrupt = interrupt  # optional tcspy.utils.InterruptHandler (Ctrl+C -> graceful abort)
+
+    def _interrupted(self):
+        return self.interrupt is not None and self.interrupt.interrupted
+
+    def _wait_action(self, action, name : str, alert_slack : bool = True):
+        """
+        Wait until the running application finishes. If a SIGINT was received
+        (InterruptHandler), abort the application gracefully and report it.
+        Returns True when the wait ended by user interrupt.
+        """
+        while action.is_running:
+            time.sleep(1)
+            if self._interrupted():
+                try:
+                    action.abort()
+                except Exception:
+                    pass
+                self.post_slack_thread(message = f'{name} is aborted by user (SIGINT): {time.strftime("%H:%M:%S", time.localtime())}', alert_slack = alert_slack)
+                return True
+        return False
 
     def get_obsinfo_tonight(self, tonight_str, return_only_set : bool = True, key_for_set : list = ['exptime', 'xbinning', 'gain']):
         """
@@ -159,10 +183,14 @@ class AppScheduler(mainConfig):
             start_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'Filtercheck is triggered: {start_time}', alert_slack = alert_slack)
             action = FilterCheck(self.multitelescopes, abort_action = self.abort_action)
-            result = action.run(exptime = exptime)
-            while action.is_running:
-                time.sleep(1)
+            action.run(exptime = exptime)
+            if self._wait_action(action, 'Filtercheck', alert_slack = alert_slack):
+                return self.schedule.CancelJob
+            result = action.result   # (skylevel_dict, problematic_units); None on failure
             end_time = time.strftime("%H:%M:%S", time.localtime())
+            if result is None:
+                self.post_slack_thread(message = f'Filtercheck is failed: {end_time}', alert_slack = alert_slack)
+                return self.schedule.CancelJob
             self.post_slack_thread(message = f'Filtercheck is finished: {end_time}', alert_slack = alert_slack)
             # Convert result[0] dictionary to a formatted string
             skylevel_str = '\n'.join([f'{band}: ' + ', '.join([f'{telescope}: {value} \n' for telescope, value in telescopes.items()])
@@ -188,8 +216,8 @@ class AppScheduler(mainConfig):
                                 search_focus_when_failed = search_focus_when_failed, 
                                 search_focus_range = search_focus_range,
                                 slew = slew) 
-            while action.is_running:
-                time.sleep(1)
+            if self._wait_action(action, 'Autofocus_initialization', alert_slack = alert_slack):
+                return self.schedule.CancelJob
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'Autofocus_initialization is finished: {end_time}', alert_slack = alert_slack)
             # Convert result[0] dictionary to a formatted string
@@ -207,8 +235,8 @@ class AppScheduler(mainConfig):
             self.post_slack_thread(message = f'StartUp is triggered: {start_time}', alert_slack = alert_slack)
             action = Startup(self.multitelescopes, abort_action = self.abort_action)
             action.run(connect = connect, home = home, slew = slew, cool = cool)
-            while action.is_running:
-                time.sleep(1)
+            if self._wait_action(action, 'StartUp', alert_slack = alert_slack):
+                return self.schedule.CancelJob
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'StartUp is finished: {end_time}', alert_slack = alert_slack)
             return self.schedule.CancelJob  # Remove this job after execution
@@ -221,8 +249,9 @@ class AppScheduler(mainConfig):
             self.post_slack_thread(message = f'NightObservation is triggered: {start_time}', alert_slack = alert_slack)
             action = NightObservation(self.multitelescopes, abort_action = self.abort_action)
             action.run()
-            while action.is_running:
-                time.sleep(1)
+            if self._wait_action(action, 'NightObservation', alert_slack = alert_slack):
+                DB().Dynamic.export_to_csv(save_type= 'history')
+                return self.schedule.CancelJob
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'NightObservation is finished: {end_time}', alert_slack = alert_slack)
             DB().Dynamic.export_to_csv(save_type= 'history')
@@ -238,8 +267,8 @@ class AppScheduler(mainConfig):
             self.post_slack_thread(message = f'BiasAcquisition is triggered: {start_time}', alert_slack = alert_slack)
             action = BiasAcquisition(self.multitelescopes, abort_action = self.abort_action)
             action.run(count = count, binning = binning, gain = gain)
-            while action.is_running:
-                time.sleep(1)
+            if self._wait_action(action, 'BiasAcquisition', alert_slack = alert_slack):
+                return self.schedule.CancelJob
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'BiasAcquisition is finished: {end_time}', alert_slack = alert_slack)
             return self.schedule.CancelJob  # Remove this job after execution
@@ -255,8 +284,8 @@ class AppScheduler(mainConfig):
             self.post_slack_thread(message = f'DarkAcquisition is triggered: {start_time}', alert_slack = alert_slack)
             action = DarkAcquisition(self.multitelescopes, abort_action = self.abort_action)
             action.run(count = count, exptime = exptime, binning = binning, gain = gain)
-            while action.is_running:
-                time.sleep(1)
+            if self._wait_action(action, 'DarkAcquisition', alert_slack = alert_slack):
+                return self.schedule.CancelJob
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'DarkAcquisition is finished: {end_time}', alert_slack = alert_slack)
             return self.schedule.CancelJob  # Remove this job after execution
@@ -271,8 +300,8 @@ class AppScheduler(mainConfig):
             self.post_slack_thread(message = f'FlatAcquisition is triggered: {start_time}', alert_slack = alert_slack)
             action = FlatAcquisition(self.multitelescopes, abort_action = self.abort_action)
             action.run(count = count, binning = binning, gain = gain)
-            while action.is_running:
-                time.sleep(1)
+            if self._wait_action(action, 'FlatAcquisition', alert_slack = alert_slack):
+                return self.schedule.CancelJob
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'FlatAcquisition is finished: {end_time}', alert_slack = alert_slack)
             return self.schedule.CancelJob  # Remove this job after execution
@@ -287,8 +316,8 @@ class AppScheduler(mainConfig):
             self.post_slack_thread(message = f'Shutdown is triggered: {start_time}', alert_slack = alert_slack)
             action = Shutdown(self.multitelescopes, abort_action = self.abort_action)
             action.run(fanoff = fanoff, slew = slew, warm = warm)
-            while action.is_running:
-                time.sleep(1)
+            if self._wait_action(action, 'Shutdown', alert_slack = alert_slack):
+                return self.schedule.CancelJob
             end_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'Shutdown is finished: {end_time}', alert_slack = alert_slack)
             return self.schedule.CancelJob  # Remove this job after execution
@@ -319,6 +348,11 @@ class AppScheduler(mainConfig):
 
     def run_schedule(self):
         while self.schedule.get_jobs():
+            if self._interrupted():
+                print('[SIGINT] AppScheduler schedule is stopped by user. Pending jobs are cleared.')
+                self.abort_action.set()
+                self.clear_schedule()
+                break
             self.schedule.run_pending()
             time.sleep(1)
             
@@ -329,9 +363,15 @@ class AppScheduler(mainConfig):
 
 # %%
 if __name__ == '__main__':
+    from tcspy.utils import InterruptHandler
+    # Install BEFORE MultiTelescopes(): every Manager and observation process
+    # forked afterwards inherits the handler and becomes immune to Ctrl+C;
+    # only the abort_action Event can stop them.
+    interrupt = InterruptHandler()
+    interrupt.install()
     M = MultiTelescopes()
     abort_action = Event()
-    A = AppScheduler(M, abort_action)
+    A = AppScheduler(M, abort_action, interrupt = interrupt)
     A.clear_schedule()
     alert_slack = True
 
@@ -374,10 +414,16 @@ if __name__ == '__main__':
         time.sleep(10)
         A.clear_schedule()
 
+    if interrupt.interrupted:
+        print('[SIGINT] AppScheduler is terminated by user.')
+        raise SystemExit(0)
 
     while Time.now() < A.obsnight_utc.sunrise_observation + 5 * u.minute:
         time.sleep(1)
-    
+        if interrupt.interrupted:
+            print('[SIGINT] AppScheduler is terminated by user.')
+            raise SystemExit(0)
+
     # Flat
     if Time.now() < A.obsnight_utc.sunrise_flat:
         A.schedule_app(A.run_flat, A.obsnight.sunrise_flat, count = 9, binning = 1, gain = 2750, alert_slack = alert_slack)

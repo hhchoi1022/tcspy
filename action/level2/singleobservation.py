@@ -11,6 +11,7 @@ from tcspy.interfaces import *
 from tcspy.utils.error import *
 from tcspy.utils.target import SingleTarget
 from tcspy.utils.exception import *
+from tcspy.utils.ditheringpattern import generate_dithering_offsets
 
 from tcspy.action.level1 import SlewRADec
 from tcspy.action.level1 import SlewAltAz
@@ -90,6 +91,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             autofocus_when_filterchange : bool = False,
             autofocus_when_elapsed : bool = False,
             autofocus_elapsed_duration : float = 60,
+            dither_offset_arcsec : float = None,
             observation_status : dict = None,
             **kwargs
             ):
@@ -121,7 +123,12 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             Whether or not to autofocus before beginning the first observation set. If not provided, it will not autofocus before beginning the observation.
         autofocus_when_filterchange : bool, optional
             Whether or not to autofocus when filter changes. If not provided, it will not autofocus when the filter changes.
-        
+        dither_offset_arcsec : float, optional
+            If given (> 0), apply an outward-spiral dithering pattern between frames with this
+            spacing in arcseconds. Requires a PWI4 mount and a RA/Dec target. The dithering
+            position of each frame follows the frame index, so resumed observations continue
+            the pattern consistently. Offsets are reset after the observation.
+
         Raises
         ------
         ConnectionException:
@@ -307,6 +314,31 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
             self.is_running = False
             raise ActionFailedException(f'[{type(self).__name__}] is failed: Coordinate type of the target : {target.status["coordtype"]} is not defined')
 
+        # Reset any residual PWI4 pointing offsets (e.g. from a previously aborted dithering sequence)
+        if self.telescope.mount_type == 'pwi4':
+            try:
+                self.telescope.mount.reset_offset()
+            except Exception:
+                self.telescope.log.warning(f'==========LV2[{type(self).__name__}] Mount offset reset is failed. Continuing without reset.')
+
+        # Dithering configuration (triggered only when dither_offset_arcsec is set)
+        use_dither = False
+        dither_offsets = None
+        if dither_offset_arcsec not in (None, '', 'None'):
+            try:
+                dither_offset_value = float(dither_offset_arcsec)
+            except (TypeError, ValueError):
+                dither_offset_value = 0
+            if dither_offset_value > 0:
+                if self.telescope.mount_type != 'pwi4':
+                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] Dithering is only supported for PWI4 mounts. Dithering is skipped.')
+                elif target.status['coordtype'] != 'radec':
+                    self.telescope.log.warning(f'==========LV2[{type(self).__name__}] Dithering requires a RA/Dec target. Dithering is skipped.')
+                else:
+                    dither_offsets = generate_dithering_offsets(n_points = 25, offset_arcsec = dither_offset_value)
+                    use_dither = True
+                    self.telescope.log.info(f'==========LV2[{type(self).__name__}] Dithering is enabled (spiral pattern, offset = {dither_offset_value}")')
+
         # Get exposure information
         observation_requested = self._exposureinfo_to_list(filter_ = exposure_info['filter_'], exptime = exposure_info['exptime'], count = exposure_info['count'], binning = exposure_info['binning'])
         # Set observation status. If observation_status is inputted, run() will resume according to the observation_status
@@ -438,6 +470,16 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                         except ActionFailedException:
                             self.telescope.log.warning(f'[{type(self).__name__}] Autofocus is failed. Return to the previous focus value')
                             
+                # Dithering: move to the spiral position of this frame before exposing
+                if use_dither:
+                    dither_index = int(observation_status[filter_]['observed'])
+                    dither_ra_arcsec, dither_dec_arcsec = dither_offsets[dither_index % len(dither_offsets)]
+                    try:
+                        self.telescope.mount.offset_radec(ra_arcsec = dither_ra_arcsec, dec_arcsec = dither_dec_arcsec, is_relative = False)
+                        self.telescope.log.info(f'==========LV2[{type(self).__name__}] Dithering position {dither_index}: dRA = {dither_ra_arcsec}", dDec = {dither_dec_arcsec}"')
+                    except Exception:
+                        self.telescope.log.warning(f'==========LV2[{type(self).__name__}] Dithering offset failed. Exposing without offset.')
+
                 # Exposure
                 try:
                     self.action = action_exposure
@@ -488,6 +530,13 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
                     self.shared_memory['is_running'] = False
                     self.is_running = False
                     raise ActionFailedException(f'[{type(self).__name__}] is failed: exposure failure.')
+
+        # Dithering: reset the accumulated offsets after the observation
+        if use_dither:
+            try:
+                self.telescope.mount.reset_offset()
+            except Exception:
+                self.telescope.log.warning(f'==========LV2[{type(self).__name__}] Mount offset reset is failed after dithering.')
 
         self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')
         self.shared_memory['succeeded'] = all(result_all_exposure)

@@ -76,7 +76,7 @@ class MultiAction:
         """
         Add the parameters for each thread in the queue.
         """
-        self.abort_action.clear()
+        # self.abort_action.clear()
         for process in self.multiprocess.values():
             process.start()
         is_running = self.status.values()

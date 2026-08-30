@@ -602,6 +602,83 @@ class mainMount_pwi4(mainConfig):
         self._log.info('Tracking deactivated')
         return True        
     
+    def offset_radec(self,
+                     ra_arcsec : float,
+                     dec_arcsec : float,
+                     is_relative : bool = False):
+        """
+        Apply a small RA/Dec pointing offset via the PWI4 offset API (used for dithering).
+
+        Parameters
+        ----------
+        ra_arcsec : float
+            RA offset in arcseconds (passed to PWI4 as-is).
+        dec_arcsec : float
+            Dec offset in arcseconds.
+        is_relative : bool, optional
+            If False (default), the values SET the total accumulated offset
+            (idempotent per dithering position). If True, the values are ADDED
+            to the current offset.
+        """
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+
+        try:
+            try:
+                if is_relative:
+                    self.device.mount_offset(ra_add_arcsec = float(ra_arcsec), dec_add_arcsec = float(dec_arcsec))
+                else:
+                    self.device.mount_offset(ra_set_total_arcsec = float(ra_arcsec), dec_set_total_arcsec = float(dec_arcsec))
+            except:
+                self._log.critical('Mount offset is failed')
+                raise SlewingFailedException('Mount offset is failed')
+
+            # Wait for the mount to settle on the offset position
+            time.sleep(float(self.config['MOUNT_CHECKTIME']))
+            status = self.get_status()
+            while status['is_slewing']:
+                time.sleep(float(self.config['MOUNT_CHECKTIME']))
+                status = self.get_status()
+            time.sleep(1)
+            self._log.info('Mount offset applied (dRA = %.2f", dDec = %.2f")' % (float(ra_arcsec), float(dec_arcsec)))
+            return True
+
+        except Exception as e:
+            exception_raised = e
+
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
+
+    def reset_offset(self):
+        """
+        Clear all accumulated RA/Dec offsets (pointing returns to the slewed target center).
+        """
+        self.is_idle.clear()
+        self.device_lock.acquire()
+        exception_raised = None
+
+        try:
+            try:
+                self.device.mount_offset(ra_reset = 0, dec_reset = 0)
+            except:
+                self._log.critical('Mount offset reset is failed')
+                raise SlewingFailedException('Mount offset reset is failed')
+            self._log.info('Mount offset is reset')
+            return True
+
+        except Exception as e:
+            exception_raised = e
+
+        finally:
+            self.device_lock.release()
+            self.is_idle.set()
+            if exception_raised:
+                raise exception_raised
+
     def wait_idle(self):
         self.is_idle.wait()
 

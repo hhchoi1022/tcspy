@@ -77,21 +77,23 @@ class TelescopeStatus(Interface):
                         status = 'idle'
                     if mount.device.AtPark:
                         status = 'idle'
-                    if mount.device.Slewing:
-                        status = 'busy'
                     if mount.device.Tracking:
                         status = 'idle'
+                    # Checked last: a mount slewing while tracking must report busy
+                    if mount.device.Slewing:
+                        status = 'busy'
             # PWI4 device
             else:
                 mount_status = mount.device.status()
                 if mount_status.mount.is_connected:
                     status = 'idle'
-                if (mount_status.mount.axis0.is_enabled == False) & (mount_status.mount.axis2.is_enabled == False):
-                    status = 'idle'
-                if mount_status.mount.is_slewing:
-                    status = 'busy'
-                if mount_status.mount.is_tracking:
-                    status = 'idle'
+                    if (mount_status.mount.axis0.is_enabled == False) & (mount_status.mount.axis1.is_enabled == False):
+                        status = 'idle'  # parked (both axes disabled); reported as idle on purpose
+                    if mount_status.mount.is_tracking:
+                        status = 'idle'
+                    # Checked last: PWI4 sets is_slewing and is_tracking together during a goto
+                    if mount_status.mount.is_slewing:
+                        status = 'busy'
         except:
             pass
         return status

@@ -97,9 +97,12 @@ class MultiTelescopes(mainConfig):
         """
         telescope_name = singletelescope.name
         log = mainLogger(unitnum = singletelescope.unitnum, logger_name = __name__+str(singletelescope.unitnum)).log()
+        # Keep _devices_list (the source of status/filters/_dict_logs) in sync with devices
+        self._devices_list = [tel for tel in self._devices_list if tel.name != telescope_name]
+        self._devices_list.append(singletelescope)
         self.devices[telescope_name] = singletelescope
         self.log_dict[telescope_name] = log
-    
+
     def remove(self,
                telescope_name):
         """
@@ -110,8 +113,12 @@ class MultiTelescopes(mainConfig):
         telescope_name : str
             The name of the telescope to remove.
         """
-        self.devices.pop(telescope_name)
-        self.log_dict.pop(telescope_name)
+        # Keep _devices_list (the source of status/filters/_dict_logs) in sync with devices.
+        # pop(..., None): removing an already-removed telescope must not kill the
+        # calling thread (Startup/Shutdown _process) with a KeyError.
+        self._devices_list = [tel for tel in self._devices_list if tel.name != telescope_name]
+        self.devices.pop(telescope_name, None)
+        self.log_dict.pop(telescope_name, None)
         self.log = self._all_logs()
 
     @property

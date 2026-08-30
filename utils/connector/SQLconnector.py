@@ -43,13 +43,19 @@ class SQLConnector:
         print("Connection pool has been closed.")
 
     def execute(self, sql_command, params=None, commit=False):
+        """
+        Execute a write/DDL statement. Returns True on success, None on failure.
+        NOTE: never returns a cursor — the cursor is closed in `finally` BEFORE
+        the caller receives the return value, so a returned cursor would always
+        be a closed one. Use query() to read data.
+        """
         conn = self.connect()
         cursor = conn.cursor(buffered=True)
         try:
             cursor.execute(sql_command, params)
             if commit:
                 conn.commit()
-            return cursor
+            return True
         except Error as e:
             conn.rollback()
             print(f"Error: {e}")
@@ -58,10 +64,27 @@ class SQLConnector:
             cursor.close()
             conn.close()
 
+    def query(self, sql_command, params=None):
+        """
+        Execute a read statement and return the fetched rows (list of tuples).
+        Rows are fetched while the cursor is still alive. Returns None on failure.
+        """
+        conn = self.connect()
+        cursor = conn.cursor(buffered=True)
+        try:
+            cursor.execute(sql_command, params)
+            return cursor.fetchall()
+        except Error as e:
+            print(f"Error: {e}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
     @property
     def databases(self):
-        cursor = self.execute("SHOW DATABASES")
-        return [db_name[0] for db_name in cursor] if cursor else []
+        rows = self.query("SHOW DATABASES")
+        return [db_name[0] for db_name in rows] if rows else []
 
     def change_db(self, db_name: str):
         self.db_name = db_name
@@ -83,19 +106,19 @@ class SQLConnector:
 
     @property
     def tables(self):
-        cursor = self.execute(f"SHOW TABLES")
-        return [tbl_name[0] for tbl_name in cursor] if cursor else []
+        rows = self.query(f"SHOW TABLES")
+        return [tbl_name[0] for tbl_name in rows] if rows else []
 
     def remove_tbl(self, tbl_name: str):
         self.execute(f"DROP TABLE {tbl_name}", commit=True)
 
     def get_colnames(self, tbl_name: str):
-        cursor = self.execute(f"SHOW COLUMNS FROM {tbl_name};")
-        return [column[0] for column in cursor.fetchall()] if cursor else []
+        rows = self.query(f"SHOW COLUMNS FROM {tbl_name};")
+        return [column[0] for column in rows] if rows else []
 
     def get_column_data_types(self, tbl_name: str):
-        cursor = self.execute(f"SHOW COLUMNS FROM {tbl_name}")
-        column_info = cursor.fetchall() if cursor else []
+        rows = self.query(f"SHOW COLUMNS FROM {tbl_name}")
+        column_info = rows if rows else []
         return {col[0]: col[1] for col in column_info}
 
     def remove_rows(self, tbl_name: str, ids: list or str):
@@ -118,8 +141,8 @@ class SQLConnector:
 
         insertion_results = []
         for value in values:
-            cursor = self.execute(sql_command, value, commit=True)
-            insertion_results.append(cursor is not None)
+            result = self.execute(sql_command, value, commit=True)
+            insertion_results.append(result is not None)
         return insertion_results
 
     def update_row(self, tbl_name: str, update_value: list or str, update_key: list or str, id_value: list or str, id_key: list or str = ['id']):
@@ -144,8 +167,8 @@ class SQLConnector:
         if isinstance(update_value, (str, np.int64, np.float64, np.integer, np.floating)):
             update_command = f"{update_key} = '{update_value}'"
             sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {where_clause}"
-            cursor = self.execute(sql_command, id_value if isinstance(id_value, list) else [id_value], commit=True)
-            return cursor is not None
+            result = self.execute(sql_command, id_value if isinstance(id_value, list) else [id_value], commit=True)
+            return result is not None
         else:
             update_command = ', '.join([f"{key} = %s" for key in update_key])
             sql_command = f"UPDATE {tbl_name} SET {update_command} WHERE {where_clause}"
@@ -153,8 +176,8 @@ class SQLConnector:
             value = tuple(convert_value(val) for val in value_None)
             # Combine update values with id values for the placeholders
             all_values = value + (tuple(id_value) if isinstance(id_value, list) else (id_value,))
-            cursor = self.execute(sql_command, all_values, commit=True)
-            return cursor is not None
+            result = self.execute(sql_command, all_values, commit=True)
+            return result is not None
 
     def get_data(self, tbl_name: str, select_key: str = '*', where_value: str = None, where_key: str = 'id', out_format: str = 'Table'):
         keys = select_key.split(',')
@@ -164,8 +187,8 @@ class SQLConnector:
         sql_command = f"SELECT {select_key} FROM {tbl_name}"
         if where_value:
             sql_command = f"SELECT {select_key} FROM {tbl_name} WHERE {where_key} = '{where_value}'"
-        cursor = self.execute(sql_command)
-        output = cursor.fetchall() if cursor else []
+        rows = self.query(sql_command)
+        output = rows if rows else []
         if out_format.lower() == 'table':
             result = Table()
         else:

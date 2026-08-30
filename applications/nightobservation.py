@@ -132,7 +132,16 @@ class NightObservation(mainConfig):
                       autofocus_when_filterchange = self.autofocus.when_filterchange,
                       autofocus_when_elapsed = self.autofocus.when_elapsed,
                       autofocus_elapsed_duration = self.autofocus.elapsed_duration,
-                      observation_status = observation_status)  
+                      observation_status = observation_status)
+        # Dithering offset from the DB column 'DITHER_OFFSET_ARCSEC' (None/empty -> no dithering)
+        kwargs['dither_offset_arcsec'] = None
+        if 'DITHER_OFFSET_ARCSEC' in target.colnames:
+            try:
+                dither_value = target['DITHER_OFFSET_ARCSEC']
+                if dither_value is not None and str(dither_value).strip() not in ('', 'None', '--'):
+                    kwargs['dither_offset_arcsec'] = float(dither_value)
+            except Exception:
+                kwargs['dither_offset_arcsec'] = None
         # Check observability when observation_status is given (when observationn is resumed)
         is_observable = True
         if observation_status:
@@ -230,9 +239,11 @@ class NightObservation(mainConfig):
         while process.is_alive():
             time.sleep(0.1)
         
-        # Check the exception
+        # Check the exception. A crashed child process leaves exception = None with
+        # succeeded = False; treat that as 'failed', never as 'observed'.
         exception = action.shared_memory['exception']
-        if not exception:
+        succeeded = action.shared_memory['succeeded']
+        if not exception and succeeded:
             self.DB.update_target(update_values = [Time.now().isot, 'observed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
@@ -240,7 +251,9 @@ class NightObservation(mainConfig):
             self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
-        elif exception == 'ActionFailedException':
+        else:
+            if not exception:
+                self.multitelescopes.log.critical(f'[{type(self).__name__}] Observation process of {target["objname"]} died without recording an exception. Marked as failed.')
             self.DB.update_target(update_values = [Time.now().isot, 'failed'], update_keys = ['obs_endtime','status'], id_value = [target['id'],target['objname']], id_key = ['id','objname'])
             self.DB.export_to_csv()
             telescopes.update_statusfile(status = 'idle', do_trigger = True)
@@ -252,7 +265,7 @@ class NightObservation(mainConfig):
     def abort(self):
         # Abort NightObservation
         self.abort_action.set()
-        aborted_action, aborted_observation_status = None
+        aborted_action, aborted_observation_status = None, None
         if self.is_rapidToO_triggered:
             aborted_action, aborted_observation_status = self._abort_ToO()
         else:
@@ -288,7 +301,7 @@ class NightObservation(mainConfig):
         obs_start_time = self.obsnight.sunset_observation
         obs_end_time = self.obsnight.sunrise_observation
         now = Time.now()
-        
+        self._ToO_abort.clear()
         # Wait until sunset
         if now < obs_start_time:
             self.multitelescopes.log.info('Wait until sunset... [%.2f hours left]'%((Time.now() - obs_start_time)*24).value)
@@ -352,7 +365,7 @@ class NightObservation(mainConfig):
                 #unsafe_weather_count += 1
                 aborted_action_ToO, aborted_observation_status_ToO = self._abort_ToO()
                 self.multitelescopes.log.info(f'[{type(self).__name__} ToO is aborted: Unsafe weather]')
-                self._ToO_abort = Event()
+                #self._ToO_abort = Event()
                 #self.is_rapidToO_triggered = True
                 if not is_shutdown_triggered:
                     Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
@@ -366,7 +379,7 @@ class NightObservation(mainConfig):
         self.is_rapidToO_triggered = False
         print('ToO observation finished', Time.now())
         self.multitelescopes.log.info(f'[{type(self).__name__}] ToO observation is finished')
-        self._observation_abort = Event()
+        #self._observation_abort = Event()
         
         # Resume the ordinary aborted observation
         for action, observation_status in zip(aborted_action, aborted_observation_status):
@@ -380,8 +393,7 @@ class NightObservation(mainConfig):
         self.is_running = True
         self.multitelescopes.register_logfile()
         self.multitelescopes.log.info(f'[{type(self).__name__}] is triggered.')
-        self._observation_abort = Event()
-        self._ToO_abort = Event()
+        self._observation_abort.clear()
         obs_start_time = self.obsnight.sunset_observation
         obs_end_time = self.obsnight.sunrise_observation
         now = Time.now() 
@@ -435,8 +447,11 @@ class NightObservation(mainConfig):
                             else:
                                 # If ToO is triggered within 30 minutes, trigger ordinary observation
                                 best_target, score = self.DB.best_target(utctime = now, force_non_ToO= True)
-                                print(f'Best target: {now.isot, best_target["objname"]}')
-                                self.dispatch_observation(target = best_target, abort_action = self._observation_abort)
+                                if best_target:
+                                    print(f'Best target: {now.isot, best_target["objname"]}')
+                                    self.dispatch_observation(target = best_target, abort_action = self._observation_abort)
+                                else:
+                                    print('No observable target exists... Waiting for target being observable or new target input')
                         else:
                             print(f'Best target: {now.isot, best_target["objname"]}')
                             self.dispatch_observation(target = best_target, abort_action = self._observation_abort)
@@ -448,7 +463,7 @@ class NightObservation(mainConfig):
                     aborted_action, aborted_observation_status = self._abort_observation()
                     self.multitelescopes.log.info(f'[{type(self).__name__}] is aborted: Unsafe weather')
                 self.multitelescopes.log.info(f'[{type(self).__name__}] is waiting for safe weather condition')
-                self._observation_abort = Event()
+                #self._observation_abort = Event()
                 if not is_shutdown_triggered:
                     Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
                     is_shutdown_triggered = True
@@ -541,6 +556,7 @@ class NightObservation(mainConfig):
                 self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = [action['target']['objname'], action['target']['id']], id_key = ['objname','id'])
                 self.DB.export_to_csv()
         # Get status of all telescopes
+        self._observation_abort.clear()
         return action_history, observation_status_history
         
     def _abort_ToO(self):
@@ -567,6 +583,7 @@ class NightObservation(mainConfig):
                 self.DB.update_target(update_values = [Time.now().isot, 'aborted'], update_keys = ['obs_endtime','status'], id_value = action['target']['id'], id_key = 'id')
                 self.DB.export_to_csv()
         self.is_rapidToO_triggered = False
+        self._ToO_abort.clear()
         return action_history, observation_status_history
 
 
@@ -575,6 +592,12 @@ if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes
     from tcspy.utils.connector import SlackConnector
     from tcspy.utils import NightSession
+    from tcspy.utils import InterruptHandler
+    # Install BEFORE MultiTelescopes()/NightObservation(): every Manager and
+    # observation process forked afterwards inherits the handler and becomes
+    # immune to Ctrl+C; only the abort_action Event can stop them.
+    interrupt = InterruptHandler()
+    interrupt.install()
     M = MultiTelescopes()
     abort_action = Event()
     application = NightObservation(M, abort_action)
@@ -590,9 +613,16 @@ if __name__ == '__main__':
     application.run()
     while application.is_running:
         time.sleep(0.1)
+        if interrupt.interrupted:
+            print('[SIGINT] Aborting NightObservation...')
+            application.abort()
+            break
     try:
         if message_ts:
-            slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
+            if interrupt.interrupted:
+                slack.post_thread_message(message_ts,f'{type(application).__name__} is aborted by user: {time.strftime("%H:%M:%S", time.localtime())}')
+            else:
+                slack.post_thread_message(message_ts,f'{type(application).__name__} is finished: {time.strftime("%H:%M:%S", time.localtime())}')
     except:
         pass
     

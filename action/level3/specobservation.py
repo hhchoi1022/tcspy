@@ -91,6 +91,7 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
             autofocus_when_filterchange : bool = False,
             autofocus_when_elapsed : bool = False,
             autofocus_elapsed_duration : float = 60,
+            dither_offset_arcsec : float = None,
             observation_status : dict = None,
             **kwargs
             ):
@@ -234,7 +235,8 @@ class SpecObservation(Interface_Runnable, Interface_Abortable, mainConfig):
                               autofocus_before_start= autofocus_before_start, 
                               autofocus_when_filterchange= autofocus_when_filterchange, 
                               autofocus_when_elapsed = autofocus_when_elapsed,
-                              autofocus_elapsed_time = autofocus_elapsed_duration, 
+                              autofocus_elapsed_time = autofocus_elapsed_duration,
+                              dither_offset_arcsec = dither_offset_arcsec,
                               observation_status = observation_status_single,
                               **exposure_params,
                               **target_params)
