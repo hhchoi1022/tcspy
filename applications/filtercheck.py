@@ -163,10 +163,8 @@ if __name__ == '__main__':
     
     M = MultiTelescopes()
     # Update config not to return log file
-    original_config = []
     for tel in M.devices.values():
         config = mainConfig(tel.unitnum)
-        original_config.append(config.config['IMAGE_SAVELOG'])
         config.update_config('IMAGE_SAVELOG', False)
         
     multitelescopes = MultiTelescopes()
@@ -196,7 +194,7 @@ if __name__ == '__main__':
     except:
         pass
     # Update config to original
-    for tel, config_value in zip(M.devices.values(), original_config):
+    for tel in M.devices.values():
         config = mainConfig(tel.unitnum)
         config.update_config('IMAGE_SAVELOG', True)
 # %%

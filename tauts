@@ -1,0 +1,270 @@
+[1mdiff --git a/action/level2/__pycache__/autofocus.cpython-311.pyc b/action/level2/__pycache__/autofocus.cpython-311.pyc[m
+[1mindex 58fbdd01a..d52b3cdfa 100644[m
+Binary files a/action/level2/__pycache__/autofocus.cpython-311.pyc and b/action/level2/__pycache__/autofocus.cpython-311.pyc differ
+[1mdiff --git a/action/level2/__pycache__/singleobservation.cpython-311.pyc b/action/level2/__pycache__/singleobservation.cpython-311.pyc[m
+[1mindex d0b672920..4893adcf6 100644[m
+Binary files a/action/level2/__pycache__/singleobservation.cpython-311.pyc and b/action/level2/__pycache__/singleobservation.cpython-311.pyc differ
+[1mdiff --git a/action/level2/autofocus.py b/action/level2/autofocus.py[m
+[1mindex 2b35acf7f..22758a7d2 100644[m
+[1m--- a/action/level2/autofocus.py[m
+[1m+++ b/action/level2/autofocus.py[m
+[36m@@ -93,6 +93,14 @@[m [mclass AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):[m
+         self.is_running = True[m
+         self.shared_memory['is_running'] = True[m
+         self.shared_memory['succeeded'] = False[m
+[32m+[m
+[32m+[m[32m        # Check safety condition[m
+[32m+[m[32m        if (self.telescope.safetymonitor.get_status()['is_safe'] == False) | (self.telescope.weather.get_status()['is_safe'] == False):[m
+[32m+[m[32m            self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is failed: Unsafe weather.')[m
+[32m+[m[32m            self.shared_memory['exception'] = 'ActionFailedException'[m
+[32m+[m[32m            self.shared_memory['is_running'] = False[m
+[32m+[m[32m            self.is_running = False[m
+[32m+[m[32m            raise ActionFailedException(f'[{type(self).__name__}] is failed: Unsafe weather.')[m
+         [m
+         # Check device status[m
+         status_camera = self.telescope_status.camera[m
+[36m@@ -211,56 +219,6 @@[m [mclass AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):[m
+             self.is_running = False[m
+             return True[m
+         [m
+[31m-        # If autofocus process is failed, try autofocus again with the focus value in the history [m
+[31m-        # elif focus_history['succeeded']:[m
+[31m-        #     now = Time.now()[m
+[31m-        #     elapsed_time = now - Time(focus_history['update_time'])[m
+[31m-        #     try:[m
+[31m-        #         self.action = action_changefocus[m
+[31m-        #         result_changefocus = action_changefocus.run(position = focus_history['focusval'], is_relative = False)[m
+[31m-        #     except ConnectionException:[m
+[31m-        #         self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')    [m
+[31m-        #         self.shared_memory['exception'] = 'ConnectionException'            [m
+[31m-        #         self.shared_memory['is_running'] = False[m
+[31m-        #         self.is_running = False[m
+[31m-        #         raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                [m
+[31m-        #     except AbortionException:[m
+[31m-        #         while action_changefocus.shared_memory['is_running']:[m
+[31m-        #             time.sleep(0.1)[m
+[31m-        #         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')[m
+[31m-        #         self.shared_memory['exception'] = 'AbortionException'[m
+[31m-        #         self.shared_memory['is_running'] = False[m
+[31m-        #         self.is_running = False[m
+[31m-        #         raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')[m
+[31m-        #     except ActionFailedException:[m
+[31m-        #         self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')[m
+[31m-        #         self.shared_memory['exception'] = 'ActionFailedException'[m
+[31m-        #         self.shared_memory['is_running'] = False[m
+[31m-        #         self.is_running = False[m
+[31m-        #         raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')[m
+[31m-        #     self.telescope.log.info(f'[{type(self).__name__}]Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')[m
+[31m-            [m
+[31m-        #     try: [m
+[31m-        #         result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)[m
+[31m-        #         # When succeeded[m
+[31m-        #         if result_autofocus:[m
+[31m-        #             self.update_focus_history(filter_ = filter_, focusval =autofocus_position, focuserr = autofocus_error, is_succeeded = result_autofocus)[m
+[31m-        #             self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')[m
+[31m-        #             self.shared_memory['succeeded'] = True[m
+[31m-        #             self.shared_memory['is_running'] = False[m
+[31m-        #             self.is_running = False[m
+[31m-        #             return True[m
+[31m-        #     except AbortionException:[m
+[31m-        #         self.telescope.focuser.wait_idle()[m
+[31m-        #         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')[m
+[31m-        #         self.shared_memory['exception'] = 'AbortionException'[m
+[31m-        #         self.shared_memory['is_running'] = False[m
+[31m-        #         self.is_running = False[m
+[31m-        #         raise AbortionException(f'[{type(self).__name__}] is aborted.') [m
+[31m- [m
+[31m-        #     except AutofocusFailedException:[m
+[31m-        #         self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 2nd try failed.')[m
+[31m-        [m
+         # If autofocus process is still failed, grid search[m
+         if search_focus_when_failed:[m
+             self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 1st try failed. Try grid search methods..')[m
+[1mdiff --git a/action/level2/singleobservation.py b/action/level2/singleobservation.py[m
+[1mindex 5e2422fc2..525cef221 100644[m
+[1m--- a/action/level2/singleobservation.py[m
+[1m+++ b/action/level2/singleobservation.py[m
+[36m@@ -173,6 +173,7 @@[m [mclass SingleObservation(Interface_Runnable, Interface_Abortable):[m
+         except:[m
+             trigger_abort_disconnected = True[m
+             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: mount status cannot be loaded.')[m
+[32m+[m[41m        [m
+         try:[m
+             self.telescope.log.info(f'Checking camera status...')[m
+ [m
+[36m@@ -180,6 +181,7 @@[m [mclass SingleObservation(Interface_Runnable, Interface_Abortable):[m
+         except Exception as e:[m
+             trigger_abort_disconnected = True[m
+             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera status cannot be loaded. Exception: {e}')[m
+[32m+[m[41m        [m
+         try:[m
+             self.telescope.log.info(f'Checking filterwheel status...')[m
+ [m
+[36m@@ -544,23 +546,44 @@[m [mclass SingleObservation(Interface_Runnable, Interface_Abortable):[m
+ [m
+ #%%    [m
+ if __name__ == '__main__':[m
+[31m-    from threading import Thread[m
+[31m-    kwargs = dict([m
+[31m-    exptime= '1',[m
+[31m-    count= '1',[m
+[31m-    filter_ = 'm450',[m
+[31m-    binning= '1',[m
+[31m-    imgtype = 'Light',[m
+[31m-    alt = 30,[m
+[31m-    az= 90,[m
+[31m-    name = "Test",[m
+[31m-    objtype = 'Testt',[m
+[31m-    autofocus_before_start= False,[m
+[31m-    autofocus_when_filterchange= False)              [m
+[32m+[m[32m    exptime = 5[m
+[32m+[m[32m    count  = 3[m
+[32m+[m[32m    obsmode : str = 'Spec'[m
+[32m+[m[32m    filter_ : str = 'r'[m
+[32m+[m[32m    specmode : str = 'specall'[m
+[32m+[m[32m    colormode : str = None[m
+[32m+[m[32m    ntelescope : int = 1[m
+[32m+[m[32m    gain : int = 2750[m
+[32m+[m[32m    binning : str = '1'[m
+[32m+[m[32m    imgtype : str = 'Light'[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Target information[m
+[32m+[m[32m    ra : float = None  # When radec == None: do not move[m[41m [m
+[32m+[m[32m    dec : float = None[m
+[32m+[m[32m    alt : float = 30  # When altaz == None: do not move[m[41m [m
+[32m+[m[32m    az : float = 270[m
+[32m+[m[32m    name : str = None[m
+[32m+[m[32m    objtype : str = None[m
+[32m+[m[32m    id_ : str = None[m
+[32m+[m[32m    note : str = None[m
+[32m+[m[32m    comment : str = None[m
+[32m+[m[32m    is_ToO : bool = False[m
+[32m+[m[32m    is_rapidToO : bool = False[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Auxiliary parameters[m
+[32m+[m[32m    force_slewing : bool = False[m
+[32m+[m[32m    autofocus_use_history : bool = True[m
+[32m+[m[32m    autofocus_history_duration : float = 60[m
+[32m+[m[32m    autofocus_before_start : bool = False[m
+[32m+[m[32m    autofocus_when_filterchange : bool = False[m
+[32m+[m[32m    autofocus_when_elapsed : bool = False[m
+[32m+[m[32m    autofocus_elapsed_duration : float = 60[m
+[32m+[m[32m    observation_status : dict = None[m
+[32m+[m[41m                 [m
+     from multiprocessing import Process[m
+     abort_action = Event()[m
+[31m-    s = SingleObservation(SingleTelescope(2),abort_action)[m
+[31m-    s.run(**kwargs)[m
+[32m+[m[32m    self = SingleObservation(SingleTelescope(2),abort_action)[m
+[32m+[m[32m    # s.run(**kwargs)[m
+ # %%[m
+ if __name__ == '__main__':[m
+     s.abort()[m
+[1mdiff --git a/action/level3/__pycache__/colorobservation.cpython-311.pyc b/action/level3/__pycache__/colorobservation.cpython-311.pyc[m
+[1mindex b9db74e1e..e7c6c9306 100644[m
+Binary files a/action/level3/__pycache__/colorobservation.cpython-311.pyc and b/action/level3/__pycache__/colorobservation.cpython-311.pyc differ
+[1mdiff --git a/action/level3/colorobservation.py b/action/level3/colorobservation.py[m
+[1mindex 3a659424d..47bfadb0f 100644[m
+[1m--- a/action/level3/colorobservation.py[m
+[1m+++ b/action/level3/colorobservation.py[m
+[36m@@ -282,26 +282,7 @@[m [mclass ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):[m
+     [m
+ # %%[m
+ if __name__ == '__main__':[m
+[31m-    import time[m
+[31m-    from tcspy.devices import SingleTelescope[m
+[31m-    start = time.time()[m
+[31m-    list_telescopes = [#SingleTelescope(1),[m
+[31m-                        SingleTelescope(2),[m
+[31m-                        SingleTelescope(3),[m
+[31m-                        SingleTelescope(5),[m
+[31m-                        #SingleTelescope(6),[m
+[31m-                        SingleTelescope(7),[m
+[31m-                        SingleTelescope(8),[m
+[31m-                        SingleTelescope(9),[m
+[31m-                        SingleTelescope(10),[m
+[31m-                        SingleTelescope(11),[m
+[31m-                        ][m
+[31m-    [m
+[31m-    print(time.time() - start)[m
+[31m-[m
+[31m-    start = time.time()[m
+[31m-[m
+[31m-    M = MultiTelescopes(list_telescopes)[m
+[32m+[m[32m    M = MultiTelescopes()[m
+ #%%[m
+ if __name__ == '__main__':[m
+     #M = MultiTelescopes([SingleTelescope(21)])[m
+[36m@@ -316,6 +297,7 @@[m [mif __name__ == '__main__':[m
+     ra= None[m
+     dec= None[m
+     alt =40 [m
+[32m+[m[32m    specmode= None[m
+     az = 300[m
+     name = "GRB240516A"[m
+     objtype = 'ToO'[m
+[36m@@ -329,9 +311,9 @@[m [mif __name__ == '__main__':[m
+         autofocus_when_filterchange= autofocus_when_filterchange,[m
+         autofocus_when_elapsed = autofocus_when_elapsed,[m
+         )[m
+[31m-    from threading import Thread[m
+[31m-    t = Thread(target = S.run, kwargs= kwargs)[m
+[31m-    t.start()[m
+[32m+[m[32m    # from threading import Thread[m
+[32m+[m[32m    # t = Thread(target = S.run, kwargs= kwargs)[m
+[32m+[m[32m    # t.start()[m
+     #t.abort()[m
+ # %%[m
+ if __name__ == '__main__':[m
+[1mdiff --git a/applications/__pycache__/autofocus_init.cpython-311.pyc b/applications/__pycache__/autofocus_init.cpython-311.pyc[m
+[1mindex d43509f35..59dc78638 100644[m
+Binary files a/applications/__pycache__/autofocus_init.cpython-311.pyc and b/applications/__pycache__/autofocus_init.cpython-311.pyc differ
+[1mdiff --git a/applications/__pycache__/biasacquisition.cpython-311.pyc b/applications/__pycache__/biasacquisition.cpython-311.pyc[m
+[1mindex 3d3dab88a..ac3078589 100644[m
+Binary files a/applications/__pycache__/biasacquisition.cpython-311.pyc and b/applications/__pycache__/biasacquisition.cpython-311.pyc differ
+[1mdiff --git a/applications/__pycache__/darkacquisition.cpython-311.pyc b/applications/__pycache__/darkacquisition.cpython-311.pyc[m
+[1mindex 349e47c5c..9b190be6d 100644[m
+Binary files a/applications/__pycache__/darkacquisition.cpython-311.pyc and b/applications/__pycache__/darkacquisition.cpython-311.pyc differ
+[1mdiff --git a/applications/__pycache__/filtercheck.cpython-311.pyc b/applications/__pycache__/filtercheck.cpython-311.pyc[m
+[1mindex 06fd591d7..1ecfa85bb 100644[m
+Binary files a/applications/__pycache__/filtercheck.cpython-311.pyc and b/applications/__pycache__/filtercheck.cpython-311.pyc differ
+[1mdiff --git a/applications/__pycache__/nightobservation.cpython-311.pyc b/applications/__pycache__/nightobservation.cpython-311.pyc[m
+[1mindex 0b3830575..ca9d6cecc 100644[m
+Binary files a/applications/__pycache__/nightobservation.cpython-311.pyc and b/applications/__pycache__/nightobservation.cpython-311.pyc differ
+[1mdiff --git a/applications/__pycache__/shutdown.cpython-311.pyc b/applications/__pycache__/shutdown.cpython-311.pyc[m
+[1mindex 7142aa0fe..132865937 100644[m
+Binary files a/applications/__pycache__/shutdown.cpython-311.pyc and b/applications/__pycache__/shutdown.cpython-311.pyc differ
+[1mdiff --git a/applications/__pycache__/startup.cpython-311.pyc b/applications/__pycache__/startup.cpython-311.pyc[m
+[1mindex 91f892758..86cfdf50f 100644[m
+Binary files a/applications/__pycache__/startup.cpython-311.pyc and b/applications/__pycache__/startup.cpython-311.pyc differ
+[1mdiff --git a/applications/appscheduler.py b/applications/appscheduler.py[m
+[1mindex 53b69c385..83a917aff 100644[m
+[1m--- a/applications/appscheduler.py[m
+[1m+++ b/applications/appscheduler.py[m
+[36m@@ -158,6 +158,11 @@[m [mclass AppScheduler(mainConfig):[m
+         with self.thread_lock:[m
+             start_time = time.strftime("%H:%M:%S", time.localtime())[m
+             self.post_slack_thread(message = f'Filtercheck is triggered: {start_time}', alert_slack = alert_slack)[m
+[32m+[m[41m            [m
+[32m+[m[32m            for tel in self.multitelescopes.devices.values():[m
+[32m+[m[32m                config = mainConfig(tel.unitnum)[m
+[32m+[m[32m                config.update_config('IMAGE_SAVELOG', False)[m
+[32m+[m[41m            [m
+             action = FilterCheck(self.multitelescopes, abort_action = self.abort_action)[m
+             result = action.run(exptime = exptime)[m
+             while action.is_running:[m
+[36m@@ -165,6 +170,9 @@[m [mclass AppScheduler(mainConfig):[m
+             end_time = time.strftime("%H:%M:%S", time.localtime())[m
+             self.post_slack_thread(message = f'Filtercheck is finished: {end_time}', alert_slack = alert_slack)[m
+             # Convert result[0] dictionary to a formatted string[m
+[32m+[m[32m            for tel in self.multitelescopes.devices.values():[m
+[32m+[m[32m                config = mainConfig(tel.unitnum)[m
+[32m+[m[32m                config.update_config('IMAGE_SAVELOG', True)[m
+             skylevel_str = '\n'.join([f'{band}: ' + ', '.join([f'{telescope}: {value} \n' for telescope, value in telescopes.items()])[m
+                                     for band, telescopes in result[0].items()])[m
+             self.post_slack_thread(message=f'Skylevel:\n{skylevel_str}', alert_slack=alert_slack)[m
+[36m@@ -340,9 +348,9 @@[m [mif __name__ == '__main__':[m
+         A.schedule_app(A.run_startup, A.obsnight.sunset_startup, connect = True, home = True, slew = True, cool = True, alert_slack = alert_slack)[m
+     # Filtercheck[m
+     if Time.now() < A.obsnight_utc.sunset_flat:[m
+[31m-     

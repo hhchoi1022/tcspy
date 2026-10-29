@@ -255,12 +255,20 @@ class AlertBroker(mainConfig):
                   match_tolerance_minutes : float = 3
                   ) -> List[Alert]:
         
+        # def get_mail_generated_time(mail_dict):
+        #     parsed_date = datetime.strptime(mail_dict['Date'], '%a, %d %b %Y %H:%M:%S %z')
+        #     utc_date = parsed_date.astimezone(timezone.utc)
+        #     date_str = utc_date.strftime('%Y%m%d_%H%M%S')
+        #     return date_str
+
+        from email.utils import parsedate_to_datetime
+
         def get_mail_generated_time(mail_dict):
-            parsed_date = datetime.strptime(mail_dict['Date'], '%a, %d %b %Y %H:%M:%S %z')
+            parsed_date = parsedate_to_datetime(mail_dict['Date'])
             utc_date = parsed_date.astimezone(timezone.utc)
             date_str = utc_date.strftime('%Y%m%d_%H%M%S')
             return date_str
-        
+
         print('Reading the alert from GmailConnector...')
         self._set_gmail()
         try:

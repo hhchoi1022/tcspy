@@ -93,6 +93,14 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
         self.is_running = True
         self.shared_memory['is_running'] = True
         self.shared_memory['succeeded'] = False
+
+        # Check safety condition
+        if (self.telescope.safetymonitor.get_status()['is_safe'] == False) | (self.telescope.weather.get_status()['is_safe'] == False):
+            self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is failed: Unsafe weather.')
+            self.shared_memory['exception'] = 'ActionFailedException'
+            self.shared_memory['is_running'] = False
+            self.is_running = False
+            raise ActionFailedException(f'[{type(self).__name__}] is failed: Unsafe weather.')
         
         # Check device status
         status_camera = self.telescope_status.camera
@@ -210,56 +218,6 @@ class AutoFocus(Interface_Runnable, Interface_Abortable, mainConfig):
             self.shared_memory['is_running'] = False
             self.is_running = False
             return True
-        
-        # If autofocus process is failed, try autofocus again with the focus value in the history 
-        # elif focus_history['succeeded']:
-        #     now = Time.now()
-        #     elapsed_time = now - Time(focus_history['update_time'])
-        #     try:
-        #         self.action = action_changefocus
-        #         result_changefocus = action_changefocus.run(position = focus_history['focusval'], is_relative = False)
-        #     except ConnectionException:
-        #         self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser is disconnected.')    
-        #         self.shared_memory['exception'] = 'ConnectionException'            
-        #         self.shared_memory['is_running'] = False
-        #         self.is_running = False
-        #         raise ConnectionException(f'[{type(self).__name__}] is failed: Focuser is disconnected.')                
-        #     except AbortionException:
-        #         while action_changefocus.shared_memory['is_running']:
-        #             time.sleep(0.1)
-        #         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
-        #         self.shared_memory['exception'] = 'AbortionException'
-        #         self.shared_memory['is_running'] = False
-        #         self.is_running = False
-        #         raise AbortionException(f'[{type(self).__name__}] is aborted: Focuser movement is aborted.')
-        #     except ActionFailedException:
-        #         self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: Focuser movement failure.')
-        #         self.shared_memory['exception'] = 'ActionFailedException'
-        #         self.shared_memory['is_running'] = False
-        #         self.is_running = False
-        #         raise ActionFailedException(f'[{type(self).__name__}] is failed: Focuser movement failure.')
-        #     self.telescope.log.info(f'[{type(self).__name__}]Focus history is applied. Elapsed time : {round(elapsed_time.value*1440,1)}min')
-            
-        #     try: 
-        #         result_autofocus, autofocus_position, autofocus_error = self.telescope.focuser.autofocus_start(abort_action = self.abort_action)
-        #         # When succeeded
-        #         if result_autofocus:
-        #             self.update_focus_history(filter_ = filter_, focusval =autofocus_position, focuserr = autofocus_error, is_succeeded = result_autofocus)
-        #             self.telescope.log.info(f'==========LV2[{type(self).__name__}] is finished')
-        #             self.shared_memory['succeeded'] = True
-        #             self.shared_memory['is_running'] = False
-        #             self.is_running = False
-        #             return True
-        #     except AbortionException:
-        #         self.telescope.focuser.wait_idle()
-        #         self.telescope.log.warning(f'==========LV2[{type(self).__name__}] is aborted.')
-        #         self.shared_memory['exception'] = 'AbortionException'
-        #         self.shared_memory['is_running'] = False
-        #         self.is_running = False
-        #         raise AbortionException(f'[{type(self).__name__}] is aborted.') 
- 
-        #     except AutofocusFailedException:
-        #         self.telescope.log.warning(f'[{type(self).__name__}] Autofocus 2nd try failed.')
         
         # If autofocus process is still failed, grid search
         if search_focus_when_failed:

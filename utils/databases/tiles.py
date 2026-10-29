@@ -19,14 +19,33 @@ class Tiles:
             self.tile_path = os.path.join(current_dir, './tileinfo/7-DT/final_tiles.txt')
         else:
             self.tile_path = tile_path
-        self.tbl_RIS = None
-        self.coords_RIS = None
+        self._tiles = None
+        self._coords = None
+    
+    @property
+    def tiles(self):
+        # Lazy loading of tiles
+        if self._tiles is None:
+            self._tiles = ascii.read(self.tile_path)
+        return self._tiles
+    
+    @property
+    def coords(self):
+        # Lazy loading of coordinates
+        if self._coords is None:
+            self._coords = SkyCoord(ra=self.tiles['ra'], dec=self.tiles['dec'], unit=(u.deg, u.deg))
+        return self._coords
+        
+    def get_tile_info(self,
+                      tile_id: int):
+        if not str(tile_id).startswith('T'):
+            tile_id = 'T%.5d'% tile_id
+        return self.tiles[self.tiles['id'] == tile_id]
 
     def find_overlapping_tiles(self, 
                                list_ra, 
                                list_dec, 
                                list_aperture= 0,
-                               list_targetname= None,
                                visualize: bool = True, 
                                visualize_ncols: int = 5, 
                                visualize_savepath: str = './tiles',
@@ -60,10 +79,10 @@ class Tiles:
             raise ValueError("list_aperture must have the same length as list_ra and list_dec.")
 
         # Load the tile data
-        if not self.tbl_RIS:
-            self.tbl_RIS = ascii.read(self.tile_path)
-        if not self.coords_RIS:
-            self.coords_RIS = SkyCoord(ra=self.tbl_RIS['ra'], dec=self.tbl_RIS['dec'], unit=(u.deg, u.deg))
+        if not self.tiles:
+            self.tiles = ascii.read(self.tile_path)
+        if not self.coords:
+            self.coords = SkyCoord(ra=self.tiles['ra'], dec=self.tiles['dec'], unit=(u.deg, u.deg))
 
         list_matched_tiles = []        
         list_matched_coords = []
@@ -75,8 +94,8 @@ class Tiles:
             coord_targets = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg))
 
             # Find nearby tiles
-            nearby_tiles_idx = coord_targets.separation(self.coords_RIS) < (aperture + 2) * u.deg
-            RIS_polygons_nearby = self._create_polygons(self.tbl_RIS[nearby_tiles_idx])
+            nearby_tiles_idx = coord_targets.separation(self.coords) < (aperture + 2) * u.deg
+            RIS_polygons_nearby = self._create_polygons(self.tiles[nearby_tiles_idx])
 
             if aperture == 0:  # Point-based matching
                 closest_tile_id, distance_to_boundary = self._find_innermost_tile(polygons_by_id = RIS_polygons_nearby, target_point = target_point)
@@ -86,7 +105,7 @@ class Tiles:
                     list_distance_to_boundary.append([distance_to_boundary])
                     list_overlapped_areas.append([1])
             else:  # Aperture-based matching
-                target_circle = self.make_sky_circle_polygon(ra, dec, aperture)
+                target_circle = self._make_sky_circle_polygon(ra, dec, aperture)
 
                 overlapped_tiles, overlapped_areas = self._find_overlapped_tiles(polygons_by_id = RIS_polygons_nearby, target_circle = target_circle, fraction_overlap_lower = fraction_overlap_lower)
                 if overlapped_tiles:
@@ -96,25 +115,34 @@ class Tiles:
                     list_overlapped_areas.append(overlapped_areas)
 
         if not list_matched_tiles:
-            return Table(), list_matched_coords, None
+            return Table(), None, None
 
         fig_path = None
         if visualize:
-            fig_path = self.visualize_tiles(list_ra, list_dec, list_aperture, list_targetname, list_matched_coords, list_matched_tiles, visualize_ncols, visualize_savepath)
+            fig_path = self.visualize_tiles(list_ra, list_dec, list_aperture, list_matched_coords, list_matched_tiles, visualize_ncols, visualize_savepath)
 
         matched_tbl = Table()
         for matched_coord, matched_tiles, distance_to_boundaries, overlapped_areas in zip(list_matched_coords, list_matched_tiles, list_distance_to_boundary, list_overlapped_areas):
-            matched_tbl_single = self.tbl_RIS[np.isin(self.tbl_RIS['id'], matched_tiles)]
+            matched_tbl_single = self.tiles[np.isin(self.tiles['id'], matched_tiles)]
             matched_tbl_single['matched_idx'] = matched_coord
             matched_tbl_single['distance_to_boundary'] = distance_to_boundaries
             matched_tbl_single['overlapped_area'] = overlapped_areas
             matched_tbl_single['is_within_boundary'] = np.array(distance_to_boundaries) > match_tolerance_minutes/60
             matched_tbl = vstack([matched_tbl, matched_tbl_single])
+            
+        from collections import defaultdict
+
+        tile_source_map = defaultdict(list)
+
+        for tile_id, src_idx in zip(matched_tbl['id'], matched_tbl['matched_idx']):
+            tile_source_map[tile_id].append(src_idx)
+
+        tile_source_map = dict(tile_source_map)
         
         _, unique_indices = np.unique(matched_tbl['id'], return_index=True)
         unique_table = matched_tbl[sorted(unique_indices)]
-        
-        return unique_table, list_matched_coords, fig_path
+
+        return matched_tbl, tile_source_map, fig_path
 
     def _find_innermost_tile(self, polygons_by_id, target_point):
         """
@@ -150,14 +178,13 @@ class Tiles:
                     break  # Avoid duplicate entries for the same tile_id
         return overlapped_tiles, overlapped_area
 
-    def visualize_tiles(self, list_ra, list_dec, list_aperture, list_targetname, list_matched_coords, list_matched_tiles, visualize_ncols, visualize_savepath):
+    def visualize_tiles(self, list_ra, list_dec, list_aperture, list_matched_coords, list_matched_tiles, visualize_ncols, visualize_savepath):
         """
         Visualize the tiles and matched coordinates with aperture regions.
         """
         list_ra = [list_ra[i] for i in list_matched_coords]
         list_dec = [list_dec[i] for i in list_matched_coords]
         list_aperture = [list_aperture[i] for i in list_matched_coords]
-        list_targetname = [list_targetname[i] for i in list_matched_coords] if list_targetname else [None] * len(list_matched_coords)
         list_matched_tiles = [list_matched_tiles[i] for i in list_matched_coords]
 
         n_coords = len(list_ra)
@@ -176,14 +203,12 @@ class Tiles:
         elif isinstance(axes, np.ndarray):
             axes = axes.flatten()
 
-        for i, (ra, dec, targetname, matched_tile_id, aperture) in enumerate(zip(list_ra, list_dec, list_targetname, list_matched_tiles, list_aperture)):
+        for i, (ra, dec, matched_tile_id, aperture) in enumerate(zip(list_ra, list_dec, list_matched_tiles, list_aperture)):
             ax = axes[i]
             coord_targets = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg))
-            nearby_tiles_idx = coord_targets.separation(self.coords_RIS) < (aperture + 3) * u.deg
-            nearby_polygons_by_id = self._create_polygons(self.tbl_RIS[nearby_tiles_idx])
-            if targetname is None:
-                targetname = f'Target {i + 1}'
-            
+            nearby_tiles_idx = coord_targets.separation(self.coords) < (aperture + 3) * u.deg
+            nearby_polygons_by_id = self._create_polygons(self.tiles[nearby_tiles_idx])
+
             # Plot surrounding polygons in blue
             for tile_id, polygons in nearby_polygons_by_id.items():
                 for poly in polygons:
@@ -200,7 +225,7 @@ class Tiles:
             if aperture > 0:
                 #aperture_circle = plt.Circle((ra, dec), aperture, color='red', fill=True, linestyle='--', label='Aperture', lw =3, alpha = 0.2)
                 #ax.add_patch(aperture_circle)
-                poly = self.make_sky_circle_polygon(ra, dec, aperture)
+                poly = self._make_sky_circle_polygon(ra, dec, aperture)
                 x, y = poly.exterior.xy
                 ax.plot(x, y, color='red', lw=2, linestyle='--')
                 ax.fill(x, y, color='red', alpha=0.2)
@@ -222,7 +247,7 @@ class Tiles:
                 centroid = innermost_poly.centroid
                 ax.text(ra, dec - 0.3, matched_tile_id[0], fontsize=8, ha='center', va='center', color='black',
                         bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
-            ax.set_title(f'{targetname}: (RA = {ra:.2f}, Dec = {dec:.2f})')
+            ax.set_title(f'Target {i + 1}: ({ra:.2f}, {dec:.2f})')
 
         # Add a legend to the first subplot
         axes[0].legend(loc='upper left', fontsize=8)
@@ -301,8 +326,7 @@ class Tiles:
                 print(f"Failed to create polygon for row {row}: {e}")
         return polygons_by_id
 
-
-    def make_sky_circle_polygon(self, ra_deg, dec_deg, radius_deg, n_points=100):
+    def _make_sky_circle_polygon(self, ra_deg, dec_deg, radius_deg, n_points=100):
         from astropy.coordinates import Angle
 
         """Create a shapely polygon that represents a sky circle at high Dec."""
@@ -315,73 +339,3 @@ class Tiles:
         dec_list = circle_coords.dec.deg
         return Polygon(zip(ra_list, dec_list))
 
-
-# %%
-# Example usage
-if __name__ == "__main__":
-    from astropy.coordinates import SkyCoord, GeocentricTrueEcliptic
-    import astropy.units as u
-
-    #tbl = ascii.read('./Subset_White_Dwarfs_with_Matched_Tiles.csv')
-    T = Tiles()
-
-    from astropy.coordinates import SkyCoord
-    from astropy.time import Time
-    import astropy.units as u
-
-    # Raw data lines
-    lines = """
-2025 09 15 000000 14 57 49.5 -12 49 47
-2025 09 16 000000 14 55 41.9 -12 42 37  
-2025 09 17 000000 14 53 35.2 -12 35 28
-2025 09 18 000000 14 51 29.5 -12 28 18 
-2025 09 19 000000 14 49 24.8 -12 21 07 
-2025 09 20 000000 14 47 21.0 -12 13 56 
-2025 09 21 000000 14 45 18.1 -12 06 44 
-2025 09 22 000000 14 43 16.1 -11 59 32 
-2025 09 23 000000 14 41 14.9 -11 52 18  
-2025 09 24 000000 14 39 14.4 -11 45 04  
-2025 09 25 000000 14 37 14.7 -11 37 49  
-2025 09 26 000000 14 35 15.7 -11 30 33  
-2025 09 27 000000 14 33 17.3 -11 23 16  
-2025 09 28 000000 14 31 19.5 -11 15 58  
-2025 09 29 000000 14 29 22.2 -11 08 38 
-2025 09 30 000000 14 27 25.5 -11 01 16  
-2025 10 01 000000 14 25 29.2 -10 53 53  
-2025 10 02 000000 14 23 33.3 -10 46 27 
-2025 10 03 000000 14 21 37.7 -10 39 00  
-2025 10 04 000000 14 19 42.4 -10 31 31 
-2025 10 05 000000 14 17 47.4 -10 23 59 
-2025 10 06 000000 14 15 52.6 -10 16 25
-    """.strip().splitlines()
-
-    ra_list = []
-    dec_list = []
-    obsdates = []
-
-    for line in lines:
-        parts = line.split()
-        year, month, day = parts[:3]
-        ra_hms = ' '.join(parts[4:7])
-        dec_dms = ' '.join(parts[7:10])
-
-        # Convert to SkyCoord (RA/Dec in degrees)
-        coord = SkyCoord(ra=ra_hms, dec=dec_dms, unit=(u.hourangle, u.deg))
-        ra_list.append(coord.ra.deg)
-        dec_list.append(coord.dec.deg)
-
-        # Convert to ISO format date
-        time = Time(f"{year}-{month}-{day}")
-        obsdates.append(time.iso[:10])
-
-    # Optional print
-    print("RA list:", ra_list)
-    print("Dec list:", dec_list)
-    print("Obsdates:", obsdates)
-    tbl_filtered, tbl_idx, fig_path = T.find_overlapping_tiles(
-    ra_list, 
-    dec_list, 
-    list_aperture = 0, 
-    list_targetname = obsdates, visualize=True, visualize_ncols=3, visualize_savepath='./output', match_tolerance_minutes=4, fraction_overlap_lower= 0.1 )
-
-    # %%

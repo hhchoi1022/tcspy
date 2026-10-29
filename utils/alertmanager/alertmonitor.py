@@ -295,15 +295,15 @@ class AlertMonitor(mainConfig):
         return users_dict
 # %%
 if __name__ == "__main__":
-    alertmonitor = AlertMonitor()
+    self = AlertMonitor()
 #%%
 if __name__ == "__main__":
-    alertmonitor.monitor_alert(send_slack = True,
-                               send_email = True,
-                               check_interval = 30,
-                               since_days = 3,
-                               max_email_alerts = 20,
-                               max_sheet_alerts = 5,
-                               match_to_tiles = True,
-                               match_tolerance_minutes = 3)
+    self.monitor_alert(send_slack = True,
+                        send_email = True,
+                        check_interval = 30,
+                        since_days = 3,
+                        max_email_alerts = 20,
+                        max_sheet_alerts = 5,
+                        match_to_tiles = True,
+                        match_tolerance_minutes = 3)
 # %%

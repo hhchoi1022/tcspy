@@ -173,6 +173,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         except:
             trigger_abort_disconnected = True
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: mount status cannot be loaded.')
+        
         try:
             self.telescope.log.info(f'Checking camera status...')
 
@@ -180,6 +181,7 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
         except Exception as e:
             trigger_abort_disconnected = True
             self.telescope.log.critical(f'==========LV2[{type(self).__name__}] is failed: camera status cannot be loaded. Exception: {e}')
+        
         try:
             self.telescope.log.info(f'Checking filterwheel status...')
 
@@ -544,23 +546,44 @@ class SingleObservation(Interface_Runnable, Interface_Abortable):
 
 #%%    
 if __name__ == '__main__':
-    from threading import Thread
-    kwargs = dict(
-    exptime= '1',
-    count= '1',
-    filter_ = 'm450',
-    binning= '1',
-    imgtype = 'Light',
-    alt = 30,
-    az= 90,
-    name = "Test",
-    objtype = 'Testt',
-    autofocus_before_start= False,
-    autofocus_when_filterchange= False)              
+    exptime = 5
+    count  = 3
+    obsmode : str = 'Spec'
+    filter_ : str = 'r'
+    specmode : str = 'specall'
+    colormode : str = None
+    ntelescope : int = 1
+    gain : int = 2750
+    binning : str = '1'
+    imgtype : str = 'Light'
+    
+    # Target information
+    ra : float = None  # When radec == None: do not move 
+    dec : float = None
+    alt : float = 30  # When altaz == None: do not move 
+    az : float = 270
+    name : str = None
+    objtype : str = None
+    id_ : str = None
+    note : str = None
+    comment : str = None
+    is_ToO : bool = False
+    is_rapidToO : bool = False
+    
+    # Auxiliary parameters
+    force_slewing : bool = False
+    autofocus_use_history : bool = True
+    autofocus_history_duration : float = 60
+    autofocus_before_start : bool = False
+    autofocus_when_filterchange : bool = False
+    autofocus_when_elapsed : bool = False
+    autofocus_elapsed_duration : float = 60
+    observation_status : dict = None
+                 
     from multiprocessing import Process
     abort_action = Event()
-    s = SingleObservation(SingleTelescope(2),abort_action)
-    s.run(**kwargs)
+    self = SingleObservation(SingleTelescope(2),abort_action)
+    # s.run(**kwargs)
 # %%
 if __name__ == '__main__':
     s.abort()

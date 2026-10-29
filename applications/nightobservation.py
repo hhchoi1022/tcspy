@@ -31,6 +31,7 @@ class NightObservation(mainConfig):
         super().__init__()
         self.multitelescopes = MultiTelescopes
         self.abort_action = abort_action
+        self.abort_weather = Event()
         self.DB = DB(utctime = Time.now()).Dynamic
         self.obsnight = NightSession(Time.now()).obsnight_utc
         self.weather = next(iter(self.multitelescopes.devices.values())).devices['weather']
@@ -55,11 +56,11 @@ class NightObservation(mainConfig):
         class autofocus_config: 
             def __init__(self):
                 self.use_history = True
-                self.history_duration = 60 
+                self.history_duration = 120
                 self.before_start = True
                 self.when_filterchange = True
                 self.when_elapsed = True
-                self.elapsed_duration = 60
+                self.elapsed_duration = 120
             def __repr__(self):
                 txt = ('AUTOFOCUS CONFIGURATION ============\n'+
                        ''.join(f"autofocus.{key} = {value}\n" for key, value in self.__dict__.items())
@@ -73,9 +74,9 @@ class NightObservation(mainConfig):
         self.DB.initialize(initialize_all= True)
         
         # Connect Weather Updater
-        Thread(target = self.weather.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
+        Thread(target = self.weather.run, kwargs = dict(abort_action = self.abort_weather), daemon = False).start()
         # Connect SafetyMonitor Updater
-        Thread(target = self.safetymonitor.run, kwargs = dict(abort_action = self.abort_action), daemon = False).start()
+        Thread(target = self.safetymonitor.run, kwargs = dict(abort_action = self.abort_weather), daemon = False).start()
 
         # Set device for safety check
         if self.config['NIGHTOBS_SAFETYPE'].upper() == 'WEATHER':
@@ -462,6 +463,7 @@ class NightObservation(mainConfig):
         if not is_shutdown_triggered:
             Shutdown(self.multitelescopes, self.abort_action).run(fanoff = False, slew = True, warm = False)
             is_shutdown_triggered = True
+        self.abort_weather.set()
         self.multitelescopes.log.info(f'[{type(self).__name__}] is finished')
         
     def _put_action(self, target, action, telescopes, action_id, kwargs):
@@ -596,6 +598,3 @@ if __name__ == '__main__':
     except:
         pass
     
-# %%
-
-# %%

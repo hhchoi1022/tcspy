@@ -372,7 +372,7 @@ class mainCamera(mainConfig):
              abort_action : Event,
              settemperature: float,
              tolerance: float = 1,
-             max_consecutive_stable_iterations: int = 50,
+             max_consecutive_stable_iterations: int = 100,
              ):
         """
         Control the cooling process of the camera.
@@ -418,7 +418,7 @@ class mainCamera(mainConfig):
                     # Calculate the gradient
                     gradient = current_temperature - prev_temperature
                     
-                    if gradient > -0.3:  # Adjust the threshold as needed
+                    if gradient > 0:  # Adjust the threshold as needed
                         consecutive_stable_iterations += 1
                     else:
                         consecutive_stable_iterations = 0
@@ -450,7 +450,7 @@ class mainCamera(mainConfig):
             
     def warm(self,
              abort_action : Event,
-             settemperature : float = 10,
+             settemperature : float = 40,
              tolerance: float = 1,
              max_consecutive_stable_iterations : int = 10
              ):
@@ -502,7 +502,7 @@ class mainCamera(mainConfig):
 
                     # Check if the temperature has been stable for too long
                     if consecutive_stable_iterations >= max_consecutive_stable_iterations:
-                        self._log.warning('CCD Temperature cannot be reached to the set temp, current temp: {}'.format(self.device.CCDTemperature))
+                        # self._log.warning('CCD Temperature cannot be reached to the set temp, current temp: {}'.format(self.device.CCDTemperature))
                         break
 
                     self._log.info('Current temperature: %.1f [Power: %d]' % (current_temperature,cooler_power))
