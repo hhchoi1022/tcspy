@@ -163,3 +163,12 @@ DataTransferManager()   # config TRANSFER_* 사용
 - `generate_dithering_pattern(ra_center, dec_center, n_points, offset_arcsec)` → 절대 RA/Dec 좌표 배열 (RA는 cos(dec) 보정). 기존 프로토타입 호환용.
 - 시각화 데모는 `__main__` 가드 안으로 이동 (임포트 안전).
 - `check_focus_offset.py` — FITS 헤더(FOCUSPOS/FILTER)로 필터별 포커스 오프셋 분석. **import 시 input() 프롬프트.**
+
+## 10. helpdesk/ — Obstech helpdesk → Slack 중계 (2026-10 신설)
+
+Obstech helpdesk(`https://helpdesk.obstech.cl`, **osTicket v1.18.2**)의 고객 포털을 로그인해서 읽고, 변경 사항을 Slack에 티켓당 스레드 1개로 올린다. 메일 연동 없음 (생성 시 알림 메일이 오지 않아 포털 폴링으로 결정).
+
+- `HelpdeskPortal` (`helpdeskportal.py`) — 읽기 전용 포털 클라이언트. **tcspy 임포트 없음** (requests + 표준 `html.parser`로 만든 간이 DOM). `login()`(`login.php`에 `__CSRFToken__`/`luser`/`lpasswd` POST), `_get()`(응답이 로그인 페이지[`id="clientLogin"`]면 1회 재로그인), `list_tickets(status='open'|'closed')`(`tickets.php?a=search&status=...` — 포털 목록은 open/closed 중 하나만 보여줌, `<tr id=ticket_id>`), `get_ticket(id)`(`#ticketInfo` + `#ticketThread`의 `thread-entry-<id>`; type은 `message`(사용자)/`response`(staff), 내부 노트는 고객 화면에 안 보임). 로그인 계정이 소유자이거나 참조자(collaborator)인 티켓만 보임.
+- `HelpdeskMonitor(mainConfig)` (`helpdeskmonitor.py`) — `check()` 1회: open 목록 전체 + closed 목록 1페이지 중 (신규 또는 직전 open) 티켓만 상세 조회 (열림 여부는 상태 이름이 아니라 어느 목록에서 나왔는지로 판단 — 이 포털의 닫힘 상태 이름은 `Resolved`) → 신규 티켓은 채널 메시지(스레드 부모), 신규 entry·상태 변경은 스레드 답글. 상태 파일(`HELPDESK_STATEPATH`, JSON: ticket_id → `slack_ts`/`entries`/`status`/`is_open`)로 재시작 시 중복 방지, 게시 성공한 entry만 기록. **상태 파일이 없으면 첫 check는 기록만 하고 게시 안 함.** 부모가 없는 기존 티켓은 첫 변경 시 부모 생성. `monitor()` = 무한 루프 (`__main__`).
+- 포털 HTML 구조에 의존(스크래핑)하므로 osTicket 업그레이드 시 깨질 수 있음 → 구조를 못 찾으면 RuntimeError로 로그에 남음.
+

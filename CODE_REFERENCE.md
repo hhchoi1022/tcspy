@@ -123,6 +123,7 @@ sunrise_shutdown(+10°)   Dark (밤 이미지의 exptime/binning/gain 조합별)
 | 서베이 타일 선정 | `utils/databases/DB_survey.py` (`select_best_targets`) |
 | 타일 기하/매칭 | `utils/databases/tiles.py` |
 | 타겟 관측가능성 | `utils/target/singletarget.py`, `multitargets.py` |
+| Helpdesk(Obstech osTicket) → Slack 중계 | `utils/helpdesk/helpdeskmonitor.py`, `helpdeskportal.py` |
 | ToO 알림 수신/처리 | `utils/alertmanager/alertmonitor.py`, `alertbroker.py`, `alert.py` |
 | Slack/Gmail/GSheet/MySQL | `utils/connector/*.py` |
 | 데이터센터 전송 | `utils/datatransfer.py` |

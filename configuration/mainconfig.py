@@ -242,6 +242,12 @@ class mainConfig:
                             SLACK_DEFAULT_CHANNEL = 'C07SREPTWFM',
                             SLACK_ALERT_CHANNEL = 'C07SREPTWFM')
         
+        helpdesk_params = dict(HELPDESK_URL = 'https://helpdesk.obstech.cl/',
+                               HELPDESK_CREDENTIAL = os.path.join(self.path, 'credential', 'helpdesk/helpdesk_account.json'), # {"username": ..., "password": ...}
+                               HELPDESK_SLACK_CHANNEL = None, # Slack channel ID. None = dry run (print only)
+                               HELPDESK_STATEPATH = f'{os.path.join(self.path_sync, "helpdesk", "helpdesk_state.json")}',
+                               HELPDESK_CHECKINTERVAL = 300) # seconds
+
         googlesheet_params = dict(GOOGLESHEET_URL = 'https://docs.google.com/spreadsheets/d/1UorU7P_UMr22Luw6q6GLQYk4-YicGRATwCePRxkx2Ms/edit#gid=0',
                                   GOOGLESHEET_AUTH = os.path.join(self.path, 'credential', f'googlesheet/targetdb-423908-ee7bb8c14ff3.json'),
                                   GOOGLESHEET_SCOPE = ['https://spreadsheets.google.com/feeds',
@@ -322,6 +328,7 @@ class mainConfig:
         # Global params
         self.make_configfile(gmail_params, filename='gmail.config', savepath= self.path_config)
         self.make_configfile(slack_params, filename='slack.config', savepath= self.path_config)
+        self.make_configfile(helpdesk_params, filename='helpdesk.config', savepath= self.path_config)
         self.make_configfile(googlesheet_params, filename='googleSheet.config', savepath= self.path_config)
         self.make_configfile(alertbroker_params, filename='alertbroker.config', savepath= self.path_config)
         self.make_configfile(self.tcspy_params, filename='TCSpy.config', savepath= self.path_config)

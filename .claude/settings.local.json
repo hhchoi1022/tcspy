@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile utils/ditheringpattern.py devices/mount/mainmount_pwi4.py action/level2/singleobservation.py action/level3/specobservation.py action/level3/deepobservation.py action/level3/colorobservation.py applications/nightobservation.py)",
+      "Bash(python -c ' *)",
+      "Bash(cp /lyman/data1/factory_hhchoi/code/tcspy/utils/ditheringpattern.py ./dp_test.py)",
+      "Bash(grep -n \"is_observable\\\\`, \\\\`cadence\\\\|is_observable.*cadence\" /lyman/data1/factory_hhchoi/code/tcspy/CODE_REFERENCE_databases.md)"
+    ]
+  }
+}

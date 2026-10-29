@@ -63,6 +63,7 @@ mainConfig(unitnum: int = None, path: str = '~/TCSpy/')
 | db | `DB_HOSTIP`('localhost'), `DB_ID`('hhchoi'), `DB_PWD`(**소스에 평문**), `DB_NAME`('target'), `DB_HISTORYPATH`(/data2/obsdata/DB_history), `DB_HISTORYFORMAT`('ascii.fixed_width'), `DB_PROGRAMPATH`, `DB_STATUSDIR`(path_sync), `DB_STATUSFORMAT`('ascii') |
 | gmail | `GMAIL_USERNAME`('7dt.observation.alert@gmail.com'), `GMAIL_TOKENPATH`(credential/gmail/...) |
 | slack | `SLACK_TOKEN`(credential/slack/... 토큰 파일 경로), `SLACK_DEFAULT_CHANNEL`('C07SREPTWFM'), `SLACK_ALERT_CHANNEL`('C07SREPTWFM') |
+| helpdesk (2026-10 신설, `helpdesk.config`) | `HELPDESK_URL`('https://helpdesk.obstech.cl/'), `HELPDESK_CREDENTIAL`(credential/helpdesk/helpdesk_account.json — `{"username","password"}`), `HELPDESK_SLACK_CHANNEL`(None=dry run), `HELPDESK_STATEPATH`(sync/helpdesk/helpdesk_state.json), `HELPDESK_CHECKINTERVAL`(300초) |
 | googleSheet | `GOOGLESHEET_URL`, `GOOGLESHEET_AUTH`(service account JSON), `GOOGLESHEET_SCOPE`(feeds/drive/spreadsheets) |
 | alertbroker | `ALERTBROKER_AUTHUSERS`(승인 이메일 8개), `ALERTBROKER_NORMUSERS`, `ALERTBROKER_ADMINUSERS`, `ALERTBROKER_PATH`(/data2/obsdata/alert_history), `ALERTBROKER_STATUSPATH`(sync/alert) |
 | autofocus | `AUTOFOCUS_TOLERANCE_LOWER`(8)/`UPPER`(45), `AUTOFOCUS_OFFSETPATH`(unit/autofocus.offset), `AUTOFOCUS_HISTORYPATH`(unit/autofocus.history), `AUTOFOCUS_FILTINFOPATH` |
