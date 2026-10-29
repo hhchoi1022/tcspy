@@ -7,6 +7,16 @@ from astropy.io import ascii
 import json
 from astropy.time import Time
 from pathlib import Path
+from astropy.utils import iers
+
+# Earth-orientation (IERS-A) table policy for the whole TCSpy process tree.
+# astropy refuses UTC->UT1 conversion (every AltAz / sunrise calculation) when the cached
+# finals2000A.all is more than `auto_max_age` days old and a fresh copy cannot be downloaded.
+# Both IERS sources (datacenter.iers.org, maia.usno.navy.mil) have been unreachable at times;
+# that must never stop startup/shutdown. The cached table carries ~1 year of predictions and
+# a few months of staleness costs well under 0.1 arcsec here, so accept a stale table and
+# refresh it separately with utils/update_iers.py (cron) instead of at import time.
+iers.conf.auto_max_age = None
 #%%
 class mainConfig:
     def __init__(self,
@@ -394,7 +404,7 @@ if __name__ == '__main__':
                    '10.0.106.21']
     for unitnum, address in zip(unitnumlist, addresslist):
         A = mainConfig(unitnum=unitnum)
-        A._initialize_config(ip_address=address, portnum = 11111, reset_autofocusinfo = True)
+        A._initialize_config(ip_address=address, portnum = 11111, reset_autofocusinfo = False)
 
 # %%
 if __name__ == '__main__':

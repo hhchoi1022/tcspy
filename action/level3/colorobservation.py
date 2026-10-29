@@ -284,26 +284,7 @@ class ColorObservation(Interface_Runnable, Interface_Abortable, mainConfig):
     
 # %%
 if __name__ == '__main__':
-    import time
-    from tcspy.devices import SingleTelescope
-    start = time.time()
-    list_telescopes = [#SingleTelescope(1),
-                        SingleTelescope(2),
-                        SingleTelescope(3),
-                        SingleTelescope(5),
-                        #SingleTelescope(6),
-                        SingleTelescope(7),
-                        SingleTelescope(8),
-                        SingleTelescope(9),
-                        SingleTelescope(10),
-                        SingleTelescope(11),
-                        ]
-    
-    print(time.time() - start)
-
-    start = time.time()
-
-    M = MultiTelescopes(list_telescopes)
+    M = MultiTelescopes()
 #%%
 if __name__ == '__main__':
     #M = MultiTelescopes([SingleTelescope(21)])
@@ -318,6 +299,7 @@ if __name__ == '__main__':
     ra= None
     dec= None
     alt =40 
+    specmode= None
     az = 300
     name = "GRB240516A"
     objtype = 'ToO'
@@ -331,9 +313,9 @@ if __name__ == '__main__':
         autofocus_when_filterchange= autofocus_when_filterchange,
         autofocus_when_elapsed = autofocus_when_elapsed,
         )
-    from threading import Thread
-    t = Thread(target = S.run, kwargs= kwargs)
-    t.start()
+    # from threading import Thread
+    # t = Thread(target = S.run, kwargs= kwargs)
+    # t.start()
     #t.abort()
 # %%
 if __name__ == '__main__':

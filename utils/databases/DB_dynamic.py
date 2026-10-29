@@ -169,7 +169,8 @@ class DB_Dynamic(mainConfig):
                 del exposure_info['specmode_filter']
                 del exposure_info['colormode_filter']
                 exposureinfo_listdict.append(exposure_info)
-            except:
+            except Exception as e:
+                print(e)
                 exposureinfo_listdict.append(dict(status = 'error'))
 
         values_update = [{**targetinfo_dict, **exposureinfo_dict} for targetinfo_dict, exposureinfo_dict in zip(targetinfo_listdict, exposureinfo_listdict)]
@@ -269,7 +270,7 @@ class DB_Dynamic(mainConfig):
                  observable_minimum_hour : float = 2,
                  n_time_grid : float = 10,
                  galactic_latitude_limit: float = 15,
-                 declination_upper_limit: float = 0,
+                 declination_upper_limit: float = 10,
                  declination_lower_limit: float = -90
                  ):
         from tcspy.utils.databases import DB_Survey
@@ -410,26 +411,25 @@ class DB_Dynamic(mainConfig):
                                       scope = self.config['GOOGLESHEET_SCOPE'])  
         tbl_sheet = gsheet.read_sheet(sheet_name = sheet_name, format_ = 'Table')
         if match_to_tiles:
-            tile_info, matched_indices = self._match_RIS_tile(tbl_sheet['RA'].tolist(), tbl_sheet['De'].tolist(), match_tolerance_minutes = match_tolerance_minutes)
-            
-            unmatched_mask = np.ones(len(tbl_sheet), dtype=bool)
-            unmatched_mask[matched_indices] = False
-            # Insert data
-            print('Inserting GoogleSheet data to DB...')
-            
-            # Update only rows where is_within_boundary is True
-            matched_tbl = tbl_sheet[matched_indices]
-            within_boundary_mask = tile_info['is_within_boundary']
-            if np.any(within_boundary_mask):  # Ensure there are rows within boundary to update
-                within_boundary_indices = np.where(within_boundary_mask)[0]
-                objname = matched_tbl['objname'][within_boundary_indices]
-                matched_tbl['objname'][within_boundary_indices] = tile_info['id'][within_boundary_indices]
-                matched_tbl['RA'][within_boundary_indices] = tile_info['ra'][within_boundary_indices]
-                matched_tbl['De'][within_boundary_indices] = tile_info['dec'][within_boundary_indices]
-                matched_tbl['note'][within_boundary_indices] = objname
-            
-            unmatched_tbl = tbl_sheet[unmatched_mask]  
-            final_tbl = vstack([matched_tbl, unmatched_tbl])
+            tile_info_tbl, _ = self._match_RIS_tile(tbl_sheet['RA'].tolist(), tbl_sheet['De'].tolist(), match_tolerance_minutes = match_tolerance_minutes)
+            if len(tile_info_tbl) > 0:
+                matched_idx = tile_info_tbl['matched_idx']
+                unmatched_mask = np.ones(len(tbl_sheet), dtype=bool)
+                unmatched_mask[matched_idx] = False
+                tbl_sheet_matched = tbl_sheet[matched_idx]
+                tbl_sheet_unmatched = tbl_sheet[unmatched_mask]
+                
+                within_boundary_mask = tile_info_tbl['is_within_boundary']
+                within_boundary_idx = np.where(within_boundary_mask)[0]
+                if np.any(within_boundary_mask):  # Ensure there are rows within boundary to update
+                    objname = tbl_sheet_matched['objname'][within_boundary_mask]
+                    tbl_sheet_matched['objname'][within_boundary_idx] = tile_info_tbl['id'][within_boundary_mask]
+                    tbl_sheet_matched['RA'][within_boundary_mask] = tile_info_tbl['ra'][within_boundary_mask]
+                    tbl_sheet_matched['De'][within_boundary_mask] = tile_info_tbl['dec'][within_boundary_mask]
+                    tbl_sheet_matched['note'][within_boundary_mask] = objname
+                final_tbl = vstack([tbl_sheet_matched, tbl_sheet_unmatched])
+            else:
+                final_tbl = tbl_sheet
         else:
             final_tbl = tbl_sheet
 
@@ -567,7 +567,7 @@ class DB_Dynamic(mainConfig):
         if len(target_tbl_for_scoring) == 0:
             return None, None
         
-        obstime_nonspecified_idx = (target_tbl_for_scoring['obs_starttime'] == None) | (target_tbl_for_scoring['obs_starttime'] == "")
+        obstime_nonspecified_idx = (target_tbl_for_scoring['obs_starttime'] == 'None') | (target_tbl_for_scoring['obs_starttime'] == None) | (target_tbl_for_scoring['obs_starttime'] == "")
         obstime_fixed_targets = target_tbl_for_scoring[~obstime_nonspecified_idx]
         obstime_nonfixed_targets = target_tbl_for_scoring[obstime_nonspecified_idx]
          
@@ -709,19 +709,34 @@ class DB_Dynamic(mainConfig):
 # %%
 if __name__ == '__main__':
     Dynamic = DB_Dynamic(Time.now())
-    Dynamic.update_7DS_obscount(remove = False, update_RIS = True, update_IMS = True)
-    Dynamic.update_program_obscount(remove = True, reset_status= False, update_program = True)
+    Dynamic.update_7DS_obscount(remove = False, update_RIS = True, update_IMS = True, update_WFS = False)
+    Dynamic.update_program_obscount(remove = False, reset_status= False, update_program = True)
     Dynamic.clear(clear_only_7ds= True, clear_only_observed = False)
     Dynamic.from_IMS()
-    Dynamic.from_RIS(size = 150)
+    Dynamic.from_RIS(size = 200)
+    Dynamic.from_GSheet('260915_GaiaSPSS', match_to_tiles = False)
     Dynamic.from_Program()
-    # Dynamic.initialize(True)
-    from tcspy.utils.databases import DB_Survey, DB_Program
-    ris = DB_Survey(tbl_name = 'RIS')
-    program = DB_Program()
-    program.export_to_csv()
-    
-    #input_tbl = ris.data[ris.data['objname'] == 'T19992']
-    #Dynamic.insert(input_tbl)
+
+    # from tcspy.utils.databases import DB_Survey, DB_Program
+    # ris = DB_Survey(tbl_name = 'RIS')
+    # program = DB_Program()
+    # program.export_to_csv()
+    # tiles = ['T20419',
+    # 'T20420',
+    # 'T20697',
+    # 'T20698',
+    # 'T20699',
+    # 'T20700',
+    # 'T20976',
+    # 'T20977',
+    # 'T20978',
+    # 'T21254',
+    # 'T21255',
+    # 'T21256',
+    # 'T21532']
+    # input_tbl = ris.data[np.isin(ris.data['objname'], tiles)]
+    # input_tbl['priority'] = 50
+    # #input_tbl = ris.data[ris.data['objname'] == 'T19992']
+    # Dynamic.insert(input_tbl)
 
 # %%

@@ -182,6 +182,11 @@ class AppScheduler(mainConfig):
         with self.thread_lock:
             start_time = time.strftime("%H:%M:%S", time.localtime())
             self.post_slack_thread(message = f'Filtercheck is triggered: {start_time}', alert_slack = alert_slack)
+            
+            for tel in self.multitelescopes.devices.values():
+                config = mainConfig(tel.unitnum)
+                config.update_config('IMAGE_SAVELOG', False)
+            
             action = FilterCheck(self.multitelescopes, abort_action = self.abort_action)
             action.run(exptime = exptime)
             if self._wait_action(action, 'Filtercheck', alert_slack = alert_slack):
@@ -193,6 +198,9 @@ class AppScheduler(mainConfig):
                 return self.schedule.CancelJob
             self.post_slack_thread(message = f'Filtercheck is finished: {end_time}', alert_slack = alert_slack)
             # Convert result[0] dictionary to a formatted string
+            for tel in self.multitelescopes.devices.values():
+                config = mainConfig(tel.unitnum)
+                config.update_config('IMAGE_SAVELOG', True)
             skylevel_str = '\n'.join([f'{band}: ' + ', '.join([f'{telescope}: {value} \n' for telescope, value in telescopes.items()])
                                     for band, telescopes in result[0].items()])
             self.post_slack_thread(message=f'Skylevel:\n{skylevel_str}', alert_slack=alert_slack)
@@ -378,11 +386,11 @@ if __name__ == '__main__':
     # # Startup
     if Time.now() < A.obsnight_utc.sunset_startup:
         A.schedule_app(A.run_startup, A.obsnight.sunset_startup, connect = True, home = True, slew = True, cool = True, alert_slack = alert_slack)
-    # Filtercheck
+    # # Filtercheck
     if Time.now() < A.obsnight_utc.sunset_flat:
-        A.schedule_app(A.run_filtercheck, A.obsnight.sunset_flat, exptime = 60)
+        A.schedule_app(A.run_filtercheck, A.obsnight.sunset_observation - 35 * u.minute, exptime = 10)
     # Autofocus_init
-    autofocus_start_time = A.obsnight.sunset_flat + 15*u.minute
+    autofocus_start_time = A.obsnight.sunset_observation - 25*u.minute
     if Time.now() < autofocus_start_time:
         A.schedule_app(A.run_autofocus_init, autofocus_start_time, 
                        filter_ = 'specall',
@@ -391,7 +399,7 @@ if __name__ == '__main__':
                        search_focus_when_failed = True,
                        search_focus_range = 3000,
                        slew = True,
-                       alert_slack = True)
+                       alert_slack = alert_slack)
         autofocus_start_time += 10*u.minute
         A.schedule_app(A.run_autofocus_init, autofocus_start_time,
                        filter_ = 'specall',
@@ -400,13 +408,14 @@ if __name__ == '__main__':
                        search_focus_when_failed = True,
                        search_focus_range = 3000,
                        slew = True,
-                       alert_slack = True)
+                       alert_slack = alert_slack)
+    
     # NightObservation
     if Time.now() < A.obsnight_utc.sunset_observation:
         A.schedule_app(A.run_nightobs, A.obsnight.sunset_observation, alert_slack = alert_slack)
-
-    A.set_alert_sender(post_tonight_info= True)
-    A.post_schedule(subject = '*Scheduled TCSpy apploication before nightly observation*')
+    if alert_slack:
+        A.set_alert_sender(post_tonight_info= True)
+        A.post_schedule(subject = '*Scheduled TCSpy apploication before nightly observation*')
     A.show_schedule()
 
     if A.schedule.jobs:
@@ -440,7 +449,7 @@ if __name__ == '__main__':
             exptected_duration = float(obsinfo['exptime']) * dark_count * 1.3
             A.schedule_app(A.run_dark, dark_starttime, count = int(dark_count), exptime = float(obsinfo['exptime']), binning = int(obsinfo['binning']), gain = int(obsinfo['gain']), alert_slack = alert_slack)
             dark_starttime += exptected_duration * u.second
-
+        
     # Bias
     all_obsinfo = A.get_obsinfo_tonight(tonight_str, return_only_set= True, key_for_set= ['xbinning', 'gain'])
     bias_count = 9
@@ -456,8 +465,8 @@ if __name__ == '__main__':
     shutdown_starttime_utc = bias_starttime_utc + 10 * u.minute
     if Time.now() < shutdown_starttime_utc:
         A.schedule_app(A.run_shutdown, shutdown_starttime, fanoff = True, slew = True, warm = True, alert_slack = alert_slack)
-
-    A.post_schedule(subject = '*Scheduled TCSpy apploication after nightly observation*')
+    if alert_slack:
+        A.post_schedule(subject = '*Scheduled TCSpy apploication after nightly observation*')
     A.show_schedule()
     A.run_schedule()
 

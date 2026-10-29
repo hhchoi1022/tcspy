@@ -1,13 +1,16 @@
 #%%
+from typing import Any
 from tcspy.configuration import mainConfig
 from tcspy.action.level2 import AutoFocus
 from tcspy.action import MultiAction
 from tcspy.action.level1 import SlewAltAz
+from tcspy.action.level1 import TrackingOff
 from tcspy.devices import SingleTelescope, MultiTelescopes
 from multiprocessing import Event
 from threading import Thread
 from tcspy.utils.exception import *
 import json, os
+import time
 #%%
 FILTINFO_FILE = '/home/kds/TCSpy/configuration/filtinfo.dict'
 
@@ -99,24 +102,44 @@ class AutofocusInitializer(mainConfig):
                 extended_list = (lst * repeat_times)[:max_length]  # Repeat and slice to the maximum length
                 autofocus_filtinfo[key] = extended_list
         
-        for idx_filter in range(max_length):
-            kwargs_autofocus_all = []
-            for tel_name in self.multitelescopes.devices.keys():
-                filter_ = autofocus_filtinfo[tel_name][idx_filter]
-                kwargs_autofocus_single = dict(filter_ = filter_, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range)
-                kwargs_autofocus_all.append(kwargs_autofocus_single)
-            action_autofocus = MultiAction(self.multitelescopes.devices.values(), kwargs_autofocus_all, AutoFocus, self.abort_action)
+        try:
+            for idx_filter in range(max_length):
+                kwargs_autofocus_all = []
+                for tel_name in self.multitelescopes.devices.keys():
+                    filter_ = autofocus_filtinfo[tel_name][idx_filter]
+                    kwargs_autofocus_single = dict(filter_ = filter_, use_history = use_history, history_duration = history_duration, search_focus_when_failed = search_focus_when_failed, search_focus_range = search_focus_range)
+                    kwargs_autofocus_all.append(kwargs_autofocus_single)
+                action_autofocus = MultiAction(self.multitelescopes.devices.values(), kwargs_autofocus_all, AutoFocus, self.abort_action)
+                try:
+                    action_autofocus.run()
+                except AbortionException:
+                    self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
+                    self.is_running = False
+                    raise AbortionException(f'[{type(self).__name__}] is aborted.')
+                except ActionFailedException:
+                    self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
+                    self.is_running = False
+                    raise ActionFailedException(f'[{type(self).__name__}] is failed.')
+        finally:
+            # Tracking off 
+            self.multitelescopes.log.info(f'[{type(self).__name__}] waiting for 3 seconds to turn off tracking.')
+            time.sleep(3)
+            action_trackingoff = MultiAction(self.multitelescopes.devices.values(), dict(), TrackingOff, Event())
             try:
-                action_autofocus.run()
+                action_trackingoff.run()
+            except ConnectionException:
+                self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
+                raise ConnectionException(f'[{type(self).__name__}] is failed.')
             except AbortionException:
                 self.multitelescopes.log.warning(f'[{type(self).__name__}] is aborted.')
-                self.is_running = False
                 raise AbortionException(f'[{type(self).__name__}] is aborted.')
-        self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
-        self.is_running = False
-        self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
-
-
+            except ActionFailedException:
+                self.multitelescopes.log.critical(f'[{type(self).__name__}] is failed.')
+                raise ActionFailedException(f'[{type(self).__name__}] is failed.')
+            finally:
+                self.multitelescopes.log.info(f'[{type(self).__name__}] is finished.')
+                self.is_running = False
+                self.multitelescopes.update_statusfile(status = 'idle', do_trigger = True)
 #%%  
 if __name__ == '__main__':
     from tcspy.devices import MultiTelescopes

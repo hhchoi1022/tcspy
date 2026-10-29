@@ -295,19 +295,19 @@ if __name__ == '__main__':
 
     abort_action = Event()
     S  = SpecObservation(M, abort_action)
-    exptime= '10'
-    count= '2,2'
-    specmode = 'calspec'
+    exptime= '100,100'
+    count= '15,15'
+    specmode = 'specall'
     binning= '1,1'
     imgtype = 'Light'
-    ra= None
-    dec= None
-    alt =40 
-    az = 300
-    name = "GRB240516A"
-    objtype = 'ToO'
+    ra= 11.887917
+    dec= -25.288889
+    alt =None 
+    az = None
+    name = "NGC0253"
+    objtype = 'Test'
     autofocus_before_start= False
-    autofocus_when_filterchange= False
+    autofocus_when_filterchange= True
     autofocus_when_elapsed = False
     kwargs = dict(exptime = exptime, count = count, specmode = specmode,
         binning = binning, imgtype = imgtype, ra = ra, dec = dec,

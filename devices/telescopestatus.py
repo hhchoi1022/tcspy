@@ -162,7 +162,7 @@ class TelescopeStatus(Interface):
 
         status = 'disconnected'
 
-        @Timeout(3, 'Timeout error when updating status of SafetyMonitor device')
+        @Timeout(10, 'Timeout error when updating status of SafetyMonitor device')
         def update_status(status):
             status = 'disconnected'
             try:
@@ -189,7 +189,7 @@ class TelescopeStatus(Interface):
         """
         status = 'disconnected'
         
-        @Timeout(3, 'Timeout error when updating status of Weather device')
+        @Timeout(10, 'Timeout error when updating status of Weather device')
         def update_status(status):
             status = 'disconnected'
             try:

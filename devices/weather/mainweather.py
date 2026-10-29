@@ -84,6 +84,7 @@ class mainWeather(mainConfig):
             else:
                 with portalocker.Lock(last_update_file, 'r', timeout=10) as f:
                     status = json.load(f)      
+
         return status   
 
     def run(self, abort_action : Event):
