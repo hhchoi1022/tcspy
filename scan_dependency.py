@@ -78,6 +78,7 @@ third_party = sorted(
     for module in imports
     if module not in sys.stdlib_module_names
     and module not in local_modules
+    and module != "tcspy"  # this project itself (imported as tcspy.*)
 )
 
 # import ??? ?? ??? ??? ?? ??
@@ -86,6 +87,10 @@ mapping = {
     "PIL": "Pillow",
     "sklearn": "scikit-learn",
     "yaml": "PyYAML",
+    # import name differs from the PyPI name (falls back to a wrong PyPI package if not installed)
+    "alpaca": "alpyca",
+    "mysql": "mysql-connector-python",
+    "ligo": "ligo.skymap",
 }
 
 # ??? import ?? ? PyPI ?? ??? ??

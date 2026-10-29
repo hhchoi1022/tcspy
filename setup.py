@@ -10,7 +10,7 @@ def read_requirements():
 setup(
     name='tcspy',
     version='1.0.5',
-    packages=find_packages(),  # Automatically finds the inner 'tippy'
+    packages=find_packages(include=['tcspy', 'tcspy.*']),  # Source code is in the inner 'tcspy' folder
     author='Hyeonho Choi',
     description='Telescope Control System with python',
     long_description=open('README.md').read() if os.path.exists('README.md') else '',
