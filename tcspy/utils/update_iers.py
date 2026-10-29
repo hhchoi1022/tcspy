@@ -4,7 +4,7 @@
 TCSpy sets ``astropy.utils.iers.conf.auto_max_age = None`` (see configuration/mainconfig.py),
 so astropy never refreshes the table on its own. Run this periodically instead, e.g. weekly:
 
-    0 12 * * 1  /home/kds/anaconda3/envs/tcs/bin/python /home/kds/code/tcspy/utils/update_iers.py >> ~/.cache/update_iers.log 2>&1
+    0 12 * * 1  ~/anaconda3/envs/tcs/bin/python ~/code/tcspy/tcspy/utils/update_iers.py >> ~/.cache/update_iers.log 2>&1
 
 Exit code: 0 = table refreshed or still fresh, 1 = download failed and table older than WARN_DAYS.
 """

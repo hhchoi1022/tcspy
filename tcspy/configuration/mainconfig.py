@@ -60,15 +60,40 @@ class mainConfig:
             with open(configfile, 'r') as f:
                 config = json.load(f)
                 all_config.update(config)
-        return all_config
+        return self._expand_home(all_config)
 
-    def make_configfile(self, 
+    @classmethod
+    def _expand_home(cls, value):
+        """Expand a leading '~' in (nested) string values to the current home directory."""
+        if isinstance(value, str):
+            return os.path.expanduser(value)
+        if isinstance(value, list):
+            return [cls._expand_home(v) for v in value]
+        if isinstance(value, dict):
+            return {k: cls._expand_home(v) for k, v in value.items()}
+        return value
+
+    @classmethod
+    def _contract_home(cls, value):
+        """Replace the current home directory in (nested) string values with '~' so config files are portable."""
+        home = os.path.expanduser('~')
+        if isinstance(value, str):
+            if value == home or value.startswith(home + os.sep):
+                return '~' + value[len(home):]
+            return value
+        if isinstance(value, list):
+            return [cls._contract_home(v) for v in value]
+        if isinstance(value, dict):
+            return {k: cls._contract_home(v) for k, v in value.items()}
+        return value
+
+    def make_configfile(self,
                         dict_params : dict,
                         filename: str,
                         savepath : str):
         filepath = os.path.join(savepath, filename)
         with open(filepath, 'w') as f:
-            json.dump(dict_params, f, indent=4)
+            json.dump(self._contract_home(dict_params), f, indent=4)
         print('New configuration file made : %s' % (filepath))
         
     def update_config(self, key: str, value):
@@ -80,7 +105,7 @@ class mainConfig:
             return
 
         # Update the in-memory config
-        self.config[key] = value
+        self.config[key] = self._expand_home(value)
 
         # Find the config file containing this key
         is_found = False
@@ -90,7 +115,7 @@ class mainConfig:
                 config_data = json.load(f)
             if key in config_data:
                 is_found = True
-                config_data[key] = value
+                config_data[key] = self._contract_home(value)
                 with open(configfile, 'w') as f:
                     json.dump(config_data, f, indent=4)
                 print(f"[INFO] Key '{key}' updated to '{value}' in '{configfile}'")

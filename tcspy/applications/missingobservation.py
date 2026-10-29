@@ -4,17 +4,17 @@ import json
 from pathlib import Path
 
 
-missed_OBSERVATION_PATH = Path('/home/kds/tile_stats_incomplete_mb.csv')
-COVERABLE_OBSERVATION_PATH = Path('/home/kds/tile_stats_incomplete_mb_coverable.csv')
+missed_OBSERVATION_PATH = Path('~/tile_stats_incomplete_mb.csv').expanduser()
+COVERABLE_OBSERVATION_PATH = Path('~/tile_stats_incomplete_mb_coverable.csv').expanduser()
 SELECTED_FILTERSET_OBSERVATION_PATH = Path(
-    '/home/kds/tile_stats_incomplete_mb_nmissed_gt5_selected_filterset.csv'
-)
+    '~/tile_stats_incomplete_mb_nmissed_gt5_selected_filterset.csv'
+).expanduser()
 SELECTED_FILTERSET_OBSERVATION_ASCII_PATH = Path(
-    '/home/kds/tile_stats_incomplete_mb_nmissed_gt5_selected_filterset.ascii_fixed_width'
-)
+    '~/tile_stats_incomplete_mb_nmissed_gt5_selected_filterset.ascii_fixed_width'
+).expanduser()
 SELECTED_FILTERSET_PATH = Path(
-    '/home/kds/TCSpy/configuration/specmode/20260523/missed_filters_1.specmode'
-)
+    '~/TCSpy/configuration/specmode/20260523/missed_filters_1.specmode'
+).expanduser()
 MAX_FILTERS_PER_TELESCOPE = 2
 MIN_missed_FILTERS = 3
 

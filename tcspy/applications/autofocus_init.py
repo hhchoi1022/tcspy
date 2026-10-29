@@ -12,7 +12,7 @@ from tcspy.utils.exception import *
 import json, os
 import time
 #%%
-FILTINFO_FILE = '/home/kds/TCSpy/configuration/filtinfo.dict'
+FILTINFO_FILE = os.path.expanduser('~/TCSpy/configuration/filtinfo.dict')
 
 class AutofocusInitializer(mainConfig):
     
